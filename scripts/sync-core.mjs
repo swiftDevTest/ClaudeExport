@@ -12,7 +12,7 @@ const PRODUCT_SLUG = "claude-export";
 // 路径定义
 const REPO_ROOT = join(__dirname, "..");
 const SHARE_ROOT = join(REPO_ROOT, "node_modules", "@chatexport/core");
-const SOURCE_EXPORT_DIR = join(SHARE_ROOT, "src");
+const SOURCE_EXPORT_DIR = join(SHARE_ROOT, "src", "modules", "export");
 const TARGET_EXPORT_DIR = join(REPO_ROOT, "src", "modules", "export");
 
 function ensureDir(dir) {

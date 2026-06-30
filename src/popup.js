@@ -527,7 +527,7 @@
 
     // 1. 初始化平台及链接监听
     document.getElementById("btn-open-chatgpt").addEventListener("click", function () {
-      chrome.tabs.create({ url: "https://chatgpt.com/" });
+      chrome.tabs.create({ url: "https://claude.ai/" });
       window.close();
     });
 
@@ -830,9 +830,6 @@
     isSupportedPage = false;
     activePlatform = "";
     hideUnsupportedPage();
-    document.querySelectorAll(".platform-icon-box").forEach(function (box) {
-      box.classList.remove("active");
-    });
     var panel = document.getElementById("health-warning-container");
     if (panel) panel.innerHTML = "";
   }
@@ -847,8 +844,6 @@
 
   function getSupportedPlatform(hostname) {
     var host = String(hostname || "").toLowerCase();
-    if (host === "chatgpt.com" || host === "chat.openai.com") return "chatgpt";
-    if (host === "gemini.google.com") return "gemini";
     if (host === "claude.ai" || host.endsWith(".claude.ai")) return "claude";
     return "";
   }
@@ -860,7 +855,7 @@
   }
 
   function showUnsupportedToast() {
-    showToast(t("toast_no_open_chat", "Open a ChatGPT, Claude, or Gemini conversation to export."));
+    showToast(t("toast_no_open_chat", "Open a Claude conversation to export."));
   }
 
   function showToast(message) {

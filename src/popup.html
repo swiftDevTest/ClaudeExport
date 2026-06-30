@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Chat Export</title>
+  <title>Claude Export</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
@@ -16,7 +16,7 @@
         </div>
         <div>
           <div class="title-container">
-            <h2>AI Chat Export</h2>
+            <h2>Claude Export</h2>
             <span class="pro-crown-indicator" id="pro-crown-indicator" title="Pro">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round">
                 <path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 10H5L3 8z"></path>
@@ -50,33 +50,12 @@
                 <line x1="12" y1="16" x2="12.01" y2="16"></line>
               </svg>
             </div>
-            <h3>不支持的页面 / Unsupported Page</h3>
-            <p>请在以下 AI 聊天页面中使用此扩展：</p>
+            <h3>请在 Claude 页面使用</h3>
+            <p>此扩展仅支持 Claude，请在以下页面中使用：</p>
             <ul>
-              <li>ChatGPT (chatgpt.com)</li>
               <li>Claude (claude.ai)</li>
-              <li>Gemini (gemini.google.com)</li>
             </ul>
-            <button class="action-btn" id="btn-open-chatgpt">打开 ChatGPT</button>
-          </div>
-        </div>
-        <!-- 平台图标列表 -->
-        <div class="platform-row">
-          <div class="platform-row-title">
-            <span>当前会话</span>
-            <strong>自动识别平台</strong>
-          </div>
-          <div class="platform-icon-box" data-platform-id="chatgpt" title="ChatGPT">
-            <img class="platform-logo" src="../images/platform-chatgpt.png" alt="">
-            <span>ChatGPT</span>
-          </div>
-          <div class="platform-icon-box" data-platform-id="gemini" title="Gemini">
-            <img class="platform-logo" src="../images/platform-gemini.svg" alt="">
-            <span>Gemini</span>
-          </div>
-          <div class="platform-icon-box" data-platform-id="claude" title="Claude">
-            <img class="platform-logo" src="../images/platform-claude.svg" alt="">
-            <span>Claude</span>
+            <button class="action-btn" id="btn-open-chatgpt">打开 Claude</button>
           </div>
         </div>
 
@@ -306,8 +285,8 @@
 
           <div class="settings-toggle-row" data-sortable-setting>
             <div>
-              <div class="toggle-title">隐藏 AI Chat Export 水印</div>
-              <div class="toggle-desc">移除文档末尾的 AI Chat Export 签名 (Pro)</div>
+              <div class="toggle-title">隐藏 Claude Export 水印</div>
+              <div class="toggle-desc">移除文档末尾的 Claude Export 签名 (Pro)</div>
             </div>
             <label class="switch">
               <input type="checkbox" id="toggle-watermark">
