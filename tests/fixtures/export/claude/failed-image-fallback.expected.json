@@ -1,0 +1,20 @@
+{
+  "messages": [
+    {
+      "role": "assistant",
+      "blocks": [
+        {
+          "type": "image",
+          "sourceKind": "fallback",
+          "normalizedSrc": "",
+          "originalIndex": 0,
+          "alt": "Claude attachment unavailable"
+        }
+      ]
+    }
+  ],
+  "assertions": {
+    "imageCount": 1,
+    "forbiddenText": []
+  }
+}

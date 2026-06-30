@@ -1,0 +1,1652 @@
+{
+  "contextMenuExportParent": {
+    "message": "AI Chat Export"
+  },
+  "contextMenuExportPdf": {
+    "message": "PDF にエクスポート"
+  },
+  "contextMenuExportWord": {
+    "message": "Word にエクスポート"
+  },
+  "contextMenuExportMarkdown": {
+    "message": "Markdown にエクスポート"
+  },
+  "contextMenuExportImage": {
+    "message": "画像にエクスポート"
+  },
+  "contextMenuExportText": {
+    "message": "テキストにエクスポート"
+  },
+  "contextMenuExportJson": {
+    "message": "JSON にエクスポート"
+  },
+  "extensionName": {
+    "message": "AI Chat Exporter - ChatGPT Claude Gemini を PDF、Docs、MD などへ"
+  },
+  "extensionShortName": {
+    "message": "AI Chat Export"
+  },
+  "extensionDescription": {
+    "message": "ChatGPT、Claude、Geminiの会話をブラウザ内で PDF、Docs、MD などへローカル書き出し。"
+  },
+  "extensionActionTitle": {
+    "message": "AI Chat Exporter - ChatGPT Claude Gemini を PDF、Docs、MD などへ"
+  },
+  "brand_ai_workspace": {
+    "message": "AI ワークスペース"
+  },
+  "tab_folders": {
+    "message": "フォルダ"
+  },
+  "tab_bookmarks": {
+    "message": "ブックマーク"
+  },
+  "tab_history": {
+    "message": "履歴"
+  },
+  "tab_account": {
+    "message": "アカウント"
+  },
+  "tab_settings": {
+    "message": "設定"
+  },
+  "btn_reorder": {
+    "message": "並べ替え"
+  },
+  "btn_sort_folders": {
+    "message": "フォルダーを並べ替え"
+  },
+  "btn_expand_all": {
+    "message": "すべて展開"
+  },
+  "btn_collapse_all": {
+    "message": "すべて折りたたむ"
+  },
+  "btn_new_folder": {
+    "message": "新規フォルダ"
+  },
+  "btn_new_folder_group": {
+    "message": "新規フォルダグループ"
+  },
+  "btn_bookmark": {
+    "message": "ブックマーク"
+  },
+  "btn_move": {
+    "message": "移動"
+  },
+  "btn_export": {
+    "message": "エクスポート"
+  },
+  "btn_delete": {
+    "message": "削除"
+  },
+  "btn_clear": {
+    "message": "クリア"
+  },
+  "btn_save": {
+    "message": "保存"
+  },
+  "btn_cancel": {
+    "message": "キャンセル"
+  },
+  "btn_restore": {
+    "message": "復元"
+  },
+  "btn_upgrade": {
+    "message": "Proプランにアップグレード"
+  },
+  "btn_logout": {
+    "message": "ログアウト"
+  },
+  "btn_detect_accounts": {
+    "message": "アカウントを再検出"
+  },
+  "btn_refresh_sync": {
+    "message": "同期を更新"
+  },
+  "btn_backup": {
+    "message": "フォルダとブックマークをバックアップ"
+  },
+  "btn_import": {
+    "message": "フォルダとブックマークをインポート"
+  },
+  "btn_select_ai": {
+    "message": "AIの回答を選択"
+  },
+  "placeholder_search": {
+    "message": "フォルダやチャットを検索..."
+  },
+  "placeholder_search_bookmarks": {
+    "message": "ブックマークを検索..."
+  },
+  "placeholder_search_history": {
+    "message": "タイトル履歴を検索..."
+  },
+  "placeholder_picker_search": {
+    "message": "検索..."
+  },
+  "filter_all": {
+    "message": "すべて"
+  },
+  "filter_gpt": {
+    "message": "GPT"
+  },
+  "filter_claude": {
+    "message": "Claude"
+  },
+  "filter_gemini": {
+    "message": "Gemini"
+  },
+  "empty_no_folders": {
+    "message": "フォルダはまだありません"
+  },
+  "empty_no_folders_desc": {
+    "message": "フォルダを使用して、インポートしたChatGPT、Claude、Geminiのチャットを整理します。"
+  },
+  "empty_no_bookmarks": {
+    "message": "ブックマークはまだありません"
+  },
+  "empty_no_bookmarks_desc": {
+    "message": "保存されたブックマークがここに表示されます。"
+  },
+  "empty_no_history": {
+    "message": "インデックスされたチャットはまだありません"
+  },
+  "empty_no_history_desc": {
+    "message": "チャットをフォルダやブックマークに追加して、タイトルのみの履歴インデックスを作成します。"
+  },
+  "login_title": {
+    "message": "ログインしてAIチャットを整理する"
+  },
+  "login_desc": {
+    "message": "ChatVaultはタイトル、リンク、フォルダ、ブックマークのみを保存します。チャット本文は保存されません。"
+  },
+  "login_btn_google": {
+    "message": "Googleでログイン"
+  },
+  "linked_accounts_title": {
+    "message": "連携済みアカウント"
+  },
+  "linked_accounts_desc": {
+    "message": "ChatVaultは、ChatGPT、Claude、Geminiのタイトルインデックスを個別に管理するためにのみ連携アカウントを使用します。プラットフォームのクッキー、パスワード、トークン、プロンプト、返信、またはチャット本文は保存しません。"
+  },
+  "settings_export_title": {
+    "message": "エクスポート内容の設定"
+  },
+  "settings_workspace_title": {
+    "message": "ワークスペース設定"
+  },
+  "setting_open_startup": {
+    "message": "起動時に開く"
+  },
+  "setting_hide_bookmarks_sidebar": {
+    "message": "左側サイドバーからブックマークを非表示にする"
+  },
+  "setting_hide_tags": {
+    "message": "チャットの下のフォルダタグを非表示にする"
+  },
+  "settings_backup_title": {
+    "message": "バックアップ & インポート"
+  },
+  "sync_ready": {
+    "message": "同期キュー準備完了。"
+  },
+  "backup_ready": {
+    "message": "整理設定の変更後に自動バックアップが作成されます。"
+  },
+  "label_selected": {
+    "message": "$1 件選択中"
+  },
+  "export_selected_as": {
+    "message": "選択したメッセージをエクスポートする形式"
+  },
+  "selection_header": {
+    "message": "メッセージの選択"
+  },
+  "menu_add_folder": {
+    "message": "フォルダを追加"
+  },
+  "menu_add_current_chat": {
+    "message": "現在のチャットを追加"
+  },
+  "menu_add_chats": {
+    "message": "チャットを追加"
+  },
+  "menu_add_project": {
+    "message": "プロジェクトを追加"
+  },
+  "menu_rename": {
+    "message": "名前を変更"
+  },
+  "menu_change_color": {
+    "message": "色を変更"
+  },
+  "menu_move_to": {
+    "message": "フォルダへ移動..."
+  },
+  "color_title": {
+    "message": "フォルダの色の変更"
+  },
+  "color_preview": {
+    "message": "プレビュー"
+  },
+  "color_quick": {
+    "message": "クイックカラー"
+  },
+  "color_custom": {
+    "message": "カスタムカラー"
+  },
+  "color_custom_desc": {
+    "message": "色相とRGB値で微調整します。"
+  },
+  "billing_title": {
+    "message": "AI Chat Export Proにアップグレード"
+  },
+  "billing_desc": {
+    "message": "ローカル書き出し上限、整ったテーマ、一括ワークフロー、PDF、Docs、MD などの出力を利用できます。"
+  },
+  "billing_footnote": {
+    "message": "エクスポートは選択したページからローカルで生成されます。チェックアウトはtabpilotpro.comで開き、安全な決済プロバイダーによって処理されます。ChatVaultはタイトル、リンク、フォルダ、ブックマークのみを保存します。チャット本文は保存されません。"
+  },
+  "billing_btn_restore": {
+    "message": "購入を復元"
+  },
+  "export_settings_title": {
+    "message": "エクスポート内容の設定"
+  },
+  "export_settings_desc": {
+    "message": "ローカルエクスポートごとに表示する詳細情報を選択します。"
+  },
+  "export_opt_ai_only": {
+    "message": "AIの回答のみ"
+  },
+  "export_opt_time": {
+    "message": "エクスポート時間"
+  },
+  "export_opt_title": {
+    "message": "対話のタイトル"
+  },
+  "export_opt_platform": {
+    "message": "プラットフォーム名"
+  },
+  "export_opt_role": {
+    "message": "役割ラベル"
+  },
+  "export_opt_url": {
+    "message": "ソースURL"
+  },
+  "export_opt_align_right": {
+    "message": "自分の質問を右揃え"
+  },
+  "export_privacy": {
+    "message": "ブラウザ内でローカルに生成されます。ChatVaultがエクスポートされたメッセージ内容をアップロード、保存、または記憶することはありません。"
+  },
+  "export_run_save": {
+    "message": "設定を保存"
+  },
+  "launcher_tooltip": {
+    "message": "ChatVault AI マネージャー"
+  },
+  "toast_folder_deleted": {
+    "message": "フォルダを削除しました。"
+  },
+  "toast_folders_deleted": {
+    "message": "$1 件のフォルダを削除しました。"
+  },
+  "toast_chat_removed": {
+    "message": "フォルダからチャットを削除しました。"
+  },
+  "toast_added_to_folder": {
+    "message": "「$1」を $2 に追加しました。"
+  },
+  "toast_folder_already_has_chat": {
+    "message": "「$1」はすでに $2 にあります。"
+  },
+  "toast_chats_removed": {
+    "message": "フォルダから $1 件のチャットを削除しました。"
+  },
+  "toast_history_deleted_single": {
+    "message": "履歴アイテムを1件削除しました。"
+  },
+  "toast_history_deleted": {
+    "message": "$1 件の履歴アイテムを削除しました。"
+  },
+  "toast_history_delete_failed": {
+    "message": "履歴項目を削除できませんでした。"
+  },
+  "toast_moved_chat": {
+    "message": "\"$1\" を $2 に移動しました。"
+  },
+  "toast_moved_chats": {
+    "message": "$1 件のチャットを移動しました。"
+  },
+  "toast_move_failed": {
+    "message": "チャットの移動に失敗しました。"
+  },
+  "toast_already_bookmarked": {
+    "message": "\"$1\" はすでにブックマークされています。"
+  },
+  "toast_bookmarked": {
+    "message": "\"$1\" をブックマークしました。"
+  },
+  "toast_queued_bookmark": {
+    "message": "\"$1\" のブックマークをキューに追加しました。"
+  },
+  "toast_removed_bookmark": {
+    "message": "\"$1\" をブックマークから削除しました。"
+  },
+  "toast_plan_expired": {
+    "message": "プランが更新されました。Pro機能は無効になりました。"
+  },
+  "toast_refresh_failed": {
+    "message": "プランを更新できませんでした。もう一度お試しください。"
+  },
+  "toast_plan_active": {
+    "message": "$1 が有効です。"
+  },
+  "toast_payment_submitted": {
+    "message": "お支払いが送信されました。Proステータスが更新されない場合は、このブラウザタブを更新するか、「購入を復元」をお試しください。"
+  },
+  "toast_limit_reached": {
+    "message": "さらに多くのチャットを整理するには、Proプランにアップグレードしてください。"
+  },
+  "toast_module_not_loaded": {
+    "message": "エクスポートモジュールがロードされていません。ページを更新してください。"
+  },
+  "toast_select_first": {
+    "message": "メッセージが選択されていません。先にページ上のチェックボックスを選択してください。"
+  },
+  "toast_export_progress": {
+    "message": "$1: $2/$3 件のチャットを処理中..."
+  },
+  "toast_saving_conversations": {
+    "message": "エクスポートを保存中: $1 件のチャット..."
+  },
+  "toast_multi_download_blocked": {
+    "message": "エクスポートのダウンロードがブロックされました。Chromeで複数ファイルのダウンロードを許可してから再試行してください。"
+  },
+  "toast_canceled": {
+    "message": "エクスポートがキャンセルされました。"
+  },
+  "toast_export_failed": {
+    "message": "エクスポートに失敗しました。"
+  },
+  "toast_preparing_export": {
+    "message": "チャットのエクスポートを準備中: $1..."
+  },
+  "toast_no_open_chat": {
+    "message": "エクスポートするには、ChatGPT、Claude、またはGeminiの対話を開いてください。"
+  },
+  "toast_image_limit_exceeded": {
+    "message": "このコンテンツは長すぎるため、高品質な画像としてエクスポートできません。PDFでエクスポートしてください。"
+  },
+  "export_image_canvas_limit": {
+    "message": "この会話は長すぎるため、ブラウザのCanvasサイズ制限により高品質な画像としてエクスポートできません。PDFでエクスポートしてください。"
+  },
+  "export_image_limit_title": {
+    "message": "画像エクスポートの制限"
+  },
+  "export_image_limit_pdf": {
+    "message": "PDFをエクスポート"
+  },
+  "confirm_import": {
+    "message": "このChatVaultバックアップをインポートしますか？\n\n$1\n\nフォルダは新しいコピーとしてインポートされます。既存のブックマークは保持され、重複はサーバーの競合ルールによってスキップされます。"
+  },
+  "confirm_restore": {
+    "message": "この自動バックアップを復元しますか？\n\n$1\n\n復元によりバックアップがコピーとしてインポートされ、サーバーの競合ルールで重複がスキップされない限り、既存のデータは保持されます。"
+  },
+  "prompt_move_selected": {
+    "message": "選択したチャットをどのフォルダ名に移動しますか？"
+  },
+  "time_no_update": {
+    "message": "更新時間なし"
+  },
+  "export_word_meta_messages": {
+    "message": "$1 件のメッセージ"
+  },
+  "export_role_user": {
+    "message": "あなたの質問"
+  },
+  "export_branding_footer": {
+    "message": "AI Chat Export によってローカルにエクスポートされました"
+  },
+  "export_image_footer_sub": {
+    "message": "ローカルエクスポート · コンテンツは保存されません"
+  },
+  "export_progress_measuring": {
+    "message": "画像レイアウトを測定中"
+  },
+  "export_progress_rendering": {
+    "message": "画像をレンダリング中"
+  },
+  "export_progress_paginating": {
+    "message": "長い画像エクスポートをページ分割中"
+  },
+  "export_progress_paginating_doc": {
+    "message": "エクスポートをページ分割中"
+  },
+  "export_progress_generating_pdf": {
+    "message": "PDF を生成中"
+  },
+  "export_progress_packaging": {
+    "message": "画像ページをパッケージ化中"
+  },
+  "export_progress_saving": {
+    "message": "画像を保存中"
+  },
+  "export_progress_ready": {
+    "message": "画像準備完了"
+  },
+  "export_pdf_image_load_failed": {
+    "message": "画像 - 読み込み失敗"
+  },
+  "export_pdf_footer_branding": {
+    "message": "AI Chat Export local"
+  },
+  "export_footer_source": {
+    "message": "Export From: $1"
+  },
+  "onboard_text_auth": {
+    "message": "Googleでログインすると、フォルダ、ブックマーク、エクスポート制限の解除、同期機能が利用可能になります。"
+  },
+  "onboard_title_login": {
+    "message": "サインインして続行"
+  },
+  "onboard_text_login_collapsed": {
+    "message": "チャットのエクスポート、ブックマーク、整理を行う前に、ChatVaultを開いてサインインしてください。"
+  },
+  "onboard_step_account": {
+    "message": "アカウント設定"
+  },
+  "onboard_btn_open_signin": {
+    "message": "サインインを開く"
+  },
+  "onboard_btn_signin": {
+    "message": "サインイン"
+  },
+  "onboard_btn_go_to_account": {
+    "message": "アカウントへ"
+  },
+  "onboard_tip": {
+    "message": "ヒント"
+  },
+  "welcome_title": {
+    "message": "AIチャットを検索可能なワークスペースに。"
+  },
+  "welcome_kicker_hero": {
+    "message": "AI ワークスペースを始める"
+  },
+  "welcome_lede": {
+    "message": "まず、ChatGPT、Claude、またはGeminiを開いてください。ChatVaultがそこに出現し、最初のチャットのエクスポート、ブックマーク、または整理ができるようになります。"
+  },
+  "welcome_rec_pill": {
+    "message": "おすすめ"
+  },
+  "welcome_rec_copy": {
+    "message": "数秒で最初のチャットをエクスポート"
+  },
+  "welcome_open_gpt": {
+    "message": "ChatGPTを開く"
+  },
+  "welcome_sub_gpt": {
+    "message": "最初のステップ：現在のチャットをエクスポート"
+  },
+  "welcome_btn_claude": {
+    "message": "Claude"
+  },
+  "welcome_btn_gemini": {
+    "message": "Gemini"
+  },
+  "welcome_pin_wait": {
+    "message": "ピン留めは後回しでも構いません。重要なのは、ChatVaultが表示される、対応するAIページを開くことです。"
+  },
+  "welcome_kicker_pin": {
+    "message": "見つけやすくするために"
+  },
+  "welcome_title_pin": {
+    "message": "準備ができたらChatVaultをピン留めします。"
+  },
+  "welcome_pin_desc": {
+    "message": "Chromeの仕様により、この手順は手動で行う必要があります。パズルアイコンをクリックし、AI Chat Exportを見つけて、ピンのアイコンをクリックします。"
+  },
+  "welcome_pin_status_init": {
+    "message": "まだピン留めしていなくても、対応するAIページ上でChatVaultは動作します。"
+  },
+  "welcome_btn_check_pin": {
+    "message": "ピン留め状態を確認"
+  },
+  "welcome_btn_checking": {
+    "message": "確認中..."
+  },
+  "welcome_btn_pinned": {
+    "message": "ピン留め完了"
+  },
+  "welcome_btn_check_again": {
+    "message": "もう一度確認"
+  },
+  "welcome_pin_success": {
+    "message": "確認できました。ChromeツールバーにChatVaultが表示されています。"
+  },
+  "welcome_pin_failed": {
+    "message": "まだピン留めされていません。ツールバーのパズルアイコンをクリックし、AI Chat Exportの横にあるピンをクリックしてください。"
+  },
+  "welcome_privacy_footnote": {
+    "message": "ChatVaultはタイトル、リンク、フォルダ、ブックマーク、および設定を保存します。プロンプト、回答、プラットフォームのクッキー、アクセストークン、またはリフレッシュトークンは保存しません。"
+  },
+  "billing_benefit_pdf": {
+    "message": "PDF、Docs、MD などの書き出し"
+  },
+  "billing_benefit_word": {
+    "message": "整った文書レイアウト出力"
+  },
+  "billing_benefit_image": {
+    "message": "画像スナップショットエクスポート"
+  },
+  "billing_benefit_folders": {
+    "message": "無制限のフォルダ管理"
+  },
+  "billing_benefit_folder_chats": {
+    "message": "フォルダ内のチャット数を拡張"
+  },
+  "billing_benefit_bookmarks": {
+    "message": "ブックマーク数を拡張"
+  },
+  "billing_benefit_search": {
+    "message": "高度な検索とフィルター"
+  },
+  "billing_benefit_batch": {
+    "message": "一括整理アクション"
+  },
+  "billing_benefit_backup": {
+    "message": "バックアップとインポート"
+  },
+  "billing_benefit_sync": {
+    "message": "高度なクラウド同期"
+  },
+  "billing_benefit_multi_device": {
+    "message": "マルチデバイスアクセス"
+  },
+  "billing_benefit_platforms": {
+    "message": "ChatGPT、Claude、Geminiをすべてサポート"
+  },
+  "billing_benefit_personal": {
+    "message": "個人利用のみ"
+  },
+  "billing_cadence_month": {
+    "message": " / 月"
+  },
+  "billing_cadence_year": {
+    "message": " / 年"
+  },
+  "billing_cadence_lifetime": {
+    "message": "一回限り"
+  },
+  "billing_plan_desc_monthly": {
+    "message": "PDF、Docs、MD などの書き出しとPro専用ツール。"
+  },
+  "billing_plan_desc_yearly": {
+    "message": "AIを日常的に使う方のためのローカル書き出し上限。"
+  },
+  "billing_plan_desc_lifetime": {
+    "message": "一度の支払いで、Proエクスポートと整理機能を永続利用。"
+  },
+  "billing_plan_detail_monthly": {
+    "message": "Pro機能をまず試してみたい方に最適。"
+  },
+  "billing_plan_detail_yearly": {
+    "message": "年間を通して整理、検索、同期機能を利用。"
+  },
+  "billing_plan_detail_lifetime": {
+    "message": "早期サポーター向け特別価格。"
+  },
+  "billing_offer_label": {
+    "message": "期間限定オファー"
+  },
+  "billing_discount_monthly": {
+    "message": "44%割引き"
+  },
+  "billing_discount_yearly": {
+    "message": "50%割引き"
+  },
+  "billing_discount_lifetime": {
+    "message": "62%割引き"
+  },
+  "billing_checkout_pro_yearly": {
+    "message": "Pro年額プランを継続 - $$29.99 / 年"
+  },
+  "billing_active_pro": {
+    "message": "Proプランが有効です。"
+  },
+  "billing_plan_title_monthly": {
+    "message": "Pro 月額プラン"
+  },
+  "billing_plan_title_yearly": {
+    "message": "Pro 年額プラン"
+  },
+  "billing_plan_title_lifetime": {
+    "message": "ライフタイム アーリーバード"
+  },
+  "billing_badge_monthly": {
+    "message": "月額 Pro"
+  },
+  "billing_badge_yearly": {
+    "message": "年額 Pro"
+  },
+  "billing_badge_lifetime": {
+    "message": "ライフタイム Pro"
+  },
+  "billing_err_plan_unavailable": {
+    "message": "選択された支払いプランはご利用いただけません。別のプランを選択してください。"
+  },
+  "billing_err_unavailable": {
+    "message": "お支払いは一時的にご利用いただけません。後ほどもう一度お試しください。"
+  },
+  "billing_err_paddle_unavailable": {
+    "message": "Paddleの決済は一時的にご利用いただけません。後ほどもう一度お試しください。"
+  },
+  "onboard_guide_badge": {
+    "message": "ガイド"
+  },
+  "untitled_chat": {
+    "message": "無題のチャット"
+  },
+  "toast_target_folder_not_found": {
+    "message": "移動先のフォルダが見つかりませんでした。"
+  },
+  "aria_sidebar": {
+    "message": "AI Chat Export サイドバー"
+  },
+  "aria_collapsed_launcher": {
+    "message": "AI Chat Export 折りたたみランチャー"
+  },
+  "format_pdf": {
+    "message": "PDF"
+  },
+  "format_word": {
+    "message": "Word"
+  },
+  "format_image": {
+    "message": "画像"
+  },
+  "btn_cancel_select": {
+    "message": "選択をキャンセル"
+  },
+  "btn_select_messages": {
+    "message": "メッセージを選択"
+  },
+  "toast_delete_failed": {
+    "message": "削除に失敗しました。"
+  },
+  "backup_none": {
+    "message": "自動バックアップはまだありません。"
+  },
+  "backup_auto_reason": {
+    "message": "自動バックアップ"
+  },
+  "backup_available": {
+    "message": "$1 件利用可能"
+  },
+  "linked_accounts_empty": {
+    "message": "リンク済みのプラットフォームアカウントはまだ検出されていません。"
+  },
+  "linked_account_email": {
+    "message": "メール: $1"
+  },
+  "linked_account_id": {
+    "message": "アカウントID: $1"
+  },
+  "linked_account_linked": {
+    "message": "$1 にリンク済み"
+  },
+  "btn_disconnect": {
+    "message": "接続解除"
+  },
+  "plan_pro": {
+    "message": "Pro"
+  },
+  "plan_free": {
+    "message": "無料"
+  },
+  "lock_plan_options": {
+    "message": "ログインしてプランを表示"
+  },
+  "plan_loading": {
+    "message": "プランを読み込み中..."
+  },
+  "plan_cancels_date": {
+    "message": "$1 にキャンセル"
+  },
+  "plan_expires_date": {
+    "message": "$1 に期限切れ"
+  },
+  "toast_folder_update_failed": {
+    "message": "フォルダの更新に失敗しました。"
+  },
+  "toast_sort_same_level": {
+    "message": "ドラッグ並べ替えは現在同じフォルダ階層内でのみ使えます。"
+  },
+  "toast_folder_order_updated": {
+    "message": "フォルダ順を更新しました。"
+  },
+  "toast_folder_order_failed": {
+    "message": "フォルダ順の保存に失敗しました。"
+  },
+  "aria_drag_folder": {
+    "message": "フォルダをドラッグ"
+  },
+  "aria_expand_folder": {
+    "message": "フォルダを展開"
+  },
+  "aria_collapse_folder": {
+    "message": "フォルダを折りたたむ"
+  },
+  "aria_rename_folder": {
+    "message": "フォルダ名を変更"
+  },
+  "backup_reason_folder_chat_removed": {
+    "message": "フォルダ内チャットを削除"
+  },
+  "dialog_move_title": {
+    "message": "\"$1\" を移動"
+  },
+  "untitled_folder": {
+    "message": "無題のフォルダ"
+  },
+  "dialog_move_empty": {
+    "message": "このチャットを移動する前に別のフォルダを作成してください。"
+  },
+  "dialog_delete_title": {
+    "message": "\"$1\" を削除しますか？"
+  },
+  "dialog_remove_folder_chat": {
+    "message": "このチャットをフォルダから削除しますか？元のチャットは削除されません。"
+  },
+  "backup_reason_folder_chat_moved": {
+    "message": "フォルダ内チャットを移動"
+  },
+  "folders_no_search_match": {
+    "message": "検索に一致するフォルダまたはチャットはありません。"
+  },
+  "folders_no_match": {
+    "message": "検索に一致するフォルダはありません。"
+  },
+  "selected_folders_count": {
+    "message": "$1 個のフォルダを選択中"
+  },
+  "chat_count_one": {
+    "message": "1 件のチャット"
+  },
+  "chat_count_many": {
+    "message": "$1 件のチャット"
+  },
+  "dialog_delete_folder_and_chats": {
+    "message": "$1 を削除し、$2 をChatVaultから外しますか？元のチャットは削除されません。"
+  },
+  "dialog_delete_folder_with_chats": {
+    "message": "$1 を削除し、$2 をChatVaultから外しますか？元のチャットは削除されません。"
+  },
+  "dialog_delete_folders_with_chats": {
+    "message": "$1 個のフォルダを削除し、$2 をChatVaultから外しますか？元のチャットは削除されません。"
+  },
+  "dialog_delete_folder_desc": {
+    "message": "$1 をChatVaultから削除しますか？元のチャットは削除されません。"
+  },
+  "backup_reason_folder_deleted": {
+    "message": "フォルダを削除"
+  },
+  "toast_move_selected_failed": {
+    "message": "選択したチャットの移動に失敗しました。"
+  },
+  "dialog_delete_chats_title": {
+    "message": "選択したチャットを削除しますか？"
+  },
+  "dialog_remove_selected_folder_chats": {
+    "message": "選択した $1 件のチャットをフォルダから削除しますか？元のチャットは削除されません。"
+  },
+  "backup_reason_bookmark_saved": {
+    "message": "ブックマークを保存"
+  },
+  "backup_reason_bookmark_queued": {
+    "message": "ブックマークをキューに追加"
+  },
+  "aria_bookmark_chat": {
+    "message": "チャットをブックマーク"
+  },
+  "aria_bookmarked": {
+    "message": "ブックマーク済み"
+  },
+  "aria_add_to_folder": {
+    "message": "フォルダに追加"
+  },
+  "aria_remove_bookmark": {
+    "message": "ブックマークを削除"
+  },
+  "label_organize_chat": {
+    "message": "\"$1\" を整理"
+  },
+  "picker_create_folder_first": {
+    "message": "先にフォルダを作成してください。"
+  },
+  "backup_reason_bookmark_removed": {
+    "message": "ブックマークを削除"
+  },
+  "export_limit_single": {
+    "message": "無料版では一度に1件の会話をエクスポートできます。フォルダや一括エクスポートにはProにアップグレードしてください。"
+  },
+  "export_limit_count": {
+    "message": "無料版では一度に最大 $1 件の会話をエクスポートできます。さらに多くはProにアップグレードしてください。"
+  },
+  "toast_signin_export": {
+    "message": "会話をエクスポートするにはログインしてください。"
+  },
+  "export_progress_preparing_image": {
+    "message": "画像エクスポートを準備中..."
+  },
+  "export_count_one": {
+    "message": "1 件の会話"
+  },
+  "export_count_many": {
+    "message": "$1 件の会話"
+  },
+  "export_selected_chats": {
+    "message": "選択したチャット"
+  },
+  "toast_no_export_bodies": {
+    "message": "エクスポートできる会話本文がありません。"
+  },
+  "toast_saved_exports_with_issues": {
+    "message": "$1 件の会話を保存しました。$2 件失敗しました。"
+  },
+  "toast_saved_exports_to_file": {
+    "message": "$1 件の会話を $2 に保存しました。"
+  },
+  "toast_exporting": {
+    "message": "エクスポート中..."
+  },
+  "export_image_label": {
+    "message": "画像エクスポート"
+  },
+  "toast_chat_record_missing": {
+    "message": "チャット記録は利用できなくなりました。"
+  },
+  "export_default_title": {
+    "message": "会話"
+  },
+  "toast_conversation_export_failed": {
+    "message": "会話のエクスポートに失敗しました。"
+  },
+  "dialog_remove_bookmark": {
+    "message": "このブックマークをChatVaultから削除しますか？"
+  },
+  "dialog_delete_history": {
+    "message": "この履歴項目をChatVaultから削除しますか？"
+  },
+  "toast_signin_export_folders": {
+    "message": "フォルダをエクスポートするにはログインしてください。"
+  },
+  "export_progress_preparing_folder": {
+    "message": "フォルダエクスポートを準備中..."
+  },
+  "toast_select_folder_chats": {
+    "message": "エクスポートする前にフォルダまたはチャットを選択してください。"
+  },
+  "export_selected_folders": {
+    "message": "選択したフォルダ"
+  },
+  "export_selected_folder_chats": {
+    "message": "選択したフォルダ内チャット"
+  },
+  "export_progress_selected_folder": {
+    "message": "選択フォルダのエクスポートを準備中..."
+  },
+  "toast_no_selected_folder_exports": {
+    "message": "選択フォルダにエクスポート可能な会話がありません。"
+  },
+  "toast_selected_folder_export_failed": {
+    "message": "選択フォルダのエクスポートに失敗しました。"
+  },
+  "toast_select_bookmarks_export": {
+    "message": "エクスポートする前にブックマークを選択してください。"
+  },
+  "toast_select_history_export": {
+    "message": "エクスポートする前に履歴項目を選択してください。"
+  },
+  "export_progress_bookmark": {
+    "message": "ブックマークエクスポートを準備中..."
+  },
+  "export_progress_history": {
+    "message": "履歴エクスポートを準備中..."
+  },
+  "toast_no_bookmark_exports": {
+    "message": "エクスポート可能なブックマーク会話がありません。"
+  },
+  "toast_no_history_exports": {
+    "message": "エクスポート可能な履歴会話がありません。"
+  },
+  "toast_folder_unavailable": {
+    "message": "フォルダは利用できなくなりました。"
+  },
+  "export_progress_folder_count": {
+    "message": "フォルダエクスポートを準備中: $1/$2 フォルダ..."
+  },
+  "toast_no_folder_exports": {
+    "message": "エクスポート可能なフォルダ会話がありません。"
+  },
+  "toast_no_conversations_exported_reason": {
+    "message": "会話はエクスポートされませんでした。$1"
+  },
+  "export_progress_folder_conversations": {
+    "message": "フォルダエクスポートを準備中: $1/$2 会話..."
+  },
+  "export_default_folder": {
+    "message": "フォルダエクスポート"
+  },
+  "toast_no_folder_export_bodies": {
+    "message": "エクスポートできるフォルダ会話本文がありません。"
+  },
+  "toast_saving_folder_export": {
+    "message": "フォルダエクスポートを保存中: $1 件の会話..."
+  },
+  "toast_folder_export_failed": {
+    "message": "フォルダエクスポートに失敗しました。"
+  },
+  "toast_signin_select_messages": {
+    "message": "メッセージを選択するにはログインしてください。"
+  },
+  "toast_no_messages_found": {
+    "message": "メッセージが見つかりません。会話が開かれて読み込まれていることを確認してください。"
+  },
+  "toast_click_messages_select": {
+    "message": "ページ上のメッセージをクリックしてエクスポート対象に選択します。"
+  },
+  "billing_original_price": {
+    "message": "通常 $1 $2"
+  },
+  "checkout_opening": {
+    "message": "チェックアウトを開いています..."
+  },
+  "billing_continue_with_plan": {
+    "message": "$1 で続行"
+  },
+  "checkout_opening_title": {
+    "message": "安全なチェックアウトを開いています"
+  },
+  "checkout_opening_plan": {
+    "message": "$1 のチェックアウトを新しいタブで開いています。"
+  },
+  "checkout_keep_open": {
+    "message": "支払い後にChatVaultがプランを更新できるよう、このタブを開いたままにしてください。"
+  },
+  "toast_allow_popups": {
+    "message": "安全なチェックアウトを開くにはポップアップを許可してください。"
+  },
+  "toast_opening_checkout": {
+    "message": "安全なチェックアウトを開いています..."
+  },
+  "toast_signin_upgrade": {
+    "message": "Proにアップグレードする前にログインしてください。"
+  },
+  "toast_checkout_opened": {
+    "message": "$1 のチェックアウトを開きました。支払い後にPro状態は自動更新されます。更新されない場合はこのタブを再読み込みしてください。"
+  },
+  "toast_refreshing_session": {
+    "message": "ChatVaultセッションを更新中です。もう一度お試しください。"
+  },
+  "toast_purchase_restored": {
+    "message": "Pro購入を復元しました。"
+  },
+  "toast_no_purchase": {
+    "message": "有効なPro購入は見つかりません。"
+  },
+  "sync_last_sync": {
+    "message": "最終同期 $1"
+  },
+  "sync_flushing": {
+    "message": "キュー内の $1 件を同期中..."
+  },
+  "sync_queued_changes": {
+    "message": "$1 件の変更が同期待ちです。"
+  },
+  "sync_all_synced": {
+    "message": "すべての変更を同期しました。"
+  },
+  "folders_loading": {
+    "message": "フォルダを読み込み中..."
+  },
+  "folders_load_failed": {
+    "message": "フォルダの読み込みに失敗しました。"
+  },
+  "folders_expand_parent_failed": {
+    "message": "親フォルダの展開に失敗しました。"
+  },
+  "backup_reason_folder_created": {
+    "message": "フォルダを作成"
+  },
+  "folders_create_failed": {
+    "message": "フォルダの作成に失敗しました。"
+  },
+  "backup_reason_folder_updated": {
+    "message": "フォルダを更新"
+  },
+  "folders_update_failed": {
+    "message": "フォルダの更新に失敗しました。"
+  },
+  "folders_collapse_failed": {
+    "message": "フォルダの折りたたみに失敗しました。"
+  },
+  "folders_expand_failed": {
+    "message": "フォルダの展開に失敗しました。"
+  },
+  "folders_rename_failed": {
+    "message": "フォルダ名の変更に失敗しました。"
+  },
+  "dialog_delete_named_folder_title": {
+    "message": "$1 を削除"
+  },
+  "dialog_delete_folder_with_subfolders": {
+    "message": "このフォルダとサブフォルダをChatVaultから削除しますか？元のチャットは削除されません。"
+  },
+  "folders_add_current_failed": {
+    "message": "現在のチャットの追加に失敗しました。"
+  },
+  "toast_folder_color_updated": {
+    "message": "フォルダ色を更新しました。"
+  },
+  "backup_reason_folder_color_updated": {
+    "message": "フォルダ色を更新"
+  },
+  "toast_folder_color_failed": {
+    "message": "フォルダ色の更新に失敗しました。"
+  },
+  "picker_mode_project": {
+    "message": "プロジェクト"
+  },
+  "picker_mode_chats": {
+    "message": "チャット"
+  },
+  "picker_mode_projects": {
+    "message": "プロジェクト"
+  },
+  "picker_loading_items": {
+    "message": "$1 を読み込み中..."
+  },
+  "picker_refreshing_items": {
+    "message": "$1 を更新中..."
+  },
+  "picker_loading_more_items": {
+    "message": "さらに $1 を読み込み中..."
+  },
+  "picker_add_to_folder": {
+    "message": "$1 を <strong>$2</strong> フォルダに追加"
+  },
+  "picker_add": {
+    "message": "$1 を追加"
+  },
+  "picker_filter_projects": {
+    "message": "プロジェクト名で絞り込み..."
+  },
+  "picker_filter_chats": {
+    "message": "チャットタイトルで絞り込み..."
+  },
+  "picker_no_projects": {
+    "message": "プロジェクトはまだ見つかりません。"
+  },
+  "picker_no_chats": {
+    "message": "チャットはまだ見つかりません。"
+  },
+  "picker_showing_matches": {
+    "message": "$2 件中 $1 件を表示中。検索で絞り込めます。"
+  },
+  "picker_count_loading": {
+    "message": "$1 件選択中 · 読み込み中"
+  },
+  "picker_count_loaded": {
+    "message": "$1 件選択中 · $2 件読み込み済み"
+  },
+  "toast_gemini_no_projects": {
+    "message": "Geminiは現在プロジェクトを提供していません。代わりにチャット追加を使用してください。"
+  },
+  "history_signin": {
+    "message": "履歴を読み込むにはログインしてください。"
+  },
+  "history_loading": {
+    "message": "履歴を読み込み中..."
+  },
+  "history_results": {
+    "message": "$1 件の結果"
+  },
+  "history_no_match": {
+    "message": "条件に一致する履歴項目はありません。"
+  },
+  "backup_reason_folder_chats_saved": {
+    "message": "フォルダ内チャットを保存"
+  },
+  "folders_saved_refresh_failed": {
+    "message": "保存しましたが、更新に失敗しました。"
+  },
+  "folders_offline_changes_queued": {
+    "message": "オフライン変更をキューに入れました。ネットワーク復帰時に同期されます。"
+  },
+  "folders_add_selected_failed": {
+    "message": "選択した項目の追加に失敗しました。"
+  },
+  "folders_offline_change_queued": {
+    "message": "オフライン変更をキューに入れました。ネットワーク復帰時に同期されます。"
+  },
+  "folders_add_chat_failed": {
+    "message": "チャットをフォルダに追加できませんでした。"
+  },
+  "folders_remove_chat_failed": {
+    "message": "チャットをフォルダから削除できませんでした。"
+  },
+  "backup_signin_create": {
+    "message": "バックアップを作成する前にログインしてください。"
+  },
+  "backup_reason_manual_export": {
+    "message": "手動バックアップエクスポート"
+  },
+  "backup_created": {
+    "message": "バックアップを作成しました。"
+  },
+  "backup_create_failed": {
+    "message": "バックアップの作成に失敗しました。"
+  },
+  "backup_summary_folders": {
+    "message": "フォルダ: $1"
+  },
+  "backup_summary_folder_chats": {
+    "message": "フォルダ内チャット: $1"
+  },
+  "backup_summary_bookmarks": {
+    "message": "ブックマーク: $1"
+  },
+  "backup_summary_settings_yes": {
+    "message": "設定を含む: はい"
+  },
+  "backup_summary_settings_no": {
+    "message": "設定を含む: いいえ"
+  },
+  "backup_summary_linked": {
+    "message": "リンク済みアカウント: $1"
+  },
+  "backup_summary_folder_conflicts": {
+    "message": "フォルダ競合: $1"
+  },
+  "backup_summary_bookmark_conflicts": {
+    "message": "ブックマーク競合: $1"
+  },
+  "backup_invalid_empty": {
+    "message": "バックアップファイルが空です。"
+  },
+  "backup_invalid_product": {
+    "message": "ChatVaultバックアップではないようです。"
+  },
+  "backup_invalid_missing": {
+    "message": "バックアップファイルに必要なデータがありません。"
+  },
+  "backup_import_cancelled": {
+    "message": "インポートをキャンセルしました。"
+  },
+  "backup_preview_failed": {
+    "message": "バックアップファイルをプレビューできませんでした。"
+  },
+  "backup_signin_import": {
+    "message": "バックアップをインポートする前にログインしてください。"
+  },
+  "backup_imported_folder": {
+    "message": "$1 をインポートしました"
+  },
+  "backup_reason_after_import": {
+    "message": "インポート後のバックアップ"
+  },
+  "backup_imported": {
+    "message": "バックアップをインポートしました。"
+  },
+  "backup_import_failed": {
+    "message": "バックアップのインポートに失敗しました。"
+  },
+  "backup_signin_restore": {
+    "message": "バックアップを復元する前にログインしてください。"
+  },
+  "backup_choose_restore": {
+    "message": "復元するバックアップを選択してください。"
+  },
+  "backup_reason_after_restore": {
+    "message": "復元後のバックアップ"
+  },
+  "aria_collapse_chatvault": {
+    "message": "ChatVaultを折りたたむ"
+  },
+  "selected_zero": {
+    "message": "0 件選択中"
+  },
+  "aria_folder_actions": {
+    "message": "フォルダ操作"
+  },
+  "aria_select_all_bookmarks": {
+    "message": "表示中のブックマークをすべて選択"
+  },
+  "aria_bookmarked_chats": {
+    "message": "ブックマーク済みチャット"
+  },
+  "aria_select_all_history": {
+    "message": "表示中の履歴をすべて選択"
+  },
+  "aria_indexed_history": {
+    "message": "インデックス済みチャット履歴"
+  },
+  "aria_expand_sidebar": {
+    "message": "ChatVaultサイドバーを展開"
+  },
+  "aria_open_export_actions": {
+    "message": "エクスポート操作を開く"
+  },
+  "aria_select_message_export": {
+    "message": "エクスポートするメッセージを選択"
+  },
+  "aria_skip_guide": {
+    "message": "ガイドをスキップ"
+  },
+  "welcome_page_title": {
+    "message": "AI Chat Exportへようこそ"
+  },
+  "welcome_aria_open_platform": {
+    "message": "AIプラットフォームを開く"
+  },
+  "welcome_aria_pin_chatvault": {
+    "message": "AI Chat Exportを固定"
+  },
+  "folder_empty_hint": {
+    "message": "チャットをここにドラッグ"
+  },
+  "export_theme_label": {
+    "message": "エクスポートのテーマとスタイル"
+  },
+  "export_theme_default": {
+    "message": "ミニマリスト"
+  },
+  "export_theme_oxford": {
+    "message": "オックスフォード"
+  },
+  "export_theme_mckinsey": {
+    "message": "マッキンゼー"
+  },
+  "export_theme_newsprint": {
+    "message": "ニュースプリント"
+  },
+  "export_theme_aurora": {
+    "message": "オーロラ"
+  },
+  "export_theme_terminal": {
+    "message": "ターミナル"
+  },
+  "export_theme_editorial": {
+    "message": "エディトリアル"
+  },
+  "export_theme_midnight": {
+    "message": "ミッドナイトダーク"
+  },
+  "toast_guest_signin_prompt": {
+    "message": "ログインするとフォルダーを同期し、別のデバイスでも続けて使えます。"
+  },
+  "merge_dialog_title": {
+    "message": "ローカルの ChatVault データを同期しますか？"
+  },
+  "merge_dialog_desc": {
+    "message": "このブラウザーにローカルのフォルダー、ブックマーク、タイトル記録が見つかりました。ログイン中のアカウントに結合するか、結合せずにローカルコピーを削除できます。"
+  },
+  "merge_summary_folders": {
+    "message": "フォルダー：$1"
+  },
+  "merge_summary_chats": {
+    "message": "保存済みチャット：$1"
+  },
+  "merge_summary_bookmarks": {
+    "message": "ブックマーク：$1"
+  },
+  "merge_summary_usage": {
+    "message": "本日の無料利用：保存 $1、エクスポート $2"
+  },
+  "merge_dialog_footnote": {
+    "message": "結合されるのはタイトル、リンク、フォルダー、ブックマーク、設定のみです。チャット本文は保存されません。"
+  },
+  "merge_btn_merge": {
+    "message": "アカウントに結合"
+  },
+  "merge_btn_loading": {
+    "message": "結合中..."
+  },
+  "merge_btn_discard": {
+    "message": "結合せずローカルコピーを削除"
+  },
+  "merge_btn_discard_loading": {
+    "message": "ローカルコピーを削除中..."
+  },
+  "merge_status_merging": {
+    "message": "ローカルの ChatVault データを結合中..."
+  },
+  "merge_success": {
+    "message": "ローカルデータをアカウントに結合しました。"
+  },
+  "merge_failed": {
+    "message": "ローカルデータの結合に失敗しました。"
+  },
+  "merge_discarded": {
+    "message": "ローカルコピーを削除しました。アカウントデータを表示しています。"
+  },
+  "merge_discard_failed": {
+    "message": "ローカルコピーの削除に失敗しました。"
+  },
+  "toast_guest_remote_blocked": {
+    "message": "ログアウト中、この操作はローカルに保存されます。ログイン後にもう一度お試しください。"
+  },
+  "btn_done": {
+    "message": "完了"
+  },
+  "aria_done_reordering": {
+    "message": "並べ替えを完了"
+  },
+  "aria_reorder_folders": {
+    "message": "フォルダーを並べ替え"
+  },
+  "account_support_desc": {
+    "message": "ご質問やご意見がございましたら、メールにてお問い合わせください："
+  },
+  "settings_export_content_title": {
+    "message": "エクスポート内容設定"
+  },
+  "batch_export": {
+    "message": "一括エクスポート"
+  },
+  "batch_export_limit_warning": {
+    "message": "最適なエクスポート体験のために、一度にエクスポートできるチャットは最大10個までです。複数回に分けてエクスポートしてください。"
+  },
+  "batch_export_no_chats": {
+    "message": "サイドバーに会話が見つかりません。サイドバーを展開するか、ページを更新してください。"
+  },
+  "batch_export_select_format": {
+    "message": "エクスポート形式を選択してください"
+  },
+  "batch_export_vip_notice": {
+    "message": "一括エクスポートはPro機能です"
+  },
+  "batch_export_preparing": {
+    "message": "エクスポートを準備中..."
+  },
+  "batch_export_progress": {
+    "message": "チャット $1 / $2 をエクスポート中..."
+  },
+  "batch_export_success": {
+    "message": "一括エクスポートが完了しました！"
+  },
+  "batch_export_cancelled": {
+    "message": "エクスポートがキャンセルされました。"
+  },
+  "popup_btn_login": {
+    "message": "ログイン"
+  },
+  "popup_unsupported_title": {
+    "message": "未対応ページ"
+  },
+  "popup_unsupported_desc": {
+    "message": "この拡張機能は次のAIチャットページで使用してください:"
+  },
+  "popup_open_chatgpt": {
+    "message": "ChatGPTを開く"
+  },
+  "popup_current_session": {
+    "message": "現在のセッション"
+  },
+  "popup_auto_detect_platform": {
+    "message": "プラットフォームを自動検出"
+  },
+  "popup_batch_export_title_attr": {
+    "message": "現在のプラットフォームの会話を一括エクスポート"
+  },
+  "popup_batch_export_compact": {
+    "message": "一括出力"
+  },
+  "popup_batch_export_desc": {
+    "message": "複数チャット"
+  },
+  "popup_custom_export_title_attr": {
+    "message": "会話選択モードに入る"
+  },
+  "popup_custom_export": {
+    "message": "選択出力"
+  },
+  "popup_custom_export_desc": {
+    "message": "メッセージ選択"
+  },
+  "popup_recommended": {
+    "message": "おすすめ"
+  },
+  "popup_one_click_export": {
+    "message": "ワンクリックエクスポート"
+  },
+  "popup_one_click_export_help": {
+    "message": "ページ内容を整形ファイルとしてすばやく保存"
+  },
+  "popup_copy_full_text": {
+    "message": "全文をコピー"
+  },
+  "popup_copy_success": {
+    "message": "全文をコピーしました"
+  },
+  "popup_format_pdf_hint": {
+    "message": "整形保存"
+  },
+  "popup_format_word_hint": {
+    "message": "編集可能"
+  },
+  "popup_format_markdown_hint": {
+    "message": "ナレッジベース"
+  },
+  "popup_format_image_hint": {
+    "message": "共有カード"
+  },
+  "popup_format_text_name": {
+    "message": "テキスト"
+  },
+  "popup_format_text_hint": {
+    "message": "プレーン内容"
+  },
+  "popup_format_json_hint": {
+    "message": "構造化"
+  },
+  "popup_privacy_title": {
+    "message": "100%ローカルでプライベート"
+  },
+  "popup_privacy_desc": {
+    "message": "解析とエクスポートはすべてブラウザ内でローカルに実行されます。チャットデータはアップロードされません。"
+  },
+  "popup_quota_loading": {
+    "message": "使用枠を読み込み中..."
+  },
+  "popup_quota_remaining": {
+    "message": "本日の残り枠: $1 / 3 回"
+  },
+  "popup_pro_quota_status": {
+    "message": "無制限のエクスポートが利用できます"
+  },
+  "popup_settings_section_title": {
+    "message": "コンテンツ書き出し設定"
+  },
+  "popup_redaction_title": {
+    "message": "書き出し証明"
+  },
+  "popup_redaction_desc": {
+    "message": "元情報、時刻、平台、チェックサムを含める"
+  },
+  "popup_title_desc": {
+    "message": "ドキュメント上部に会話タイトルを表示"
+  },
+  "popup_time_desc": {
+    "message": "ドキュメントヘッダーにエクスポート時刻を挿入"
+  },
+  "popup_ai_only_desc": {
+    "message": "ユーザーのプロンプトを除外しAI回答のみ保持"
+  },
+  "popup_appendix_title": {
+    "message": "プロンプト付録"
+  },
+  "popup_appendix_desc": {
+    "message": "元のプロンプトを末尾に追加 (Pro)"
+  },
+  "popup_watermark_title": {
+    "message": "AI Chat Exportの透かしを非表示"
+  },
+  "popup_watermark_desc": {
+    "message": "ドキュメント末尾のAI Chat Export署名を削除 (Pro)"
+  },
+  "popup_source_url_desc": {
+    "message": "元の会話URLをエクスポート文書に追加"
+  },
+  "popup_platform_name_desc": {
+    "message": "ドキュメントヘッダーにソースプラットフォームを表示"
+  },
+  "popup_role_labels_desc": {
+    "message": "本文前にUser / Assistantラベルを表示"
+  },
+  "popup_align_right_desc": {
+    "message": "PDF/画像エクスポートで自分の質問を右揃え"
+  },
+  "popup_system_debug_title": {
+    "message": "システムとデバッグ"
+  },
+  "popup_reset_quota_title": {
+    "message": "使用枠をリセット"
+  },
+  "popup_reset_quota_desc": {
+    "message": "ローカルの日次エクスポートキャッシュを0/3にリセット"
+  },
+  "popup_reset_cache": {
+    "message": "キャッシュをリセット"
+  },
+  "popup_reset_quota_success": {
+    "message": "ローカル枠を0/3にリセットしました。"
+  },
+  "popup_test_pro_title": {
+    "message": "Proテスト状態（開発者）"
+  },
+  "popup_test_pro_desc": {
+    "message": "オンにするとPro状態を直接有効化"
+  },
+  "popup_export_panel_title": {
+    "message": "エクスポートパネル"
+  },
+  "popup_export_settings_title": {
+    "message": "エクスポート設定"
+  },
+  "popup_benefit_unlimited_exports": {
+    "message": "無制限のローカルエクスポート"
+  },
+  "popup_benefit_report_themes": {
+    "message": "出版品質のテーマ"
+  },
+  "popup_benefit_local_receipts": {
+    "message": "ローカルのエクスポート証明"
+  },
+  "popup_benefit_hide_watermark": {
+    "message": "すべての透かしを非表示"
+  },
+  "popup_benefit_zip_download": {
+    "message": "コードパッケージZIPダウンロード"
+  },
+  "popup_benefit_shared_pro": {
+    "message": "共有Proアクセス"
+  },
+  "popup_subscribe_login_prefix": {
+    "message": "ログインしていません。決済前に "
+  },
+  "popup_subscribe_login_suffix": {
+    "message": " してProを自動的に紐づけてください。"
+  },
+  "popup_subscribe_signin_confirm": {
+    "message": "決済前にGoogleでログインして、Proをアカウントに紐づけてください。"
+  },
+  "popup_pro_active_label": {
+    "message": "Proが有効です"
+  },
+  "popup_pro_active_suffix": {
+    "message": "（無制限エクスポート）"
+  },
+  "popup_free_account": {
+    "message": "無料アカウント"
+  },
+  "popup_account": {
+    "message": "アカウント"
+  },
+  "popup_auth_loading": {
+    "message": "ログイン中..."
+  },
+  "popup_refresh_required_title": {
+    "message": "拡張機能を有効にするにはページを更新してください"
+  },
+  "popup_refresh_required_desc": {
+    "message": "拡張機能が読み込まれた、または更新されました。開いているAI会話ページは一度更新するとポップアップ通信が有効になります。"
+  },
+  "popup_refresh_page_retry": {
+    "message": "現在のAI会話ページを更新してから再試行してください。"
+  },
+  "popup_operation_failed": {
+    "message": "操作に失敗しました。後でもう一度お試しください。"
+  },
+  "popup_confirm_logout_title": {
+    "message": "ログアウト"
+  },
+  "popup_confirm_logout_message": {
+    "message": "現在のアカウントからログアウトしますか？"
+  },
+  "popup_signed_out": {
+    "message": "ログアウトしました。"
+  },
+  "popup_login_success": {
+    "message": "ログインしました。"
+  },
+  "popup_login_incomplete": {
+    "message": "ログインが完了しませんでした。もう一度お試しください。"
+  },
+  "popup_login_failed": {
+    "message": "ログインに失敗しました: $1"
+  },
+  "popup_try_later": {
+    "message": "後でもう一度お試しください。"
+  },
+  "popup_creating_checkout": {
+    "message": "チェックアウトセッションを作成中..."
+  },
+  "popup_checkout_unavailable": {
+    "message": "チェックアウトを開けませんでした。後でもう一度お試しください。"
+  },
+  "popup_checkout_service_syncing": {
+    "message": "チェックアウトサービスを更新中です。しばらくしてから AI Chat Export を開き直して再試行してください。"
+  },
+  "popup_checkout_popup_blocked": {
+    "message": "ブラウザーがチェックアウトをブロックしました。もう一度お試しください。"
+  },
+  "popup_checkout_error": {
+    "message": "チェックアウトに失敗しました: $1"
+  },
+  "popup_restore_login_required": {
+    "message": "まずログインしてから購入を復元し、Pro状態を同期してください。"
+  },
+  "popup_restoring": {
+    "message": "復元中..."
+  },
+  "popup_restore_submitted": {
+    "message": "復元リクエストを送信しました。最新状態を見るにはポップアップを閉じて再度開いてください。"
+  },
+  "popup_service_unavailable": {
+    "message": "サービスを利用できません。後でもう一度お試しください。"
+  },
+  "popup_restore_failed": {
+    "message": "購入の復元に失敗しました: $1"
+  },
+  "popup_health_high_risk": {
+    "message": "高リスクの問題"
+  },
+  "popup_health_attention": {
+    "message": "注意が必要"
+  }
+}

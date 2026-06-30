@@ -1,0 +1,17 @@
+[functions.create-checkout-session]
+verify_jwt = true
+
+[functions.analytics-track]
+verify_jwt = false
+
+[functions.analytics-identify]
+verify_jwt = false
+
+[functions.payment-webhook]
+verify_jwt = false
+
+[functions.sync-subscription-status]
+verify_jwt = true
+
+[functions.verify-export-entitlement]
+verify_jwt = true

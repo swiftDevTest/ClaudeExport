@@ -1,0 +1,1652 @@
+{
+  "contextMenuExportParent": {
+    "message": "AI Chat Export"
+  },
+  "contextMenuExportPdf": {
+    "message": "匯出為 PDF"
+  },
+  "contextMenuExportWord": {
+    "message": "匯出為 Word"
+  },
+  "contextMenuExportMarkdown": {
+    "message": "匯出為 Markdown"
+  },
+  "contextMenuExportImage": {
+    "message": "匯出為圖片"
+  },
+  "contextMenuExportText": {
+    "message": "匯出為文字"
+  },
+  "contextMenuExportJson": {
+    "message": "匯出為 JSON"
+  },
+  "extensionName": {
+    "message": "AI Chat Exporter - ChatGPT Claude Gemini 到 PDF、Docs、MD 等"
+  },
+  "extensionShortName": {
+    "message": "AI Chat Export"
+  },
+  "extensionDescription": {
+    "message": "將 ChatGPT、Claude 和 Gemini 對話在瀏覽器本機匯出為 PDF、Docs、MD 等，保留清晰排版。"
+  },
+  "extensionActionTitle": {
+    "message": "AI Chat Exporter - ChatGPT Claude Gemini 到 PDF、Docs、MD 等"
+  },
+  "brand_ai_workspace": {
+    "message": "AI 工作區"
+  },
+  "tab_folders": {
+    "message": "資料夾"
+  },
+  "tab_bookmarks": {
+    "message": "書籤"
+  },
+  "tab_history": {
+    "message": "歷史紀錄"
+  },
+  "tab_account": {
+    "message": "帳戶"
+  },
+  "tab_settings": {
+    "message": "設定"
+  },
+  "btn_reorder": {
+    "message": "重新排序"
+  },
+  "btn_sort_folders": {
+    "message": "排序資料夾"
+  },
+  "btn_expand_all": {
+    "message": "展開全部"
+  },
+  "btn_collapse_all": {
+    "message": "折疊全部"
+  },
+  "btn_new_folder": {
+    "message": "新建資料夾"
+  },
+  "btn_new_folder_group": {
+    "message": "新建資料夾群組"
+  },
+  "btn_bookmark": {
+    "message": "書籤"
+  },
+  "btn_move": {
+    "message": "移動"
+  },
+  "btn_export": {
+    "message": "匯出"
+  },
+  "btn_delete": {
+    "message": "刪除"
+  },
+  "btn_clear": {
+    "message": "清除"
+  },
+  "btn_save": {
+    "message": "儲存"
+  },
+  "btn_cancel": {
+    "message": "取消"
+  },
+  "btn_restore": {
+    "message": "還原"
+  },
+  "btn_upgrade": {
+    "message": "升級至 Pro"
+  },
+  "btn_logout": {
+    "message": "登出"
+  },
+  "btn_detect_accounts": {
+    "message": "重新偵測帳戶"
+  },
+  "btn_refresh_sync": {
+    "message": "重新整理同步"
+  },
+  "btn_backup": {
+    "message": "備份資料夾与書籤"
+  },
+  "btn_import": {
+    "message": "匯入資料夾与書籤"
+  },
+  "btn_select_ai": {
+    "message": "選擇 AI 回覆"
+  },
+  "placeholder_search": {
+    "message": "搜尋資料夾或對話..."
+  },
+  "placeholder_search_bookmarks": {
+    "message": "搜尋書籤..."
+  },
+  "placeholder_search_history": {
+    "message": "搜尋標題歷史..."
+  },
+  "placeholder_picker_search": {
+    "message": "搜尋..."
+  },
+  "filter_all": {
+    "message": "全部"
+  },
+  "filter_gpt": {
+    "message": "GPT"
+  },
+  "filter_claude": {
+    "message": "Claude"
+  },
+  "filter_gemini": {
+    "message": "Gemini"
+  },
+  "empty_no_folders": {
+    "message": "暫無資料夾"
+  },
+  "empty_no_folders_desc": {
+    "message": "使用資料夾來整理匯入的 ChatGPT、Claude 和 Gemini 對話。"
+  },
+  "empty_no_bookmarks": {
+    "message": "暫無書籤"
+  },
+  "empty_no_bookmarks_desc": {
+    "message": "儲存的書籤將顯示在此處。"
+  },
+  "empty_no_history": {
+    "message": "暫無索引對話"
+  },
+  "empty_no_history_desc": {
+    "message": "將對話加入資料夾或書籤以建立僅標題的歷史紀錄索引。"
+  },
+  "login_title": {
+    "message": "登入以整理您的 AI 聊天紀錄"
+  },
+  "login_desc": {
+    "message": "ChatVault 僅儲存標題、連結、資料夾和書籤。對話內容不會被儲存。"
+  },
+  "login_btn_google": {
+    "message": "使用 Google 登入"
+  },
+  "linked_accounts_title": {
+    "message": "已連結帳戶"
+  },
+  "linked_accounts_desc": {
+    "message": "ChatVault 僅使用連結的帳戶來區分 ChatGPT、Claude 和 Gemini 標題索引。它不會儲存平台 Cookie、密碼、Token、提示詞、回覆或對話正文。"
+  },
+  "settings_export_title": {
+    "message": "導出內容設置"
+  },
+  "settings_workspace_title": {
+    "message": "工作區設定"
+  },
+  "setting_open_startup": {
+    "message": "啟動時開啟"
+  },
+  "setting_hide_bookmarks_sidebar": {
+    "message": "在左側側邊欄中隱藏書籤"
+  },
+  "setting_hide_tags": {
+    "message": "隱藏對話下方的資料夾標籤"
+  },
+  "settings_backup_title": {
+    "message": "備份與匯入"
+  },
+  "sync_ready": {
+    "message": "同步佇列已就緒。"
+  },
+  "backup_ready": {
+    "message": "在變更整理設定後將自動建立備份。"
+  },
+  "label_selected": {
+    "message": "已選擇 $1"
+  },
+  "export_selected_as": {
+    "message": "將所選匯出為"
+  },
+  "selection_header": {
+    "message": "訊息選擇"
+  },
+  "menu_add_folder": {
+    "message": "新增資料夾"
+  },
+  "menu_add_current_chat": {
+    "message": "新增目前對話"
+  },
+  "menu_add_chats": {
+    "message": "新增對話"
+  },
+  "menu_add_project": {
+    "message": "新增專案"
+  },
+  "menu_rename": {
+    "message": "重新命名"
+  },
+  "menu_change_color": {
+    "message": "變更顏色"
+  },
+  "menu_move_to": {
+    "message": "移動到..."
+  },
+  "color_title": {
+    "message": "變更資料夾顏色"
+  },
+  "color_preview": {
+    "message": "預覽"
+  },
+  "color_quick": {
+    "message": "快速顏色"
+  },
+  "color_custom": {
+    "message": "自訂顏色"
+  },
+  "color_custom_desc": {
+    "message": "使用色相和 RGB 值進行微調。"
+  },
+  "billing_title": {
+    "message": "升級至 AI Chat Export Pro"
+  },
+  "billing_desc": {
+    "message": "解鎖更高本機匯出額度、專業主題、批次流程和 PDF、Docs、MD 等輸出。"
+  },
+  "billing_footnote": {
+    "message": "匯出是在您選擇的頁面中本地端產生的。結帳頁面將在 tabpilotpro.com 開啟，並由安全的支付處理器處理。ChatVault 僅儲存標題、連結、資料夾和書籤。對話內容不會被儲存。"
+  },
+  "billing_btn_restore": {
+    "message": "還原購買"
+  },
+  "export_settings_title": {
+    "message": "導出內容設置"
+  },
+  "export_settings_desc": {
+    "message": "選擇每次本地端匯出中顯示的詳細資訊。"
+  },
+  "export_opt_ai_only": {
+    "message": "僅 AI 回覆"
+  },
+  "export_opt_time": {
+    "message": "匯出時間"
+  },
+  "export_opt_title": {
+    "message": "對話標題"
+  },
+  "export_opt_platform": {
+    "message": "平台名稱"
+  },
+  "export_opt_role": {
+    "message": "角色標籤"
+  },
+  "export_opt_url": {
+    "message": "來源 URL"
+  },
+  "export_opt_align_right": {
+    "message": "提問靠右對齊"
+  },
+  "export_privacy": {
+    "message": "在您的瀏覽器中本地端產生。ChatVault 不會上傳、儲存或記錄匯出的訊息內容。"
+  },
+  "export_run_save": {
+    "message": "儲存設定"
+  },
+  "launcher_tooltip": {
+    "message": "ChatVault AI 管理器"
+  },
+  "toast_folder_deleted": {
+    "message": "資料夾已刪除。"
+  },
+  "toast_folders_deleted": {
+    "message": "已刪除 $1 个資料夾。"
+  },
+  "toast_chat_removed": {
+    "message": "對話已從資料夾中移除。"
+  },
+  "toast_added_to_folder": {
+    "message": "已將「$1」加入 $2。"
+  },
+  "toast_folder_already_has_chat": {
+    "message": "「$1」已在 $2 中。"
+  },
+  "toast_chats_removed": {
+    "message": "已從資料夾中移除 $1 個對話。"
+  },
+  "toast_history_deleted_single": {
+    "message": "已刪除 1 個歷史紀錄項。"
+  },
+  "toast_history_deleted": {
+    "message": "已刪除 $1 個歷史紀錄項。"
+  },
+  "toast_history_delete_failed": {
+    "message": "刪除歷史記錄失敗。"
+  },
+  "toast_moved_chat": {
+    "message": "已將「$1」移動到 $2。"
+  },
+  "toast_moved_chats": {
+    "message": "已移動 $1 個對話。"
+  },
+  "toast_move_failed": {
+    "message": "移動對話失敗。"
+  },
+  "toast_already_bookmarked": {
+    "message": "「$1」已加入書籤。"
+  },
+  "toast_bookmarked": {
+    "message": "已將「$1」加入書籤。"
+  },
+  "toast_queued_bookmark": {
+    "message": "已將「$1」的書籤加入佇列。"
+  },
+  "toast_removed_bookmark": {
+    "message": "已從書籤中移除「$1」。"
+  },
+  "toast_plan_expired": {
+    "message": "方案已更新。Pro 功能已不再生效。"
+  },
+  "toast_refresh_failed": {
+    "message": "無法重新整理您的方案。請重試。"
+  },
+  "toast_plan_active": {
+    "message": "$1 已啟用。"
+  },
+  "toast_payment_submitted": {
+    "message": "付款已提交。如果 Pro 狀態沒有更新，請重新整理此瀏覽器分頁或使用還原購買。"
+  },
+  "toast_limit_reached": {
+    "message": "升級至 Pro 以繼續整理更多對話。"
+  },
+  "toast_module_not_loaded": {
+    "message": "匯出模組未載入。請重新整理頁面。"
+  },
+  "toast_select_first": {
+    "message": "未選擇訊息。請先點選頁面上的核取方塊。"
+  },
+  "toast_export_progress": {
+    "message": "$1: $2/$3 個對話..."
+  },
+  "toast_saving_conversations": {
+    "message": "正在儲存匯出: $1 個對話..."
+  },
+  "toast_multi_download_blocked": {
+    "message": "匯出下載被阻擋。請在 Chrome 中允許多個檔案下載後再試一次。"
+  },
+  "toast_canceled": {
+    "message": "匯出已取消。"
+  },
+  "toast_export_failed": {
+    "message": "匯出失敗。"
+  },
+  "toast_preparing_export": {
+    "message": "正在準備對話匯出: $1..."
+  },
+  "toast_no_open_chat": {
+    "message": "開啟 ChatGPT、Claude 或 Gemini 對話以進行匯出。"
+  },
+  "toast_image_limit_exceeded": {
+    "message": "此內容過長，無法保證高品質圖片匯出。建議改為匯出 PDF。"
+  },
+  "export_image_canvas_limit": {
+    "message": "此對話過長，受瀏覽器 Canvas 尺寸限制，無法保證高品質圖片匯出。請改為匯出 PDF。"
+  },
+  "export_image_limit_title": {
+    "message": "圖片匯出受限"
+  },
+  "export_image_limit_pdf": {
+    "message": "匯出 PDF"
+  },
+  "confirm_import": {
+    "message": "匯入此 ChatVault 備份嗎？\n\n$1\n\n資料夾將作為新複本匯入。現有書籤將保留，重複項將根據伺服器衝突規則進行跳過。"
+  },
+  "confirm_restore": {
+    "message": "還原此自動備份嗎？\n\n$1\n\n還原會將備份以複本方式匯入，並保留您現有的資料，除非伺服器衝突規則跳過了重複項。"
+  },
+  "prompt_move_selected": {
+    "message": "將所選對話移動到哪個資料夾名稱？"
+  },
+  "time_no_update": {
+    "message": "無更新時間"
+  },
+  "export_word_meta_messages": {
+    "message": "$1 條訊息"
+  },
+  "export_role_user": {
+    "message": "您提問"
+  },
+  "export_branding_footer": {
+    "message": "由 AI Chat Export 本地端匯出"
+  },
+  "export_image_footer_sub": {
+    "message": "本地端匯出 · 內容不儲存"
+  },
+  "export_progress_measuring": {
+    "message": "正在測量圖片版面配置"
+  },
+  "export_progress_rendering": {
+    "message": "正在算圖图片"
+  },
+  "export_progress_paginating": {
+    "message": "正在對長圖片匯出進行分頁"
+  },
+  "export_progress_paginating_doc": {
+    "message": "正在對匯出進行分頁"
+  },
+  "export_progress_generating_pdf": {
+    "message": "正在產生 PDF"
+  },
+  "export_progress_packaging": {
+    "message": "正在打包圖片頁面"
+  },
+  "export_progress_saving": {
+    "message": "正在儲存圖片"
+  },
+  "export_progress_ready": {
+    "message": "圖片已就緒"
+  },
+  "export_pdf_image_load_failed": {
+    "message": "圖片 - 載入失敗"
+  },
+  "export_pdf_footer_branding": {
+    "message": "AI Chat Export local"
+  },
+  "export_footer_source": {
+    "message": "Export From: $1"
+  },
+  "onboard_text_auth": {
+    "message": "使用 Google 登入以使用資料夾、書籤、匯出限制解除和同步功能。"
+  },
+  "onboard_title_login": {
+    "message": "登入以繼續"
+  },
+  "onboard_text_login_collapsed": {
+    "message": "在匯出、加入書籤或整理對話之前，請開啟 ChatVault 并登入。"
+  },
+  "onboard_step_account": {
+    "message": "帳戶設定"
+  },
+  "onboard_btn_open_signin": {
+    "message": "開啟登入"
+  },
+  "onboard_btn_signin": {
+    "message": "登入"
+  },
+  "onboard_btn_go_to_account": {
+    "message": "前往帳戶"
+  },
+  "onboard_tip": {
+    "message": "提示"
+  },
+  "welcome_title": {
+    "message": "將您的 AI 對話變成可搜尋的工作區。"
+  },
+  "welcome_kicker_hero": {
+    "message": "在您的 AI 工作區中開始"
+  },
+  "welcome_lede": {
+    "message": "請先開啟 ChatGPT、Claude 或 Gemini。ChatVault 會在那裡與您會合，以便您可以匯出、加入書籤或整理您的第一個對話。"
+  },
+  "welcome_rec_pill": {
+    "message": "推薦"
+  },
+  "welcome_rec_copy": {
+    "message": "在數秒內匯出您的第一個對話"
+  },
+  "welcome_open_gpt": {
+    "message": "開啟 ChatGPT"
+  },
+  "welcome_sub_gpt": {
+    "message": "最佳第一步：匯出目前對話"
+  },
+  "welcome_btn_claude": {
+    "message": "Claude"
+  },
+  "welcome_btn_gemini": {
+    "message": "Gemini"
+  },
+  "welcome_pin_wait": {
+    "message": "固定的動作可以稍後進行。最重要的是開啟一個支援的 AI 頁面，讓 ChatVault 可以出現。"
+  },
+  "welcome_kicker_pin": {
+    "message": "然後讓它易於找到"
+  },
+  "welcome_title_pin": {
+    "message": "在準備好時固定 ChatVault。"
+  },
+  "welcome_pin_desc": {
+    "message": "Chrome 要求手動完成此步驟。點選拼圖圖示，找到 AI Chat Export，然後點選固定圖示。"
+  },
+  "welcome_pin_status_init": {
+    "message": "如果尚未固定，ChatVault 仍可在受支援的 AI 頁面上正常工作。"
+  },
+  "welcome_btn_check_pin": {
+    "message": "檢查固定狀態"
+  },
+  "welcome_btn_checking": {
+    "message": "正在檢查..."
+  },
+  "welcome_btn_pinned": {
+    "message": "已固定"
+  },
+  "welcome_btn_check_again": {
+    "message": "重新檢查"
+  },
+  "welcome_pin_success": {
+    "message": "太棒了。ChatVault 在您的 Chrome 工具列中已可見。"
+  },
+  "welcome_pin_failed": {
+    "message": "尚未固定。請使用工具列中的 Chrome 拼圖圖示，然後點選 AI Chat Export 旁的固定圖示。"
+  },
+  "welcome_privacy_footnote": {
+    "message": "ChatVault 僅儲存標題、連結、資料夾、書籤和設定。它不會儲存提示詞、回覆、平台 Cookie、存取 Token 或重新整理 Token。"
+  },
+  "billing_benefit_pdf": {
+    "message": "PDF、Docs、MD 等匯出"
+  },
+  "billing_benefit_word": {
+    "message": "精緻文件排版輸出"
+  },
+  "billing_benefit_image": {
+    "message": "圖片匯出快照"
+  },
+  "billing_benefit_folders": {
+    "message": "更多資料夾"
+  },
+  "billing_benefit_folder_chats": {
+    "message": "每個資料夾可容納更多對話"
+  },
+  "billing_benefit_bookmarks": {
+    "message": "更多書籤"
+  },
+  "billing_benefit_search": {
+    "message": "進階搜尋與篩選"
+  },
+  "billing_benefit_batch": {
+    "message": "批次整理操作"
+  },
+  "billing_benefit_backup": {
+    "message": "備份與匯入"
+  },
+  "billing_benefit_sync": {
+    "message": "增強的雲端同步"
+  },
+  "billing_benefit_multi_device": {
+    "message": "多裝置存取"
+  },
+  "billing_benefit_platforms": {
+    "message": "支援 ChatGPT、Claude 和 Gemini"
+  },
+  "billing_benefit_personal": {
+    "message": "僅限個人使用"
+  },
+  "billing_cadence_month": {
+    "message": "/ 月"
+  },
+  "billing_cadence_year": {
+    "message": "/ 年"
+  },
+  "billing_cadence_lifetime": {
+    "message": "一次性"
+  },
+  "billing_plan_desc_monthly": {
+    "message": "PDF、Docs、MD 等匯出以及 Pro 工具。"
+  },
+  "billing_plan_desc_yearly": {
+    "message": "適合 AI 深度使用者的更高本機匯出額度。"
+  },
+  "billing_plan_desc_lifetime": {
+    "message": "一次性付款。保留 Pro 匯出和整理功能。"
+  },
+  "billing_plan_detail_monthly": {
+    "message": "如果您想先試用 Pro，這是最佳選擇。"
+  },
+  "billing_plan_detail_yearly": {
+    "message": "全年整理、搜尋和同步。"
+  },
+  "billing_plan_detail_lifetime": {
+    "message": "早期支持者特惠價格。"
+  },
+  "billing_offer_label": {
+    "message": "限時特惠"
+  },
+  "billing_discount_monthly": {
+    "message": "省 44%"
+  },
+  "billing_discount_yearly": {
+    "message": "省 50%"
+  },
+  "billing_discount_lifetime": {
+    "message": "省 62%"
+  },
+  "billing_checkout_pro_yearly": {
+    "message": "繼續使用 Pro 年付計劃 - $$29.99 / 年"
+  },
+  "billing_active_pro": {
+    "message": "Pro 已啟用。"
+  },
+  "billing_plan_title_monthly": {
+    "message": "Pro 月付"
+  },
+  "billing_plan_title_yearly": {
+    "message": "Pro 年付"
+  },
+  "billing_plan_title_lifetime": {
+    "message": "終身早鳥特惠"
+  },
+  "billing_badge_monthly": {
+    "message": "月度 Pro"
+  },
+  "billing_badge_yearly": {
+    "message": "年度 Pro"
+  },
+  "billing_badge_lifetime": {
+    "message": "終身 Pro"
+  },
+  "billing_err_plan_unavailable": {
+    "message": "所選訂閱方案不可用。請選擇其他方案。"
+  },
+  "billing_err_unavailable": {
+    "message": "結帳暫時不可用。請稍後再試。"
+  },
+  "billing_err_paddle_unavailable": {
+    "message": "Paddle 結帳暫時不可用。請稍後再試。"
+  },
+  "onboard_guide_badge": {
+    "message": "指南"
+  },
+  "untitled_chat": {
+    "message": "未命名對話"
+  },
+  "toast_target_folder_not_found": {
+    "message": "未找到目標資料夾。"
+  },
+  "aria_sidebar": {
+    "message": "AI Chat Export 側邊欄"
+  },
+  "aria_collapsed_launcher": {
+    "message": "AI Chat Export 折疊啟動器"
+  },
+  "format_pdf": {
+    "message": "PDF"
+  },
+  "format_word": {
+    "message": "Word"
+  },
+  "format_image": {
+    "message": "圖片"
+  },
+  "btn_cancel_select": {
+    "message": "取消選擇"
+  },
+  "btn_select_messages": {
+    "message": "選擇訊息"
+  },
+  "toast_delete_failed": {
+    "message": "刪除失敗。"
+  },
+  "backup_none": {
+    "message": "暫無自動備份。"
+  },
+  "backup_auto_reason": {
+    "message": "自動備份"
+  },
+  "backup_available": {
+    "message": "$1 可用"
+  },
+  "linked_accounts_empty": {
+    "message": "尚未偵測到連結的平台帳戶。"
+  },
+  "linked_account_email": {
+    "message": "電子郵件: $1"
+  },
+  "linked_account_id": {
+    "message": "帳戶 ID: $1"
+  },
+  "linked_account_linked": {
+    "message": "已連結 $1"
+  },
+  "btn_disconnect": {
+    "message": "中斷連線"
+  },
+  "plan_pro": {
+    "message": "Pro"
+  },
+  "plan_free": {
+    "message": "免費"
+  },
+  "lock_plan_options": {
+    "message": "登入以檢視方案選項"
+  },
+  "plan_loading": {
+    "message": "正在載入方案..."
+  },
+  "plan_cancels_date": {
+    "message": "$1 取消"
+  },
+  "plan_expires_date": {
+    "message": "$1 過期"
+  },
+  "toast_folder_update_failed": {
+    "message": "更新資料夾失敗。"
+  },
+  "toast_sort_same_level": {
+    "message": "拖曳排序目前僅在同級資料夾內有效。"
+  },
+  "toast_folder_order_updated": {
+    "message": "資料夾順序已更新。"
+  },
+  "toast_folder_order_failed": {
+    "message": "儲存資料夾順序失敗。"
+  },
+  "aria_drag_folder": {
+    "message": "拖曳資料夾"
+  },
+  "aria_expand_folder": {
+    "message": "展開資料夾"
+  },
+  "aria_collapse_folder": {
+    "message": "折疊資料夾"
+  },
+  "aria_rename_folder": {
+    "message": "重新命名資料夾"
+  },
+  "backup_reason_folder_chat_removed": {
+    "message": "已移除資料夾對話"
+  },
+  "dialog_move_title": {
+    "message": "移動「$1」"
+  },
+  "untitled_folder": {
+    "message": "未命名資料夾"
+  },
+  "dialog_move_empty": {
+    "message": "在移動此對話之前，請先建立另一個資料夾。"
+  },
+  "dialog_delete_title": {
+    "message": "刪除「$1」？"
+  },
+  "dialog_remove_folder_chat": {
+    "message": "從該資料夾中移除此對話？原始來源對話不會被刪除。"
+  },
+  "backup_reason_folder_chat_moved": {
+    "message": "資料夾對話已移動"
+  },
+  "folders_no_search_match": {
+    "message": "沒有找到符合您搜尋的資料夾或對話。"
+  },
+  "folders_no_match": {
+    "message": "沒有找到符合您搜尋的資料夾。"
+  },
+  "selected_folders_count": {
+    "message": "已選擇 $1 個資料夾"
+  },
+  "chat_count_one": {
+    "message": "1 個對話"
+  },
+  "chat_count_many": {
+    "message": "$1 個對話"
+  },
+  "dialog_delete_folder_and_chats": {
+    "message": "從 ChatVault 中刪除 $1 並移除 $2？原始來源對話不會被刪除。"
+  },
+  "dialog_delete_folder_with_chats": {
+    "message": "從 ChatVault 中刪除 $1 並移除 $2？原始來源對話不會被刪除。"
+  },
+  "dialog_delete_folders_with_chats": {
+    "message": "從 ChatVault 中刪除 $1 個資料夾並移除 $2？原始來源對話不會被刪除。"
+  },
+  "dialog_delete_folder_desc": {
+    "message": "從 ChatVault 中刪除 $1？原始來源對話不會被刪除。"
+  },
+  "backup_reason_folder_deleted": {
+    "message": "資料夾已刪除"
+  },
+  "toast_move_selected_failed": {
+    "message": "移動選定的對話失敗。"
+  },
+  "dialog_delete_chats_title": {
+    "message": "刪除選定的對話？"
+  },
+  "dialog_remove_selected_folder_chats": {
+    "message": "從資料夾中移除 $1 個選定的對話？原始來源對話不會被刪除。"
+  },
+  "backup_reason_bookmark_saved": {
+    "message": "書籤已儲存"
+  },
+  "backup_reason_bookmark_queued": {
+    "message": "書籤已加入佇列"
+  },
+  "aria_bookmark_chat": {
+    "message": "加入書籤"
+  },
+  "aria_bookmarked": {
+    "message": "已加入書籤"
+  },
+  "aria_add_to_folder": {
+    "message": "新增至資料夾"
+  },
+  "aria_remove_bookmark": {
+    "message": "移除書籤"
+  },
+  "label_organize_chat": {
+    "message": "整理「$1」"
+  },
+  "picker_create_folder_first": {
+    "message": "請先建立一個資料夾。"
+  },
+  "backup_reason_bookmark_removed": {
+    "message": "書籤已移除"
+  },
+  "export_limit_single": {
+    "message": "免費版每次只能匯出一個對話。升級到 Pro 可進行資料夾和批次匯出。"
+  },
+  "export_limit_count": {
+    "message": "免費版每次最多可匯出 $1 個對話。升級到 Pro 可進行更大規模的匯出。"
+  },
+  "toast_signin_export": {
+    "message": "登入以匯出對話。"
+  },
+  "export_progress_preparing_image": {
+    "message": "正在準備圖片匯出..."
+  },
+  "export_count_one": {
+    "message": "1 個對話"
+  },
+  "export_count_many": {
+    "message": "$1 個對話"
+  },
+  "export_selected_chats": {
+    "message": "選定的對話"
+  },
+  "toast_no_export_bodies": {
+    "message": "沒有可匯出的對話內容。"
+  },
+  "toast_saved_exports_with_issues": {
+    "message": "已儲存 $1 個對話。$2 個失敗。"
+  },
+  "toast_saved_exports_to_file": {
+    "message": "已將 $1 個對話儲存到 $2。"
+  },
+  "toast_exporting": {
+    "message": "正在匯出..."
+  },
+  "export_image_label": {
+    "message": "圖片匯出"
+  },
+  "toast_chat_record_missing": {
+    "message": "對話紀錄已不再可用。"
+  },
+  "export_default_title": {
+    "message": "對話"
+  },
+  "toast_conversation_export_failed": {
+    "message": "對話匯出失敗。"
+  },
+  "dialog_remove_bookmark": {
+    "message": "從 ChatVault 中移除此書籤？"
+  },
+  "dialog_delete_history": {
+    "message": "從 ChatVault 中刪除此歷史紀錄項？"
+  },
+  "toast_signin_export_folders": {
+    "message": "登入以匯出資料夾。"
+  },
+  "export_progress_preparing_folder": {
+    "message": "正在準備資料夾匯出..."
+  },
+  "toast_select_folder_chats": {
+    "message": "匯出前請先選擇資料夾或對話。"
+  },
+  "export_selected_folders": {
+    "message": "選定的資料夾"
+  },
+  "export_selected_folder_chats": {
+    "message": "選定的資料夾對話"
+  },
+  "export_progress_selected_folder": {
+    "message": "正在準備選定資料夾的匯出..."
+  },
+  "toast_no_selected_folder_exports": {
+    "message": "沒有可匯出的選定資料夾對話。"
+  },
+  "toast_selected_folder_export_failed": {
+    "message": "選定資料夾匯出失敗。"
+  },
+  "toast_select_bookmarks_export": {
+    "message": "匯出前請先選擇書籤。"
+  },
+  "toast_select_history_export": {
+    "message": "匯出前請先选择歷史紀錄項。"
+  },
+  "export_progress_bookmark": {
+    "message": "正在準備書籤匯出..."
+  },
+  "export_progress_history": {
+    "message": "正在準備歷史紀錄匯出..."
+  },
+  "toast_no_bookmark_exports": {
+    "message": "沒有可匯出的書籤對話。"
+  },
+  "toast_no_history_exports": {
+    "message": "沒有可匯出的歷史紀錄對話。"
+  },
+  "toast_folder_unavailable": {
+    "message": "資料夾已不再可用。"
+  },
+  "export_progress_folder_count": {
+    "message": "正在準備資料夾匯出: $1/$2 個資料夾..."
+  },
+  "toast_no_folder_exports": {
+    "message": "沒有可匯出的資料夾對話。"
+  },
+  "toast_no_conversations_exported_reason": {
+    "message": "沒有對話被匯出。$1"
+  },
+  "export_progress_folder_conversations": {
+    "message": "正在準備資料夾匯出: $1/$2 個對話..."
+  },
+  "export_default_folder": {
+    "message": "資料夾匯出"
+  },
+  "toast_no_folder_export_bodies": {
+    "message": "沒有可匯出的資料夾對話內容。"
+  },
+  "toast_saving_folder_export": {
+    "message": "正在儲存資料夾匯出: $1 個對話..."
+  },
+  "toast_folder_export_failed": {
+    "message": "資料夾匯出失敗。"
+  },
+  "toast_signin_select_messages": {
+    "message": "登入以選擇訊息。"
+  },
+  "toast_no_messages_found": {
+    "message": "未找到訊息。請確保對話已開啟並載入完成。"
+  },
+  "toast_click_messages_select": {
+    "message": "點選頁面上的訊息以選擇它們進行匯出。"
+  },
+  "billing_original_price": {
+    "message": "原價 $1 $2"
+  },
+  "checkout_opening": {
+    "message": "正在開啟結帳..."
+  },
+  "billing_continue_with_plan": {
+    "message": "繼續使用 $1"
+  },
+  "checkout_opening_title": {
+    "message": "正在開啟安全結帳"
+  },
+  "checkout_opening_plan": {
+    "message": "$1 結帳頁面正在新分頁中開啟。"
+  },
+  "checkout_keep_open": {
+    "message": "請保持此分頁開啟，以便 ChatVault 能在付款後重新整理您的方案。"
+  },
+  "toast_allow_popups": {
+    "message": "允許彈出式視窗以開啟安全結帳。"
+  },
+  "toast_opening_checkout": {
+    "message": "正在開啟安全結帳..."
+  },
+  "toast_signin_upgrade": {
+    "message": "升級到 Pro 前請先登入。"
+  },
+  "toast_checkout_opened": {
+    "message": "$1 結帳已開啟。Pro 狀態將在付款後自動更新。如果沒有重新整理，請重新整理此瀏覽器分頁。"
+  },
+  "toast_refreshing_session": {
+    "message": "正在重新整理您的 ChatVault 工作階段。請重試。"
+  },
+  "toast_purchase_restored": {
+    "message": "Pro 購買已還原。"
+  },
+  "toast_no_purchase": {
+    "message": "未找到有效的 Pro 購買。"
+  },
+  "sync_last_sync": {
+    "message": "上次同步 $1"
+  },
+  "sync_flushing": {
+    "message": "正在同步 $1 個排隊的變更..."
+  },
+  "sync_queued_changes": {
+    "message": "$1 個變更已排隊等待同步。"
+  },
+  "sync_all_synced": {
+    "message": "所有變更均已同步。"
+  },
+  "folders_loading": {
+    "message": "正在載入資料夾..."
+  },
+  "folders_load_failed": {
+    "message": "載入資料夾失敗。"
+  },
+  "folders_expand_parent_failed": {
+    "message": "展開父資料夾失敗。"
+  },
+  "backup_reason_folder_created": {
+    "message": "已建立資料夾"
+  },
+  "folders_create_failed": {
+    "message": "建立資料夾失敗。"
+  },
+  "backup_reason_folder_updated": {
+    "message": "已更新資料夾"
+  },
+  "folders_update_failed": {
+    "message": "更新資料夾失敗。"
+  },
+  "folders_collapse_failed": {
+    "message": "折疊資料夾失敗。"
+  },
+  "folders_expand_failed": {
+    "message": "展開資料夾失敗。"
+  },
+  "folders_rename_failed": {
+    "message": "重新命名資料夾失敗。"
+  },
+  "dialog_delete_named_folder_title": {
+    "message": "刪除 $1"
+  },
+  "dialog_delete_folder_with_subfolders": {
+    "message": "從 ChatVault 中刪除此資料夾及其子資料夾？原始來源對話不會被刪除。"
+  },
+  "folders_add_current_failed": {
+    "message": "新增目前對話失敗。"
+  },
+  "toast_folder_color_updated": {
+    "message": "資料夾顏色已更新。"
+  },
+  "backup_reason_folder_color_updated": {
+    "message": "資料夾顏色已更新"
+  },
+  "toast_folder_color_failed": {
+    "message": "更新資料夾顏色失敗。"
+  },
+  "picker_mode_project": {
+    "message": "專案"
+  },
+  "picker_mode_chats": {
+    "message": "對話"
+  },
+  "picker_mode_projects": {
+    "message": "專案"
+  },
+  "picker_loading_items": {
+    "message": "正在載入 $1..."
+  },
+  "picker_refreshing_items": {
+    "message": "正在重新整理 $1..."
+  },
+  "picker_loading_more_items": {
+    "message": "正在載入更多 $1..."
+  },
+  "picker_add_to_folder": {
+    "message": "將 $1 新增至 <strong>$2</strong> 資料夾"
+  },
+  "picker_add": {
+    "message": "新增 $1"
+  },
+  "picker_filter_projects": {
+    "message": "按名稱篩選專案..."
+  },
+  "picker_filter_chats": {
+    "message": "按標題篩選對話..."
+  },
+  "picker_no_projects": {
+    "message": "尚未找到任何專案。"
+  },
+  "picker_no_chats": {
+    "message": "尚未找到任何對話。"
+  },
+  "picker_showing_matches": {
+    "message": "顯示第 $1 個（共 $2 個符合項）。使用搜尋以縮小範圍。"
+  },
+  "picker_count_loading": {
+    "message": "已選擇 $1 · 正在載入"
+  },
+  "picker_count_loaded": {
+    "message": "已選擇 $1 · 已載入 $2"
+  },
+  "toast_gemini_no_projects": {
+    "message": "Gemini 目前不提供專案。請改用「新增對話」。"
+  },
+  "history_signin": {
+    "message": "登入以載入歷史紀錄。"
+  },
+  "history_loading": {
+    "message": "正在載入歷史紀錄..."
+  },
+  "history_results": {
+    "message": "$1 個結果"
+  },
+  "history_no_match": {
+    "message": "沒有與您的篩選條件符合的歷史紀錄項。"
+  },
+  "backup_reason_folder_chats_saved": {
+    "message": "資料夾對話已儲存"
+  },
+  "folders_saved_refresh_failed": {
+    "message": "已儲存，但重新整理失敗。"
+  },
+  "folders_offline_changes_queued": {
+    "message": "離線變更已排隊。恢復網路連線時它們會自動同步。"
+  },
+  "folders_add_selected_failed": {
+    "message": "新增選定項失敗。"
+  },
+  "folders_offline_change_queued": {
+    "message": "離線變更已排隊。恢復網路連線時它會自動同步。"
+  },
+  "folders_add_chat_failed": {
+    "message": "將對話加入資料夾失敗。"
+  },
+  "folders_remove_chat_failed": {
+    "message": "從資料夾中移除對話失敗。"
+  },
+  "backup_signin_create": {
+    "message": "建立備份前請先登入。"
+  },
+  "backup_reason_manual_export": {
+    "message": "手動備份匯出"
+  },
+  "backup_created": {
+    "message": "備份已建立。"
+  },
+  "backup_create_failed": {
+    "message": "建立備份失敗。"
+  },
+  "backup_summary_folders": {
+    "message": "資料夾數: $1"
+  },
+  "backup_summary_folder_chats": {
+    "message": "資料夾對話數: $1"
+  },
+  "backup_summary_bookmarks": {
+    "message": "書籤數: $1"
+  },
+  "backup_summary_settings_yes": {
+    "message": "包含設定: 是"
+  },
+  "backup_summary_settings_no": {
+    "message": "包含設定: 否"
+  },
+  "backup_summary_linked": {
+    "message": "連結的帳戶數: $1"
+  },
+  "backup_summary_folder_conflicts": {
+    "message": "資料夾衝突數: $1"
+  },
+  "backup_summary_bookmark_conflicts": {
+    "message": "書籤衝突數: $1"
+  },
+  "backup_invalid_empty": {
+    "message": "備份檔案为空。"
+  },
+  "backup_invalid_product": {
+    "message": "這看起來不像是一個 ChatVault 備份檔案。"
+  },
+  "backup_invalid_missing": {
+    "message": "備份檔案缺少必要的資料。"
+  },
+  "backup_import_cancelled": {
+    "message": "匯入已取消。"
+  },
+  "backup_preview_failed": {
+    "message": "無法預覽備份檔案。"
+  },
+  "backup_signin_import": {
+    "message": "匯入備份前請先登入。"
+  },
+  "backup_imported_folder": {
+    "message": "已匯入 $1"
+  },
+  "backup_reason_after_import": {
+    "message": "匯入後的備份"
+  },
+  "backup_imported": {
+    "message": "備份已匯入。"
+  },
+  "backup_import_failed": {
+    "message": "匯入備份失敗。"
+  },
+  "backup_signin_restore": {
+    "message": "還原備份前請先登入。"
+  },
+  "backup_choose_restore": {
+    "message": "選擇要還原的備份。"
+  },
+  "backup_reason_after_restore": {
+    "message": "還原後的備份"
+  },
+  "aria_collapse_chatvault": {
+    "message": "折疊 ChatVault"
+  },
+  "selected_zero": {
+    "message": "0 已選擇"
+  },
+  "aria_folder_actions": {
+    "message": "資料夾操作"
+  },
+  "aria_select_all_bookmarks": {
+    "message": "選擇所有可見書籤"
+  },
+  "aria_bookmarked_chats": {
+    "message": "已加入書籤的對話"
+  },
+  "aria_select_all_history": {
+    "message": "選擇所有可見歷史紀錄"
+  },
+  "aria_indexed_history": {
+    "message": "已索引的對話歷史紀錄"
+  },
+  "aria_expand_sidebar": {
+    "message": "展開 ChatVault 側邊欄"
+  },
+  "aria_open_export_actions": {
+    "message": "開啟匯出操作"
+  },
+  "aria_select_message_export": {
+    "message": "選擇要匯出的訊息"
+  },
+  "aria_skip_guide": {
+    "message": "跳過指南"
+  },
+  "welcome_page_title": {
+    "message": "歡迎來到 AI Chat Export"
+  },
+  "welcome_aria_open_platform": {
+    "message": "開啟一個 AI 平台"
+  },
+  "welcome_aria_pin_chatvault": {
+    "message": "固定 AI Chat Export"
+  },
+  "folder_empty_hint": {
+    "message": "拖拽聊天記錄到這裡"
+  },
+  "export_theme_label": {
+    "message": "導出主題與樣式"
+  },
+  "export_theme_default": {
+    "message": "極簡純白"
+  },
+  "export_theme_oxford": {
+    "message": "學術深青"
+  },
+  "export_theme_mckinsey": {
+    "message": "麥肯錫商務"
+  },
+  "export_theme_newsprint": {
+    "message": "復古印報"
+  },
+  "export_theme_aurora": {
+    "message": "流光極光"
+  },
+  "export_theme_terminal": {
+    "message": "終端機"
+  },
+  "export_theme_editorial": {
+    "message": "編輯版式"
+  },
+  "export_theme_midnight": {
+    "message": "暗黑深邃"
+  },
+  "toast_guest_signin_prompt": {
+    "message": "登入後可同步資料夾，並在更換裝置後繼續使用。"
+  },
+  "merge_dialog_title": {
+    "message": "同步本機 ChatVault 資料？"
+  },
+  "merge_dialog_desc": {
+    "message": "偵測到此瀏覽器中有本機資料夾、書籤與標題記錄。你可以合併到目前帳號，也可以不合併並刪除本機副本。"
+  },
+  "merge_summary_folders": {
+    "message": "資料夾：$1"
+  },
+  "merge_summary_chats": {
+    "message": "已儲存聊天：$1"
+  },
+  "merge_summary_bookmarks": {
+    "message": "書籤：$1"
+  },
+  "merge_summary_usage": {
+    "message": "今日免費用量：已儲存 $1，已匯出 $2"
+  },
+  "merge_dialog_footnote": {
+    "message": "只會合併標題、連結、資料夾、書籤和設定。聊天正文不會被儲存。"
+  },
+  "merge_btn_merge": {
+    "message": "合併到帳號"
+  },
+  "merge_btn_loading": {
+    "message": "合併中..."
+  },
+  "merge_btn_discard": {
+    "message": "不合併，刪除本機副本"
+  },
+  "merge_btn_discard_loading": {
+    "message": "正在刪除本機副本..."
+  },
+  "merge_status_merging": {
+    "message": "正在合併本機 ChatVault 資料..."
+  },
+  "merge_success": {
+    "message": "本機資料已合併到帳號。"
+  },
+  "merge_failed": {
+    "message": "合併本機資料失敗。"
+  },
+  "merge_discarded": {
+    "message": "本機副本已刪除，現在顯示帳號資料。"
+  },
+  "merge_discard_failed": {
+    "message": "刪除本機副本失敗。"
+  },
+  "toast_guest_remote_blocked": {
+    "message": "未登入時此操作會保存在本機。請登入後再重試。"
+  },
+  "btn_done": {
+    "message": "完成"
+  },
+  "aria_done_reordering": {
+    "message": "完成排序"
+  },
+  "aria_reorder_folders": {
+    "message": "排序資料夾"
+  },
+  "account_support_desc": {
+    "message": "如有任何問題或回饋，請透過郵件聯絡我們："
+  },
+  "settings_export_content_title": {
+    "message": "匯出內容設定"
+  },
+  "batch_export": {
+    "message": "批量匯出"
+  },
+  "batch_export_limit_warning": {
+    "message": "為了匯出體驗，一次最多匯出 10 個，請分多次匯出。"
+  },
+  "batch_export_no_chats": {
+    "message": "未在側邊欄找到任何會話。請展開側邊欄或重新整理頁面後再試。"
+  },
+  "batch_export_select_format": {
+    "message": "請選擇匯出格式"
+  },
+  "batch_export_vip_notice": {
+    "message": "批量匯出是 Pro 專屬功能"
+  },
+  "batch_export_preparing": {
+    "message": "正在準備匯出..."
+  },
+  "batch_export_progress": {
+    "message": "正在匯出第 $1/$2 個會話..."
+  },
+  "batch_export_success": {
+    "message": "批量匯出已完成！"
+  },
+  "batch_export_cancelled": {
+    "message": "匯出已被取消。"
+  },
+  "popup_btn_login": {
+    "message": "登入"
+  },
+  "popup_unsupported_title": {
+    "message": "不支援的頁面"
+  },
+  "popup_unsupported_desc": {
+    "message": "請在以下 AI 聊天頁面中使用此擴充功能："
+  },
+  "popup_open_chatgpt": {
+    "message": "開啟 ChatGPT"
+  },
+  "popup_current_session": {
+    "message": "目前會話"
+  },
+  "popup_auto_detect_platform": {
+    "message": "自動識別平台"
+  },
+  "popup_batch_export_title_attr": {
+    "message": "批量匯出目前平台的會話"
+  },
+  "popup_batch_export_compact": {
+    "message": "批量匯出"
+  },
+  "popup_batch_export_desc": {
+    "message": "多會話匯出"
+  },
+  "popup_custom_export_title_attr": {
+    "message": "進入對話選取模式"
+  },
+  "popup_custom_export": {
+    "message": "自訂匯出"
+  },
+  "popup_custom_export_desc": {
+    "message": "選擇訊息"
+  },
+  "popup_recommended": {
+    "message": "推薦"
+  },
+  "popup_one_click_export": {
+    "message": "一鍵匯出"
+  },
+  "popup_one_click_export_help": {
+    "message": "快速儲存網頁內容為排版文件"
+  },
+  "popup_copy_full_text": {
+    "message": "複製全文"
+  },
+  "popup_copy_success": {
+    "message": "已複製全文"
+  },
+  "popup_format_pdf_hint": {
+    "message": "排版儲存"
+  },
+  "popup_format_word_hint": {
+    "message": "可編輯"
+  },
+  "popup_format_markdown_hint": {
+    "message": "知識庫"
+  },
+  "popup_format_image_hint": {
+    "message": "分享卡片"
+  },
+  "popup_format_text_name": {
+    "message": "文字"
+  },
+  "popup_format_text_hint": {
+    "message": "純內容"
+  },
+  "popup_format_json_hint": {
+    "message": "結構化"
+  },
+  "popup_privacy_title": {
+    "message": "100% 本機安全執行"
+  },
+  "popup_privacy_desc": {
+    "message": "所有解析與匯出都在本機瀏覽器完成，不會上傳您的聊天資料。"
+  },
+  "popup_quota_loading": {
+    "message": "正在載入使用額度狀態..."
+  },
+  "popup_quota_remaining": {
+    "message": "今日剩餘額度：$1 / 3 次"
+  },
+  "popup_pro_quota_status": {
+    "message": "無限匯出額度可用"
+  },
+  "popup_settings_section_title": {
+    "message": "內容匯出設定"
+  },
+  "popup_redaction_title": {
+    "message": "匯出憑證"
+  },
+  "popup_redaction_desc": {
+    "message": "包含來源、時間、平台與校驗和資訊"
+  },
+  "popup_title_desc": {
+    "message": "在文件頂部顯示對話標題"
+  },
+  "popup_time_desc": {
+    "message": "在文件頁首插入匯出時間戳"
+  },
+  "popup_ai_only_desc": {
+    "message": "過濾使用者 Prompt，只保留 AI 回覆"
+  },
+  "popup_appendix_title": {
+    "message": "Prompt 附錄"
+  },
+  "popup_appendix_desc": {
+    "message": "在文末附上原始 Prompts (Pro)"
+  },
+  "popup_watermark_title": {
+    "message": "隱藏 AI Chat Export 浮水印"
+  },
+  "popup_watermark_desc": {
+    "message": "移除文件末尾的 AI Chat Export 簽名 (Pro)"
+  },
+  "popup_source_url_desc": {
+    "message": "在匯出文件尾端附加對話原始網址"
+  },
+  "popup_platform_name_desc": {
+    "message": "在文件頁首顯示來源平台"
+  },
+  "popup_role_labels_desc": {
+    "message": "在聊天發言內容前顯示 User / Assistant 角色"
+  },
+  "popup_align_right_desc": {
+    "message": "將您的提問在 PDF/圖片中靠右排版"
+  },
+  "popup_system_debug_title": {
+    "message": "系統與偵錯"
+  },
+  "popup_reset_quota_title": {
+    "message": "重置使用額度"
+  },
+  "popup_reset_quota_desc": {
+    "message": "將本機每日匯出次數快取重置為 0/3"
+  },
+  "popup_reset_cache": {
+    "message": "重置快取"
+  },
+  "popup_reset_quota_success": {
+    "message": "本機額度已成功重置為 0/3。"
+  },
+  "popup_test_pro_title": {
+    "message": "Pro 測試狀態（開發者）"
+  },
+  "popup_test_pro_desc": {
+    "message": "開啟後直接啟用 Pro 會員狀態"
+  },
+  "popup_export_panel_title": {
+    "message": "匯出面板"
+  },
+  "popup_export_settings_title": {
+    "message": "匯出設定"
+  },
+  "popup_benefit_unlimited_exports": {
+    "message": "無限制本機匯出"
+  },
+  "popup_benefit_report_themes": {
+    "message": "出版級排版主題"
+  },
+  "popup_benefit_local_receipts": {
+    "message": "本機匯出憑證"
+  },
+  "popup_benefit_hide_watermark": {
+    "message": "隱藏全部匯出浮水印"
+  },
+  "popup_benefit_zip_download": {
+    "message": "程式碼打包 ZIP 下載"
+  },
+  "popup_benefit_shared_pro": {
+    "message": "共享 Pro 權益"
+  },
+  "popup_subscribe_login_prefix": {
+    "message": "尚未登入，請先 "
+  },
+  "popup_subscribe_login_suffix": {
+    "message": " 以自動綁定權益後再付款。"
+  },
+  "popup_subscribe_signin_confirm": {
+    "message": "請先使用 Google 登入，以便在付款前自動綁定 Pro 會員權益。"
+  },
+  "popup_pro_active_label": {
+    "message": "Pro 會員已啟用"
+  },
+  "popup_pro_active_suffix": {
+    "message": "（無限次匯出）"
+  },
+  "popup_free_account": {
+    "message": "免費帳號"
+  },
+  "popup_account": {
+    "message": "帳號"
+  },
+  "popup_auth_loading": {
+    "message": "登入中..."
+  },
+  "popup_refresh_required_title": {
+    "message": "請重新整理頁面以啟用擴充功能"
+  },
+  "popup_refresh_required_desc": {
+    "message": "擴充功能剛載入或更新，已開啟的對話頁面必須重新整理一次後才能通訊。"
+  },
+  "popup_refresh_page_retry": {
+    "message": "請重新整理目前 AI 對話頁面後再試。"
+  },
+  "popup_operation_failed": {
+    "message": "操作失敗，請稍後再試。"
+  },
+  "popup_confirm_logout_title": {
+    "message": "登出"
+  },
+  "popup_confirm_logout_message": {
+    "message": "確定要登出目前帳號嗎？"
+  },
+  "popup_signed_out": {
+    "message": "已登出"
+  },
+  "popup_login_success": {
+    "message": "登入成功"
+  },
+  "popup_login_incomplete": {
+    "message": "登入未完成，請重試。"
+  },
+  "popup_login_failed": {
+    "message": "登入失敗：$1"
+  },
+  "popup_try_later": {
+    "message": "請稍後再試。"
+  },
+  "popup_creating_checkout": {
+    "message": "正在建立結帳工作階段..."
+  },
+  "popup_checkout_unavailable": {
+    "message": "無法開啟結帳頁面，請稍後再試。"
+  },
+  "popup_checkout_service_syncing": {
+    "message": "結帳服務正在更新，請稍後重新開啟 AI Chat Export 再試。"
+  },
+  "popup_checkout_popup_blocked": {
+    "message": "瀏覽器封鎖了結帳頁面，請重試。"
+  },
+  "popup_checkout_error": {
+    "message": "結帳失敗：$1"
+  },
+  "popup_restore_login_required": {
+    "message": "請先登入，然後點擊還原購買以同步您的 Pro 會員狀態。"
+  },
+  "popup_restoring": {
+    "message": "正在還原..."
+  },
+  "popup_restore_submitted": {
+    "message": "還原購買請求已提交。請關閉並重新開啟彈出視窗以查看最新狀態。"
+  },
+  "popup_service_unavailable": {
+    "message": "服務不可用，請稍後再試。"
+  },
+  "popup_restore_failed": {
+    "message": "還原購買失敗：$1"
+  },
+  "popup_health_high_risk": {
+    "message": "匯出風險"
+  },
+  "popup_health_attention": {
+    "message": "注意"
+  }
+}

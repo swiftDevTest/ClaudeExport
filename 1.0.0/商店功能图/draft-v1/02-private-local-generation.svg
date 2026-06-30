@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="800" viewBox="0 0 1280 800">
+  
+    <defs>
+      <linearGradient id="bgGradient" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#e9fff8"/>
+        <stop offset="46%" stop-color="#f2f9df"/>
+        <stop offset="100%" stop-color="#ffffff"/>
+      </linearGradient>
+      <linearGradient id="mintPanel" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#ffffff"/>
+        <stop offset="100%" stop-color="#f4fbf8"/>
+      </linearGradient>
+      <linearGradient id="greenButton" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#20d6a0"/>
+        <stop offset="100%" stop-color="#047857"/>
+      </linearGradient>
+      <linearGradient id="docBlue" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#eaf6ff"/>
+        <stop offset="100%" stop-color="#f8fbff"/>
+      </linearGradient>
+      <filter id="cardShadow" x="-22%" y="-18%" width="144%" height="145%">
+        <feDropShadow dx="0" dy="24" stdDeviation="22" flood-color="#0f172a" flood-opacity="0.15"/>
+      </filter>
+      <filter id="softShadow" x="-24%" y="-24%" width="148%" height="150%">
+        <feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#0f172a" flood-opacity="0.11"/>
+      </filter>
+      <filter id="buttonShadow" x="-30%" y="-45%" width="160%" height="190%">
+        <feDropShadow dx="0" dy="8" stdDeviation="7" flood-color="#047857" flood-opacity="0.14"/>
+      </filter>
+      <clipPath id="documentClip">
+        <rect x="0" y="0" width="430" height="560" rx="16"/>
+      </clipPath>
+    </defs>
+    <style>
+      svg {
+        font-family: "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+        text-rendering: geometricPrecision;
+      }
+      .headline { font-size: 54px; font-weight: 820; fill: #17201d; }
+      .body { font-size: 25px; font-weight: 560; fill: #33413d; }
+      .small { font-size: 15px; font-weight: 650; fill: #53605b; }
+      .ui { font-size: 15px; font-weight: 720; fill: #17201d; }
+      .mono { font-family: "SFMono-Regular", Menlo, Consolas, monospace; }
+    </style>
+  
+  
+    <rect width="1280" height="800" fill="url(#bgGradient)"/>
+    <path d="M-80 682 C 178 594 356 812 640 664 C 834 563 944 571 1124 615 C 1218 638 1304 611 1368 560" fill="none" stroke="#0f766e" stroke-width="44" stroke-linecap="round" opacity="0.035"/>
+    <path d="M-40 188 C 192 110 357 190 562 162 C 811 128 952 64 1314 112" fill="none" stroke="#0ea5e9" stroke-width="38" stroke-linecap="round" opacity="0.032"/>
+    <g transform="translate(517 118) scale(2.1)" opacity="0.045"><path d="M12 2 14.8 8.4 22 11l-7.2 2.6L12 20l-2.8-6.4L2 11l7.2-2.6L12 2Z" fill="#0ea5e9"/></g>
+<g transform="translate(222 652) scale(2.5)" opacity="0.05"><path d="M4 17c4-7 10-10 17-10-5 3-8 7-9 12-2-3-5-3-8-2Z" fill="none" stroke="#064e3b" stroke-width="1.4"/></g>
+<g transform="translate(660 646) scale(2.05)" opacity="0.045"><path d="M12 2 15 9l7 3-7 3-3 7-3-7-7-3 7-3 3-7Z" fill="#f59e0b"/></g>
+<g transform="translate(1120 648) scale(1.9)" opacity="0.05"><path d="M4 19V5l8-3 8 3v14l-8 3-8-3Z" fill="none" stroke="#064e3b" stroke-width="1.5"/><path d="M8 7h8M8 11h7M8 15h5" stroke="#064e3b" stroke-width="1.5"/></g>
+<g transform="translate(82 118) scale(2.25)" opacity="0.055"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-1.2 4.3 4.9 2.8v5.7l-4.9 2.9-4.9-2.9V9.1l4.9-2.8Z" fill="none" stroke="#064e3b" stroke-width="1.5"/></g>
+  
+  
+    
+    <g filter="url(#buttonShadow)">
+      <rect x="76" y="242" width="184" height="48" rx="24" fill="#fbfffd" stroke="#bfe7d7"/>
+      <text x="94" y="273" font-size="23" font-weight="780" fill="#075985">隐私证明</text>
+    </g>
+  
+    <text x="76" y="348" class="headline" font-size="54" font-weight="820" fill="#17201d" text-anchor="start">
+  <tspan x="76" dy="0">聊天正文</tspan>
+  <tspan x="76" dy="69.12">不上传</tspan>
+</text>
+    <text x="76" y="506" class="body" font-size="25" font-weight="560" fill="#34413e" text-anchor="start">
+  <tspan x="76" dy="0">导出、排版与文件生成都在浏览器本地完成。</tspan>
+  <tspan x="76" dy="37.5">账号只用于登录与恢复 Pro 权益。</tspan>
+</text>
+    
+    <g>
+      <circle cx="85" cy="626" r="10" fill="#e8fbf3" stroke="#10b981" stroke-width="2"/>
+      <path d="M80 625l4 4 8-9" fill="none" stroke="#10b981" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="108" y="634" font-size="24" font-weight="650" fill="#33413d">本地解析与排版</text>
+    </g>
+  
+
+    <g>
+      <circle cx="85" cy="673" r="10" fill="#e8fbf3" stroke="#10b981" stroke-width="2"/>
+      <path d="M80 672l4 4 8-9" fill="none" stroke="#10b981" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="108" y="681" font-size="24" font-weight="650" fill="#33413d">敏感信息本地脱敏</text>
+    </g>
+  
+
+    <g>
+      <circle cx="85" cy="720" r="10" fill="#e8fbf3" stroke="#10b981" stroke-width="2"/>
+      <path d="M80 719l4 4 8-9" fill="none" stroke="#10b981" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="108" y="728" font-size="24" font-weight="650" fill="#33413d">导出凭证可验证</text>
+    </g>
+  
+    
+  
+  
+    <g transform="translate(650 96)" filter="url(#cardShadow)">
+      <rect x="0" y="0" width="560" height="590" rx="22" fill="#ffffff" stroke="#d9e6e1"/>
+      <rect x="0" y="0" width="560" height="84" rx="22" fill="#f7fffb"/>
+      <path d="M0 84h560" stroke="#dce8e3"/>
+      <circle cx="48" cy="42" r="24" fill="#dcfce7"/>
+      <path d="M48 24 67 32v15c0 18-19 25-19 25s-19-7-19-25V32l19-8Z" fill="none" stroke="#047857" stroke-width="2.4" stroke-linejoin="round"/>
+      <path d="M39 44l6 6 13-15" fill="none" stroke="#047857" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="86" y="36" font-size="22" font-weight="840" fill="#17201d">Privacy Proof</text>
+      <text x="86" y="59" font-size="13" font-weight="660" fill="#53605b">本次导出发生在你的浏览器本地</text>
+      <rect x="432" y="27" width="94" height="32" rx="16" fill="#ecfdf5" stroke="#bfe7d7"/>
+      <text x="479" y="49" font-size="13" font-weight="820" fill="#047857" text-anchor="middle">Local</text>
+
+      <g transform="translate(42 122)">
+        
+    <g transform="translate(0 0)">
+      <circle cx="17" cy="17" r="14" fill="#10b98118" stroke="#10b981" stroke-width="1.4"/>
+      <path d="M11 17l4 4 8-10" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="44" y="14" font-size="17" font-weight="820" fill="#17201d">PDF / Word / 图片本地生成</text>
+      <text x="44" y="35" font-size="12.5" font-weight="620" fill="#53605b">不使用 ChatVault 服务器做转档</text>
+    </g>
+        
+    <g transform="translate(0 72)">
+      <circle cx="17" cy="17" r="14" fill="#10b98118" stroke="#10b981" stroke-width="1.4"/>
+      <path d="M11 17l4 4 8-10" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="44" y="14" font-size="17" font-weight="820" fill="#17201d">聊天正文不上传</text>
+      <text x="44" y="35" font-size="12.5" font-weight="620" fill="#53605b">账号服务只校验登录与 Pro 权益</text>
+    </g>
+        
+    <g transform="translate(0 144)">
+      <circle cx="17" cy="17" r="14" fill="#0ea5e918" stroke="#0ea5e9" stroke-width="1.4"/>
+      <path d="M11 17l4 4 8-10" fill="none" stroke="#0ea5e9" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="44" y="14" font-size="17" font-weight="820" fill="#17201d">敏感信息可本地脱敏</text>
+      <text x="44" y="35" font-size="12.5" font-weight="620" fill="#53605b">邮箱、电话、API Key 可在导出前处理</text>
+    </g>
+        
+    <g transform="translate(0 216)">
+      <circle cx="17" cy="17" r="14" fill="#f59e0b18" stroke="#f59e0b" stroke-width="1.4"/>
+      <path d="M11 17l4 4 8-10" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="44" y="14" font-size="17" font-weight="820" fill="#17201d">导出凭证可验证</text>
+      <text x="44" y="35" font-size="12.5" font-weight="620" fill="#53605b">来源 URL、平台、时间与 SHA-256 校验</text>
+    </g>
+      </g>
+
+      <g transform="translate(62 408)">
+        <rect x="0" y="0" width="436" height="118" rx="20" fill="#f8fbff" stroke="#dbeafe"/>
+        <g transform="translate(30 34)">
+          <rect x="0" y="0" width="92" height="50" rx="16" fill="#ffffff" stroke="#dce8e3"/>
+          <text x="46" y="31" font-size="13" font-weight="820" fill="#17201d" text-anchor="middle">AI Chat</text>
+          <path d="M112 25h62" stroke="#10b981" stroke-width="3" stroke-linecap="round"/>
+          <path d="M166 16l13 9-13 9" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          <rect x="198" y="0" width="92" height="50" rx="16" fill="#ecfdf5" stroke="#bfe7d7"/>
+          <text x="244" y="31" font-size="13" font-weight="820" fill="#064e3b" text-anchor="middle">Browser</text>
+          <path d="M310 25h42" stroke="#10b981" stroke-width="3" stroke-linecap="round"/>
+          <path d="M344 16l13 9-13 9" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          <rect x="368" y="0" width="68" height="50" rx="16" fill="#ffffff" stroke="#dce8e3"/>
+          <text x="402" y="31" font-size="13" font-weight="820" fill="#17201d" text-anchor="middle">File</text>
+        </g>
+      </g>
+    </g>
+    <g transform="translate(1004 520)" filter="url(#softShadow)">
+      <rect x="0" y="0" width="178" height="96" rx="18" fill="#fff7ed" stroke="#fed7aa"/>
+      <path d="M38 24c18 0 29 11 29 27H9c0-16 11-27 29-27Z" fill="#ffedd5" stroke="#f59e0b"/>
+      <path d="M25 61l27-27M52 61 25 34" stroke="#ef4444" stroke-width="4" stroke-linecap="round"/>
+      <text x="86" y="40" font-size="15" font-weight="820" fill="#9a3412">No upload</text>
+      <text x="86" y="62" font-size="12" font-weight="650" fill="#9a3412">No conversion server</text>
+    </g>
+  
+</svg>

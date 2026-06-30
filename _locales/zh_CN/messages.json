@@ -1,0 +1,1652 @@
+{
+  "contextMenuExportParent": {
+    "message": "AI Chat Export"
+  },
+  "contextMenuExportPdf": {
+    "message": "导出为 PDF"
+  },
+  "contextMenuExportWord": {
+    "message": "导出为 Word"
+  },
+  "contextMenuExportMarkdown": {
+    "message": "导出为 Markdown"
+  },
+  "contextMenuExportImage": {
+    "message": "导出为图片"
+  },
+  "contextMenuExportText": {
+    "message": "导出为文本"
+  },
+  "contextMenuExportJson": {
+    "message": "导出为 JSON"
+  },
+  "extensionName": {
+    "message": "Claude 导出助手 - 浏览器本地导出 PDF、Word、MD 与 JSON"
+  },
+  "extensionShortName": {
+    "message": "Claude 导出"
+  },
+  "extensionDescription": {
+    "message": "在浏览器本地将 Claude 对话导出为 PDF、Word、Markdown、纯文本与 JSON，保留美观排版。"
+  },
+  "extensionActionTitle": {
+    "message": "Claude 导出助手 - 浏览器本地导出 PDF、Word、MD 与 JSON"
+  },
+  "brand_ai_workspace": {
+    "message": "AI 工作区"
+  },
+  "tab_folders": {
+    "message": "文件夹"
+  },
+  "tab_bookmarks": {
+    "message": "书签"
+  },
+  "tab_history": {
+    "message": "历史记录"
+  },
+  "tab_account": {
+    "message": "账户"
+  },
+  "tab_settings": {
+    "message": "设置"
+  },
+  "btn_reorder": {
+    "message": "重新排序"
+  },
+  "btn_sort_folders": {
+    "message": "排序文件夹"
+  },
+  "btn_expand_all": {
+    "message": "展开全部"
+  },
+  "btn_collapse_all": {
+    "message": "折叠全部"
+  },
+  "btn_new_folder": {
+    "message": "新建文件夹"
+  },
+  "btn_new_folder_group": {
+    "message": "新建文件夹组"
+  },
+  "btn_bookmark": {
+    "message": "书签"
+  },
+  "btn_move": {
+    "message": "移动"
+  },
+  "btn_export": {
+    "message": "导出"
+  },
+  "btn_delete": {
+    "message": "删除"
+  },
+  "btn_clear": {
+    "message": "清除"
+  },
+  "btn_save": {
+    "message": "保存"
+  },
+  "btn_cancel": {
+    "message": "取消"
+  },
+  "btn_restore": {
+    "message": "恢复"
+  },
+  "btn_upgrade": {
+    "message": "升级至 Pro"
+  },
+  "btn_logout": {
+    "message": "退出登录"
+  },
+  "btn_detect_accounts": {
+    "message": "重新检测账户"
+  },
+  "btn_refresh_sync": {
+    "message": "刷新同步"
+  },
+  "btn_backup": {
+    "message": "备份文件夹和书签"
+  },
+  "btn_import": {
+    "message": "导入文件夹和书签"
+  },
+  "btn_select_ai": {
+    "message": "选择 AI 回复"
+  },
+  "placeholder_search": {
+    "message": "搜索文件夹或聊天..."
+  },
+  "placeholder_search_bookmarks": {
+    "message": "搜索书签..."
+  },
+  "placeholder_search_history": {
+    "message": "搜索标题历史..."
+  },
+  "placeholder_picker_search": {
+    "message": "搜索..."
+  },
+  "filter_all": {
+    "message": "全部"
+  },
+  "filter_gpt": {
+    "message": "GPT"
+  },
+  "filter_claude": {
+    "message": "Claude"
+  },
+  "filter_gemini": {
+    "message": "Gemini"
+  },
+  "empty_no_folders": {
+    "message": "暂无文件夹"
+  },
+  "empty_no_folders_desc": {
+    "message": "使用文件夹来整理导入的 ChatGPT、Claude 和 Gemini 聊天。"
+  },
+  "empty_no_bookmarks": {
+    "message": "暂无书签"
+  },
+  "empty_no_bookmarks_desc": {
+    "message": "保存的书签将显示在此处。"
+  },
+  "empty_no_history": {
+    "message": "暂无索引聊天"
+  },
+  "empty_no_history_desc": {
+    "message": "将聊天添加到文件夹或书签以构建仅标题的历史记录索引。"
+  },
+  "login_title": {
+    "message": "登录以整理您的 AI 聊天记录"
+  },
+  "login_desc": {
+    "message": "ChatVault 仅存储标题、链接、文件夹和书签。聊天内容不会被保存。"
+  },
+  "login_btn_google": {
+    "message": "使用 Google 登录"
+  },
+  "linked_accounts_title": {
+    "message": "已绑定账户"
+  },
+  "linked_accounts_desc": {
+    "message": "ChatVault 仅使用绑定的账户来区分 ChatGPT、Claude 和 Gemini 标题索引。它不会存储平台 Cookie、密码、Token、提示词、回复或聊天正文。"
+  },
+  "settings_export_title": {
+    "message": "导出内容设置"
+  },
+  "settings_workspace_title": {
+    "message": "工作区设置"
+  },
+  "setting_open_startup": {
+    "message": "启动时打开"
+  },
+  "setting_hide_bookmarks_sidebar": {
+    "message": "在左侧侧边栏中隐藏书签"
+  },
+  "setting_hide_tags": {
+    "message": "隐藏聊天下方的文件夹标签"
+  },
+  "settings_backup_title": {
+    "message": "备份与导入"
+  },
+  "sync_ready": {
+    "message": "同步队列已就绪。"
+  },
+  "backup_ready": {
+    "message": "在更改整理设置后将自动创建备份。"
+  },
+  "label_selected": {
+    "message": "已选择 $1"
+  },
+  "export_selected_as": {
+    "message": "将所选导出为"
+  },
+  "selection_header": {
+    "message": "消息选择"
+  },
+  "menu_add_folder": {
+    "message": "添加文件夹"
+  },
+  "menu_add_current_chat": {
+    "message": "添加当前聊天"
+  },
+  "menu_add_chats": {
+    "message": "添加聊天"
+  },
+  "menu_add_project": {
+    "message": "添加项目"
+  },
+  "menu_rename": {
+    "message": "重命名"
+  },
+  "menu_change_color": {
+    "message": "更改颜色"
+  },
+  "menu_move_to": {
+    "message": "移动到..."
+  },
+  "color_title": {
+    "message": "更改文件夹颜色"
+  },
+  "color_preview": {
+    "message": "预览"
+  },
+  "color_quick": {
+    "message": "快速颜色"
+  },
+  "color_custom": {
+    "message": "自定义颜色"
+  },
+  "color_custom_desc": {
+    "message": "使用色调和 RGB 值进行微调。"
+  },
+  "billing_title": {
+    "message": "升级至 AI Chat Export Pro"
+  },
+  "billing_desc": {
+    "message": "解锁更高本地导出额度、专业主题、批量流程和 PDF、Docs、MD 等输出。"
+  },
+  "billing_footnote": {
+    "message": "导出是在您选择的页面中本地生成的。结账页面将在 AI Chat Export 专属定价页打开，并由安全的支付处理器处理。AI Chat Export 仅存储设置、登录邮箱和会员状态。聊天内容不会被保存。"
+  },
+  "billing_btn_restore": {
+    "message": "恢复购买"
+  },
+  "export_settings_title": {
+    "message": "导出内容设置"
+  },
+  "export_settings_desc": {
+    "message": "选择每次本地导出中显示的详细信息。"
+  },
+  "export_opt_ai_only": {
+    "message": "仅 AI 回复"
+  },
+  "export_opt_time": {
+    "message": "导出时间"
+  },
+  "export_opt_title": {
+    "message": "对话标题"
+  },
+  "export_opt_platform": {
+    "message": "平台名称"
+  },
+  "export_opt_role": {
+    "message": "角色标签"
+  },
+  "export_opt_url": {
+    "message": "源 URL"
+  },
+  "export_opt_align_right": {
+    "message": "提问靠右对齐"
+  },
+  "export_privacy": {
+    "message": "在您的浏览器中本地生成。ChatVault 不会上传、存储或记录导出的消息内容。"
+  },
+  "export_run_save": {
+    "message": "保存设置"
+  },
+  "launcher_tooltip": {
+    "message": "ChatVault AI 管理器"
+  },
+  "toast_folder_deleted": {
+    "message": "文件夹已删除。"
+  },
+  "toast_folders_deleted": {
+    "message": "已删除 $1 个文件夹。"
+  },
+  "toast_chat_removed": {
+    "message": "聊天已从文件夹中移除。"
+  },
+  "toast_added_to_folder": {
+    "message": "已将“$1”添加到 $2。"
+  },
+  "toast_folder_already_has_chat": {
+    "message": "“$1”已在 $2 中。"
+  },
+  "toast_chats_removed": {
+    "message": "已从文件夹中移除 $1 个聊天。"
+  },
+  "toast_history_deleted_single": {
+    "message": "已删除 1 个历史记录项。"
+  },
+  "toast_history_deleted": {
+    "message": "已删除 $1 个历史记录项。"
+  },
+  "toast_history_delete_failed": {
+    "message": "删除历史记录失败。"
+  },
+  "toast_moved_chat": {
+    "message": "已将“$1”移动到 $2。"
+  },
+  "toast_moved_chats": {
+    "message": "已移动 $1 个聊天。"
+  },
+  "toast_move_failed": {
+    "message": "移动聊天失败。"
+  },
+  "toast_already_bookmarked": {
+    "message": "“$1”已添加书签。"
+  },
+  "toast_bookmarked": {
+    "message": "已将“$1”添加书签。"
+  },
+  "toast_queued_bookmark": {
+    "message": "已将“$1”的书签加入队列。"
+  },
+  "toast_removed_bookmark": {
+    "message": "已从书签中移除“$1”。"
+  },
+  "toast_plan_expired": {
+    "message": "方案已更新。Pro 功能已不再生效。"
+  },
+  "toast_refresh_failed": {
+    "message": "无法刷新您的方案。请重试。"
+  },
+  "toast_plan_active": {
+    "message": "$1 已激活。"
+  },
+  "toast_payment_submitted": {
+    "message": "付款已提交。如果 Pro 状态没有刷新，请刷新此浏览器标签页或使用恢复购买。"
+  },
+  "toast_limit_reached": {
+    "message": "升级至 Pro 以继续整理更多聊天。"
+  },
+  "toast_module_not_loaded": {
+    "message": "导出模块未加载。请刷新页面。"
+  },
+  "toast_select_first": {
+    "message": "未选择消息。请先点击页面上的复选框。"
+  },
+  "toast_export_progress": {
+    "message": "$1: $2/$3 个对话..."
+  },
+  "toast_saving_conversations": {
+    "message": "正在保存导出: $1 个对话..."
+  },
+  "toast_multi_download_blocked": {
+    "message": "导出下载被阻止。请在 Chrome 中允许多个文件下载后重试。"
+  },
+  "toast_canceled": {
+    "message": "导出已取消。"
+  },
+  "toast_export_failed": {
+    "message": "导出失败。"
+  },
+  "toast_preparing_export": {
+    "message": "正在准备对话导出: $1..."
+  },
+  "toast_no_open_chat": {
+    "message": "打开 ChatGPT、Claude 或 Gemini 对话以进行导出。"
+  },
+  "toast_image_limit_exceeded": {
+    "message": "此内容过长，无法保证高质量图片导出。建议改为导出 PDF。"
+  },
+  "export_image_canvas_limit": {
+    "message": "此对话过长，受浏览器 Canvas 尺寸限制，无法保证高质量图片导出。请改为导出 PDF。"
+  },
+  "export_image_limit_title": {
+    "message": "图片导出受限"
+  },
+  "export_image_limit_pdf": {
+    "message": "导出 PDF"
+  },
+  "confirm_import": {
+    "message": "导入此 ChatVault 备份吗？\n\n$1\n\n文件夹将作为新副本导入。现有书签将被保留，重复项将根据服务器冲突规则进行跳过。"
+  },
+  "confirm_restore": {
+    "message": "恢复此自动备份吗？\n\n$1\n\n恢复会将备份作为副本导入，并保留您现有的数据，除非服务器冲突规则跳过了重复项。"
+  },
+  "prompt_move_selected": {
+    "message": "将所选聊天移动到哪个文件夹？"
+  },
+  "time_no_update": {
+    "message": "无更新时间"
+  },
+  "export_word_meta_messages": {
+    "message": "$1 条消息"
+  },
+  "export_role_user": {
+    "message": "您提问"
+  },
+  "export_branding_footer": {
+    "message": "由 AI Chat Export 本地导出"
+  },
+  "export_image_footer_sub": {
+    "message": "本地导出 · 内容不存储"
+  },
+  "export_progress_measuring": {
+    "message": "正在测量图片布局"
+  },
+  "export_progress_rendering": {
+    "message": "正在渲染图片"
+  },
+  "export_progress_paginating": {
+    "message": "正在对长图片导出进行分页"
+  },
+  "export_progress_paginating_doc": {
+    "message": "正在对导出进行分页"
+  },
+  "export_progress_generating_pdf": {
+    "message": "正在生成 PDF"
+  },
+  "export_progress_packaging": {
+    "message": "正在打包图片页面"
+  },
+  "export_progress_saving": {
+    "message": "正在保存图片"
+  },
+  "export_progress_ready": {
+    "message": "图片已就绪"
+  },
+  "export_pdf_image_load_failed": {
+    "message": "图片 - 加载失败"
+  },
+  "export_pdf_footer_branding": {
+    "message": "AI Chat Export local"
+  },
+  "export_footer_source": {
+    "message": "Export From: $1"
+  },
+  "onboard_text_auth": {
+    "message": "使用 Google 登录以使用文件夹、书签、导出限制解除和同步功能。"
+  },
+  "onboard_title_login": {
+    "message": "登录以继续"
+  },
+  "onboard_text_login_collapsed": {
+    "message": "在导出、添加书签或整理聊天之前，请打开 ChatVault 并登录。"
+  },
+  "onboard_step_account": {
+    "message": "账户设置"
+  },
+  "onboard_btn_open_signin": {
+    "message": "打开登录"
+  },
+  "onboard_btn_signin": {
+    "message": "登录"
+  },
+  "onboard_btn_go_to_account": {
+    "message": "前往账号"
+  },
+  "onboard_tip": {
+    "message": "提示"
+  },
+  "welcome_title": {
+    "message": "将您的 AI 聊天变成可搜索的工作区。"
+  },
+  "welcome_kicker_hero": {
+    "message": "在您的 AI 工作区中开始"
+  },
+  "welcome_lede": {
+    "message": "请先打开 ChatGPT、Claude 或 Gemini。ChatVault 会在那里与您会合，以便您可以导出、添加书签或整理您的第一个对话。"
+  },
+  "welcome_rec_pill": {
+    "message": "推荐"
+  },
+  "welcome_rec_copy": {
+    "message": "在数秒内导出您的第一个聊天"
+  },
+  "welcome_open_gpt": {
+    "message": "打开 ChatGPT"
+  },
+  "welcome_sub_gpt": {
+    "message": "最佳第一步：导出当前聊天"
+  },
+  "welcome_btn_claude": {
+    "message": "Claude"
+  },
+  "welcome_btn_gemini": {
+    "message": "Gemini"
+  },
+  "welcome_pin_wait": {
+    "message": "固定的操作可以稍后进行。最重要的是打开一个支持的 AI 页面，让 ChatVault 可以出现。"
+  },
+  "welcome_kicker_pin": {
+    "message": "然后让它易于找到"
+  },
+  "welcome_title_pin": {
+    "message": "在准备好时固定 ChatVault。"
+  },
+  "welcome_pin_desc": {
+    "message": "Chrome 要求手动完成此步骤。点击拼图图标，找到 AI Chat Export，然后点击固定图标。"
+  },
+  "welcome_pin_status_init": {
+    "message": "如果尚未固定，ChatVault 仍可在受支持的 AI 页面上正常工作。"
+  },
+  "welcome_btn_check_pin": {
+    "message": "检查固定状态"
+  },
+  "welcome_btn_checking": {
+    "message": "正在检查..."
+  },
+  "welcome_btn_pinned": {
+    "message": "已固定"
+  },
+  "welcome_btn_check_again": {
+    "message": "重新检查"
+  },
+  "welcome_pin_success": {
+    "message": "太棒了。ChatVault 在您的 Chrome 工具栏中已可见。"
+  },
+  "welcome_pin_failed": {
+    "message": "尚未固定。请使用工具栏中的 Chrome 拼图图标，然后点击 AI Chat Export 旁的固定图标。"
+  },
+  "welcome_privacy_footnote": {
+    "message": "ChatVault 仅存储标题、链接、文件夹、书签和设置。它不会存储提示词、回复、平台 Cookie、访问 Token 或刷新 Token。"
+  },
+  "billing_benefit_pdf": {
+    "message": "PDF、Docs、MD 等导出"
+  },
+  "billing_benefit_word": {
+    "message": "精致文档排版输出"
+  },
+  "billing_benefit_image": {
+    "message": "图片导出快照"
+  },
+  "billing_benefit_folders": {
+    "message": "更多文件夹"
+  },
+  "billing_benefit_folder_chats": {
+    "message": "每个文件夹可容纳更多聊天"
+  },
+  "billing_benefit_bookmarks": {
+    "message": "更多书签"
+  },
+  "billing_benefit_search": {
+    "message": "高级搜索与过滤"
+  },
+  "billing_benefit_batch": {
+    "message": "批量整理操作"
+  },
+  "billing_benefit_backup": {
+    "message": "备份与导入"
+  },
+  "billing_benefit_sync": {
+    "message": "增强的云同步"
+  },
+  "billing_benefit_multi_device": {
+    "message": "多设备访问"
+  },
+  "billing_benefit_platforms": {
+    "message": "支持 ChatGPT、Claude 和 Gemini"
+  },
+  "billing_benefit_personal": {
+    "message": "仅限个人使用"
+  },
+  "billing_cadence_month": {
+    "message": "/ 月"
+  },
+  "billing_cadence_year": {
+    "message": "/ 年"
+  },
+  "billing_cadence_lifetime": {
+    "message": "一次性"
+  },
+  "billing_plan_desc_monthly": {
+    "message": "PDF、Docs、MD 等导出以及 Pro 工具。"
+  },
+  "billing_plan_desc_yearly": {
+    "message": "适合 AI 深度用户的更高本地导出额度。"
+  },
+  "billing_plan_desc_lifetime": {
+    "message": "一次性付款。保留 Pro 导出和整理功能。"
+  },
+  "billing_plan_detail_monthly": {
+    "message": "如果您想先试用 Pro，这是最佳选择。"
+  },
+  "billing_plan_detail_yearly": {
+    "message": "全年整理、搜索和同步。"
+  },
+  "billing_plan_detail_lifetime": {
+    "message": "早期支持者特惠价格。"
+  },
+  "billing_offer_label": {
+    "message": "限时特惠"
+  },
+  "billing_discount_monthly": {
+    "message": "省 44%"
+  },
+  "billing_discount_yearly": {
+    "message": "省 50%"
+  },
+  "billing_discount_lifetime": {
+    "message": "省 62%"
+  },
+  "billing_checkout_pro_yearly": {
+    "message": "继续使用 Pro 年付计划 - $$29.99 / 年"
+  },
+  "billing_active_pro": {
+    "message": "Pro 已激活。"
+  },
+  "billing_plan_title_monthly": {
+    "message": "Pro 月付"
+  },
+  "billing_plan_title_yearly": {
+    "message": "Pro 年付"
+  },
+  "billing_plan_title_lifetime": {
+    "message": "终身早鸟特惠"
+  },
+  "billing_badge_monthly": {
+    "message": "月度 Pro"
+  },
+  "billing_badge_yearly": {
+    "message": "年度 Pro"
+  },
+  "billing_badge_lifetime": {
+    "message": "终身 Pro"
+  },
+  "billing_err_plan_unavailable": {
+    "message": "所选订阅方案不可用。请选择其他方案。"
+  },
+  "billing_err_unavailable": {
+    "message": "结账暂时不可用。请稍后再试。"
+  },
+  "billing_err_paddle_unavailable": {
+    "message": "Paddle 结账暂时不可用。请稍后再试。"
+  },
+  "onboard_guide_badge": {
+    "message": "指南"
+  },
+  "untitled_chat": {
+    "message": "未命名聊天"
+  },
+  "toast_target_folder_not_found": {
+    "message": "未找到目标文件夹。"
+  },
+  "aria_sidebar": {
+    "message": "AI Chat Export 侧边栏"
+  },
+  "aria_collapsed_launcher": {
+    "message": "AI Chat Export 折叠启动器"
+  },
+  "format_pdf": {
+    "message": "PDF"
+  },
+  "format_word": {
+    "message": "Word"
+  },
+  "format_image": {
+    "message": "图片"
+  },
+  "btn_cancel_select": {
+    "message": "取消选择"
+  },
+  "btn_select_messages": {
+    "message": "选择消息"
+  },
+  "toast_delete_failed": {
+    "message": "删除失败。"
+  },
+  "backup_none": {
+    "message": "暂无自动备份。"
+  },
+  "backup_auto_reason": {
+    "message": "自动备份"
+  },
+  "backup_available": {
+    "message": "$1 可用"
+  },
+  "linked_accounts_empty": {
+    "message": "尚未检测到绑定的平台账户。"
+  },
+  "linked_account_email": {
+    "message": "邮箱: $1"
+  },
+  "linked_account_id": {
+    "message": "账户 ID: $1"
+  },
+  "linked_account_linked": {
+    "message": "已绑定 $1"
+  },
+  "btn_disconnect": {
+    "message": "断开连接"
+  },
+  "plan_pro": {
+    "message": "Pro"
+  },
+  "plan_free": {
+    "message": "免费"
+  },
+  "lock_plan_options": {
+    "message": "登录以查看方案选项"
+  },
+  "plan_loading": {
+    "message": "正在加载方案..."
+  },
+  "plan_cancels_date": {
+    "message": "$1 取消"
+  },
+  "plan_expires_date": {
+    "message": "$1 过期"
+  },
+  "toast_folder_update_failed": {
+    "message": "更新文件夹失败。"
+  },
+  "toast_sort_same_level": {
+    "message": "拖拽排序目前仅在同级文件夹内有效。"
+  },
+  "toast_folder_order_updated": {
+    "message": "文件夹顺序已更新。"
+  },
+  "toast_folder_order_failed": {
+    "message": "保存文件夹顺序失败。"
+  },
+  "aria_drag_folder": {
+    "message": "拖拽文件夹"
+  },
+  "aria_expand_folder": {
+    "message": "展开文件夹"
+  },
+  "aria_collapse_folder": {
+    "message": "折叠文件夹"
+  },
+  "aria_rename_folder": {
+    "message": "重命名文件夹"
+  },
+  "backup_reason_folder_chat_removed": {
+    "message": "已移除文件夹聊天"
+  },
+  "dialog_move_title": {
+    "message": "移动“$1”"
+  },
+  "untitled_folder": {
+    "message": "未命名文件夹"
+  },
+  "dialog_move_empty": {
+    "message": "在移动此聊天之前，请先创建另一个文件夹。"
+  },
+  "dialog_delete_title": {
+    "message": "删除“$1”？"
+  },
+  "dialog_remove_folder_chat": {
+    "message": "从该文件夹中移除此聊天？原始源聊天不会被删除。"
+  },
+  "backup_reason_folder_chat_moved": {
+    "message": "文件夹聊天已移动"
+  },
+  "folders_no_search_match": {
+    "message": "没有找到符合您搜索的文件夹或聊天。"
+  },
+  "folders_no_match": {
+    "message": "没有找到符合您搜索的文件夹。"
+  },
+  "selected_folders_count": {
+    "message": "已选择 $1 个文件夹"
+  },
+  "chat_count_one": {
+    "message": "1 个聊天"
+  },
+  "chat_count_many": {
+    "message": "$1 个聊天"
+  },
+  "dialog_delete_folder_and_chats": {
+    "message": "从 ChatVault 中删除 $1 并移除 $2？原始源聊天不会被删除。"
+  },
+  "dialog_delete_folder_with_chats": {
+    "message": "从 ChatVault 中删除 $1 并移除 $2？原始源聊天不会被删除。"
+  },
+  "dialog_delete_folders_with_chats": {
+    "message": "从 ChatVault 中删除 $1 个文件夹并移除 $2？原始源聊天不会被删除。"
+  },
+  "dialog_delete_folder_desc": {
+    "message": "从 ChatVault 中删除 $1？原始源聊天不会被删除。"
+  },
+  "backup_reason_folder_deleted": {
+    "message": "文件夹已删除"
+  },
+  "toast_move_selected_failed": {
+    "message": "移动选定的聊天失败。"
+  },
+  "dialog_delete_chats_title": {
+    "message": "删除选定的聊天？"
+  },
+  "dialog_remove_selected_folder_chats": {
+    "message": "从文件夹中移除 $1 个选定的聊天？原始源聊天不会被删除。"
+  },
+  "backup_reason_bookmark_saved": {
+    "message": "书签已保存"
+  },
+  "backup_reason_bookmark_queued": {
+    "message": "书签已加入队列"
+  },
+  "aria_bookmark_chat": {
+    "message": "添加书签"
+  },
+  "aria_bookmarked": {
+    "message": "已添加书签"
+  },
+  "aria_add_to_folder": {
+    "message": "添加到文件夹"
+  },
+  "aria_remove_bookmark": {
+    "message": "移除书签"
+  },
+  "label_organize_chat": {
+    "message": "整理“$1”"
+  },
+  "picker_create_folder_first": {
+    "message": "请先创建一个文件夹。"
+  },
+  "backup_reason_bookmark_removed": {
+    "message": "书签已移除"
+  },
+  "export_limit_single": {
+    "message": "免费版每次只能导出一个对话。升级到 Pro 可进行文件夹和批量导出。"
+  },
+  "export_limit_count": {
+    "message": "免费版每次最多可导出 $1 个对话。升级到 Pro 可进行更大规模的导出。"
+  },
+  "toast_signin_export": {
+    "message": "登录以导出对话。"
+  },
+  "export_progress_preparing_image": {
+    "message": "正在准备图片导出..."
+  },
+  "export_count_one": {
+    "message": "1 个对话"
+  },
+  "export_count_many": {
+    "message": "$1 个对话"
+  },
+  "export_selected_chats": {
+    "message": "选定的聊天"
+  },
+  "toast_no_export_bodies": {
+    "message": "没有可导出的对话内容。"
+  },
+  "toast_saved_exports_with_issues": {
+    "message": "已保存 $1 个对话。$2 个失败。"
+  },
+  "toast_saved_exports_to_file": {
+    "message": "已将 $1 个对话保存到 $2。"
+  },
+  "toast_exporting": {
+    "message": "正在导出..."
+  },
+  "export_image_label": {
+    "message": "图片导出"
+  },
+  "toast_chat_record_missing": {
+    "message": "聊天记录已不再可用。"
+  },
+  "export_default_title": {
+    "message": "对话"
+  },
+  "toast_conversation_export_failed": {
+    "message": "对话导出失败。"
+  },
+  "dialog_remove_bookmark": {
+    "message": "从 ChatVault 中移除此书签？"
+  },
+  "dialog_delete_history": {
+    "message": "从 ChatVault 中删除此历史记录项？"
+  },
+  "toast_signin_export_folders": {
+    "message": "登录以导出文件夹。"
+  },
+  "export_progress_preparing_folder": {
+    "message": "正在准备文件夹导出..."
+  },
+  "toast_select_folder_chats": {
+    "message": "导出前请先选择文件夹或聊天。"
+  },
+  "export_selected_folders": {
+    "message": "选定的文件夹"
+  },
+  "export_selected_folder_chats": {
+    "message": "选定的文件夹聊天"
+  },
+  "export_progress_selected_folder": {
+    "message": "正在准备选定文件夹的导出..."
+  },
+  "toast_no_selected_folder_exports": {
+    "message": "没有可导出的选定文件夹对话。"
+  },
+  "toast_selected_folder_export_failed": {
+    "message": "选定文件夹导出失败。"
+  },
+  "toast_select_bookmarks_export": {
+    "message": "导出前请先选择书签。"
+  },
+  "toast_select_history_export": {
+    "message": "导出前请先选择历史记录项。"
+  },
+  "export_progress_bookmark": {
+    "message": "正在准备书签导出..."
+  },
+  "export_progress_history": {
+    "message": "正在准备历史记录导出..."
+  },
+  "toast_no_bookmark_exports": {
+    "message": "没有可导出的书签对话。"
+  },
+  "toast_no_history_exports": {
+    "message": "没有可导出的历史记录对话。"
+  },
+  "toast_folder_unavailable": {
+    "message": "文件夹已不再可用。"
+  },
+  "export_progress_folder_count": {
+    "message": "正在准备文件夹导出: $1/$2 个文件夹..."
+  },
+  "toast_no_folder_exports": {
+    "message": "没有可导出的文件夹对话。"
+  },
+  "toast_no_conversations_exported_reason": {
+    "message": "没有对话被导出。$1"
+  },
+  "export_progress_folder_conversations": {
+    "message": "正在准备文件夹导出: $1/$2 个对话..."
+  },
+  "export_default_folder": {
+    "message": "文件夹导出"
+  },
+  "toast_no_folder_export_bodies": {
+    "message": "没有可导出的文件夹对话内容。"
+  },
+  "toast_saving_folder_export": {
+    "message": "正在保存文件夹导出: $1 个对话..."
+  },
+  "toast_folder_export_failed": {
+    "message": "文件夹导出失败。"
+  },
+  "toast_signin_select_messages": {
+    "message": "登录以选择消息。"
+  },
+  "toast_no_messages_found": {
+    "message": "未找到消息。请确保对话已打开并加载完成。"
+  },
+  "toast_click_messages_select": {
+    "message": "点击页面上的消息以选择它们进行导出。"
+  },
+  "billing_original_price": {
+    "message": "原价 $1 $2"
+  },
+  "checkout_opening": {
+    "message": "正在打开结账..."
+  },
+  "billing_continue_with_plan": {
+    "message": "继续使用 $1"
+  },
+  "checkout_opening_title": {
+    "message": "正在打开安全结账"
+  },
+  "checkout_opening_plan": {
+    "message": "$1 结账页面正在新标签页中打开。"
+  },
+  "checkout_keep_open": {
+    "message": "请保持此标签页打开，以便 ChatVault 能在付款后刷新您的方案。"
+  },
+  "toast_allow_popups": {
+    "message": "允许弹窗以打开安全结账。"
+  },
+  "toast_opening_checkout": {
+    "message": "正在打开安全结账..."
+  },
+  "toast_signin_upgrade": {
+    "message": "升级到 Pro 前请先登录。"
+  },
+  "toast_checkout_opened": {
+    "message": "$1 结账已打开。Pro 状态将在付款后自动更新。如果没有刷新，请刷新此浏览器标签页。"
+  },
+  "toast_refreshing_session": {
+    "message": "正在刷新您的 ChatVault 会话。请重试。"
+  },
+  "toast_purchase_restored": {
+    "message": "Pro 购买已恢复。"
+  },
+  "toast_no_purchase": {
+    "message": "未找到有效的 Pro 购买。"
+  },
+  "sync_last_sync": {
+    "message": "上次同步 $1"
+  },
+  "sync_flushing": {
+    "message": "正在同步 $1 个排队的更改..."
+  },
+  "sync_queued_changes": {
+    "message": "$1 个更改已排队等待同步。"
+  },
+  "sync_all_synced": {
+    "message": "所有更改均已同步。"
+  },
+  "folders_loading": {
+    "message": "正在加载文件夹..."
+  },
+  "folders_load_failed": {
+    "message": "加载文件夹失败。"
+  },
+  "folders_expand_parent_failed": {
+    "message": "展开父文件夹失败。"
+  },
+  "backup_reason_folder_created": {
+    "message": "已创建文件夹"
+  },
+  "folders_create_failed": {
+    "message": "创建文件夹失败。"
+  },
+  "backup_reason_folder_updated": {
+    "message": "已更新文件夹"
+  },
+  "folders_update_failed": {
+    "message": "更新文件夹失败。"
+  },
+  "folders_collapse_failed": {
+    "message": "折叠文件夹失败。"
+  },
+  "folders_expand_failed": {
+    "message": "展开文件夹失败。"
+  },
+  "folders_rename_failed": {
+    "message": "重命名文件夹失败。"
+  },
+  "dialog_delete_named_folder_title": {
+    "message": "删除 $1"
+  },
+  "dialog_delete_folder_with_subfolders": {
+    "message": "从 ChatVault 中删除此文件夹及其子文件夹？原始源聊天不会被删除。"
+  },
+  "folders_add_current_failed": {
+    "message": "添加当前聊天失败。"
+  },
+  "toast_folder_color_updated": {
+    "message": "文件夹颜色已更新。"
+  },
+  "backup_reason_folder_color_updated": {
+    "message": "文件夹颜色已更新"
+  },
+  "toast_folder_color_failed": {
+    "message": "更新文件夹颜色失败。"
+  },
+  "picker_mode_project": {
+    "message": "项目"
+  },
+  "picker_mode_chats": {
+    "message": "聊天"
+  },
+  "picker_mode_projects": {
+    "message": "项目"
+  },
+  "picker_loading_items": {
+    "message": "正在加载 $1..."
+  },
+  "picker_refreshing_items": {
+    "message": "正在刷新 $1..."
+  },
+  "picker_loading_more_items": {
+    "message": "正在加载更多 $1..."
+  },
+  "picker_add_to_folder": {
+    "message": "将 $1 添加到 <strong>$2</strong> 文件夹"
+  },
+  "picker_add": {
+    "message": "添加 $1"
+  },
+  "picker_filter_projects": {
+    "message": "按名称过滤项目..."
+  },
+  "picker_filter_chats": {
+    "message": "按标题过滤聊天..."
+  },
+  "picker_no_projects": {
+    "message": "尚未找到任何项目。"
+  },
+  "picker_no_chats": {
+    "message": "尚未找到任何聊天。"
+  },
+  "picker_showing_matches": {
+    "message": "显示第 $1 个（共 $2 个匹配项）。使用搜索以缩小范围。"
+  },
+  "picker_count_loading": {
+    "message": "已选择 $1 · 正在加载"
+  },
+  "picker_count_loaded": {
+    "message": "已选择 $1 · 已加载 $2"
+  },
+  "toast_gemini_no_projects": {
+    "message": "Gemini 目前不提供项目。请改用“添加聊天”。"
+  },
+  "history_signin": {
+    "message": "登录以加载历史记录。"
+  },
+  "history_loading": {
+    "message": "正在加载历史记录..."
+  },
+  "history_results": {
+    "message": "$1 个结果"
+  },
+  "history_no_match": {
+    "message": "没有与您的过滤器匹配的历史记录项。"
+  },
+  "backup_reason_folder_chats_saved": {
+    "message": "文件夹聊天已保存"
+  },
+  "folders_saved_refresh_failed": {
+    "message": "已保存，但刷新失败。"
+  },
+  "folders_offline_changes_queued": {
+    "message": "离线更改已排队。恢复网络连接时它们会自动同步。"
+  },
+  "folders_add_selected_failed": {
+    "message": "添加选定项失败。"
+  },
+  "folders_offline_change_queued": {
+    "message": "离线更改已排队。恢复网络连接时它会自动同步。"
+  },
+  "folders_add_chat_failed": {
+    "message": "将聊天添加到文件夹失败。"
+  },
+  "folders_remove_chat_failed": {
+    "message": "从文件夹中移除聊天失败。"
+  },
+  "backup_signin_create": {
+    "message": "创建备份前请先登录。"
+  },
+  "backup_reason_manual_export": {
+    "message": "手动备份导出"
+  },
+  "backup_created": {
+    "message": "备份已创建。"
+  },
+  "backup_create_failed": {
+    "message": "创建备份失败。"
+  },
+  "backup_summary_folders": {
+    "message": "文件夹数: $1"
+  },
+  "backup_summary_folder_chats": {
+    "message": "文件夹聊天数: $1"
+  },
+  "backup_summary_bookmarks": {
+    "message": "书签数: $1"
+  },
+  "backup_summary_settings_yes": {
+    "message": "包含设置: 是"
+  },
+  "backup_summary_settings_no": {
+    "message": "包含设置: 否"
+  },
+  "backup_summary_linked": {
+    "message": "绑定的账户数: $1"
+  },
+  "backup_summary_folder_conflicts": {
+    "message": "文件夹冲突数: $1"
+  },
+  "backup_summary_bookmark_conflicts": {
+    "message": "书签冲突数: $1"
+  },
+  "backup_invalid_empty": {
+    "message": "备份文件为空。"
+  },
+  "backup_invalid_product": {
+    "message": "这看起来不像是一个 ChatVault 备份文件。"
+  },
+  "backup_invalid_missing": {
+    "message": "备份文件缺少必要的数据。"
+  },
+  "backup_import_cancelled": {
+    "message": "导入已取消。"
+  },
+  "backup_preview_failed": {
+    "message": "无法预览备份文件。"
+  },
+  "backup_signin_import": {
+    "message": "导入备份前请先登录。"
+  },
+  "backup_imported_folder": {
+    "message": "已导入 $1"
+  },
+  "backup_reason_after_import": {
+    "message": "导入后的备份"
+  },
+  "backup_imported": {
+    "message": "备份已导入。"
+  },
+  "backup_import_failed": {
+    "message": "导入备份失败。"
+  },
+  "backup_signin_restore": {
+    "message": "恢复备份前请先登录。"
+  },
+  "backup_choose_restore": {
+    "message": "选择要恢复的备份。"
+  },
+  "backup_reason_after_restore": {
+    "message": "恢复后的备份"
+  },
+  "aria_collapse_chatvault": {
+    "message": "折叠 ChatVault"
+  },
+  "selected_zero": {
+    "message": "0 已选择"
+  },
+  "aria_folder_actions": {
+    "message": "文件夹操作"
+  },
+  "aria_select_all_bookmarks": {
+    "message": "选择所有可见书签"
+  },
+  "aria_bookmarked_chats": {
+    "message": "已添加书签的聊天"
+  },
+  "aria_select_all_history": {
+    "message": "选择所有可见历史记录"
+  },
+  "aria_indexed_history": {
+    "message": "已索引的聊天历史记录"
+  },
+  "aria_expand_sidebar": {
+    "message": "展开 ChatVault 侧边栏"
+  },
+  "aria_open_export_actions": {
+    "message": "打开导出操作"
+  },
+  "aria_select_message_export": {
+    "message": "选择要导出的消息"
+  },
+  "aria_skip_guide": {
+    "message": "跳过指南"
+  },
+  "welcome_page_title": {
+    "message": "欢迎来到 AI Chat Export"
+  },
+  "welcome_aria_open_platform": {
+    "message": "打开一个 AI 平台"
+  },
+  "welcome_aria_pin_chatvault": {
+    "message": "固定 AI Chat Export"
+  },
+  "folder_empty_hint": {
+    "message": "拖拽聊天记录到这里"
+  },
+  "export_theme_label": {
+    "message": "导出主题与样式"
+  },
+  "export_theme_default": {
+    "message": "极简纯白"
+  },
+  "export_theme_oxford": {
+    "message": "学术深青"
+  },
+  "export_theme_mckinsey": {
+    "message": "麦肯锡商务"
+  },
+  "export_theme_newsprint": {
+    "message": "复古印报"
+  },
+  "export_theme_aurora": {
+    "message": "流光极光 (毛玻璃)"
+  },
+  "export_theme_terminal": {
+    "message": "赛博终端"
+  },
+  "export_theme_editorial": {
+    "message": "学术社评"
+  },
+  "export_theme_midnight": {
+    "message": "暗黑深邃"
+  },
+  "toast_guest_signin_prompt": {
+    "message": "登录后可同步文件夹，并在更换设备后继续使用。"
+  },
+  "merge_dialog_title": {
+    "message": "同步本地 ChatVault 数据？"
+  },
+  "merge_dialog_desc": {
+    "message": "检测到此浏览器中有本地文件夹、书签和标题记录。你可以合并到当前账号，也可以不合并并删除本地副本。"
+  },
+  "merge_summary_folders": {
+    "message": "文件夹：$1"
+  },
+  "merge_summary_chats": {
+    "message": "已保存聊天：$1"
+  },
+  "merge_summary_bookmarks": {
+    "message": "书签：$1"
+  },
+  "merge_summary_usage": {
+    "message": "今日免费用量：已保存 $1，已导出 $2"
+  },
+  "merge_dialog_footnote": {
+    "message": "只会合并标题、链接、文件夹、书签和设置。聊天正文不会被保存。"
+  },
+  "merge_btn_merge": {
+    "message": "合并到账号"
+  },
+  "merge_btn_loading": {
+    "message": "合并中..."
+  },
+  "merge_btn_discard": {
+    "message": "不合并，删除本地副本"
+  },
+  "merge_btn_discard_loading": {
+    "message": "正在删除本地副本..."
+  },
+  "merge_status_merging": {
+    "message": "正在合并本地 ChatVault 数据..."
+  },
+  "merge_success": {
+    "message": "本地数据已合并到账号。"
+  },
+  "merge_failed": {
+    "message": "合并本地数据失败。"
+  },
+  "merge_discarded": {
+    "message": "本地副本已删除，现在展示账号数据。"
+  },
+  "merge_discard_failed": {
+    "message": "删除本地副本失败。"
+  },
+  "toast_guest_remote_blocked": {
+    "message": "未登录时此操作会保存在本地。请登录后再重试。"
+  },
+  "btn_done": {
+    "message": "完成"
+  },
+  "aria_done_reordering": {
+    "message": "完成排序"
+  },
+  "aria_reorder_folders": {
+    "message": "排序文件夹"
+  },
+  "account_support_desc": {
+    "message": "如有任何问题或反馈，请通过邮件联系我们："
+  },
+  "settings_export_content_title": {
+    "message": "导出内容设置"
+  },
+  "batch_export": {
+    "message": "批量导出"
+  },
+  "batch_export_limit_warning": {
+    "message": "为了导出体验，一次最多导出 10 个，请分多次导出。"
+  },
+  "batch_export_no_chats": {
+    "message": "未在侧边栏找到任何会话。请展开侧边栏或刷新页面后再试。"
+  },
+  "batch_export_select_format": {
+    "message": "请选择导出格式"
+  },
+  "batch_export_vip_notice": {
+    "message": "批量导出是 Pro 专属功能"
+  },
+  "batch_export_preparing": {
+    "message": "正在准备导出..."
+  },
+  "batch_export_progress": {
+    "message": "正在导出第 $1/$2 个会话..."
+  },
+  "batch_export_success": {
+    "message": "批量导出已完成！"
+  },
+  "batch_export_cancelled": {
+    "message": "导出已被取消。"
+  },
+  "popup_btn_login": {
+    "message": "登录"
+  },
+  "popup_unsupported_title": {
+    "message": "不支持的页面"
+  },
+  "popup_unsupported_desc": {
+    "message": "请在以下 AI 聊天页面中使用此扩展："
+  },
+  "popup_open_chatgpt": {
+    "message": "打开 ChatGPT"
+  },
+  "popup_current_session": {
+    "message": "当前会话"
+  },
+  "popup_auto_detect_platform": {
+    "message": "自动识别平台"
+  },
+  "popup_batch_export_title_attr": {
+    "message": "批量导出当前平台的会话"
+  },
+  "popup_batch_export_compact": {
+    "message": "批量导出"
+  },
+  "popup_batch_export_desc": {
+    "message": "多会话导出"
+  },
+  "popup_custom_export_title_attr": {
+    "message": "进入对话选择模式"
+  },
+  "popup_custom_export": {
+    "message": "自定义导出"
+  },
+  "popup_custom_export_desc": {
+    "message": "选择消息"
+  },
+  "popup_recommended": {
+    "message": "推荐"
+  },
+  "popup_one_click_export": {
+    "message": "一键导出"
+  },
+  "popup_one_click_export_help": {
+    "message": "快速保存网页内容为排版文件"
+  },
+  "popup_copy_full_text": {
+    "message": "复制全文"
+  },
+  "popup_copy_success": {
+    "message": "已复制全文"
+  },
+  "popup_format_pdf_hint": {
+    "message": "排版保存"
+  },
+  "popup_format_word_hint": {
+    "message": "可编辑"
+  },
+  "popup_format_markdown_hint": {
+    "message": "知识库"
+  },
+  "popup_format_image_hint": {
+    "message": "分享卡片"
+  },
+  "popup_format_text_name": {
+    "message": "文本"
+  },
+  "popup_format_text_hint": {
+    "message": "纯内容"
+  },
+  "popup_format_json_hint": {
+    "message": "结构化"
+  },
+  "popup_privacy_title": {
+    "message": "100% 本地安全运行"
+  },
+  "popup_privacy_desc": {
+    "message": "所有解析与导出均在本地浏览器完成，不上传您的聊天数据。"
+  },
+  "popup_quota_loading": {
+    "message": "正在加载使用额度状态..."
+  },
+  "popup_quota_remaining": {
+    "message": "今日剩余额度：$1 / 3 次"
+  },
+  "popup_pro_quota_status": {
+    "message": "无限导出额度可用"
+  },
+  "popup_settings_section_title": {
+    "message": "内容导出设置"
+  },
+  "popup_redaction_title": {
+    "message": "导出凭证"
+  },
+  "popup_redaction_desc": {
+    "message": "包含来源、时间、平台与校验和信息"
+  },
+  "popup_title_desc": {
+    "message": "在文档顶部显示对话标题"
+  },
+  "popup_time_desc": {
+    "message": "在文档头部插入导出时间戳"
+  },
+  "popup_ai_only_desc": {
+    "message": "过滤用户 Prompt，只保留 AI 回复"
+  },
+  "popup_appendix_title": {
+    "message": "Prompt 附录"
+  },
+  "popup_appendix_desc": {
+    "message": "在文末附带原始 Prompts (Pro)"
+  },
+  "popup_watermark_title": {
+    "message": "隐藏 AI Chat Export 水印"
+  },
+  "popup_watermark_desc": {
+    "message": "移除文档末尾的 AI Chat Export 签名 (Pro)"
+  },
+  "popup_source_url_desc": {
+    "message": "在导出的文档尾部附加对话原始网址"
+  },
+  "popup_platform_name_desc": {
+    "message": "在文档头部显示来源平台"
+  },
+  "popup_role_labels_desc": {
+    "message": "在聊天发言内容前显示 User / Assistant 角色"
+  },
+  "popup_align_right_desc": {
+    "message": "将您的提问在 PDF/图片中靠右排版"
+  },
+  "popup_system_debug_title": {
+    "message": "系统与调试"
+  },
+  "popup_reset_quota_title": {
+    "message": "重置使用配额"
+  },
+  "popup_reset_quota_desc": {
+    "message": "重置本地每日导出次数缓存为 0/3"
+  },
+  "popup_reset_cache": {
+    "message": "重置缓存"
+  },
+  "popup_reset_quota_success": {
+    "message": "本地额度已成功重置为 0/3。"
+  },
+  "popup_test_pro_title": {
+    "message": "Pro 测试状态（开发者）"
+  },
+  "popup_test_pro_desc": {
+    "message": "开启后直接激活 Pro 会员状态"
+  },
+  "popup_export_panel_title": {
+    "message": "导出面板"
+  },
+  "popup_export_settings_title": {
+    "message": "导出配置"
+  },
+  "popup_benefit_unlimited_exports": {
+    "message": "无限制本地导出"
+  },
+  "popup_benefit_report_themes": {
+    "message": "出版级排版主题"
+  },
+  "popup_benefit_local_receipts": {
+    "message": "本地导出凭证"
+  },
+  "popup_benefit_hide_watermark": {
+    "message": "隐藏全部导出水印"
+  },
+  "popup_benefit_zip_download": {
+    "message": "代码打包 ZIP 下载"
+  },
+  "popup_benefit_shared_pro": {
+    "message": "共享 Pro 权益"
+  },
+  "popup_subscribe_login_prefix": {
+    "message": "未登录账号，请先 "
+  },
+  "popup_subscribe_login_suffix": {
+    "message": " 以自动绑定权益后再支付。"
+  },
+  "popup_subscribe_signin_confirm": {
+    "message": "请先使用 Google 登录，以便在支付前自动绑定 Pro 会员权益。"
+  },
+  "popup_pro_active_label": {
+    "message": "Pro 会员已激活"
+  },
+  "popup_pro_active_suffix": {
+    "message": "（无限次导出）"
+  },
+  "popup_free_account": {
+    "message": "免费账号"
+  },
+  "popup_account": {
+    "message": "账号"
+  },
+  "popup_auth_loading": {
+    "message": "登录中..."
+  },
+  "popup_refresh_required_title": {
+    "message": "请刷新页面以激活插件"
+  },
+  "popup_refresh_required_desc": {
+    "message": "扩展程序刚刚加载或更新，已打开的对话页面必须刷新一次后才能获得注入通信。"
+  },
+  "popup_refresh_page_retry": {
+    "message": "请刷新当前 AI 对话页面后再试。"
+  },
+  "popup_operation_failed": {
+    "message": "操作失败，请稍后再试。"
+  },
+  "popup_confirm_logout_title": {
+    "message": "退出登录"
+  },
+  "popup_confirm_logout_message": {
+    "message": "确定要退出当前账号吗？"
+  },
+  "popup_signed_out": {
+    "message": "已退出登录"
+  },
+  "popup_login_success": {
+    "message": "登录成功"
+  },
+  "popup_login_incomplete": {
+    "message": "登录未完成，请重试。"
+  },
+  "popup_login_failed": {
+    "message": "登录失败：$1"
+  },
+  "popup_try_later": {
+    "message": "请稍后再试。"
+  },
+  "popup_creating_checkout": {
+    "message": "正在打开结账页面..."
+  },
+  "popup_checkout_unavailable": {
+    "message": "无法构建结账页面，请稍后再试。"
+  },
+  "popup_checkout_service_syncing": {
+    "message": "结账服务正在更新，请稍后重新打开 AI Chat Export 再试。"
+  },
+  "popup_checkout_popup_blocked": {
+    "message": "浏览器拦截了结账页面，请重试。"
+  },
+  "popup_checkout_error": {
+    "message": "结账时发生错误：$1"
+  },
+  "popup_restore_login_required": {
+    "message": "请先登录，然后点击恢复购买以同步您的 Pro 会员状态。"
+  },
+  "popup_restoring": {
+    "message": "正在恢复..."
+  },
+  "popup_restore_submitted": {
+    "message": "购买恢复请求已提交。请关闭弹出窗口并重新打开以查看最新状态。"
+  },
+  "popup_service_unavailable": {
+    "message": "服务不可用，请稍后再试。"
+  },
+  "popup_restore_failed": {
+    "message": "恢复购买失败：$1"
+  },
+  "popup_health_high_risk": {
+    "message": "导出风险"
+  },
+  "popup_health_attention": {
+    "message": "注意"
+  }
+}

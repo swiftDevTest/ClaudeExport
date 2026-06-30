@@ -1,0 +1,406 @@
+:root {
+  color-scheme: dark;
+  --cv-bg: #0b0f12;
+  --cv-panel: rgba(20, 24, 28, 0.72);
+  --cv-panel-strong: rgba(28, 33, 38, 0.94);
+  --cv-line: rgba(255, 255, 255, 0.08);
+  --cv-line-strong: rgba(255, 255, 255, 0.15);
+  --cv-text: #f3f4f6;
+  --cv-text-muted: #9ca3af;
+  --cv-primary: #10b981;
+  --cv-primary-hover: #059669;
+  --cv-accent: #3b82f6;
+  --cv-amber: #fbbf24;
+  --cv-gold-glow: rgba(251, 191, 36, 0.15);
+  --cv-radius: 20px;
+  --cv-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background:
+    radial-gradient(circle at 10% 15%, rgba(16, 185, 129, 0.14), transparent 35%),
+    radial-gradient(circle at 85% 20%, rgba(59, 130, 246, 0.12), transparent 35%),
+    radial-gradient(circle at 50% 80%, rgba(251, 191, 36, 0.08), transparent 30%),
+    linear-gradient(145deg, #07090b 0%, #0f1316 60%, #0c0e10 100%);
+  color: var(--cv-text);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Shell Layout */
+.cv-subscribe-shell {
+  width: min(1000px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 60px 0 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 60px;
+}
+
+/* Header */
+.cv-header {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.cv-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #e5e7eb;
+}
+
+.cv-brand-mark {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.cv-title {
+  font-size: clamp(32px, 5vw, 48px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 10px 0 0;
+  background: linear-gradient(135deg, #ffffff 30%, #e5e7eb 70%, rgba(255,255,255,0.7) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.cv-subtitle {
+  max-width: 650px;
+  font-size: 16px;
+  color: var(--cv-text-muted);
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* Pricing Grid */
+.cv-plans-section {
+  width: 100%;
+}
+
+.cv-plans-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+  align-items: stretch;
+}
+
+.cv-plan-card {
+  position: relative;
+  background: var(--cv-panel);
+  border: 1px solid var(--cv-line);
+  border-radius: var(--cv-radius);
+  padding: 40px 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  box-shadow: var(--cv-shadow);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cv-plan-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--cv-line-strong);
+  box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+}
+
+.cv-plan-card.recommended {
+  border: 2px solid var(--cv-primary);
+  background: linear-gradient(180deg, rgba(16, 185, 129, 0.04) 0%, rgba(0, 0, 0, 0.2) 100%), var(--cv-panel-strong);
+  box-shadow: 0 20px 50px rgba(16, 185, 129, 0.12);
+}
+
+.cv-plan-card.recommended:hover {
+  box-shadow: 0 30px 60px rgba(16, 185, 129, 0.2);
+}
+
+.cv-plan-badge {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--cv-text-muted);
+}
+
+.cv-plan-card.recommended .cv-plan-badge {
+  color: var(--cv-primary);
+}
+
+.cv-recommended-badge {
+  position: absolute;
+  top: 18px;
+  right: 20px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #6ee7b7;
+  padding: 4px 10px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.cv-recommended-badge.amber {
+  background: rgba(251, 191, 36, 0.12);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  color: #fde047;
+}
+
+.cv-plan-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cv-plan-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+  color: #ffffff;
+}
+
+.cv-plan-discount {
+  font-size: 11px;
+  font-weight: 800;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.cv-plan-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.cv-price-original {
+  font-size: 16px;
+  text-decoration: line-through;
+  color: var(--cv-text-muted);
+}
+
+.cv-price-current {
+  font-size: 38px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+}
+
+.cv-price-cadence {
+  font-size: 14px;
+  color: var(--cv-text-muted);
+}
+
+.cv-plan-desc {
+  font-size: 13.5px;
+  color: var(--cv-text-muted);
+  margin: 0;
+  min-height: 48px;
+  line-height: 1.5;
+}
+
+.cv-plan-btn {
+  width: 100%;
+  height: 48px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+  transition: all 0.25s ease;
+  outline: none;
+}
+
+.cv-plan-btn:hover {
+  background: rgba(255,255,255,0.12);
+  border-color: rgba(255,255,255,0.3);
+}
+
+.cv-plan-btn.primary {
+  border: none;
+  background: linear-gradient(135deg, var(--cv-primary) 0%, var(--cv-primary-hover) 100%);
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2);
+}
+
+.cv-plan-btn.primary:hover {
+  background: linear-gradient(135deg, var(--cv-primary-hover) 0%, #047857 100%);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
+  transform: scale(1.02);
+}
+
+.cv-plan-detail {
+  font-size: 11px;
+  color: var(--cv-text-muted);
+  text-align: center;
+}
+
+/* Features Section */
+.cv-features-section {
+  background: var(--cv-panel);
+  border: 1px solid var(--cv-line);
+  border-radius: 28px;
+  padding: 50px 40px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: var(--cv-shadow);
+}
+
+.cv-section-title {
+  font-size: 24px;
+  font-weight: 800;
+  text-align: center;
+  margin: 0 0 40px 0;
+  letter-spacing: -0.01em;
+}
+
+.cv-features-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 30px;
+}
+
+.cv-feature-item {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 16px;
+  transition: background 0.2s ease;
+}
+
+.cv-feature-item:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.cv-feature-item.text-highlight {
+  grid-column: 1 / 3;
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.05) 0%, rgba(16, 185, 129, 0.05) 100%);
+  border: 1px dashed rgba(16, 185, 129, 0.25);
+}
+
+.cv-feature-icon {
+  font-size: 24px;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+
+.cv-feature-text h3 {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0 0 6px;
+  color: #ffffff;
+}
+
+.cv-feature-text p {
+  font-size: 13px;
+  color: var(--cv-text-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* FAQ Section */
+.cv-faq-section {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.cv-faq-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 30px;
+}
+
+.cv-faq-item {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--cv-line);
+  border-radius: 18px;
+  padding: 24px;
+  height: 100%;
+}
+
+.cv-faq-item h4 {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0 0 10px;
+  color: #ffffff;
+}
+
+.cv-faq-item p {
+  font-size: 13px;
+  color: var(--cv-text-muted);
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* Footer */
+.cv-footer {
+  text-align: center;
+  border-top: 1px solid var(--cv-line);
+  padding-top: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cv-footnote {
+  font-size: 12px;
+  color: var(--cv-text-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.cv-footnote a {
+  color: var(--cv-primary);
+  text-decoration: none;
+}
+
+.cv-footnote a:hover {
+  text-decoration: underline;
+}
+
+.cv-copyright {
+  font-size: 11px;
+  color: rgba(156, 163, 175, 0.5);
+  margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .cv-plans-grid {
+    grid-template-columns: 1fr;
+    max-width: 420px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .cv-features-grid,
+  .cv-faq-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cv-feature-item.text-highlight {
+    grid-column: 1 / 2;
+  }
+}

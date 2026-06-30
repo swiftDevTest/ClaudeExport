@@ -1,0 +1,24 @@
+{
+  "messages": [
+    {
+      "role": "assistant",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Merged image:"
+        },
+        {
+          "type": "image",
+          "sourceKind": "generated",
+          "normalizedSrc": "file_abc123same",
+          "originalIndex": 2,
+          "alt": "Loaded DOM image"
+        }
+      ]
+    }
+  ],
+  "assertions": {
+    "imageCount": 1,
+    "forbiddenText": []
+  }
+}

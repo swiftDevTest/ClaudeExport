@@ -1,0 +1,22 @@
+{
+  "platform": "chatgpt",
+  "title": "Fixture generated image prompt cleanup",
+  "scope": "conversation",
+  "messages": [
+    {
+      "role": "assistant",
+      "contentBlocks": [
+        {
+          "type": "paragraph",
+          "text": "Here is the generated image."
+        },
+        {
+          "type": "image",
+          "src": "https://chatgpt.com/backend-api/estuary/content?id=file_0000000004c472089294ccd9aef22cd3&ts=123",
+          "alt": "{\"prompt\":\"SECRET_INTERNAL_DALLE_PROMPT\",\"size\":\"1024x1024\"}",
+          "sourceKind": "generated"
+        }
+      ]
+    }
+  ]
+}

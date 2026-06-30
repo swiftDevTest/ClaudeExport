@@ -1,0 +1,24 @@
+{
+  "messages": [
+    {
+      "role": "assistant",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Here is the generated image."
+        },
+        {
+          "type": "image",
+          "sourceKind": "generated",
+          "normalizedSrc": "file_0000000004c472089294ccd9aef22cd3",
+          "originalIndex": 1,
+          "alt": "Image"
+        }
+      ]
+    }
+  ],
+  "assertions": {
+    "imageCount": 1,
+    "forbiddenText": ["SECRET_INTERNAL_DALLE_PROMPT"]
+  }
+}

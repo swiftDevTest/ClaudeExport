@@ -1,0 +1,26 @@
+{
+  "platform": "gemini",
+  "title": "Fixture Gemini mixed order",
+  "scope": "conversation",
+  "messages": [
+    {
+      "role": "assistant",
+      "contentBlocks": [
+        {
+          "type": "paragraph",
+          "text": "Before image"
+        },
+        {
+          "type": "image",
+          "src": "https://lh3.googleusercontent.com/image_generation_content/example.png",
+          "alt": "Gemini image",
+          "sourceKind": "remote"
+        },
+        {
+          "type": "paragraph",
+          "text": "After image"
+        }
+      ]
+    }
+  ]
+}

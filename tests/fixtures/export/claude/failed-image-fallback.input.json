@@ -1,0 +1,18 @@
+{
+  "platform": "claude",
+  "title": "Fixture Claude failed image fallback",
+  "scope": "conversation",
+  "messages": [
+    {
+      "role": "assistant",
+      "contentBlocks": [
+        {
+          "type": "image",
+          "src": "",
+          "alt": "Claude attachment unavailable",
+          "sourceKind": "fallback"
+        }
+      ]
+    }
+  ]
+}

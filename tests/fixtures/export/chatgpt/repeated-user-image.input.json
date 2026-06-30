@@ -1,0 +1,37 @@
+{
+  "platform": "chatgpt",
+  "title": "Fixture repeated user image",
+  "scope": "conversation",
+  "messages": [
+    {
+      "role": "user",
+      "contentBlocks": [
+        {
+          "type": "image",
+          "src": "https://example.test/assets/same-image.png",
+          "alt": "User uploaded image",
+          "sourceKind": "uploaded"
+        },
+        {
+          "type": "paragraph",
+          "text": "First prompt"
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "contentBlocks": [
+        {
+          "type": "image",
+          "src": "https://example.test/assets/same-image.png",
+          "alt": "User uploaded image",
+          "sourceKind": "uploaded"
+        },
+        {
+          "type": "paragraph",
+          "text": "Second prompt"
+        }
+      ]
+    }
+  ]
+}

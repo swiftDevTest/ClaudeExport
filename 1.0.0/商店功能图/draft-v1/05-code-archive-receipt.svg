@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="800" viewBox="0 0 1280 800">
+  
+    <defs>
+      <linearGradient id="bgGradient" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#e9fff8"/>
+        <stop offset="46%" stop-color="#f2f9df"/>
+        <stop offset="100%" stop-color="#ffffff"/>
+      </linearGradient>
+      <linearGradient id="mintPanel" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#ffffff"/>
+        <stop offset="100%" stop-color="#f4fbf8"/>
+      </linearGradient>
+      <linearGradient id="greenButton" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#20d6a0"/>
+        <stop offset="100%" stop-color="#047857"/>
+      </linearGradient>
+      <linearGradient id="docBlue" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#eaf6ff"/>
+        <stop offset="100%" stop-color="#f8fbff"/>
+      </linearGradient>
+      <filter id="cardShadow" x="-22%" y="-18%" width="144%" height="145%">
+        <feDropShadow dx="0" dy="24" stdDeviation="22" flood-color="#0f172a" flood-opacity="0.15"/>
+      </filter>
+      <filter id="softShadow" x="-24%" y="-24%" width="148%" height="150%">
+        <feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#0f172a" flood-opacity="0.11"/>
+      </filter>
+      <filter id="buttonShadow" x="-30%" y="-45%" width="160%" height="190%">
+        <feDropShadow dx="0" dy="8" stdDeviation="7" flood-color="#047857" flood-opacity="0.14"/>
+      </filter>
+      <clipPath id="documentClip">
+        <rect x="0" y="0" width="430" height="560" rx="16"/>
+      </clipPath>
+    </defs>
+    <style>
+      svg {
+        font-family: "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+        text-rendering: geometricPrecision;
+      }
+      .headline { font-size: 54px; font-weight: 820; fill: #17201d; }
+      .body { font-size: 25px; font-weight: 560; fill: #33413d; }
+      .small { font-size: 15px; font-weight: 650; fill: #53605b; }
+      .ui { font-size: 15px; font-weight: 720; fill: #17201d; }
+      .mono { font-family: "SFMono-Regular", Menlo, Consolas, monospace; }
+    </style>
+  
+  
+    <rect width="1280" height="800" fill="url(#bgGradient)"/>
+    <path d="M-80 682 C 178 594 356 812 640 664 C 834 563 944 571 1124 615 C 1218 638 1304 611 1368 560" fill="none" stroke="#0f766e" stroke-width="44" stroke-linecap="round" opacity="0.035"/>
+    <path d="M-40 188 C 192 110 357 190 562 162 C 811 128 952 64 1314 112" fill="none" stroke="#0ea5e9" stroke-width="38" stroke-linecap="round" opacity="0.032"/>
+    <g transform="translate(1120 648) scale(1.9)" opacity="0.05"><path d="M4 19V5l8-3 8 3v14l-8 3-8-3Z" fill="none" stroke="#064e3b" stroke-width="1.5"/><path d="M8 7h8M8 11h7M8 15h5" stroke="#064e3b" stroke-width="1.5"/></g>
+<g transform="translate(82 118) scale(2.25)" opacity="0.055"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-1.2 4.3 4.9 2.8v5.7l-4.9 2.9-4.9-2.9V9.1l4.9-2.8Z" fill="none" stroke="#064e3b" stroke-width="1.5"/></g>
+<g transform="translate(517 118) scale(2.1)" opacity="0.045"><path d="M12 2 14.8 8.4 22 11l-7.2 2.6L12 20l-2.8-6.4L2 11l7.2-2.6L12 2Z" fill="#0ea5e9"/></g>
+<g transform="translate(222 652) scale(2.5)" opacity="0.05"><path d="M4 17c4-7 10-10 17-10-5 3-8 7-9 12-2-3-5-3-8-2Z" fill="none" stroke="#064e3b" stroke-width="1.4"/></g>
+<g transform="translate(660 646) scale(2.05)" opacity="0.045"><path d="M12 2 15 9l7 3-7 3-3 7-3-7-7-3 7-3 3-7Z" fill="#f59e0b"/></g>
+  
+  
+    
+    <g filter="url(#buttonShadow)">
+      <rect x="76" y="242" width="340" height="48" rx="24" fill="#fbfffd" stroke="#bfe7d7"/>
+      <text x="94" y="273" font-size="23" font-weight="780" fill="#064e3b">代码索引 + 可验证归档</text>
+    </g>
+  
+    <text x="76" y="348" class="headline" font-size="54" font-weight="820" fill="#17201d" text-anchor="start">
+  <tspan x="76" dy="0">开发者与</tspan>
+  <tspan x="76" dy="69.12">归档友好</tspan>
+</text>
+    <text x="76" y="506" class="body" font-size="25" font-weight="560" fill="#34413e" text-anchor="start">
+  <tspan x="76" dy="0">为代码块建立索引，可打包导出，并生成来源、</tspan>
+  <tspan x="76" dy="37.5">平台、时间与 SHA-256 校验信息。</tspan>
+</text>
+    
+    <g>
+      <circle cx="85" cy="626" r="10" fill="#e8fbf3" stroke="#10b981" stroke-width="2"/>
+      <path d="M80 625l4 4 8-9" fill="none" stroke="#10b981" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="108" y="634" font-size="24" font-weight="650" fill="#33413d">代码文件 Zip</text>
+    </g>
+  
+
+    <g>
+      <circle cx="85" cy="673" r="10" fill="#e8fbf3" stroke="#10b981" stroke-width="2"/>
+      <path d="M80 672l4 4 8-9" fill="none" stroke="#10b981" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="108" y="681" font-size="24" font-weight="650" fill="#33413d">Markdown / JSON 保留结构</text>
+    </g>
+  
+
+    <g>
+      <circle cx="85" cy="720" r="10" fill="#e8fbf3" stroke="#10b981" stroke-width="2"/>
+      <path d="M80 719l4 4 8-9" fill="none" stroke="#10b981" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="108" y="728" font-size="24" font-weight="650" fill="#33413d">Export Receipt 留档</text>
+    </g>
+  
+    
+  
+  
+    <g transform="translate(644 118)" filter="url(#cardShadow)">
+      <rect x="0" y="0" width="560" height="540" rx="24" fill="#ffffff" stroke="#d9e6e1"/>
+      <rect x="0" y="0" width="560" height="72" rx="24" fill="#f8fffb"/>
+      <text x="32" y="43" font-size="22" font-weight="840" fill="#17201d">Developer Export</text>
+      <rect x="386" y="20" width="128" height="34" rx="17" fill="#eff6ff" stroke="#bfdbfe"/>
+      <text x="450" y="42" font-size="13" font-weight="820" fill="#2563eb" text-anchor="middle">Code ZIP</text>
+
+      <g transform="translate(32 102)">
+        <rect x="0" y="0" width="240" height="286" rx="18" fill="#0f172a"/>
+        <text x="22" y="34" font-size="15" font-weight="820" fill="#e2e8f0">代码索引</text>
+        <rect x="22" y="58" width="196" height="42" rx="12" fill="#111f33" stroke="#233148"/>
+        <text x="42" y="84" class="mono" font-size="12" font-weight="700" fill="#93c5fd">01_export-helper.js</text>
+        <rect x="22" y="112" width="196" height="42" rx="12" fill="#111f33" stroke="#233148"/>
+        <text x="42" y="138" class="mono" font-size="12" font-weight="700" fill="#bbf7d0">02_theme-tokens.css</text>
+        <rect x="22" y="166" width="196" height="42" rx="12" fill="#111f33" stroke="#233148"/>
+        <text x="42" y="192" class="mono" font-size="12" font-weight="700" fill="#fde68a">03_readme.md</text>
+        <rect x="22" y="222" width="98" height="34" rx="17" fill="#10b981"/>
+        <text x="71" y="244" font-size="12" font-weight="840" fill="#ffffff" text-anchor="middle">打包导出</text>
+      </g>
+
+      <g transform="translate(302 102)">
+        <rect x="0" y="0" width="210" height="286" rx="18" fill="#fbfdfc" stroke="#dce8e3"/>
+        <text x="22" y="34" font-size="16" font-weight="840" fill="#17201d">Export Receipt</text>
+        <text x="22" y="60" font-size="11.5" font-weight="650" fill="#53605b">用于归档与审计的导出凭证</text>
+        <path d="M22 86h166" stroke="#dce8e3"/>
+        <text x="22" y="116" font-size="11" font-weight="820" fill="#78908a">Platform</text>
+        <text x="188" y="116" font-size="12" font-weight="780" fill="#17201d" text-anchor="end">Claude</text>
+        <text x="22" y="154" font-size="11" font-weight="820" fill="#78908a">Source URL</text>
+        <text x="188" y="154" font-size="12" font-weight="780" fill="#17201d" text-anchor="end">claude.ai/...</text>
+        <text x="22" y="192" font-size="11" font-weight="820" fill="#78908a">SHA-256</text>
+        <text x="188" y="192" class="mono" font-size="11" font-weight="780" fill="#047857" text-anchor="end">9F3A...7C2E</text>
+        <rect x="22" y="224" width="166" height="38" rx="12" fill="#ecfdf5" stroke="#bfe7d7"/>
+        <path d="M46 242l8 8 16-20" fill="none" stroke="#047857" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"/>
+        <text x="84" y="249" font-size="12" font-weight="820" fill="#047857">Verified local file</text>
+      </g>
+
+      <g transform="translate(32 420)">
+        <rect x="0" y="0" width="480" height="70" rx="18" fill="#f8fbff" stroke="#dbeafe"/>
+        <text x="24" y="29" font-size="14" font-weight="820" fill="#17201d">Markdown / JSON 保留结构</text>
+        <text x="24" y="51" font-size="12" font-weight="650" fill="#53605b">标题、代码块、表格、图片引用和元数据都适合后续处理。</text>
+        <rect x="376" y="18" width="76" height="34" rx="17" fill="#eef2ff" stroke="#c7d2fe"/>
+        <text x="414" y="40" font-size="12" font-weight="820" fill="#7c3aed" text-anchor="middle">Archive</text>
+      </g>
+    </g>
+  
+</svg>

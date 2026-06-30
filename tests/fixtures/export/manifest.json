@@ -1,0 +1,68 @@
+{
+  "fixtures": [
+    {
+      "id": "chatgpt/repeated-user-image",
+      "platform": "chatgpt",
+      "entry": "resolveMessages",
+      "input": "chatgpt/repeated-user-image.input.json",
+      "expected": "chatgpt/repeated-user-image.expected.json",
+      "assertions": ["noCrossMessageImageDedupe", "stableImageModel"]
+    },
+    {
+      "id": "chatgpt/same-message-duplicate-image",
+      "platform": "chatgpt",
+      "entry": "resolveMessages",
+      "input": "chatgpt/same-message-duplicate-image.input.json",
+      "expected": "chatgpt/same-message-duplicate-image.expected.json",
+      "assertions": ["sameMessageImageDedupe", "stableImageModel"]
+    },
+    {
+      "id": "chatgpt/api-dom-same-message-merge",
+      "platform": "chatgpt",
+      "entry": "resolveMessages",
+      "input": "chatgpt/api-dom-same-message-merge.input.json",
+      "expected": "chatgpt/api-dom-same-message-merge.expected.json",
+      "assertions": ["sameMessageImageDedupe", "preferCompleteImageBlock", "stableImageModel"]
+    },
+    {
+      "id": "chatgpt/generated-image-with-internal-prompt",
+      "platform": "chatgpt",
+      "entry": "resolveMessages",
+      "input": "chatgpt/generated-image-with-internal-prompt.input.json",
+      "expected": "chatgpt/generated-image-with-internal-prompt.expected.json",
+      "assertions": ["safeImageAlt", "stableImageModel"]
+    },
+    {
+      "id": "chatgpt/assistant-image-only-separate-turns",
+      "platform": "chatgpt",
+      "entry": "resolveMessages",
+      "input": "chatgpt/assistant-image-only-separate-turns.input.json",
+      "expected": "chatgpt/assistant-image-only-separate-turns.expected.json",
+      "assertions": ["noCrossMessageImageDedupe", "stableImageModel"]
+    },
+    {
+      "id": "claude/failed-image-fallback",
+      "platform": "claude",
+      "entry": "resolveMessages",
+      "input": "claude/failed-image-fallback.input.json",
+      "expected": "claude/failed-image-fallback.expected.json",
+      "assertions": ["fallbackImageBlock", "stableImageModel"]
+    },
+    {
+      "id": "gemini/mixed-text-image-order",
+      "platform": "gemini",
+      "entry": "resolveMessages",
+      "input": "gemini/mixed-text-image-order.input.json",
+      "expected": "gemini/mixed-text-image-order.expected.json",
+      "assertions": ["messageOrder", "stableImageModel"]
+    },
+    {
+      "id": "gemini/no-image-inheritance-after-upload",
+      "platform": "gemini",
+      "entry": "resolveMessages",
+      "input": "gemini/no-image-inheritance-after-upload.input.json",
+      "expected": "gemini/no-image-inheritance-after-upload.expected.json",
+      "assertions": ["noCrossMessageImageDedupe", "stableImageModel"]
+    }
+  ]
+}

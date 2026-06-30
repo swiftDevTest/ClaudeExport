@@ -1,0 +1,42 @@
+{
+  "messages": [
+    {
+      "role": "user",
+      "blocks": [
+        {
+          "type": "image",
+          "sourceKind": "remote",
+          "normalizedSrc": "https://lh3.googleusercontent.com/uploaded/user-first.png",
+          "originalIndex": 0,
+          "alt": "Uploaded diagram"
+        },
+        {
+          "type": "paragraph",
+          "text": "Explain this diagram"
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "It is a diagram."
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Now answer without another image"
+        }
+      ]
+    }
+  ],
+  "assertions": {
+    "imageCount": 1,
+    "forbiddenText": []
+  }
+}

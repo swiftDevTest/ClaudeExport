@@ -1,0 +1,103 @@
+{
+  "manifest_version": 3,
+  "default_locale": "en",
+  "name": "__MSG_extensionName__",
+  "short_name": "__MSG_extensionShortName__",
+  "version": "1.0.0",
+  "description": "__MSG_extensionDescription__",
+  "icons": {
+    "16": "images/store-icon-16.png",
+    "32": "images/store-icon-32.png",
+    "48": "images/store-icon-48.png",
+    "128": "images/store-icon-128.png"
+  },
+  "action": {
+    "default_title": "__MSG_extensionActionTitle__",
+    "default_icon": {
+      "16": "images/store-icon-16.png",
+      "32": "images/store-icon-32.png",
+      "48": "images/store-icon-48.png",
+      "128": "images/store-icon-128.png"
+    },
+    "default_popup": "src/popup.html"
+  },
+  "permissions": ["storage", "downloads", "contextMenus", "identity"],
+  "background": {
+    "service_worker": "src/background.js"
+  },
+  "host_permissions": [
+    "https://acgehhqcgreatcjcefub.supabase.co/*",
+    "https://claude.ai/*"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "src/content.css",
+        "images/*.png"
+      ],
+      "matches": [
+        "https://claude.ai/*"
+      ]
+    },
+    {
+      "resources": [
+        "src/modules/export/utils.js",
+        "src/modules/export/platform.js",
+        "src/modules/export/parser-dom.js",
+        "src/modules/export/media.js",
+        "src/modules/export/zip.js",
+        "src/modules/export/save.js",
+        "src/modules/export/selection.js",
+        "src/modules/export/engine.js",
+        "src/modules/export/document.js",
+        "src/modules/export/builders/docx.js",
+        "src/modules/export/builders/image.js",
+        "src/modules/export/builders/pdf.js",
+        "src/modules/export/builders/markdown.js",
+        "src/modules/export/ui-controller.js",
+        "src/modules/export/platform-fetchers.js",
+        "src/modules/export/message-adapter.js",
+        "src/modules/export/platforms/shared.js",
+        "src/modules/export/platforms/registry.js",
+        "src/modules/export/platforms/claude/extractor.js",
+        "src/modules/export/renderers/pdf/index.js",
+        "src/modules/export/renderers/word/index.js",
+        "src/modules/export/renderers/image/index.js",
+        "src/modules/export/themes/tokens.js",
+        "src/modules/export/themes/pdf.js",
+        "src/modules/export/themes/word.js",
+        "src/modules/export/themes/image.js"
+      ],
+      "matches": [
+        "https://claude.ai/*"
+      ]
+    }
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://claude.ai/*"
+      ],
+      "js": [
+        "src/supabase-config.js",
+        "src/supabase-api.js",
+        "src/supabase-auth.js",
+        "src/modules/analytics.js",
+        "src/modules/i18n.js",
+        "src/modules/entitlements.js",
+        "src/modules/usage-store.js",
+        "src/modules/privacy-proof.js",
+        "src/modules/export-health.js",
+        "src/modules/template-presets.js",
+        "src/modules/export-receipt.js",
+        "src/modules/developer-export.js",
+        "src/modules/share-cards.js",
+        "src/modules/billing.js",
+        "src/modules/export-message-adapter.js",
+        "src/modules/export.js",
+        "src/content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}

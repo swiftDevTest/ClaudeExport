@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="800" viewBox="0 0 1280 800">
+  
+    <defs>
+      <linearGradient id="bgGradient" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#e9fff8"/>
+        <stop offset="46%" stop-color="#f2f9df"/>
+        <stop offset="100%" stop-color="#ffffff"/>
+      </linearGradient>
+      <linearGradient id="mintPanel" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#ffffff"/>
+        <stop offset="100%" stop-color="#f4fbf8"/>
+      </linearGradient>
+      <linearGradient id="greenButton" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#20d6a0"/>
+        <stop offset="100%" stop-color="#047857"/>
+      </linearGradient>
+      <linearGradient id="docBlue" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#eaf6ff"/>
+        <stop offset="100%" stop-color="#f8fbff"/>
+      </linearGradient>
+      <filter id="cardShadow" x="-22%" y="-18%" width="144%" height="145%">
+        <feDropShadow dx="0" dy="24" stdDeviation="22" flood-color="#0f172a" flood-opacity="0.15"/>
+      </filter>
+      <filter id="softShadow" x="-24%" y="-24%" width="148%" height="150%">
+        <feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#0f172a" flood-opacity="0.11"/>
+      </filter>
+      <filter id="buttonShadow" x="-30%" y="-45%" width="160%" height="190%">
+        <feDropShadow dx="0" dy="8" stdDeviation="7" flood-color="#047857" flood-opacity="0.14"/>
+      </filter>
+      <clipPath id="documentClip">
+        <rect x="0" y="0" width="430" height="560" rx="16"/>
+      </clipPath>
+    </defs>
+    <style>
+      svg {
+        font-family: "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+        text-rendering: geometricPrecision;
+      }
+      .headline { font-size: 54px; font-weight: 820; fill: #17201d; }
+      .body { font-size: 25px; font-weight: 560; fill: #33413d; }
+      .small { font-size: 15px; font-weight: 650; fill: #53605b; }
+      .ui { font-size: 15px; font-weight: 720; fill: #17201d; }
+      .mono { font-family: "SFMono-Regular", Menlo, Consolas, monospace; }
+    </style>
+  
+  
+    <rect width="1280" height="800" fill="url(#bgGradient)"/>
+    <path d="M-80 682 C 178 594 356 812 640 664 C 834 563 944 571 1124 615 C 1218 638 1304 611 1368 560" fill="none" stroke="#0f766e" stroke-width="44" stroke-linecap="round" opacity="0.035"/>
+    <path d="M-40 188 C 192 110 357 190 562 162 C 811 128 952 64 1314 112" fill="none" stroke="#0ea5e9" stroke-width="38" stroke-linecap="round" opacity="0.032"/>
+    <g transform="translate(660 646) scale(2.05)" opacity="0.045"><path d="M12 2 15 9l7 3-7 3-3 7-3-7-7-3 7-3 3-7Z" fill="#f59e0b"/></g>
+<g transform="translate(1120 648) scale(1.9)" opacity="0.05"><path d="M4 19V5l8-3 8 3v14l-8 3-8-3Z" fill="none" stroke="#064e3b" stroke-width="1.5"/><path d="M8 7h8M8 11h7M8 15h5" stroke="#064e3b" stroke-width="1.5"/></g>
+<g transform="translate(82 118) scale(2.25)" opacity="0.055"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-1.2 4.3 4.9 2.8v5.7l-4.9 2.9-4.9-2.9V9.1l4.9-2.8Z" fill="none" stroke="#064e3b" stroke-width="1.5"/></g>
+<g transform="translate(517 118) scale(2.1)" opacity="0.045"><path d="M12 2 14.8 8.4 22 11l-7.2 2.6L12 20l-2.8-6.4L2 11l7.2-2.6L12 2Z" fill="#0ea5e9"/></g>
+<g transform="translate(222 652) scale(2.5)" opacity="0.05"><path d="M4 17c4-7 10-10 17-10-5 3-8 7-9 12-2-3-5-3-8-2Z" fill="none" stroke="#064e3b" stroke-width="1.4"/></g>
+  
+  
+    
+    <g filter="url(#buttonShadow)">
+      <rect x="76" y="242" width="392" height="48" rx="24" fill="#fbfffd" stroke="#bfe7d7"/>
+      <text x="94" y="273" font-size="23" font-weight="780" fill="#075985">报告级 PDF / Word</text>
+    </g>
+  
+    <text x="76" y="348" class="headline" font-size="54" font-weight="820" fill="#17201d" text-anchor="start">
+  <tspan x="76" dy="0">导出效果预览</tspan>
+</text>
+    <text x="76" y="436" class="body" font-size="25" font-weight="560" fill="#34413e" text-anchor="start">
+  <tspan x="76" dy="0">保留标题、表格、代码、图片和公式，</tspan>
+  <tspan x="76" dy="37.5">导出结果像正式报告，而不是网页打印。</tspan>
+</text>
+    
+    
+    <g>
+      <rect x="76" y="574" width="94" height="44" rx="22" fill="#f1e9ff" stroke="#d8c4ff"/>
+      <text x="123" y="603" font-size="19" font-weight="760" fill="#7c3aed" text-anchor="middle">目录</text>
+    </g>
+  
+
+    <g>
+      <rect x="184" y="574" width="118" height="44" rx="22" fill="#e9f6ff" stroke="#bfe3ff"/>
+      <text x="243" y="603" font-size="19" font-weight="760" fill="#2563eb" text-anchor="middle">代码高亮</text>
+    </g>
+  
+
+    <g>
+      <rect x="316" y="574" width="96" height="44" rx="22" fill="#fff4d8" stroke="#ffe1a3"/>
+      <text x="364" y="603" font-size="19" font-weight="760" fill="#a15c00" text-anchor="middle">时间戳</text>
+    </g>
+  
+
+    <g>
+      <rect x="426" y="574" width="118" height="44" rx="22" fill="#e6fbf3" stroke="#bfead9"/>
+      <text x="485" y="603" font-size="19" font-weight="760" fill="#047857" text-anchor="middle">模型信息</text>
+    </g>
+  
+
+    <g>
+      <rect x="558" y="574" width="96" height="44" rx="22" fill="#ffeaf0" stroke="#ffc7d5"/>
+      <text x="606" y="603" font-size="19" font-weight="760" fill="#f43f5e" text-anchor="middle">长会话</text>
+    </g>
+  
+  
+  
+    <g transform="translate(664 66)" filter="url(#cardShadow)">
+      <rect x="0" y="0" width="548" height="652" rx="20" fill="#1f2937"/>
+      <rect x="0" y="0" width="548" height="52" rx="20" fill="#2f353d"/>
+      <text x="194" y="32" font-size="13" font-weight="780" fill="#e5e7eb">1 / 8</text>
+      <rect x="250" y="14" width="56" height="24" rx="12" fill="#111827"/>
+      <text x="278" y="31" font-size="11" font-weight="820" fill="#ffffff" text-anchor="middle">100%</text>
+      <circle cx="335" cy="26" r="12" fill="#3f4650"/>
+      <circle cx="369" cy="26" r="12" fill="#3f4650"/>
+      <g transform="translate(38 74)" clip-path="url(#documentClip)">
+        <rect x="0" y="0" width="430" height="560" fill="#ffffff"/>
+        <rect x="0" y="0" width="430" height="90" fill="#f8fbff"/>
+        <text x="36" y="48" font-size="25" font-weight="840" fill="#17201d">Research Brief</text>
+        <text x="36" y="72" font-size="12" font-weight="700" fill="#0ea5e9">ChatGPT · 2026-06-25 · 14 messages</text>
+        <rect x="36" y="112" width="358" height="42" rx="10" fill="#ecfeff" stroke="#bae6fd"/>
+        <text x="56" y="139" font-size="14" font-weight="780" fill="#075985">AI-only Report</text>
+        <text x="170" y="139" font-size="12" font-weight="650" fill="#53605b">用户提问已过滤，保留 AI 输出结构</text>
+        <text x="36" y="192" font-size="19" font-weight="840" fill="#17201d">1. Executive Summary</text>
+        <rect x="36" y="214" width="326" height="8" rx="4" fill="#dce8e3"/>
+        <rect x="36" y="235" width="292" height="8" rx="4" fill="#dce8e3"/>
+        <rect x="36" y="256" width="354" height="8" rx="4" fill="#dce8e3"/>
+        <text x="36" y="306" font-size="19" font-weight="840" fill="#17201d">2. Evidence Table</text>
+        <rect x="36" y="326" width="358" height="90" rx="10" fill="#ffffff" stroke="#dce8e3"/>
+        <path d="M36 356h358M36 386h358M154 326v90M276 326v90" stroke="#dce8e3"/>
+        <text x="55" y="347" font-size="11" font-weight="820" fill="#53605b">Section</text>
+        <text x="174" y="347" font-size="11" font-weight="820" fill="#53605b">Source</text>
+        <text x="296" y="347" font-size="11" font-weight="820" fill="#53605b">Status</text>
+        <text x="55" y="377" font-size="11" font-weight="650" fill="#17201d">Privacy</text>
+        <text x="174" y="377" font-size="11" font-weight="650" fill="#17201d">Local proof</text>
+        <text x="296" y="377" font-size="11" font-weight="650" fill="#047857">Verified</text>
+        <text x="36" y="462" font-size="19" font-weight="840" fill="#17201d">3. Code Block</text>
+        <rect x="36" y="482" width="358" height="76" rx="10" fill="#0f172a"/>
+        <text x="58" y="508" class="mono" font-size="12" font-weight="650" fill="#93c5fd">const report = await exportChat({</text>
+        <text x="58" y="529" class="mono" font-size="12" font-weight="650" fill="#bbf7d0">  format: "pdf", theme: "business"</text>
+        <text x="58" y="550" class="mono" font-size="12" font-weight="650" fill="#93c5fd">});</text>
+      </g>
+    </g>
+    <g transform="translate(1048 168)" filter="url(#softShadow)">
+      <rect x="0" y="0" width="150" height="234" rx="18" fill="#ffffff" stroke="#dce8e3"/>
+      <text x="22" y="34" font-size="14" font-weight="840" fill="#17201d">Themes</text>
+      <rect x="18" y="56" width="114" height="36" rx="12" fill="#ecfdf5" stroke="#bfe7d7"/>
+      <text x="75" y="79" font-size="12" font-weight="820" fill="#047857" text-anchor="middle">Business</text>
+      <rect x="18" y="104" width="114" height="36" rx="12" fill="#f8fafc" stroke="#dce8e3"/>
+      <text x="75" y="127" font-size="12" font-weight="760" fill="#53605b" text-anchor="middle">Academic</text>
+      <rect x="18" y="152" width="114" height="36" rx="12" fill="#f8fafc" stroke="#dce8e3"/>
+      <text x="75" y="175" font-size="12" font-weight="760" fill="#53605b" text-anchor="middle">Client Memo</text>
+      <rect x="18" y="198" width="114" height="20" rx="10" fill="#fff7ed"/>
+      <text x="75" y="212" font-size="10" font-weight="780" fill="#c2410c" text-anchor="middle">Pro unlocked</text>
+    </g>
+  
+</svg>

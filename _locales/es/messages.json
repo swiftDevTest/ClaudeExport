@@ -1,0 +1,1652 @@
+{
+  "contextMenuExportParent": {
+    "message": "AI Chat Export"
+  },
+  "contextMenuExportPdf": {
+    "message": "Exportar a PDF"
+  },
+  "contextMenuExportWord": {
+    "message": "Exportar a Word"
+  },
+  "contextMenuExportMarkdown": {
+    "message": "Exportar a Markdown"
+  },
+  "contextMenuExportImage": {
+    "message": "Exportar a imagen"
+  },
+  "contextMenuExportText": {
+    "message": "Exportar a texto"
+  },
+  "contextMenuExportJson": {
+    "message": "Exportar a JSON"
+  },
+  "extensionName": {
+    "message": "AI Chat Exporter - ChatGPT Claude Gemini a PDF, Docs, MD y más"
+  },
+  "extensionShortName": {
+    "message": "AI Chat Export"
+  },
+  "extensionDescription": {
+    "message": "Exporta conversaciones de ChatGPT, Claude y Gemini localmente a PDF, Docs, MD y más."
+  },
+  "extensionActionTitle": {
+    "message": "AI Chat Exporter - ChatGPT Claude Gemini a PDF, Docs, MD y más"
+  },
+  "brand_ai_workspace": {
+    "message": "Espacio de trabajo IA"
+  },
+  "tab_folders": {
+    "message": "Carpetas"
+  },
+  "tab_bookmarks": {
+    "message": "Marcadores"
+  },
+  "tab_history": {
+    "message": "Historial"
+  },
+  "tab_account": {
+    "message": "Cuenta"
+  },
+  "tab_settings": {
+    "message": "Configuración"
+  },
+  "btn_reorder": {
+    "message": "Reordenar"
+  },
+  "btn_sort_folders": {
+    "message": "Ordenar carpetas"
+  },
+  "btn_expand_all": {
+    "message": "Expandir todo"
+  },
+  "btn_collapse_all": {
+    "message": "Contraer todo"
+  },
+  "btn_new_folder": {
+    "message": "Nueva carpeta"
+  },
+  "btn_new_folder_group": {
+    "message": "Nuevo grupo de carpetas"
+  },
+  "btn_bookmark": {
+    "message": "Marcador"
+  },
+  "btn_move": {
+    "message": "Mover"
+  },
+  "btn_export": {
+    "message": "Exportar"
+  },
+  "btn_delete": {
+    "message": "Eliminar"
+  },
+  "btn_clear": {
+    "message": "Limpiar"
+  },
+  "btn_save": {
+    "message": "Guardar"
+  },
+  "btn_cancel": {
+    "message": "Cancelar"
+  },
+  "btn_restore": {
+    "message": "Restaurar"
+  },
+  "btn_upgrade": {
+    "message": "Subir a Pro"
+  },
+  "btn_logout": {
+    "message": "Cerrar sesión"
+  },
+  "btn_detect_accounts": {
+    "message": "Volver a detectar cuentas"
+  },
+  "btn_refresh_sync": {
+    "message": "Actualizar sincronización"
+  },
+  "btn_backup": {
+    "message": "Guardar carpetas y marcadores"
+  },
+  "btn_import": {
+    "message": "Importar carpetas y marcadores"
+  },
+  "btn_select_ai": {
+    "message": "Seleccionar respuestas IA"
+  },
+  "placeholder_search": {
+    "message": "Buscar carpetas o chats..."
+  },
+  "placeholder_search_bookmarks": {
+    "message": "Buscar marcadores..."
+  },
+  "placeholder_search_history": {
+    "message": "Buscar historial de títulos..."
+  },
+  "placeholder_picker_search": {
+    "message": "Buscar..."
+  },
+  "filter_all": {
+    "message": "Todos"
+  },
+  "filter_gpt": {
+    "message": "GPT"
+  },
+  "filter_claude": {
+    "message": "Claude"
+  },
+  "filter_gemini": {
+    "message": "Gemini"
+  },
+  "empty_no_folders": {
+    "message": "No hay carpetas aún"
+  },
+  "empty_no_folders_desc": {
+    "message": "Usa carpetas para organizar los chats importados de ChatGPT, Claude y Gemini."
+  },
+  "empty_no_bookmarks": {
+    "message": "No hay marcadores aún"
+  },
+  "empty_no_bookmarks_desc": {
+    "message": "Los marcadores guardados aparecerán aquí."
+  },
+  "empty_no_history": {
+    "message": "No hay chats indexados aún"
+  },
+  "empty_no_history_desc": {
+    "message": "Agrega chats a carpetas o marcadores para crear un historial indexado de solo títulos."
+  },
+  "login_title": {
+    "message": "Inicia sesión para organizar tus chats de IA"
+  },
+  "login_desc": {
+    "message": "ChatVault solo almacena títulos, enlaces, carpetas y marcadores. El contenido del chat no se guarda."
+  },
+  "login_btn_google": {
+    "message": "Iniciar sesión con Google"
+  },
+  "linked_accounts_title": {
+    "message": "Cuentas vinculadas"
+  },
+  "linked_accounts_desc": {
+    "message": "ChatVault usa las cuentas vinculadas únicamente para mantener separados los índices de títulos de ChatGPT, Claude y Gemini. No almacena cookies de plataforma, contraseñas, tokens, prompts, respuestas ni el cuerpo del chat."
+  },
+  "settings_export_title": {
+    "message": "Ajustes de exportación de contenido"
+  },
+  "settings_workspace_title": {
+    "message": "Ajustes del espacio de trabajo"
+  },
+  "setting_open_startup": {
+    "message": "Abrir al iniciar"
+  },
+  "setting_hide_bookmarks_sidebar": {
+    "message": "Ocultar marcadores de la barra lateral izquierda"
+  },
+  "setting_hide_tags": {
+    "message": "Ocultar etiquetas de carpeta debajo de los chats"
+  },
+  "settings_backup_title": {
+    "message": "Copia de seguridad e importación"
+  },
+  "sync_ready": {
+    "message": "Cola de sincronización lista."
+  },
+  "backup_ready": {
+    "message": "Las copias de seguridad automáticas se crean después de realizar cambios de organización."
+  },
+  "label_selected": {
+    "message": "$1 seleccionado(s)"
+  },
+  "export_selected_as": {
+    "message": "Exportar selección como"
+  },
+  "selection_header": {
+    "message": "Selección de mensajes"
+  },
+  "menu_add_folder": {
+    "message": "Agregar carpeta"
+  },
+  "menu_add_current_chat": {
+    "message": "Agregar chat actual"
+  },
+  "menu_add_chats": {
+    "message": "Agregar chats"
+  },
+  "menu_add_project": {
+    "message": "Agregar proyecto"
+  },
+  "menu_rename": {
+    "message": "Renombrar"
+  },
+  "menu_change_color": {
+    "message": "Cambiar color"
+  },
+  "menu_move_to": {
+    "message": "Mover a..."
+  },
+  "color_title": {
+    "message": "Cambiar color de carpeta"
+  },
+  "color_preview": {
+    "message": "Vista previa"
+  },
+  "color_quick": {
+    "message": "Colores rápidos"
+  },
+  "color_custom": {
+    "message": "Color personalizado"
+  },
+  "color_custom_desc": {
+    "message": "Ajuste fino con matiz y valores RGB."
+  },
+  "billing_title": {
+    "message": "Subir a AI Chat Export Pro"
+  },
+  "billing_desc": {
+    "message": "Desbloquea más exportaciones locales, temas pulidos, lotes y salida PDF, Docs, MD y más."
+  },
+  "billing_footnote": {
+    "message": "Las exportaciones se generan localmente desde la página que elijas. El pago se abre en tabpilotpro.com y se procesa mediante un proveedor de pago seguro. ChatVault solo almacena títulos, enlaces, carpetas y marcadores. El contenido del chat no se guarda."
+  },
+  "billing_btn_restore": {
+    "message": "Restaurar compra"
+  },
+  "export_settings_title": {
+    "message": "Ajustes de exportación de contenido"
+  },
+  "export_settings_desc": {
+    "message": "Elige qué detalles aparecen en cada exportación local."
+  },
+  "export_opt_ai_only": {
+    "message": "Solo respuestas de IA"
+  },
+  "export_opt_time": {
+    "message": "Hora de exportación"
+  },
+  "export_opt_title": {
+    "message": "Título de conversación"
+  },
+  "export_opt_platform": {
+    "message": "Nombre de plataforma"
+  },
+  "export_opt_role": {
+    "message": "Etiquetas de rol"
+  },
+  "export_opt_url": {
+    "message": "URL de origen"
+  },
+  "export_opt_align_right": {
+    "message": "Alinear mis preguntas a la derecha"
+  },
+  "export_privacy": {
+    "message": "Generado localmente en tu navegador. ChatVault no sube, almacena ni recuerda el contenido de los mensajes exportados."
+  },
+  "export_run_save": {
+    "message": "Guardar ajustes"
+  },
+  "launcher_tooltip": {
+    "message": "Gestor de ChatVault AI"
+  },
+  "toast_folder_deleted": {
+    "message": "Carpeta eliminada."
+  },
+  "toast_folders_deleted": {
+    "message": "$1 carpetas eliminadas."
+  },
+  "toast_chat_removed": {
+    "message": "Chat removido de la carpeta."
+  },
+  "toast_added_to_folder": {
+    "message": "Se agregó \"$1\" a $2."
+  },
+  "toast_folder_already_has_chat": {
+    "message": "\"$1\" ya está en $2."
+  },
+  "toast_chats_removed": {
+    "message": "$1 chats removidos de las carpetas."
+  },
+  "toast_history_deleted_single": {
+    "message": "Se eliminó 1 elemento del historial."
+  },
+  "toast_history_deleted": {
+    "message": "Se eliminaron $1 elementos del historial."
+  },
+  "toast_history_delete_failed": {
+    "message": "No se pudieron eliminar los elementos del historial."
+  },
+  "toast_moved_chat": {
+    "message": "Se movió \"$1\" a $2."
+  },
+  "toast_moved_chats": {
+    "message": "Se movieron $1 chats."
+  },
+  "toast_move_failed": {
+    "message": "Error al mover el chat."
+  },
+  "toast_already_bookmarked": {
+    "message": "\"$1\" ya está en marcadores."
+  },
+  "toast_bookmarked": {
+    "message": "\"$1\" agregado a marcadores."
+  },
+  "toast_queued_bookmark": {
+    "message": "Marcador para \"$1\" en cola."
+  },
+  "toast_removed_bookmark": {
+    "message": "\"$1\" removido de marcadores."
+  },
+  "toast_plan_expired": {
+    "message": "Suscripción actualizada. Las funciones Pro ya no están activas."
+  },
+  "toast_refresh_failed": {
+    "message": "No se pudo actualizar tu suscripción. Inténtalo de nuevo."
+  },
+  "toast_plan_active": {
+    "message": "$1 está activo."
+  },
+  "toast_payment_submitted": {
+    "message": "Pago enviado. Si el estado Pro no se actualiza, recarga esta pestaña o usa 'Restaurar compra'."
+  },
+  "toast_limit_reached": {
+    "message": "Sube a Pro para seguir organizando más chats."
+  },
+  "toast_module_not_loaded": {
+    "message": "El módulo de exportación no está cargado. Recarga la página."
+  },
+  "toast_select_first": {
+    "message": "No se seleccionaron mensajes. Marca primero las casillas en la página."
+  },
+  "toast_export_progress": {
+    "message": "$1: $2/$3 conversaciones..."
+  },
+  "toast_saving_conversations": {
+    "message": "Guardando exportación: $1 conversaciones..."
+  },
+  "toast_multi_download_blocked": {
+    "message": "La descarga de exportación fue bloqueada. Permite descargas múltiples en Chrome e inténtalo de nuevo."
+  },
+  "toast_canceled": {
+    "message": "Exportación cancelada."
+  },
+  "toast_export_failed": {
+    "message": "Error al exportar."
+  },
+  "toast_preparing_export": {
+    "message": "Preparando exportación de chat: $1..."
+  },
+  "toast_no_open_chat": {
+    "message": "Abre una conversación de ChatGPT, Claude o Gemini para exportar."
+  },
+  "toast_image_limit_exceeded": {
+    "message": "Este contenido es demasiado largo para exportarlo como imagen de alta calidad. Expórtalo como PDF."
+  },
+  "export_image_canvas_limit": {
+    "message": "Esta conversación es demasiado larga para exportarla como imagen de alta calidad porque los navegadores limitan el tamaño del canvas. Expórtala como PDF."
+  },
+  "export_image_limit_title": {
+    "message": "La exportación de imagen está limitada"
+  },
+  "export_image_limit_pdf": {
+    "message": "Exportar PDF"
+  },
+  "confirm_import": {
+    "message": "¿Importar esta copia de seguridad de ChatVault?\n\n$1\n\nLas carpetas se importan como copias nuevas. Los marcadores existentes se conservan y los duplicados se omiten."
+  },
+  "confirm_restore": {
+    "message": "¿Restaurar esta copia de seguridad automática?\n\n$1\n\nLa restauración importa la copia de seguridad y conserva tus datos existentes."
+  },
+  "prompt_move_selected": {
+    "message": "¿A qué nombre de carpeta mover los chats seleccionados?"
+  },
+  "time_no_update": {
+    "message": "Sin hora de actualización"
+  },
+  "export_word_meta_messages": {
+    "message": "$1 mensajes"
+  },
+  "export_role_user": {
+    "message": "Tú preguntaste"
+  },
+  "export_branding_footer": {
+    "message": "Exportado localmente por AI Chat Export"
+  },
+  "export_image_footer_sub": {
+    "message": "Exportación local · contenido no almacenado"
+  },
+  "export_progress_measuring": {
+    "message": "Midiendo el diseño de la imagen"
+  },
+  "export_progress_rendering": {
+    "message": "Renderizando la imagen"
+  },
+  "export_progress_paginating": {
+    "message": "Paginando la exportación de imagen larga"
+  },
+  "export_progress_paginating_doc": {
+    "message": "Paginando exportación"
+  },
+  "export_progress_generating_pdf": {
+    "message": "Generando PDF"
+  },
+  "export_progress_packaging": {
+    "message": "Empaquetando páginas de imágenes"
+  },
+  "export_progress_saving": {
+    "message": "Guardando la imagen"
+  },
+  "export_progress_ready": {
+    "message": "Imagen lista"
+  },
+  "export_pdf_image_load_failed": {
+    "message": "Imagen - Error al cargar"
+  },
+  "export_pdf_footer_branding": {
+    "message": "AI Chat Export local"
+  },
+  "export_footer_source": {
+    "message": "Export From: $1"
+  },
+  "onboard_text_auth": {
+    "message": "Inicia sesión con Google para usar carpetas, marcadores, límites de exportación aumentados y sincronización."
+  },
+  "onboard_title_login": {
+    "message": "Inicia sesión para continuar"
+  },
+  "onboard_text_login_collapsed": {
+    "message": "Abre ChatVault e inicia sesión antes de exportar, marcar o clasificar chats."
+  },
+  "onboard_step_account": {
+    "message": "Configuración de cuenta"
+  },
+  "onboard_btn_open_signin": {
+    "message": "Abrir inicio de sesión"
+  },
+  "onboard_btn_signin": {
+    "message": "Iniciar sesión"
+  },
+  "onboard_btn_go_to_account": {
+    "message": "Ir a la cuenta"
+  },
+  "onboard_tip": {
+    "message": "Consejo"
+  },
+  "welcome_title": {
+    "message": "Convierte tus chats de IA en un espacio de trabajo de búsqueda fácil."
+  },
+  "welcome_kicker_hero": {
+    "message": "Comienza en tu espacio de IA"
+  },
+  "welcome_lede": {
+    "message": "Abre ChatGPT, Claude o Gemini primero. ChatVault aparecerá allí para que puedas exportar, guardar o planificar tu primera conversación."
+  },
+  "welcome_rec_pill": {
+    "message": "Recomendado"
+  },
+  "welcome_rec_copy": {
+    "message": "Exporta tu primer chat en segundos"
+  },
+  "welcome_open_gpt": {
+    "message": "Abrir ChatGPT"
+  },
+  "welcome_sub_gpt": {
+    "message": "Primer paso ideal: exportar chat actual"
+  },
+  "welcome_btn_claude": {
+    "message": "Claude"
+  },
+  "welcome_btn_gemini": {
+    "message": "Gemini"
+  },
+  "welcome_pin_wait": {
+    "message": "Fijar la extensión puede esperar. Lo importante es abrir una página de IA compatible donde ChatVault pueda aparecer."
+  },
+  "welcome_kicker_pin": {
+    "message": "Para volver a encontrarla fácilmente"
+  },
+  "welcome_title_pin": {
+    "message": "Fija ChatVault cuando estés listo."
+  },
+  "welcome_pin_desc": {
+    "message": "Chrome requiere realizar este paso manualmente. Haz clic en el ícono del rompecabezas, busca AI Chat Export y luego haz clic en el ícono de la chincheta (pin)."
+  },
+  "welcome_pin_status_init": {
+    "message": "Incluso si aún no está fijado, ChatVault funciona en las páginas de IA compatibles."
+  },
+  "welcome_btn_check_pin": {
+    "message": "Comprobar estado"
+  },
+  "welcome_btn_checking": {
+    "message": "Comprobando..."
+  },
+  "welcome_btn_pinned": {
+    "message": "Fijado"
+  },
+  "welcome_btn_check_again": {
+    "message": "Comprobar de nuevo"
+  },
+  "welcome_pin_success": {
+    "message": "Genial. ChatVault es visible en la barra de herramientas de tu Chrome."
+  },
+  "welcome_pin_failed": {
+    "message": "No está fijado aún. Usa el ícono de rompecabezas de Chrome y haz clic en el pin al lado de AI Chat Export."
+  },
+  "welcome_privacy_footnote": {
+    "message": "ChatVault almacena títulos, enlaces, carpetas, marcadores y ajustes. No guarda prompts, respuestas, cookies de plataforma, ni tokens de acceso o actualización."
+  },
+  "billing_benefit_pdf": {
+    "message": "Exportación PDF, Docs, MD y más"
+  },
+  "billing_benefit_word": {
+    "message": "Salida de documento pulida"
+  },
+  "billing_benefit_image": {
+    "message": "Instantáneas de exportación de imágenes"
+  },
+  "billing_benefit_folders": {
+    "message": "Más carpetas"
+  },
+  "billing_benefit_folder_chats": {
+    "message": "Más chats por carpeta"
+  },
+  "billing_benefit_bookmarks": {
+    "message": "Más marcadores"
+  },
+  "billing_benefit_search": {
+    "message": "Búsqueda avanzada & filtros"
+  },
+  "billing_benefit_batch": {
+    "message": "Acciones de organización por lotes"
+  },
+  "billing_benefit_backup": {
+    "message": "Copia de seguridad e importación"
+  },
+  "billing_benefit_sync": {
+    "message": "Sincronización en la nube mejorada"
+  },
+  "billing_benefit_multi_device": {
+    "message": "Acceso multidispositivo"
+  },
+  "billing_benefit_platforms": {
+    "message": "Soporte para ChatGPT, Claude y Gemini"
+  },
+  "billing_benefit_personal": {
+    "message": "Solo uso personal"
+  },
+  "billing_cadence_month": {
+    "message": " / mes"
+  },
+  "billing_cadence_year": {
+    "message": " / año"
+  },
+  "billing_cadence_lifetime": {
+    "message": "único pago"
+  },
+  "billing_plan_desc_monthly": {
+    "message": "Exportaciones PDF, Docs, MD y más con herramientas Pro."
+  },
+  "billing_plan_desc_yearly": {
+    "message": "Límites de exportación local más altos para usuarios frecuentes."
+  },
+  "billing_plan_desc_lifetime": {
+    "message": "Paga una vez. Conserva las exportaciones Pro y funciones de organización."
+  },
+  "billing_plan_detail_monthly": {
+    "message": "Ideal si quieres probar Pro primero."
+  },
+  "billing_plan_detail_yearly": {
+    "message": "Organiza, busca y sincroniza todo el año."
+  },
+  "billing_plan_detail_lifetime": {
+    "message": "Precio especial para patrocinadores iniciales."
+  },
+  "billing_offer_label": {
+    "message": "Ofrecimiento de tiempo limitado"
+  },
+  "billing_discount_monthly": {
+    "message": "Ahorra 44%"
+  },
+  "billing_discount_yearly": {
+    "message": "Ahorra 50%"
+  },
+  "billing_discount_lifetime": {
+    "message": "Ahorra 62%"
+  },
+  "billing_checkout_pro_yearly": {
+    "message": "Continuar con Pro Anual - $$29.99 / año"
+  },
+  "billing_active_pro": {
+    "message": "Pro está activo."
+  },
+  "billing_plan_title_monthly": {
+    "message": "Pro Mensual"
+  },
+  "billing_plan_title_yearly": {
+    "message": "Pro Anual"
+  },
+  "billing_plan_title_lifetime": {
+    "message": "Vitalicio Early Bird"
+  },
+  "billing_badge_monthly": {
+    "message": "Pro Mensual"
+  },
+  "billing_badge_yearly": {
+    "message": "Pro Anual"
+  },
+  "billing_badge_lifetime": {
+    "message": "Pro Vitalicio"
+  },
+  "billing_err_plan_unavailable": {
+    "message": "El plan de facturación seleccionado no está disponible. Por favor, elige otro plan."
+  },
+  "billing_err_unavailable": {
+    "message": "El pago no está disponible temporalmente. Por favor, inténtalo de nuevo más tarde."
+  },
+  "billing_err_paddle_unavailable": {
+    "message": "El pago con Paddle no está disponible temporalmente. Por favor, inténtalo de nuevo más tarde."
+  },
+  "onboard_guide_badge": {
+    "message": "Guía"
+  },
+  "untitled_chat": {
+    "message": "Chat sin título"
+  },
+  "toast_target_folder_not_found": {
+    "message": "No se encontró la carpeta de destino."
+  },
+  "aria_sidebar": {
+    "message": "Barra lateral de AI Chat Export"
+  },
+  "aria_collapsed_launcher": {
+    "message": "Lanzador plegado de AI Chat Export"
+  },
+  "format_pdf": {
+    "message": "PDF"
+  },
+  "format_word": {
+    "message": "Word"
+  },
+  "format_image": {
+    "message": "Imagen"
+  },
+  "btn_cancel_select": {
+    "message": "Cancelar selección"
+  },
+  "btn_select_messages": {
+    "message": "Seleccionar mensajes"
+  },
+  "toast_delete_failed": {
+    "message": "No se pudo eliminar."
+  },
+  "backup_none": {
+    "message": "Aún no hay copias automáticas."
+  },
+  "backup_auto_reason": {
+    "message": "Copia automática"
+  },
+  "backup_available": {
+    "message": "$1 disponible(s)"
+  },
+  "linked_accounts_empty": {
+    "message": "Aún no se detectaron cuentas de plataforma vinculadas."
+  },
+  "linked_account_email": {
+    "message": "Correo: $1"
+  },
+  "linked_account_id": {
+    "message": "ID de cuenta: $1"
+  },
+  "linked_account_linked": {
+    "message": "$1 vinculada"
+  },
+  "btn_disconnect": {
+    "message": "Desconectar"
+  },
+  "plan_pro": {
+    "message": "Pro"
+  },
+  "plan_free": {
+    "message": "Gratis"
+  },
+  "lock_plan_options": {
+    "message": "Inicia sesión para ver opciones de plan"
+  },
+  "plan_loading": {
+    "message": "Cargando plan..."
+  },
+  "plan_cancels_date": {
+    "message": "Se cancela el $1"
+  },
+  "plan_expires_date": {
+    "message": "Vence el $1"
+  },
+  "toast_folder_update_failed": {
+    "message": "No se pudieron actualizar las carpetas."
+  },
+  "toast_sort_same_level": {
+    "message": "El orden por arrastre funciona por ahora dentro del mismo nivel de carpeta."
+  },
+  "toast_folder_order_updated": {
+    "message": "Orden de carpetas actualizado."
+  },
+  "toast_folder_order_failed": {
+    "message": "No se pudo guardar el orden de carpetas."
+  },
+  "aria_drag_folder": {
+    "message": "Arrastrar carpeta"
+  },
+  "aria_expand_folder": {
+    "message": "Expandir carpeta"
+  },
+  "aria_collapse_folder": {
+    "message": "Contraer carpeta"
+  },
+  "aria_rename_folder": {
+    "message": "Renombrar carpeta"
+  },
+  "backup_reason_folder_chat_removed": {
+    "message": "Chat eliminado de carpeta"
+  },
+  "dialog_move_title": {
+    "message": "Mover \"$1\""
+  },
+  "untitled_folder": {
+    "message": "Carpeta sin título"
+  },
+  "dialog_move_empty": {
+    "message": "Crea otra carpeta antes de mover este chat."
+  },
+  "dialog_delete_title": {
+    "message": "¿Eliminar \"$1\"?"
+  },
+  "dialog_remove_folder_chat": {
+    "message": "¿Quitar este chat de la carpeta? El chat original no se elimina."
+  },
+  "backup_reason_folder_chat_moved": {
+    "message": "Chat movido de carpeta"
+  },
+  "folders_no_search_match": {
+    "message": "No hay carpetas ni chats que coincidan con tu búsqueda."
+  },
+  "folders_no_match": {
+    "message": "No hay carpetas que coincidan con tu búsqueda."
+  },
+  "selected_folders_count": {
+    "message": "$1 carpetas seleccionadas"
+  },
+  "chat_count_one": {
+    "message": "1 conversación"
+  },
+  "chat_count_many": {
+    "message": "$1 conversaciones"
+  },
+  "dialog_delete_folder_and_chats": {
+    "message": "¿Eliminar $1 y quitar $2 de ChatVault? Los chats originales no se eliminan."
+  },
+  "dialog_delete_folder_with_chats": {
+    "message": "¿Eliminar $1 y quitar $2 de ChatVault? Los chats originales no se eliminan."
+  },
+  "dialog_delete_folders_with_chats": {
+    "message": "¿Eliminar $1 carpetas y quitar $2 de ChatVault? Los chats originales no se eliminan."
+  },
+  "dialog_delete_folder_desc": {
+    "message": "¿Eliminar $1 de ChatVault? Los chats originales no se eliminan."
+  },
+  "backup_reason_folder_deleted": {
+    "message": "Carpeta eliminada"
+  },
+  "toast_move_selected_failed": {
+    "message": "No se pudieron mover los chats seleccionados."
+  },
+  "dialog_delete_chats_title": {
+    "message": "¿Eliminar chats seleccionados?"
+  },
+  "dialog_remove_selected_folder_chats": {
+    "message": "¿Quitar $1 chats seleccionados de sus carpetas? Los chats originales no se eliminan."
+  },
+  "backup_reason_bookmark_saved": {
+    "message": "Marcador guardado"
+  },
+  "backup_reason_bookmark_queued": {
+    "message": "Marcador en cola"
+  },
+  "aria_bookmark_chat": {
+    "message": "Marcar chat"
+  },
+  "aria_bookmarked": {
+    "message": "Marcado"
+  },
+  "aria_add_to_folder": {
+    "message": "Agregar a carpeta"
+  },
+  "aria_remove_bookmark": {
+    "message": "Quitar marcador"
+  },
+  "label_organize_chat": {
+    "message": "Organizar \"$1\""
+  },
+  "picker_create_folder_first": {
+    "message": "Crea una carpeta primero."
+  },
+  "backup_reason_bookmark_removed": {
+    "message": "Marcador eliminado"
+  },
+  "export_limit_single": {
+    "message": "El plan gratis exporta una conversación a la vez. Actualiza a Pro para exportar carpetas y lotes."
+  },
+  "export_limit_count": {
+    "message": "El plan gratis exporta hasta $1 conversaciones a la vez. Actualiza a Pro para exportaciones más grandes."
+  },
+  "toast_signin_export": {
+    "message": "Inicia sesión para exportar conversaciones."
+  },
+  "export_progress_preparing_image": {
+    "message": "Preparando exportación de imagen..."
+  },
+  "export_count_one": {
+    "message": "1 conversación"
+  },
+  "export_count_many": {
+    "message": "$1 conversaciones"
+  },
+  "export_selected_chats": {
+    "message": "Chats seleccionados"
+  },
+  "toast_no_export_bodies": {
+    "message": "No hay contenido de conversación disponible para exportar."
+  },
+  "toast_saved_exports_with_issues": {
+    "message": "$1 conversaciones guardadas. $2 fallaron."
+  },
+  "toast_saved_exports_to_file": {
+    "message": "$1 conversaciones guardadas en $2."
+  },
+  "toast_exporting": {
+    "message": "Exportando..."
+  },
+  "export_image_label": {
+    "message": "Exportación de imagen"
+  },
+  "toast_chat_record_missing": {
+    "message": "El registro del chat ya no está disponible."
+  },
+  "export_default_title": {
+    "message": "Conversación"
+  },
+  "toast_conversation_export_failed": {
+    "message": "Falló la exportación de la conversación."
+  },
+  "dialog_remove_bookmark": {
+    "message": "¿Quitar este marcador de ChatVault?"
+  },
+  "dialog_delete_history": {
+    "message": "¿Eliminar este elemento del historial de ChatVault?"
+  },
+  "toast_signin_export_folders": {
+    "message": "Inicia sesión para exportar carpetas."
+  },
+  "export_progress_preparing_folder": {
+    "message": "Preparando exportación de carpeta..."
+  },
+  "toast_select_folder_chats": {
+    "message": "Selecciona carpetas o chats antes de exportar."
+  },
+  "export_selected_folders": {
+    "message": "Carpetas seleccionadas"
+  },
+  "export_selected_folder_chats": {
+    "message": "Chats de carpeta seleccionados"
+  },
+  "export_progress_selected_folder": {
+    "message": "Preparando exportación de carpeta seleccionada..."
+  },
+  "toast_no_selected_folder_exports": {
+    "message": "No hay conversaciones de carpetas seleccionadas para exportar."
+  },
+  "toast_selected_folder_export_failed": {
+    "message": "Falló la exportación de carpeta seleccionada."
+  },
+  "toast_select_bookmarks_export": {
+    "message": "Selecciona marcadores antes de exportar."
+  },
+  "toast_select_history_export": {
+    "message": "Selecciona elementos del historial antes de exportar."
+  },
+  "export_progress_bookmark": {
+    "message": "Preparando exportación de marcadores..."
+  },
+  "export_progress_history": {
+    "message": "Preparando exportación del historial..."
+  },
+  "toast_no_bookmark_exports": {
+    "message": "No hay conversaciones marcadas para exportar."
+  },
+  "toast_no_history_exports": {
+    "message": "No hay conversaciones del historial para exportar."
+  },
+  "toast_folder_unavailable": {
+    "message": "La carpeta ya no está disponible."
+  },
+  "export_progress_folder_count": {
+    "message": "Preparando exportación de carpeta: $1/$2 carpetas..."
+  },
+  "toast_no_folder_exports": {
+    "message": "No hay conversaciones de carpeta para exportar."
+  },
+  "toast_no_conversations_exported_reason": {
+    "message": "No se exportaron conversaciones. $1"
+  },
+  "export_progress_folder_conversations": {
+    "message": "Preparando exportación de carpeta: $1/$2 conversaciones..."
+  },
+  "export_default_folder": {
+    "message": "Exportación de carpeta"
+  },
+  "toast_no_folder_export_bodies": {
+    "message": "No hay contenido de conversaciones de carpeta para exportar."
+  },
+  "toast_saving_folder_export": {
+    "message": "Guardando exportación de carpeta: $1 conversaciones..."
+  },
+  "toast_folder_export_failed": {
+    "message": "Falló la exportación de carpeta."
+  },
+  "toast_signin_select_messages": {
+    "message": "Inicia sesión para seleccionar mensajes."
+  },
+  "toast_no_messages_found": {
+    "message": "No se encontraron mensajes. Asegúrate de que la conversación esté abierta y cargada."
+  },
+  "toast_click_messages_select": {
+    "message": "Haz clic en mensajes de la página para seleccionarlos para exportar."
+  },
+  "billing_original_price": {
+    "message": "Precio original $1 $2"
+  },
+  "checkout_opening": {
+    "message": "Abriendo pago..."
+  },
+  "billing_continue_with_plan": {
+    "message": "Continuar con $1"
+  },
+  "checkout_opening_title": {
+    "message": "Abriendo pago seguro"
+  },
+  "checkout_opening_plan": {
+    "message": "El pago de $1 se abrirá en una nueva pestaña."
+  },
+  "checkout_keep_open": {
+    "message": "Mantén esta pestaña abierta para que ChatVault actualice tu plan después del pago."
+  },
+  "toast_allow_popups": {
+    "message": "Permite ventanas emergentes para abrir el pago seguro."
+  },
+  "toast_opening_checkout": {
+    "message": "Abriendo pago seguro..."
+  },
+  "toast_signin_upgrade": {
+    "message": "Inicia sesión antes de actualizar a Pro."
+  },
+  "toast_checkout_opened": {
+    "message": "Pago de $1 abierto. El estado Pro se actualiza automáticamente después del pago. Si no se actualiza, recarga esta pestaña."
+  },
+  "toast_refreshing_session": {
+    "message": "Actualizando tu sesión de ChatVault. Inténtalo de nuevo."
+  },
+  "toast_purchase_restored": {
+    "message": "Compra Pro restaurada."
+  },
+  "toast_no_purchase": {
+    "message": "No se encontró una compra Pro activa."
+  },
+  "sync_last_sync": {
+    "message": "Última sincronización $1"
+  },
+  "sync_flushing": {
+    "message": "Sincronizando $1 cambios en cola..."
+  },
+  "sync_queued_changes": {
+    "message": "$1 cambios en cola para sincronizar."
+  },
+  "sync_all_synced": {
+    "message": "Todos los cambios sincronizados."
+  },
+  "folders_loading": {
+    "message": "Cargando carpetas..."
+  },
+  "folders_load_failed": {
+    "message": "No se pudieron cargar las carpetas."
+  },
+  "folders_expand_parent_failed": {
+    "message": "No se pudo expandir la carpeta principal."
+  },
+  "backup_reason_folder_created": {
+    "message": "Carpeta creada"
+  },
+  "folders_create_failed": {
+    "message": "No se pudo crear la carpeta."
+  },
+  "backup_reason_folder_updated": {
+    "message": "Carpeta actualizada"
+  },
+  "folders_update_failed": {
+    "message": "No se pudo actualizar la carpeta."
+  },
+  "folders_collapse_failed": {
+    "message": "No se pudieron contraer las carpetas."
+  },
+  "folders_expand_failed": {
+    "message": "No se pudieron expandir las carpetas."
+  },
+  "folders_rename_failed": {
+    "message": "No se pudo renombrar la carpeta."
+  },
+  "dialog_delete_named_folder_title": {
+    "message": "Eliminar $1"
+  },
+  "dialog_delete_folder_with_subfolders": {
+    "message": "¿Eliminar esta carpeta y sus subcarpetas de ChatVault? Los chats originales no se eliminan."
+  },
+  "folders_add_current_failed": {
+    "message": "No se pudo agregar el chat actual."
+  },
+  "toast_folder_color_updated": {
+    "message": "Color de carpeta actualizado."
+  },
+  "backup_reason_folder_color_updated": {
+    "message": "Color de carpeta actualizado"
+  },
+  "toast_folder_color_failed": {
+    "message": "No se pudo actualizar el color de carpeta."
+  },
+  "picker_mode_project": {
+    "message": "proyecto"
+  },
+  "picker_mode_chats": {
+    "message": "conversaciones"
+  },
+  "picker_mode_projects": {
+    "message": "proyectos"
+  },
+  "picker_loading_items": {
+    "message": "Cargando $1..."
+  },
+  "picker_refreshing_items": {
+    "message": "Actualizando $1..."
+  },
+  "picker_loading_more_items": {
+    "message": "Cargando más $1..."
+  },
+  "picker_add_to_folder": {
+    "message": "Agregar $1 a la carpeta <strong>$2</strong>"
+  },
+  "picker_add": {
+    "message": "Agregar $1"
+  },
+  "picker_filter_projects": {
+    "message": "Filtrar proyectos por nombre..."
+  },
+  "picker_filter_chats": {
+    "message": "Filtrar chats por título..."
+  },
+  "picker_no_projects": {
+    "message": "Aún no se encontraron proyectos."
+  },
+  "picker_no_chats": {
+    "message": "Aún no se encontraron chats."
+  },
+  "picker_showing_matches": {
+    "message": "Mostrando $1 de $2 coincidencias. Usa la búsqueda para acotar la lista."
+  },
+  "picker_count_loading": {
+    "message": "$1 seleccionados · Cargando"
+  },
+  "picker_count_loaded": {
+    "message": "$1 seleccionados · $2 cargados"
+  },
+  "toast_gemini_no_projects": {
+    "message": "Gemini no ofrece proyectos actualmente. Usa Agregar chats en su lugar."
+  },
+  "history_signin": {
+    "message": "Inicia sesión para cargar el historial."
+  },
+  "history_loading": {
+    "message": "Cargando historial..."
+  },
+  "history_results": {
+    "message": "$1 resultados"
+  },
+  "history_no_match": {
+    "message": "Ningún elemento del historial coincide con tus filtros."
+  },
+  "backup_reason_folder_chats_saved": {
+    "message": "Chats de carpeta guardados"
+  },
+  "folders_saved_refresh_failed": {
+    "message": "Guardado, pero falló la actualización."
+  },
+  "folders_offline_changes_queued": {
+    "message": "Cambios sin conexión en cola. Se sincronizarán cuando vuelva la red."
+  },
+  "folders_add_selected_failed": {
+    "message": "No se pudieron agregar los elementos seleccionados."
+  },
+  "folders_offline_change_queued": {
+    "message": "Cambio sin conexión en cola. Se sincronizará cuando vuelva la red."
+  },
+  "folders_add_chat_failed": {
+    "message": "No se pudo agregar el chat a la carpeta."
+  },
+  "folders_remove_chat_failed": {
+    "message": "No se pudo quitar el chat de la carpeta."
+  },
+  "backup_signin_create": {
+    "message": "Inicia sesión antes de crear una copia."
+  },
+  "backup_reason_manual_export": {
+    "message": "Exportación manual de copia"
+  },
+  "backup_created": {
+    "message": "Copia creada."
+  },
+  "backup_create_failed": {
+    "message": "No se pudo crear la copia."
+  },
+  "backup_summary_folders": {
+    "message": "Carpetas: $1"
+  },
+  "backup_summary_folder_chats": {
+    "message": "Chats de carpeta: $1"
+  },
+  "backup_summary_bookmarks": {
+    "message": "Marcadores: $1"
+  },
+  "backup_summary_settings_yes": {
+    "message": "Configuración incluida: sí"
+  },
+  "backup_summary_settings_no": {
+    "message": "Configuración incluida: no"
+  },
+  "backup_summary_linked": {
+    "message": "Cuentas vinculadas: $1"
+  },
+  "backup_summary_folder_conflicts": {
+    "message": "Conflictos de carpetas: $1"
+  },
+  "backup_summary_bookmark_conflicts": {
+    "message": "Conflictos de marcadores: $1"
+  },
+  "backup_invalid_empty": {
+    "message": "El archivo de copia está vacío."
+  },
+  "backup_invalid_product": {
+    "message": "Esto no parece una copia de ChatVault."
+  },
+  "backup_invalid_missing": {
+    "message": "Al archivo de copia le faltan datos requeridos."
+  },
+  "backup_import_cancelled": {
+    "message": "Importación cancelada."
+  },
+  "backup_preview_failed": {
+    "message": "No se pudo previsualizar el archivo de copia."
+  },
+  "backup_signin_import": {
+    "message": "Inicia sesión antes de importar una copia."
+  },
+  "backup_imported_folder": {
+    "message": "$1 importado"
+  },
+  "backup_reason_after_import": {
+    "message": "Copia después de importar"
+  },
+  "backup_imported": {
+    "message": "Copia importada."
+  },
+  "backup_import_failed": {
+    "message": "No se pudo importar la copia."
+  },
+  "backup_signin_restore": {
+    "message": "Inicia sesión antes de restaurar una copia."
+  },
+  "backup_choose_restore": {
+    "message": "Elige una copia para restaurar."
+  },
+  "backup_reason_after_restore": {
+    "message": "Copia después de restaurar"
+  },
+  "aria_collapse_chatvault": {
+    "message": "Contraer ChatVault"
+  },
+  "selected_zero": {
+    "message": "0 seleccionados"
+  },
+  "aria_folder_actions": {
+    "message": "Acciones de carpeta"
+  },
+  "aria_select_all_bookmarks": {
+    "message": "Seleccionar todos los marcadores visibles"
+  },
+  "aria_bookmarked_chats": {
+    "message": "Chats marcados"
+  },
+  "aria_select_all_history": {
+    "message": "Seleccionar todo el historial visible"
+  },
+  "aria_indexed_history": {
+    "message": "Historial de chats indexado"
+  },
+  "aria_expand_sidebar": {
+    "message": "Expandir barra lateral de ChatVault"
+  },
+  "aria_open_export_actions": {
+    "message": "Abrir acciones de exportación"
+  },
+  "aria_select_message_export": {
+    "message": "Seleccionar mensaje para exportar"
+  },
+  "aria_skip_guide": {
+    "message": "Omitir guía"
+  },
+  "welcome_page_title": {
+    "message": "Bienvenido a AI Chat Export"
+  },
+  "welcome_aria_open_platform": {
+    "message": "Abrir una plataforma de IA"
+  },
+  "welcome_aria_pin_chatvault": {
+    "message": "Fijar AI Chat Export"
+  },
+  "folder_empty_hint": {
+    "message": "Arrastra los chats aquí"
+  },
+  "export_theme_label": {
+    "message": "Tema y estilo de exportación"
+  },
+  "export_theme_default": {
+    "message": "Minimalista"
+  },
+  "export_theme_oxford": {
+    "message": "Estilo Oxford"
+  },
+  "export_theme_mckinsey": {
+    "message": "Estilo McKinsey"
+  },
+  "export_theme_newsprint": {
+    "message": "Papel Periódico"
+  },
+  "export_theme_aurora": {
+    "message": "Aurora brillante"
+  },
+  "export_theme_terminal": {
+    "message": "Estilo terminal"
+  },
+  "export_theme_editorial": {
+    "message": "Estilo editorial"
+  },
+  "export_theme_midnight": {
+    "message": "Oscuro medianoche"
+  },
+  "toast_guest_signin_prompt": {
+    "message": "Inicia sesión para sincronizar tus carpetas y conservarlas al cambiar de dispositivo."
+  },
+  "merge_dialog_title": {
+    "message": "¿Sincronizar los datos locales de ChatVault?"
+  },
+  "merge_dialog_desc": {
+    "message": "Encontramos carpetas, marcadores y registros de títulos locales en este navegador. Puedes fusionarlos con tu cuenta o borrar la copia local y usar solo los datos de la cuenta."
+  },
+  "merge_summary_folders": {
+    "message": "Carpetas: $1"
+  },
+  "merge_summary_chats": {
+    "message": "Chats guardados: $1"
+  },
+  "merge_summary_bookmarks": {
+    "message": "Marcadores: $1"
+  },
+  "merge_summary_usage": {
+    "message": "Uso gratis de hoy: $1 guardados, $2 exportados"
+  },
+  "merge_dialog_footnote": {
+    "message": "Solo se fusionan títulos, enlaces, carpetas, marcadores y ajustes. El contenido del chat no se guarda."
+  },
+  "merge_btn_merge": {
+    "message": "Fusionar con la cuenta"
+  },
+  "merge_btn_loading": {
+    "message": "Fusionando..."
+  },
+  "merge_btn_discard": {
+    "message": "No fusionar y borrar copia local"
+  },
+  "merge_btn_discard_loading": {
+    "message": "Borrando copia local..."
+  },
+  "merge_status_merging": {
+    "message": "Fusionando datos locales de ChatVault..."
+  },
+  "merge_success": {
+    "message": "Los datos locales se fusionaron con tu cuenta."
+  },
+  "merge_failed": {
+    "message": "No se pudieron fusionar los datos locales."
+  },
+  "merge_discarded": {
+    "message": "Copia local borrada. Ahora se muestran los datos de tu cuenta."
+  },
+  "merge_discard_failed": {
+    "message": "No se pudo borrar la copia local."
+  },
+  "toast_guest_remote_blocked": {
+    "message": "Esta acción se mantiene local mientras no hayas iniciado sesión. Inténtalo de nuevo después de iniciar sesión."
+  },
+  "btn_done": {
+    "message": "Listo"
+  },
+  "aria_done_reordering": {
+    "message": "Terminar reordenación"
+  },
+  "aria_reorder_folders": {
+    "message": "Reordenar carpetas"
+  },
+  "account_support_desc": {
+    "message": "Para cualquier pregunta o sugerencia, contáctenos en "
+  },
+  "settings_export_content_title": {
+    "message": "Configuración de Contenido a Exportar"
+  },
+  "batch_export": {
+    "message": "Exportación por lotes"
+  },
+  "batch_export_limit_warning": {
+    "message": "Para una mejor experiencia, puede exportar hasta 10 chats a la vez. Por favor, exporte en varios lotes."
+  },
+  "batch_export_no_chats": {
+    "message": "No se encontraron conversaciones en la barra lateral. Expanda la barra lateral o actualice la página."
+  },
+  "batch_export_select_format": {
+    "message": "Seleccione el formato de exportación"
+  },
+  "batch_export_vip_notice": {
+    "message": "La exportación por lotes es una función Pro"
+  },
+  "batch_export_preparing": {
+    "message": "Preparando exportación..."
+  },
+  "batch_export_progress": {
+    "message": "Exportando chat $1 de $2..."
+  },
+  "batch_export_success": {
+    "message": "¡Exportación por lotes completada!"
+  },
+  "batch_export_cancelled": {
+    "message": "Exportación cancelada."
+  },
+  "popup_btn_login": {
+    "message": "Iniciar sesión"
+  },
+  "popup_unsupported_title": {
+    "message": "Página no compatible"
+  },
+  "popup_unsupported_desc": {
+    "message": "Usa esta extensión en una de estas páginas de chat de IA:"
+  },
+  "popup_open_chatgpt": {
+    "message": "Abrir ChatGPT"
+  },
+  "popup_current_session": {
+    "message": "Sesión actual"
+  },
+  "popup_auto_detect_platform": {
+    "message": "Detectar plataforma automáticamente"
+  },
+  "popup_batch_export_title_attr": {
+    "message": "Exportar conversaciones de la plataforma actual por lotes"
+  },
+  "popup_batch_export_compact": {
+    "message": "Exportar lote"
+  },
+  "popup_batch_export_desc": {
+    "message": "Varios chats"
+  },
+  "popup_custom_export_title_attr": {
+    "message": "Entrar en modo de selección de conversación"
+  },
+  "popup_custom_export": {
+    "message": "Exportar selección"
+  },
+  "popup_custom_export_desc": {
+    "message": "Elegir mensajes"
+  },
+  "popup_recommended": {
+    "message": "Recomendado"
+  },
+  "popup_one_click_export": {
+    "message": "Exportación en un clic"
+  },
+  "popup_one_click_export_help": {
+    "message": "Guarda rápidamente el contenido de la página como archivo con formato"
+  },
+  "popup_copy_full_text": {
+    "message": "Copiar texto completo"
+  },
+  "popup_copy_success": {
+    "message": "Texto completo copiado"
+  },
+  "popup_format_pdf_hint": {
+    "message": "Guardar con formato"
+  },
+  "popup_format_word_hint": {
+    "message": "Editable"
+  },
+  "popup_format_markdown_hint": {
+    "message": "Base de conocimiento"
+  },
+  "popup_format_image_hint": {
+    "message": "Tarjeta para compartir"
+  },
+  "popup_format_text_name": {
+    "message": "Texto"
+  },
+  "popup_format_text_hint": {
+    "message": "Contenido simple"
+  },
+  "popup_format_json_hint": {
+    "message": "Estructurado"
+  },
+  "popup_privacy_title": {
+    "message": "100% local y privado"
+  },
+  "popup_privacy_desc": {
+    "message": "Todo el análisis y la exportación ocurren localmente en tu navegador. Tus datos de chat no se suben."
+  },
+  "popup_quota_loading": {
+    "message": "Cargando cuota de uso..."
+  },
+  "popup_quota_remaining": {
+    "message": "Cuota restante de hoy: $1 / 3 exportaciones"
+  },
+  "popup_pro_quota_status": {
+    "message": "Exportaciones ilimitadas disponibles"
+  },
+  "popup_settings_section_title": {
+    "message": "Configuración de exportación de contenido"
+  },
+  "popup_redaction_title": {
+    "message": "Recibo de exportación"
+  },
+  "popup_redaction_desc": {
+    "message": "Incluye origen, hora, plataforma y suma de verificación"
+  },
+  "popup_title_desc": {
+    "message": "Muestra el título de la conversación al inicio del documento"
+  },
+  "popup_time_desc": {
+    "message": "Inserta una marca de tiempo de exportación en el encabezado"
+  },
+  "popup_ai_only_desc": {
+    "message": "Filtra prompts del usuario y conserva solo respuestas de IA"
+  },
+  "popup_appendix_title": {
+    "message": "Apéndice de prompts"
+  },
+  "popup_appendix_desc": {
+    "message": "Agrega los prompts originales al final (Pro)"
+  },
+  "popup_watermark_title": {
+    "message": "Ocultar marca de agua de AI Chat Export"
+  },
+  "popup_watermark_desc": {
+    "message": "Quita la firma de AI Chat Export al final del documento (Pro)"
+  },
+  "popup_source_url_desc": {
+    "message": "Agrega la URL original de la conversación al documento exportado"
+  },
+  "popup_platform_name_desc": {
+    "message": "Muestra la plataforma de origen en el encabezado"
+  },
+  "popup_role_labels_desc": {
+    "message": "Muestra etiquetas User / Assistant antes del contenido"
+  },
+  "popup_align_right_desc": {
+    "message": "Alinea tus preguntas a la derecha en exportaciones PDF e imagen"
+  },
+  "popup_system_debug_title": {
+    "message": "Sistema y depuración"
+  },
+  "popup_reset_quota_title": {
+    "message": "Restablecer cuota de uso"
+  },
+  "popup_reset_quota_desc": {
+    "message": "Restablece la caché local diaria de exportaciones a 0/3"
+  },
+  "popup_reset_cache": {
+    "message": "Restablecer caché"
+  },
+  "popup_reset_quota_success": {
+    "message": "La cuota local se restableció a 0/3."
+  },
+  "popup_test_pro_title": {
+    "message": "Estado Pro de prueba (desarrollador)"
+  },
+  "popup_test_pro_desc": {
+    "message": "Actívalo para habilitar Pro directamente"
+  },
+  "popup_export_panel_title": {
+    "message": "Panel de exportación"
+  },
+  "popup_export_settings_title": {
+    "message": "Configuración de exportación"
+  },
+  "popup_benefit_unlimited_exports": {
+    "message": "Exportaciones locales ilimitadas"
+  },
+  "popup_benefit_report_themes": {
+    "message": "Temas de calidad editorial"
+  },
+  "popup_benefit_local_receipts": {
+    "message": "Recibos de exportación locales"
+  },
+  "popup_benefit_hide_watermark": {
+    "message": "Ocultar todas las marcas de agua"
+  },
+  "popup_benefit_zip_download": {
+    "message": "Descarga ZIP de paquete de código"
+  },
+  "popup_benefit_shared_pro": {
+    "message": "Acceso Pro compartido"
+  },
+  "popup_subscribe_login_prefix": {
+    "message": "No has iniciado sesión. "
+  },
+  "popup_subscribe_login_suffix": {
+    "message": " primero para vincular Pro automáticamente antes del pago."
+  },
+  "popup_subscribe_signin_confirm": {
+    "message": "Inicia sesión con Google antes del pago para vincular Pro a tu cuenta."
+  },
+  "popup_pro_active_label": {
+    "message": "Pro está activo"
+  },
+  "popup_pro_active_suffix": {
+    "message": "(exportaciones ilimitadas)"
+  },
+  "popup_free_account": {
+    "message": "Cuenta gratuita"
+  },
+  "popup_account": {
+    "message": "Cuenta"
+  },
+  "popup_auth_loading": {
+    "message": "Iniciando sesión..."
+  },
+  "popup_refresh_required_title": {
+    "message": "Actualiza la página para activar la extensión"
+  },
+  "popup_refresh_required_desc": {
+    "message": "La extensión acaba de cargarse o actualizarse. Las páginas de chat de IA abiertas deben actualizarse una vez para que funcione la comunicación con el popup."
+  },
+  "popup_refresh_page_retry": {
+    "message": "Actualiza la página de conversación de IA actual e inténtalo de nuevo."
+  },
+  "popup_operation_failed": {
+    "message": "La operación falló. Inténtalo más tarde."
+  },
+  "popup_confirm_logout_title": {
+    "message": "Cerrar sesión"
+  },
+  "popup_confirm_logout_message": {
+    "message": "¿Cerrar sesión en la cuenta actual?"
+  },
+  "popup_signed_out": {
+    "message": "Sesión cerrada."
+  },
+  "popup_login_success": {
+    "message": "Sesión iniciada."
+  },
+  "popup_login_incomplete": {
+    "message": "El inicio de sesión no se completó. Inténtalo de nuevo."
+  },
+  "popup_login_failed": {
+    "message": "Error al iniciar sesión: $1"
+  },
+  "popup_try_later": {
+    "message": "Inténtalo más tarde."
+  },
+  "popup_creating_checkout": {
+    "message": "Creando sesión de pago..."
+  },
+  "popup_checkout_unavailable": {
+    "message": "No se pudo abrir el pago. Inténtalo más tarde."
+  },
+  "popup_checkout_service_syncing": {
+    "message": "El servicio de pago se está actualizando. Vuelve a abrir AI Chat Export e inténtalo de nuevo en un momento."
+  },
+  "popup_checkout_popup_blocked": {
+    "message": "El navegador bloqueó el pago. Inténtalo de nuevo."
+  },
+  "popup_checkout_error": {
+    "message": "Error de pago: $1"
+  },
+  "popup_restore_login_required": {
+    "message": "Inicia sesión primero y luego restaura la compra para sincronizar tu estado Pro."
+  },
+  "popup_restoring": {
+    "message": "Restaurando..."
+  },
+  "popup_restore_submitted": {
+    "message": "Solicitud de restauración enviada. Cierra y vuelve a abrir el popup para ver el estado más reciente."
+  },
+  "popup_service_unavailable": {
+    "message": "Servicio no disponible. Inténtalo más tarde."
+  },
+  "popup_restore_failed": {
+    "message": "Error al restaurar compra: $1"
+  },
+  "popup_health_high_risk": {
+    "message": "Problemas de alto riesgo"
+  },
+  "popup_health_attention": {
+    "message": "Requiere atención"
+  }
+}

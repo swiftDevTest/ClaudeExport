@@ -1,0 +1,29 @@
+{
+  "platform": "chatgpt",
+  "title": "Fixture API DOM same message merge",
+  "scope": "conversation",
+  "messages": [
+    {
+      "role": "assistant",
+      "contentBlocks": [
+        {
+          "type": "paragraph",
+          "text": "Merged image:"
+        },
+        {
+          "type": "image",
+          "src": "",
+          "alt": "API image placeholder",
+          "_chatGptFileId": "file_abc123same",
+          "sourceKind": "generated"
+        },
+        {
+          "type": "image",
+          "src": "https://chatgpt.com/backend-api/estuary/content?id=file_abc123same&ts=456",
+          "alt": "Loaded DOM image",
+          "sourceKind": "generated"
+        }
+      ]
+    }
+  ]
+}
