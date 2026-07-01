@@ -369,14 +369,14 @@
   }
 
   function sanitizeDownloadFilename(value) {
-    const parts = String(value || "AI-Chat-Export")
+    const parts = String(value || "Claude-Export")
       .replace(/\\/g, "/")
       .split("/")
       .map(sanitizeDownloadPathSegment)
       .filter(Boolean)
       .slice(-12);
 
-    return parts.join("/") || "AI-Chat-Export";
+    return parts.join("/") || "Claude-Export";
   }
 
   function isTrustedExportBlobUrl(value) {
@@ -579,7 +579,7 @@
 
       chrome.contextMenus.create({
         id: "chatvault_export_parent",
-        title: chrome.i18n.getMessage("contextMenuExportParent") || "AI Chat Export",
+        title: chrome.i18n.getMessage("contextMenuExportParent") || "Claude Export",
         contexts: ["page"],
         documentUrlPatterns: targetPatterns
       }, () => {

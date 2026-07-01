@@ -40,7 +40,7 @@
     const receipt = {
       version: 1,
       generatedAt: new Date().toISOString(),
-      extensionName: "AI Chat Export",
+      extensionName: "Claude Export",
       extensionVersion: (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.getManifest ? chrome.runtime.getManifest().version : "1.0.0"),
       platform: String(metadata.platform || "chatgpt"),
       sourceUrl: sanitizeSourceUrl(metadata.sourceUrl || (typeof window !== "undefined" ? window.location.href : "")),

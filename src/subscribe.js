@@ -20,7 +20,7 @@
 
   function getCheckoutErrorMessage(error) {
     if (isBackendSchemaCacheError(error)) {
-      return "结账服务正在更新，请稍后重新打开 AI Chat Export 再试。";
+      return "结账服务正在更新，请稍后重新打开 Claude Export 再试。";
     }
     return error && error.message ? error.message : "请稍后再试。";
   }
@@ -354,7 +354,7 @@
     // Handle policy link clicks (mock links or direct to standard terms)
     document.getElementById("link-terms").onclick = (e) => {
       e.preventDefault();
-      alert("服务条款：AI Chat Export 仅用于个人日常提取和保存 AI 对话。严禁利用本工具抓取敏感、非法或侵犯版权的数据。");
+      alert("服务条款：Claude Export 仅用于个人日常提取和保存 AI 对话。严禁利用本工具抓取敏感、非法或侵犯版权的数据。");
     };
 
     document.getElementById("link-privacy").onclick = (e) => {

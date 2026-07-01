@@ -1,8 +1,8 @@
 (function initChatVaultBilling() {
-  const checkoutUrl = "https://tabpilotpro.com/aichatexport/checkout";
-  const productId = "ai_chat_export";
-  const productSlug = "ai-chat-export";
-  const productName = "AI Chat Export";
+  const checkoutUrl = "https://tabpilotpro.com/claude/checkout.html";
+  const productId = "claude_export";
+  const productSlug = "claude-export";
+  const productName = "Claude Export";
   const checkoutIntentStorageKey = "chatvault_pending_checkout_intent_v1";
   const checkoutIntentMaxAgeMs = 5 * 60 * 1000;
 
@@ -79,7 +79,7 @@
     t("billing_benefit_premium_styles", "Premium report styles (Oxford, McKinsey)"),
     t("billing_benefit_receipt_local", "Local export receipts"),
     t("billing_benefit_unlimited", "Unlimited daily chat exports"),
-    t("billing_benefit_watermark", "Hide AI Chat Export watermark"),
+    t("billing_benefit_watermark", "Hide Claude Export watermark"),
     t("billing_benefit_receipt", "Download sidecar export receipt"),
     t("billing_benefit_shared", "Shared Pro VIP status with ChatVault AI"),
     t("billing_benefit_platforms", "ChatGPT, Claude & Gemini support")

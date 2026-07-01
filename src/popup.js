@@ -77,7 +77,7 @@
 
   function applyPopupI18n() {
     document.documentElement.lang = getUILanguage().replace("_", "-");
-    document.title = t("extensionShortName", "AI Chat Export");
+    document.title = t("extensionShortName", "Claude Export");
     if (globalThis.CHATVAULT_I18N && typeof globalThis.CHATVAULT_I18N.translateDOM === "function") {
       globalThis.CHATVAULT_I18N.translateDOM();
     }
@@ -130,7 +130,7 @@
     setSettingTexts("toggle-title", "export_opt_title", "Conversation Title", "popup_title_desc", "Show the conversation title at the top of the document");
     setSettingTexts("toggle-time", "export_opt_time", "Export Time", "popup_time_desc", "Insert an export timestamp in the document header");
     setSettingTexts("toggle-ai-only", "export_opt_ai_only", "AI Replies Only", "popup_ai_only_desc", "Filter user prompts and keep only AI replies");
-    setSettingTexts("toggle-watermark", "popup_watermark_title", "Hide AI Chat Export Watermark", "popup_watermark_desc", "Remove the AI Chat Export signature from the document end (Pro)");
+    setSettingTexts("toggle-watermark", "popup_watermark_title", "Hide Claude Export Watermark", "popup_watermark_desc", "Remove the Claude Export signature from the document end (Pro)");
     setSettingTexts("toggle-source-url", "export_opt_url", "Source URL", "popup_source_url_desc", "Append the original conversation URL to the exported document");
     setSettingTexts("toggle-platform-name", "export_opt_platform", "Platform Name", "popup_platform_name_desc", "Show the source platform in the document header");
     setSettingTexts("toggle-role-labels", "export_opt_role", "Role Labels", "popup_role_labels_desc", "Show User / Assistant labels before chat content");
@@ -141,7 +141,7 @@
     setTitle('.footer-tab[data-tab-id="settings"]', "popup_export_settings_title", "Export settings");
     setText('.footer-tab[data-tab-id="settings"] span', "tab_settings", "Settings");
 
-    setText(".subscribe-header h2", "billing_title", "Upgrade To AI Chat Export Pro");
+    setText(".subscribe-header h2", "billing_title", "Upgrade To Claude Export Pro");
     setAriaLabel("#btn-close-subscribe", "btn_cancel", "Cancel");
     setText(".subscribe-subtitle", "billing_desc", "Unlock higher local export limits, polished themes, batch workflows, and PDF, Docs, MD and More output.");
     updateSubscribeLoginWarningText();
@@ -155,7 +155,7 @@
       subscribeSubmit.textContent = t("billing_continue_with_plan", "Continue with $1", getPlanTitle("yearly"));
     }
     setText("#btn-subscribe-restore", "billing_btn_restore", "Restore purchase");
-    setText(".subscribe-footnote", "billing_footnote", "Exports are generated locally from the page you choose. Checkout opens on the AI Chat Export pricing page and is processed by a secure payment processor. AI Chat Export stores settings, sign-in email, and membership status only. Chat content is never saved.");
+    setText(".subscribe-footnote", "billing_footnote", "Exports are generated locally from the page you choose. Checkout opens on the Claude Export pricing page and is processed by a secure payment processor. Claude Export stores settings, sign-in email, and membership status only. Chat content is never saved.");
 
     setText(".confirm-modal-header h3", "popup_confirm_logout_title", "Log out");
     setText(".confirm-modal-message", "popup_confirm_logout_message", "Log out of the current account?");
@@ -931,7 +931,7 @@
 
   function getCheckoutErrorMessage(error) {
     if (isBackendSchemaCacheError(error)) {
-      return t("popup_checkout_service_syncing", "Checkout service is updating. Please reopen AI Chat Export and try again in a moment.");
+      return t("popup_checkout_service_syncing", "Checkout service is updating. Please reopen Claude Export and try again in a moment.");
     }
     return error && error.message ? error.message : t("popup_checkout_unavailable", "Could not open checkout. Please try again later.");
   }
