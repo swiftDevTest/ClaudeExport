@@ -1,6 +1,6 @@
 {
   "contextMenuExportParent": {
-    "message": "AI Chat Export"
+    "message": "Claude Export"
   },
   "contextMenuExportPdf": {
     "message": "PDF にエクスポート"
@@ -21,16 +21,16 @@
     "message": "JSON にエクスポート"
   },
   "extensionName": {
-    "message": "AI Chat Exporter - ChatGPT Claude Gemini を PDF、Docs、MD などへ"
+    "message": "Claude Exporter - Claude を PDF、Docs、MD などへ"
   },
   "extensionShortName": {
-    "message": "AI Chat Export"
+    "message": "Claude Export"
   },
   "extensionDescription": {
-    "message": "ChatGPT、Claude、Geminiの会話をブラウザ内で PDF、Docs、MD などへローカル書き出し。"
+    "message": "Claudeの会話をブラウザ内で PDF、Docs、MD などへローカル書き出し。"
   },
   "extensionActionTitle": {
-    "message": "AI Chat Exporter - ChatGPT Claude Gemini を PDF、Docs、MD などへ"
+    "message": "Claude Exporter - Claude を PDF、Docs、MD などへ"
   },
   "brand_ai_workspace": {
     "message": "AI ワークスペース"
@@ -141,7 +141,7 @@
     "message": "フォルダはまだありません"
   },
   "empty_no_folders_desc": {
-    "message": "フォルダを使用して、インポートしたChatGPT、Claude、Geminiのチャットを整理します。"
+    "message": "フォルダを使用して、インポートしたClaudeのチャットを整理します。"
   },
   "empty_no_bookmarks": {
     "message": "ブックマークはまだありません"
@@ -168,7 +168,7 @@
     "message": "連携済みアカウント"
   },
   "linked_accounts_desc": {
-    "message": "ChatVaultは、ChatGPT、Claude、Geminiのタイトルインデックスを個別に管理するためにのみ連携アカウントを使用します。プラットフォームのクッキー、パスワード、トークン、プロンプト、返信、またはチャット本文は保存しません。"
+    "message": "ChatVaultは、Claudeのタイトルインデックスを個別に管理するためにのみ連携アカウントを使用します。プラットフォームのクッキー、パスワード、トークン、プロンプト、返信、またはチャット本文は保存しません。"
   },
   "settings_export_title": {
     "message": "エクスポート内容の設定"
@@ -240,7 +240,7 @@
     "message": "色相とRGB値で微調整します。"
   },
   "billing_title": {
-    "message": "AI Chat Export Proにアップグレード"
+    "message": "Claude Export Proにアップグレード"
   },
   "billing_desc": {
     "message": "ローカル書き出し上限、整ったテーマ、一括ワークフロー、PDF、Docs、MD などの出力を利用できます。"
@@ -408,7 +408,7 @@
     "message": "あなたの質問"
   },
   "export_branding_footer": {
-    "message": "AI Chat Export によってローカルにエクスポートされました"
+    "message": "Claude Export によってローカルにエクスポートされました"
   },
   "export_image_footer_sub": {
     "message": "ローカルエクスポート · コンテンツは保存されません"
@@ -441,7 +441,7 @@
     "message": "画像 - 読み込み失敗"
   },
   "export_pdf_footer_branding": {
-    "message": "AI Chat Export local"
+    "message": "Claude Export local"
   },
   "export_footer_source": {
     "message": "Export From: $1"
@@ -507,7 +507,7 @@
     "message": "準備ができたらChatVaultをピン留めします。"
   },
   "welcome_pin_desc": {
-    "message": "Chromeの仕様により、この手順は手動で行う必要があります。パズルアイコンをクリックし、AI Chat Exportを見つけて、ピンのアイコンをクリックします。"
+    "message": "Chromeの仕様により、この手順は手動で行う必要があります。パズルアイコンをクリックし、Claude Exportを見つけて、ピンのアイコンをクリックします。"
   },
   "welcome_pin_status_init": {
     "message": "まだピン留めしていなくても、対応するAIページ上でChatVaultは動作します。"
@@ -528,7 +528,7 @@
     "message": "確認できました。ChromeツールバーにChatVaultが表示されています。"
   },
   "welcome_pin_failed": {
-    "message": "まだピン留めされていません。ツールバーのパズルアイコンをクリックし、AI Chat Exportの横にあるピンをクリックしてください。"
+    "message": "まだピン留めされていません。ツールバーのパズルアイコンをクリックし、Claude Exportの横にあるピンをクリックしてください。"
   },
   "welcome_privacy_footnote": {
     "message": "ChatVaultはタイトル、リンク、フォルダ、ブックマーク、および設定を保存します。プロンプト、回答、プラットフォームのクッキー、アクセストークン、またはリフレッシュトークンは保存しません。"
@@ -567,7 +567,7 @@
     "message": "マルチデバイスアクセス"
   },
   "billing_benefit_platforms": {
-    "message": "ChatGPT、Claude、Geminiをすべてサポート"
+    "message": "Claudeをすべてサポート"
   },
   "billing_benefit_personal": {
     "message": "個人利用のみ"
@@ -654,10 +654,10 @@
     "message": "移動先のフォルダが見つかりませんでした。"
   },
   "aria_sidebar": {
-    "message": "AI Chat Export サイドバー"
+    "message": "Claude Export サイドバー"
   },
   "aria_collapsed_launcher": {
-    "message": "AI Chat Export 折りたたみランチャー"
+    "message": "Claude Export 折りたたみランチャー"
   },
   "format_pdf": {
     "message": "PDF"
@@ -1248,13 +1248,13 @@
     "message": "ガイドをスキップ"
   },
   "welcome_page_title": {
-    "message": "AI Chat Exportへようこそ"
+    "message": "Claude Exportへようこそ"
   },
   "welcome_aria_open_platform": {
     "message": "AIプラットフォームを開く"
   },
   "welcome_aria_pin_chatvault": {
-    "message": "AI Chat Exportを固定"
+    "message": "Claude Exportを固定"
   },
   "folder_empty_hint": {
     "message": "チャットをここにドラッグ"
@@ -1494,10 +1494,10 @@
     "message": "元のプロンプトを末尾に追加 (Pro)"
   },
   "popup_watermark_title": {
-    "message": "AI Chat Exportの透かしを非表示"
+    "message": "Claude Exportの透かしを非表示"
   },
   "popup_watermark_desc": {
-    "message": "ドキュメント末尾のAI Chat Export署名を削除 (Pro)"
+    "message": "ドキュメント末尾のClaude Export署名を削除 (Pro)"
   },
   "popup_source_url_desc": {
     "message": "元の会話URLをエクスポート文書に追加"
@@ -1620,7 +1620,7 @@
     "message": "チェックアウトを開けませんでした。後でもう一度お試しください。"
   },
   "popup_checkout_service_syncing": {
-    "message": "チェックアウトサービスを更新中です。しばらくしてから AI Chat Export を開き直して再試行してください。"
+    "message": "チェックアウトサービスを更新中です。しばらくしてから Claude Export を開き直して再試行してください。"
   },
   "popup_checkout_popup_blocked": {
     "message": "ブラウザーがチェックアウトをブロックしました。もう一度お試しください。"

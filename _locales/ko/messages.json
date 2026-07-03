@@ -1,6 +1,6 @@
 {
   "contextMenuExportParent": {
-    "message": "AI Chat Export"
+    "message": "Claude Export"
   },
   "contextMenuExportPdf": {
     "message": "PDF로 내보내기"
@@ -21,16 +21,16 @@
     "message": "JSON으로 내보내기"
   },
   "extensionName": {
-    "message": "AI Chat Exporter - ChatGPT Claude Gemini를 PDF, Docs, MD 등으로"
+    "message": "Claude Exporter - Claude를 PDF, Docs, MD 등으로"
   },
   "extensionShortName": {
-    "message": "AI Chat Export"
+    "message": "Claude Export"
   },
   "extensionDescription": {
-    "message": "ChatGPT, Claude, Gemini 대화를 브라우저에서 PDF, Docs, MD 등으로 로컬 내보내기."
+    "message": "Claude 대화를 브라우저에서 PDF, Docs, MD 등으로 로컬 내보내기."
   },
   "extensionActionTitle": {
-    "message": "AI Chat Exporter - ChatGPT Claude Gemini를 PDF, Docs, MD 등으로"
+    "message": "Claude Exporter - Claude를 PDF, Docs, MD 등으로"
   },
   "brand_ai_workspace": {
     "message": "AI 워크스페이스"
@@ -141,7 +141,7 @@
     "message": "아직 폴더가 없습니다"
   },
   "empty_no_folders_desc": {
-    "message": "폴더를 사용하여 가져온 ChatGPT, Claude, Gemini 채팅을 정리해 보세요."
+    "message": "폴더를 사용하여 가져온 Claude 채팅을 정리해 보세요."
   },
   "empty_no_bookmarks": {
     "message": "아직 북마크가 없습니다"
@@ -168,7 +168,7 @@
     "message": "연동된 계정"
   },
   "linked_accounts_desc": {
-    "message": "ChatVault는 ChatGPT, Claude, Gemini의 제목 인덱스를 개별적으로 관리하기 위해서만 연동된 계정을 사용합니다. 플랫폼 쿠키, 비밀번호, 토큰, 프롬프트, 답변 또는 채팅 본문은 저장하지 않습니다."
+    "message": "ChatVault는 Claude의 제목 인덱스를 개별적으로 관리하기 위해서만 연동된 계정을 사용합니다. 플랫폼 쿠키, 비밀번호, 토큰, 프롬프트, 답변 또는 채팅 본문은 저장하지 않습니다."
   },
   "settings_export_title": {
     "message": "내보내기 콘텐츠 설정"
@@ -240,7 +240,7 @@
     "message": "색조와 RGB 값으로 미세 조정합니다."
   },
   "billing_title": {
-    "message": "AI Chat Export Pro로 업그레이드"
+    "message": "Claude Export Pro로 업그레이드"
   },
   "billing_desc": {
     "message": "더 높은 로컬 내보내기 한도, 정돈된 테마, 일괄 작업, PDF, Docs, MD 등 출력을 사용할 수 있습니다."
@@ -375,7 +375,7 @@
     "message": "대화 내보내기 준비 중: $1..."
   },
   "toast_no_open_chat": {
-    "message": "내보내려면 ChatGPT, Claude 또는 Gemini 대화를 열어주세요."
+    "message": "내보내려면 Claude 대화를 열어주세요."
   },
   "toast_image_limit_exceeded": {
     "message": "이 콘텐츠는 너무 길어 고품질 이미지로 내보낼 수 없습니다. PDF로 내보내세요."
@@ -408,7 +408,7 @@
     "message": "사용자 질문"
   },
   "export_branding_footer": {
-    "message": "AI Chat Export를 통해 로컬로 내보냄"
+    "message": "Claude Export를 통해 로컬로 내보냄"
   },
   "export_image_footer_sub": {
     "message": "로컬 내보내기 · 콘텐츠 저장 안 됨"
@@ -441,7 +441,7 @@
     "message": "이미지 - 로드 실패"
   },
   "export_pdf_footer_branding": {
-    "message": "AI Chat Export local"
+    "message": "Claude Export local"
   },
   "export_footer_source": {
     "message": "Export From: $1"
@@ -477,7 +477,7 @@
     "message": "AI 워크스페이스 시작하기"
   },
   "welcome_lede": {
-    "message": "먼저 ChatGPT, Claude 또는 Gemini를 열어주세요. ChatVault가 지원되는 AI 대화방에 자동으로 표시되어 첫 대화를 내보내거나 북마크하고 정리할 수 있게 도와줍니다."
+    "message": "먼저 Claude를 열어주세요. ChatVault가 지원되는 AI 대화방에 자동으로 표시되어 첫 대화를 내보내거나 북마크하고 정리할 수 있게 도와줍니다."
   },
   "welcome_rec_pill": {
     "message": "추천"
@@ -507,7 +507,7 @@
     "message": "준비가 되면 ChatVault를 고정하세요."
   },
   "welcome_pin_desc": {
-    "message": "Chrome 정책상 이 단계는 수동으로 진행해야 합니다. 툴바에서 퍼즐 아이콘을 클릭하고 AI Chat Export를 찾은 다음 고정 아이콘을 클릭하세요."
+    "message": "Chrome 정책상 이 단계는 수동으로 진행해야 합니다. 툴바에서 퍼즐 아이콘을 클릭하고 Claude Export를 찾은 다음 고정 아이콘을 클릭하세요."
   },
   "welcome_pin_status_init": {
     "message": "아직 고정하지 않았더라도 ChatVault는 지원되는 AI 페이지에서 계속 작동합니다."
@@ -528,7 +528,7 @@
     "message": "좋습니다. Chrome 툴바에 ChatVault가 표시됩니다."
   },
   "welcome_pin_failed": {
-    "message": "아직 고정되지 않았습니다. Chrome 툴바의 퍼즐 아이콘을 클릭하고 AI Chat Export 옆의 고정 핀을 클릭해 주세요."
+    "message": "아직 고정되지 않았습니다. Chrome 툴바의 퍼즐 아이콘을 클릭하고 Claude Export 옆의 고정 핀을 클릭해 주세요."
   },
   "welcome_privacy_footnote": {
     "message": "ChatVault는 제목, 링크, 폴더, 북마크, 설정만 저장합니다. 프롬프트, 응답, 플랫폼 쿠키, 액세스 토큰 또는 리프레시 토큰은 저장하지 않습니다."
@@ -567,7 +567,7 @@
     "message": "다중 기기 접속"
   },
   "billing_benefit_platforms": {
-    "message": "ChatGPT, Claude 및 Gemini 통합 지원"
+    "message": "Claude 통합 지원"
   },
   "billing_benefit_personal": {
     "message": "개인 용도로만 사용 가능"
@@ -654,10 +654,10 @@
     "message": "대상 폴더를 찾을 수 없습니다."
   },
   "aria_sidebar": {
-    "message": "AI Chat Export 사이드바"
+    "message": "Claude Export 사이드바"
   },
   "aria_collapsed_launcher": {
-    "message": "AI Chat Export 접힌 실행기"
+    "message": "Claude Export 접힌 실행기"
   },
   "format_pdf": {
     "message": "PDF"
@@ -1248,13 +1248,13 @@
     "message": "가이드 건너뛰기"
   },
   "welcome_page_title": {
-    "message": "AI Chat Export에 오신 것을 환영합니다"
+    "message": "Claude Export에 오신 것을 환영합니다"
   },
   "welcome_aria_open_platform": {
     "message": "AI 플랫폼 열기"
   },
   "welcome_aria_pin_chatvault": {
-    "message": "AI Chat Export 고정"
+    "message": "Claude Export 고정"
   },
   "folder_empty_hint": {
     "message": "여기로 대화 드래그"
@@ -1494,10 +1494,10 @@
     "message": "원본 프롬프트를 끝에 추가 (Pro)"
   },
   "popup_watermark_title": {
-    "message": "AI Chat Export 워터마크 숨기기"
+    "message": "Claude Export 워터마크 숨기기"
   },
   "popup_watermark_desc": {
-    "message": "문서 끝의 AI Chat Export 서명 제거 (Pro)"
+    "message": "문서 끝의 Claude Export 서명 제거 (Pro)"
   },
   "popup_source_url_desc": {
     "message": "원본 대화 URL을 내보낸 문서에 추가"
@@ -1620,7 +1620,7 @@
     "message": "결제를 열 수 없습니다. 나중에 다시 시도하세요."
   },
   "popup_checkout_service_syncing": {
-    "message": "결제 서비스가 업데이트 중입니다. 잠시 후 AI Chat Export를 다시 열어 시도하세요."
+    "message": "결제 서비스가 업데이트 중입니다. 잠시 후 Claude Export를 다시 열어 시도하세요."
   },
   "popup_checkout_popup_blocked": {
     "message": "브라우저가 결제 페이지를 차단했습니다. 다시 시도하세요."

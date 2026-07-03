@@ -1,6 +1,6 @@
 {
   "contextMenuExportParent": {
-    "message": "AI Chat Export"
+    "message": "Claude Export"
   },
   "contextMenuExportPdf": {
     "message": "导出为 PDF"
@@ -141,7 +141,7 @@
     "message": "暂无文件夹"
   },
   "empty_no_folders_desc": {
-    "message": "使用文件夹来整理导入的 ChatGPT、Claude 和 Gemini 聊天。"
+    "message": "使用文件夹来整理导入的 Claude 聊天。"
   },
   "empty_no_bookmarks": {
     "message": "暂无书签"
@@ -168,7 +168,7 @@
     "message": "已绑定账户"
   },
   "linked_accounts_desc": {
-    "message": "ChatVault 仅使用绑定的账户来区分 ChatGPT、Claude 和 Gemini 标题索引。它不会存储平台 Cookie、密码、Token、提示词、回复或聊天正文。"
+    "message": "ChatVault 仅使用绑定的账户来区分 Claude 标题索引。它不会存储平台 Cookie、密码、Token、提示词、回复或聊天正文。"
   },
   "settings_export_title": {
     "message": "导出内容设置"
@@ -240,13 +240,13 @@
     "message": "使用色调和 RGB 值进行微调。"
   },
   "billing_title": {
-    "message": "升级至 AI Chat Export Pro"
+    "message": "升级至 Claude Export Pro"
   },
   "billing_desc": {
     "message": "解锁更高本地导出额度、专业主题、批量流程和 PDF、Docs、MD 等输出。"
   },
   "billing_footnote": {
-    "message": "导出是在您选择的页面中本地生成的。结账页面将在 AI Chat Export 专属定价页打开，并由安全的支付处理器处理。AI Chat Export 仅存储设置、登录邮箱和会员状态。聊天内容不会被保存。"
+    "message": "导出是在您选择的页面中本地生成的。结账页面将在 Claude Export 专属定价页打开，并由安全的支付处理器处理。Claude Export 仅存储设置、登录邮箱和会员状态。聊天内容不会被保存。"
   },
   "billing_btn_restore": {
     "message": "恢复购买"
@@ -375,7 +375,7 @@
     "message": "正在准备对话导出: $1..."
   },
   "toast_no_open_chat": {
-    "message": "打开 ChatGPT、Claude 或 Gemini 对话以进行导出。"
+    "message": "打开 Claude 对话以进行导出。"
   },
   "toast_image_limit_exceeded": {
     "message": "此内容过长，无法保证高质量图片导出。建议改为导出 PDF。"
@@ -408,7 +408,7 @@
     "message": "您提问"
   },
   "export_branding_footer": {
-    "message": "由 AI Chat Export 本地导出"
+    "message": "由 Claude Export 本地导出"
   },
   "export_image_footer_sub": {
     "message": "本地导出 · 内容不存储"
@@ -441,7 +441,7 @@
     "message": "图片 - 加载失败"
   },
   "export_pdf_footer_branding": {
-    "message": "AI Chat Export local"
+    "message": "Claude Export local"
   },
   "export_footer_source": {
     "message": "Export From: $1"
@@ -477,7 +477,7 @@
     "message": "在您的 AI 工作区中开始"
   },
   "welcome_lede": {
-    "message": "请先打开 ChatGPT、Claude 或 Gemini。ChatVault 会在那里与您会合，以便您可以导出、添加书签或整理您的第一个对话。"
+    "message": "请先打开 Claude。ChatVault 会在那里与您会合，以便您可以导出、添加书签或整理您的第一个对话。"
   },
   "welcome_rec_pill": {
     "message": "推荐"
@@ -507,7 +507,7 @@
     "message": "在准备好时固定 ChatVault。"
   },
   "welcome_pin_desc": {
-    "message": "Chrome 要求手动完成此步骤。点击拼图图标，找到 AI Chat Export，然后点击固定图标。"
+    "message": "Chrome 要求手动完成此步骤。点击拼图图标，找到 Claude Export，然后点击固定图标。"
   },
   "welcome_pin_status_init": {
     "message": "如果尚未固定，ChatVault 仍可在受支持的 AI 页面上正常工作。"
@@ -528,7 +528,7 @@
     "message": "太棒了。ChatVault 在您的 Chrome 工具栏中已可见。"
   },
   "welcome_pin_failed": {
-    "message": "尚未固定。请使用工具栏中的 Chrome 拼图图标，然后点击 AI Chat Export 旁的固定图标。"
+    "message": "尚未固定。请使用工具栏中的 Chrome 拼图图标，然后点击 Claude Export 旁的固定图标。"
   },
   "welcome_privacy_footnote": {
     "message": "ChatVault 仅存储标题、链接、文件夹、书签和设置。它不会存储提示词、回复、平台 Cookie、访问 Token 或刷新 Token。"
@@ -567,7 +567,7 @@
     "message": "多设备访问"
   },
   "billing_benefit_platforms": {
-    "message": "支持 ChatGPT、Claude 和 Gemini"
+    "message": "支持 Claude"
   },
   "billing_benefit_personal": {
     "message": "仅限个人使用"
@@ -654,10 +654,10 @@
     "message": "未找到目标文件夹。"
   },
   "aria_sidebar": {
-    "message": "AI Chat Export 侧边栏"
+    "message": "Claude Export 侧边栏"
   },
   "aria_collapsed_launcher": {
-    "message": "AI Chat Export 折叠启动器"
+    "message": "Claude Export 折叠启动器"
   },
   "format_pdf": {
     "message": "PDF"
@@ -1248,13 +1248,13 @@
     "message": "跳过指南"
   },
   "welcome_page_title": {
-    "message": "欢迎来到 AI Chat Export"
+    "message": "欢迎来到 Claude Export"
   },
   "welcome_aria_open_platform": {
     "message": "打开一个 AI 平台"
   },
   "welcome_aria_pin_chatvault": {
-    "message": "固定 AI Chat Export"
+    "message": "固定 Claude Export"
   },
   "folder_empty_hint": {
     "message": "拖拽聊天记录到这里"
@@ -1494,10 +1494,10 @@
     "message": "在文末附带原始 Prompts (Pro)"
   },
   "popup_watermark_title": {
-    "message": "隐藏 AI Chat Export 水印"
+    "message": "隐藏 Claude Export 水印"
   },
   "popup_watermark_desc": {
-    "message": "移除文档末尾的 AI Chat Export 签名 (Pro)"
+    "message": "移除文档末尾的 Claude Export 签名 (Pro)"
   },
   "popup_source_url_desc": {
     "message": "在导出的文档尾部附加对话原始网址"
@@ -1620,7 +1620,7 @@
     "message": "无法构建结账页面，请稍后再试。"
   },
   "popup_checkout_service_syncing": {
-    "message": "结账服务正在更新，请稍后重新打开 AI Chat Export 再试。"
+    "message": "结账服务正在更新，请稍后重新打开 Claude Export 再试。"
   },
   "popup_checkout_popup_blocked": {
     "message": "浏览器拦截了结账页面，请重试。"

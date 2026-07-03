@@ -1,10 +1,14 @@
 (function initChatVaultAnalytics() {
   "use strict";
 
-  const QUEUE_KEY = "chatvault.exporter.analytics.queue.v1";
-  const GUEST_ID_KEY = "chatvault.exporter.analytics.guest_id.v1";
-  const IDENTIFY_DONE_KEY = "chatvault.exporter.analytics.identify_done.v1";
-  const TRACKED_ONCE_KEY = "chatvault.exporter.analytics.tracked_once.v1";
+  const productConfig = globalThis.CHATVAULT_PRODUCT_CONFIG || {};
+  const storageKey = typeof productConfig.storageKey === "function"
+    ? productConfig.storageKey
+    : (name) => `chatvault_exporter.${name}`;
+  const QUEUE_KEY = storageKey("analytics.queue.v1");
+  const GUEST_ID_KEY = storageKey("analytics.guest_id.v1");
+  const IDENTIFY_DONE_KEY = storageKey("analytics.identify_done.v1");
+  const TRACKED_ONCE_KEY = storageKey("analytics.tracked_once.v1");
   const memoryStorageFallback = new Map();
 
   const ALLOWED_EVENTS = new Set([
@@ -57,6 +61,66 @@
       return typeof chrome !== "undefined" && chrome.storage && chrome.storage.local ? chrome.storage.local : null;
     } catch (e) {
       return null;
+    }
+  }
+
+  function canUseBackgroundAnalytics() {
+    try {
+      return typeof chrome !== "undefined" &&
+        chrome.runtime &&
+        typeof chrome.runtime.sendMessage === "function";
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function sendRuntimeMessage(message) {
+    return new Promise((resolve, reject) => {
+      try {
+        if (!canUseBackgroundAnalytics()) {
+          reject(new Error("Extension background messaging is unavailable."));
+          return;
+        }
+        chrome.runtime.sendMessage(message, (reply) => {
+          let lastError = null;
+          try {
+            lastError = chrome.runtime.lastError;
+          } catch (e) {
+            lastError = null;
+          }
+
+          if (lastError) {
+            reject(new Error(lastError.message || "Extension background messaging failed."));
+            return;
+          }
+          resolve(reply || null);
+        });
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  async function sendAnalyticsEventToBackground(event) {
+    const reply = await sendRuntimeMessage({
+      type: "CHATVAULT_ANALYTICS_TRACK",
+      event
+    });
+    if (!reply || reply.ok !== true) {
+      throw new Error(reply?.error || "Analytics background queue failed.");
+    }
+    return reply;
+  }
+
+  async function requestBackgroundFlush() {
+    if (!canUseBackgroundAnalytics()) {
+      await flush();
+      return;
+    }
+    try {
+      await sendRuntimeMessage({ type: "CHATVAULT_ANALYTICS_FLUSH" });
+    } catch (_) {
+      await flush();
     }
   }
 
@@ -228,134 +292,20 @@
   let isFlushing = false;
 
   async function flush() {
-    if (isFlushing) return;
-    isFlushing = true;
-
-    try {
-      let queue = (await storageGet(QUEUE_KEY)) || [];
-      if (queue.length === 0) {
-        isFlushing = false;
-        return;
-      }
-
-      const batch = queue.slice(0, 10);
-      const guestId = await getOrCreateGuestId();
-
-      let accessToken = null;
-      try {
-        const session = await globalThis.CHATVAULT_SUPABASE_AUTH?.getStoredSession();
-        if (session?.access_token) {
-          accessToken = session.access_token;
-        }
-      } catch (_) {}
-
-      const api = globalThis.CHATVAULT_SUPABASE_API;
-      if (!api) {
-        isFlushing = false;
-        return;
-      }
-
-      await api.request("/functions/v1/analytics-track", {
-        method: "POST",
-        accessToken,
-        body: {
-          guest_id: guestId,
-          events: batch
-        }
-      });
-
-      let currentQueue = (await storageGet(QUEUE_KEY)) || [];
-      currentQueue = currentQueue.slice(batch.length);
-      await storageSet(QUEUE_KEY, currentQueue);
-
-      if (currentQueue.length > 0) {
-        setTimeout(() => flush().catch(() => {}), 100);
-      }
-    } catch (_) {
-    } finally {
-      isFlushing = false;
-    }
+    return; // 注销埋点
   }
 
   async function track(eventName, options = {}) {
-    if (!ALLOWED_EVENTS.has(eventName)) {
-      return;
-    }
-
-    const platform = ALLOWED_PLATFORMS.has(options.platform) ? options.platform : "unknown";
-    const sanitizedProps = sanitizePropertiesClient(eventName, options.properties);
-    const onceState = await getOnceState(eventName);
-    if (onceState?.alreadyTracked) {
-      return;
-    }
-
-    const event = {
-      event_name: eventName,
-      platform,
-      client_timestamp: new Date().toISOString(),
-      properties: sanitizedProps
-    };
-
-    let queue = (await storageGet(QUEUE_KEY)) || [];
-    queue.push(event);
-
-    const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-    queue = queue.filter((item) => {
-      try {
-        return new Date(item.client_timestamp).getTime() > sevenDaysAgo;
-      } catch (_) {
-        return false;
-      }
-    });
-
-    if (queue.length > 50) {
-      queue = queue.slice(queue.length - 50);
-    }
-
-    await storageSet(QUEUE_KEY, queue);
-    await markTrackedOnce(onceState);
-    flush().catch(() => {});
+    return; // 注销埋点
   }
 
   async function identify() {
-    try {
-      const guestId = await getOrCreateGuestId();
-      const done = await storageGet(IDENTIFY_DONE_KEY);
-      if (done === guestId) {
-        return;
-      }
-
-      const session = await globalThis.CHATVAULT_SUPABASE_AUTH?.getSession();
-      if (!session?.access_token) {
-        return;
-      }
-
-      const api = globalThis.CHATVAULT_SUPABASE_API;
-      if (!api) return;
-
-      await api.request("/functions/v1/analytics-identify", {
-        method: "POST",
-        accessToken: session.access_token,
-        body: {
-          guest_id: guestId
-        }
-      });
-
-      await mergeGuestTrackedOnceToUser(guestId, session);
-      await storageSet(IDENTIFY_DONE_KEY, guestId);
-    } catch (_) {
-    }
+    return; // 注销埋点
   }
 
   let flushInterval = null;
   function startSyncTimer() {
-    if (flushInterval) return;
-    flushInterval = setInterval(() => {
-      flush().catch(() => {});
-    }, 15000);
-    if (typeof flushInterval.unref === "function") {
-      flushInterval.unref();
-    }
+    return; // 注销定时器
   }
 
   function stopSyncTimer() {

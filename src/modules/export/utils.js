@@ -1,4 +1,5 @@
 const i18n = globalThis.CHATVAULT_I18N;
+const PRODUCT_NAME = globalThis.CHATVAULT_PRODUCT_CONFIG?.productName || "Claude Export";
 
 export function t(key, defaultText, ...args) {
   if (i18n && typeof i18n.t === "function") {
@@ -49,7 +50,7 @@ export var DEFAULT_EXPORT_SETTINGS = {
   show_conversation_title: true,
   show_platform_name: true,
   show_role_labels: true,
-  show_chatvault_badge: false,
+  show_chatvault_badge: true,
   include_source_url: false,
   align_user_messages_right: true,
   export_style: "default"
@@ -321,14 +322,42 @@ export function formatDateDisplay(date) {
 
 export function buildFilename(format, scope, metadata) {
   var title = sanitizeFilename((metadata && metadata.title) || getConversationTitle());
-  var ext = format === "word" ? "docx" : format === "image" ? "png" : format === "markdown" ? "md" : "pdf";
+  var ext = format === "word" ? "docx" : format === "image" ? "png" : format === "markdown" ? "md" : format === "txt" ? "txt" : format === "json" ? "json" : "pdf";
   return title + "." + ext;
 }
 
 export function replaceFileExtension(filename, nextExt) {
   var cleanExt = String(nextExt || "").replace(/^\./, "");
-  var base = String(filename || "ChatVault-export").replace(/\.[^.]+$/, "");
+  var base = String(filename || "AI-Chat-Export").replace(/\.[^.]+$/, "");
   return base + (cleanExt ? "." + cleanExt : "");
+}
+
+export function getExportSourceUrl(metadata) {
+  return metadata && (metadata.sourceUrl || metadata.url || metadata.source) || "";
+}
+
+export function getExportFooterParts(settings, metadata) {
+  var segments = getExportFooterSegments(settings, metadata);
+  var parts = [];
+  if (segments.left) parts.push(segments.left);
+  if (segments.right) parts.push(segments.right);
+  return parts;
+}
+
+export function getExportFooterSegments(settings, metadata) {
+  var sourceUrl = getExportSourceUrl(metadata);
+  return {
+    left: settings && settings.show_chatvault_badge
+      ? PRODUCT_NAME
+      : "",
+    right: settings && settings.include_source_url && sourceUrl
+      ? t("export_footer_source", "Export From: $1", sourceUrl)
+      : ""
+  };
+}
+
+export function getExportFooterText(settings, metadata) {
+  return getExportFooterParts(settings, metadata).join(" ").trim();
 }
 
 export function notifyProgress(options, message, progress) {

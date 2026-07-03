@@ -1,5 +1,9 @@
 (function initChatVaultUsageStore() {
-  const USAGE_KEY = "chatvault_exporter_daily_usage";
+  const productConfig = globalThis.CHATVAULT_PRODUCT_CONFIG || {};
+  const storageKey = typeof productConfig.storageKey === "function"
+    ? productConfig.storageKey
+    : (name) => `chatvault_exporter.${name}`;
+  const USAGE_KEY = storageKey("daily_usage.v1");
   const MAX_EXPORT_EVENTS = 50;
 
   function getChromeLocalStorage() {
@@ -85,9 +89,12 @@
   }
 
   async function setDailyUsage(usage) {
-    const current = normalize(usage, getTodayString());
-    await saveDailyUsage(current);
-    return current;
+    const today = getTodayString();
+    const current = normalize(await getDailyUsage(), today);
+    const incoming = normalize(usage, today);
+    const merged = mergeDailyUsage(current, incoming, today);
+    await saveDailyUsage(merged);
+    return merged;
   }
 
   async function resetDailyUsage() {
@@ -122,6 +129,45 @@
       exportedChats: Math.max(0, Number(value.exportedChats || value.exported_chats || value.count || value.used || 0)),
       exportEvents: Array.isArray(value.exportEvents) ? value.exportEvents.slice(-MAX_EXPORT_EVENTS) : []
     };
+  }
+
+  function mergeDailyUsage(current, incoming, today) {
+    const targetDate = today || getTodayString();
+    const currentUsage = normalize(current, targetDate);
+    const incomingUsage = normalize(incoming, targetDate);
+    const exportEvents = [
+      ...(Array.isArray(currentUsage.exportEvents) ? currentUsage.exportEvents : []),
+      ...(Array.isArray(incomingUsage.exportEvents) ? incomingUsage.exportEvents : [])
+    ];
+    const seenEvents = new Set();
+    const dedupedEvents = [];
+
+    exportEvents.forEach((event) => {
+      if (!event || typeof event !== "object") {
+        return;
+      }
+      const key = `${event.at || ""}|${event.count || ""}`;
+      if (seenEvents.has(key)) {
+        return;
+      }
+      seenEvents.add(key);
+      dedupedEvents.push(event);
+    });
+
+    const merged = {
+      date: targetDate,
+      exportedChats: Math.max(
+        Math.max(0, Number(currentUsage.exportedChats) || 0),
+        Math.max(0, Number(incomingUsage.exportedChats) || 0)
+      ),
+      exportEvents: dedupedEvents.slice(-MAX_EXPORT_EVENTS)
+    };
+
+    if (currentUsage.usage_date === targetDate || incomingUsage.usage_date === targetDate) {
+      merged.usage_date = targetDate;
+    }
+
+    return merged;
   }
 
   globalThis.CHATVAULT_USAGE_STORE = {

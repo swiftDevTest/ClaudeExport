@@ -1,6 +1,6 @@
 {
   "contextMenuExportParent": {
-    "message": "AI Chat Export"
+    "message": "Claude Export"
   },
   "contextMenuExportPdf": {
     "message": "匯出為 PDF"
@@ -21,16 +21,16 @@
     "message": "匯出為 JSON"
   },
   "extensionName": {
-    "message": "AI Chat Exporter - ChatGPT Claude Gemini 到 PDF、Docs、MD 等"
+    "message": "Claude Exporter - Claude 到 PDF、Docs、MD 等"
   },
   "extensionShortName": {
-    "message": "AI Chat Export"
+    "message": "Claude Export"
   },
   "extensionDescription": {
-    "message": "將 ChatGPT、Claude 和 Gemini 對話在瀏覽器本機匯出為 PDF、Docs、MD 等，保留清晰排版。"
+    "message": "將 Claude 對話在瀏覽器本機匯出為 PDF、Docs、MD 等，保留清晰排版。"
   },
   "extensionActionTitle": {
-    "message": "AI Chat Exporter - ChatGPT Claude Gemini 到 PDF、Docs、MD 等"
+    "message": "Claude Exporter - Claude 到 PDF、Docs、MD 等"
   },
   "brand_ai_workspace": {
     "message": "AI 工作區"
@@ -141,7 +141,7 @@
     "message": "暫無資料夾"
   },
   "empty_no_folders_desc": {
-    "message": "使用資料夾來整理匯入的 ChatGPT、Claude 和 Gemini 對話。"
+    "message": "使用資料夾來整理匯入的 Claude 對話。"
   },
   "empty_no_bookmarks": {
     "message": "暫無書籤"
@@ -168,7 +168,7 @@
     "message": "已連結帳戶"
   },
   "linked_accounts_desc": {
-    "message": "ChatVault 僅使用連結的帳戶來區分 ChatGPT、Claude 和 Gemini 標題索引。它不會儲存平台 Cookie、密碼、Token、提示詞、回覆或對話正文。"
+    "message": "ChatVault 僅使用連結的帳戶來區分 Claude 標題索引。它不會儲存平台 Cookie、密碼、Token、提示詞、回覆或對話正文。"
   },
   "settings_export_title": {
     "message": "導出內容設置"
@@ -240,7 +240,7 @@
     "message": "使用色相和 RGB 值進行微調。"
   },
   "billing_title": {
-    "message": "升級至 AI Chat Export Pro"
+    "message": "升級至 Claude Export Pro"
   },
   "billing_desc": {
     "message": "解鎖更高本機匯出額度、專業主題、批次流程和 PDF、Docs、MD 等輸出。"
@@ -375,7 +375,7 @@
     "message": "正在準備對話匯出: $1..."
   },
   "toast_no_open_chat": {
-    "message": "開啟 ChatGPT、Claude 或 Gemini 對話以進行匯出。"
+    "message": "開啟 Claude 對話以進行匯出。"
   },
   "toast_image_limit_exceeded": {
     "message": "此內容過長，無法保證高品質圖片匯出。建議改為匯出 PDF。"
@@ -408,7 +408,7 @@
     "message": "您提問"
   },
   "export_branding_footer": {
-    "message": "由 AI Chat Export 本地端匯出"
+    "message": "由 Claude Export 本地端匯出"
   },
   "export_image_footer_sub": {
     "message": "本地端匯出 · 內容不儲存"
@@ -441,7 +441,7 @@
     "message": "圖片 - 載入失敗"
   },
   "export_pdf_footer_branding": {
-    "message": "AI Chat Export local"
+    "message": "Claude Export local"
   },
   "export_footer_source": {
     "message": "Export From: $1"
@@ -477,7 +477,7 @@
     "message": "在您的 AI 工作區中開始"
   },
   "welcome_lede": {
-    "message": "請先開啟 ChatGPT、Claude 或 Gemini。ChatVault 會在那裡與您會合，以便您可以匯出、加入書籤或整理您的第一個對話。"
+    "message": "請先開啟 Claude。ChatVault 會在那裡與您會合，以便您可以匯出、加入書籤或整理您的第一個對話。"
   },
   "welcome_rec_pill": {
     "message": "推薦"
@@ -507,7 +507,7 @@
     "message": "在準備好時固定 ChatVault。"
   },
   "welcome_pin_desc": {
-    "message": "Chrome 要求手動完成此步驟。點選拼圖圖示，找到 AI Chat Export，然後點選固定圖示。"
+    "message": "Chrome 要求手動完成此步驟。點選拼圖圖示，找到 Claude Export，然後點選固定圖示。"
   },
   "welcome_pin_status_init": {
     "message": "如果尚未固定，ChatVault 仍可在受支援的 AI 頁面上正常工作。"
@@ -528,7 +528,7 @@
     "message": "太棒了。ChatVault 在您的 Chrome 工具列中已可見。"
   },
   "welcome_pin_failed": {
-    "message": "尚未固定。請使用工具列中的 Chrome 拼圖圖示，然後點選 AI Chat Export 旁的固定圖示。"
+    "message": "尚未固定。請使用工具列中的 Chrome 拼圖圖示，然後點選 Claude Export 旁的固定圖示。"
   },
   "welcome_privacy_footnote": {
     "message": "ChatVault 僅儲存標題、連結、資料夾、書籤和設定。它不會儲存提示詞、回覆、平台 Cookie、存取 Token 或重新整理 Token。"
@@ -567,7 +567,7 @@
     "message": "多裝置存取"
   },
   "billing_benefit_platforms": {
-    "message": "支援 ChatGPT、Claude 和 Gemini"
+    "message": "支援 Claude"
   },
   "billing_benefit_personal": {
     "message": "僅限個人使用"
@@ -654,10 +654,10 @@
     "message": "未找到目標資料夾。"
   },
   "aria_sidebar": {
-    "message": "AI Chat Export 側邊欄"
+    "message": "Claude Export 側邊欄"
   },
   "aria_collapsed_launcher": {
-    "message": "AI Chat Export 折疊啟動器"
+    "message": "Claude Export 折疊啟動器"
   },
   "format_pdf": {
     "message": "PDF"
@@ -1248,13 +1248,13 @@
     "message": "跳過指南"
   },
   "welcome_page_title": {
-    "message": "歡迎來到 AI Chat Export"
+    "message": "歡迎來到 Claude Export"
   },
   "welcome_aria_open_platform": {
     "message": "開啟一個 AI 平台"
   },
   "welcome_aria_pin_chatvault": {
-    "message": "固定 AI Chat Export"
+    "message": "固定 Claude Export"
   },
   "folder_empty_hint": {
     "message": "拖拽聊天記錄到這裡"
@@ -1494,10 +1494,10 @@
     "message": "在文末附上原始 Prompts (Pro)"
   },
   "popup_watermark_title": {
-    "message": "隱藏 AI Chat Export 浮水印"
+    "message": "隱藏 Claude Export 浮水印"
   },
   "popup_watermark_desc": {
-    "message": "移除文件末尾的 AI Chat Export 簽名 (Pro)"
+    "message": "移除文件末尾的 Claude Export 簽名 (Pro)"
   },
   "popup_source_url_desc": {
     "message": "在匯出文件尾端附加對話原始網址"
@@ -1620,7 +1620,7 @@
     "message": "無法開啟結帳頁面，請稍後再試。"
   },
   "popup_checkout_service_syncing": {
-    "message": "結帳服務正在更新，請稍後重新開啟 AI Chat Export 再試。"
+    "message": "結帳服務正在更新，請稍後重新開啟 Claude Export 再試。"
   },
   "popup_checkout_popup_blocked": {
     "message": "瀏覽器封鎖了結帳頁面，請重試。"

@@ -1,19 +1,167 @@
 import { isSubstantialSvg, convertSvgToDataUrl, mapLimit, yieldToBrowser, notifyProgress, isGoogleUserContentUrl, isGoogleAccountAvatarUrl, isTrustedConversationImageSrc, isPlatformOrSystemIcon, isTestEnv, canvasToBlob, ensureImageBlockMetadata, getImageDedupKey } from './utils.js';
 
 var IMAGE_CACHE_MAX = 50;
+var IMAGE_CACHE_MAX_BYTES = 24 * 1024 * 1024;
+var IMAGE_FETCH_MAX_BYTES = 8 * 1024 * 1024;
+var IMAGE_PRELOAD_CONCURRENCY = 2;
 var IMAGE_PRELOAD_CANVAS_TIMEOUT_MS = 5000;
 var IMAGE_ELEMENT_LOAD_TIMEOUT_MS = 8000;
 var _imageBytesCache = new Map();
+var _imageBytesCacheBytes = 0;
 var _imageBytesInFlight = new Map();
+
+function normalizeImageMimeType(value) {
+  var mimeType = String(value || "").split(";")[0].trim().toLowerCase();
+  if (mimeType === "image/jpg") return "image/jpeg";
+  return mimeType;
+}
+
+function isSupportedImageMimeType(value) {
+  return /^image\/(?:png|jpe?g|gif|webp|svg\+xml|bmp|avif|heic|heif)$/i.test(String(value || ""));
+}
+
+function toByteArray(bytes) {
+  if (!bytes) return new Uint8Array();
+  if (bytes instanceof Uint8Array) return bytes;
+  if (bytes instanceof ArrayBuffer) return new Uint8Array(bytes);
+  if (bytes.buffer instanceof ArrayBuffer) {
+    return new Uint8Array(bytes.buffer, bytes.byteOffset || 0, bytes.byteLength || bytes.length || 0);
+  }
+  return new Uint8Array();
+}
+
+function bytesStartWith(bytes, signature) {
+  if (!bytes || bytes.length < signature.length) return false;
+  for (var index = 0; index < signature.length; index += 1) {
+    if (bytes[index] !== signature[index]) return false;
+  }
+  return true;
+}
+
+function asciiHeader(bytes, maxLength) {
+  var length = Math.min(bytes.length, maxLength || 512);
+  var text = "";
+  for (var index = 0; index < length; index += 1) {
+    var byte = bytes[index];
+    if (byte === 0) continue;
+    text += String.fromCharCode(byte);
+  }
+  return text.trim().toLowerCase();
+}
+
+function looksLikeNonImagePayload(bytes) {
+  var header = asciiHeader(bytes, 512);
+  return /^<!doctype\s+html\b/.test(header) ||
+    /^<html\b/.test(header) ||
+    /^<body\b/.test(header) ||
+    /^<(?:error|script|div|pre)\b/.test(header) ||
+    /^[{[]/.test(header);
+}
+
+export function detectImageMimeType(bytes, fallbackMimeType) {
+  var data = toByteArray(bytes);
+  var fallback = normalizeImageMimeType(fallbackMimeType);
+
+  if (!data.length) return "";
+  if (bytesStartWith(data, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) return "image/png";
+  if (bytesStartWith(data, [0xff, 0xd8, 0xff])) return "image/jpeg";
+  if (bytesStartWith(data, [0x47, 0x49, 0x46, 0x38])) return "image/gif";
+  if (data.length >= 12 &&
+      bytesStartWith(data.subarray(0, 4), [0x52, 0x49, 0x46, 0x46]) &&
+      bytesStartWith(data.subarray(8, 12), [0x57, 0x45, 0x42, 0x50])) {
+    return "image/webp";
+  }
+  if (bytesStartWith(data, [0x42, 0x4d])) return "image/bmp";
+
+  var header = asciiHeader(data, 512);
+  if (/^<\?xml\b[\s\S]*<svg\b/.test(header) || /^<svg\b/.test(header)) return "image/svg+xml";
+  if (data.length >= 12 && bytesStartWith(data.subarray(4, 8), [0x66, 0x74, 0x79, 0x70])) {
+    var brand = asciiHeader(data.subarray(8, 12), 4);
+    if (/^(avif|avis)$/.test(brand)) return "image/avif";
+    if (/^(heic|heix|hevc|hevx|mif1|msf1)$/.test(brand)) return "image/heic";
+  }
+
+  if (isSupportedImageMimeType(fallback) && !looksLikeNonImagePayload(data)) {
+    return fallback;
+  }
+
+  return "";
+}
+
+function getCachedImageByteLength(value) {
+  return Math.max(0, Number(value && value.bytes && value.bytes.byteLength || 0) || 0);
+}
+
+function assertImageByteLength(byteLength) {
+  if (Number.isFinite(byteLength) && byteLength > IMAGE_FETCH_MAX_BYTES) {
+    throw new Error("Image is too large to export safely. Reduce images or export a shorter conversation.");
+  }
+}
+
+function binaryStringToBytes(binaryStr) {
+  return Uint8Array.from(binaryStr, function (char) {
+    return char.charCodeAt(0);
+  });
+}
+
+function textToUtf8Bytes(text) {
+  if (typeof TextEncoder === "function") {
+    return new TextEncoder().encode(text);
+  }
+  var encoded = unescape(encodeURIComponent(text));
+  return binaryStringToBytes(encoded);
+}
+
+export function parseImageDataUrl(src) {
+  if (!src || typeof src !== "string" || src.indexOf("data:") !== 0) {
+    return null;
+  }
+  var commaIndex = src.indexOf(",");
+  if (commaIndex === -1) {
+    return null;
+  }
+
+  var meta = src.slice(5, commaIndex);
+  var payload = src.slice(commaIndex + 1);
+  var mimeType = (meta.split(";")[0] || "image/png").trim() || "image/png";
+
+  try {
+    if (/;base64(?:;|$)/i.test(";" + meta)) {
+      return {
+        bytes: binaryStringToBytes(atob(payload.replace(/\s/g, ""))),
+        mimeType: mimeType
+      };
+    }
+
+    var decodedPayload = payload;
+    try {
+      decodedPayload = decodeURIComponent(payload);
+    } catch (decodeErr) {
+      decodedPayload = payload;
+    }
+    return {
+      bytes: textToUtf8Bytes(decodedPayload),
+      mimeType: mimeType
+    };
+  } catch (err) {
+    return null;
+  }
+}
+
 export var imageBytesCache = {
   get: function (key) {
     return _imageBytesCache.get(key);
   },
   set: function (key, value) {
-    if (_imageBytesCache.has(key)) _imageBytesCache.delete(key);
+    if (_imageBytesCache.has(key)) {
+      _imageBytesCacheBytes -= getCachedImageByteLength(_imageBytesCache.get(key));
+      _imageBytesCache.delete(key);
+    }
     _imageBytesCache.set(key, value);
-    while (_imageBytesCache.size > IMAGE_CACHE_MAX) {
+    _imageBytesCacheBytes += getCachedImageByteLength(value);
+    while (_imageBytesCache.size > IMAGE_CACHE_MAX || _imageBytesCacheBytes > IMAGE_CACHE_MAX_BYTES) {
       var firstKey = _imageBytesCache.keys().next().value;
+      _imageBytesCacheBytes -= getCachedImageByteLength(_imageBytesCache.get(firstKey));
       _imageBytesCache.delete(firstKey);
     }
     return _imageBytesCache;
@@ -23,6 +171,9 @@ export var imageBytesCache = {
   },
   get size() {
     return _imageBytesCache.size;
+  },
+  get byteLength() {
+    return Math.max(0, _imageBytesCacheBytes);
   }
 };
 
@@ -32,7 +183,28 @@ function createAbortError() {
   return err;
 }
 
-export var activeAdapters = { current: null };
+function createImageFetchRequestId() {
+  return "img_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2);
+}
+
+function sendBackgroundImageFetchCancel(requestId) {
+  if (!requestId) return;
+  try {
+    if (typeof chrome === "undefined" || !chrome.runtime || typeof chrome.runtime.sendMessage !== "function") {
+      return;
+    }
+    chrome.runtime.sendMessage({
+      type: "CHATVAULT_CANCEL_IMAGE_FETCH",
+      requestId: requestId
+    }, function () {
+      try {
+        var ignored = chrome.runtime.lastError;
+      } catch (error) {
+      }
+    });
+  } catch (error) {
+  }
+}
 
 export async function fetchImageBytes(src, options) {
   if (options && options.signal && options.signal.aborted) {
@@ -45,26 +217,10 @@ export async function fetchImageBytes(src, options) {
   if (_imageBytesInFlight.has(src)) {
     return _imageBytesInFlight.get(src);
   }
-
-  // Hook in injected imageFetcher adapter if present
-  if (activeAdapters && activeAdapters.current && typeof activeAdapters.current.imageFetcher === "function") {
-    var customPending = activeAdapters.current.imageFetcher(src, {
-      signal: options && options.signal
-    }).then(function (result) {
-      if (!isTestEnv && result) {
-        imageBytesCache.set(src, result);
-      }
-      return result;
-    }).catch(function() {
-      return null;
-    });
-    _imageBytesInFlight.set(src, customPending);
-    var result = await customPending;
-    _imageBytesInFlight.delete(src);
-    return result;
-  }
-
   var pending = _fetchImageBytesDirectly(src, options).then(function (result) {
+    if (result && result.bytes) {
+      assertImageByteLength(result.bytes.byteLength);
+    }
     if (!isTestEnv && result) {
       imageBytesCache.set(src, result);
     }
@@ -135,6 +291,15 @@ async function fetchImageBytesViaNetwork(src, options) {
       try {
         var sessionController = typeof AbortController !== "undefined" ? new AbortController() : null;
         var sessionTimeoutId = sessionController ? setTimeout(function () { sessionController.abort(); }, 4000) : null;
+        var sessionAbortListener = null;
+        if (sessionController && options && options.signal) {
+          sessionAbortListener = function () { sessionController.abort(); };
+          if (options.signal.aborted) {
+            sessionController.abort();
+          } else {
+            options.signal.addEventListener("abort", sessionAbortListener, { once: true });
+          }
+        }
         try {
           var sessionResponse = await globalThis["fetch"](window.location.origin + "/api/auth/session", {
             credentials: "include",
@@ -148,6 +313,9 @@ async function fetchImageBytesViaNetwork(src, options) {
           }
         } finally {
           if (sessionTimeoutId) clearTimeout(sessionTimeoutId);
+          if (options && options.signal && sessionAbortListener) {
+            options.signal.removeEventListener("abort", sessionAbortListener);
+          }
         }
       } catch (sessionErr) {
       }
@@ -172,9 +340,13 @@ async function fetchImageBytesViaNetwork(src, options) {
       }
       var response = await globalThis["fetch"](src, fetchOptions);
       if (!response.ok) throw new Error("Fetch response not OK: " + response.status);
+      var contentLength = Number(response.headers && response.headers.get ? response.headers.get("content-length") || 0 : 0);
+      assertImageByteLength(contentLength);
       var arrayBuffer = await response.arrayBuffer();
+      assertImageByteLength(arrayBuffer.byteLength);
       var bytes = new Uint8Array(arrayBuffer);
-      var mimeType = response.headers.get("content-type") || "image/png";
+      var mimeType = detectImageMimeType(bytes, response.headers.get("content-type") || "image/png");
+      if (!mimeType) return null;
       return { bytes: bytes, mimeType: mimeType };
     } finally {
       if (timeoutId) clearTimeout(timeoutId);
@@ -194,32 +366,64 @@ async function fetchImageBytesViaNetwork(src, options) {
         reject(new Error("chrome.runtime is not available"));
         return;
       }
+      var requestId = createImageFetchRequestId();
+      var settled = false;
+      var abortListener = null;
       var messageTimeout = setTimeout(function () {
-        reject(new Error("Background fetch timeout"));
+        sendBackgroundImageFetchCancel(requestId);
+        finish(reject, new Error("Background fetch timeout"));
       }, 8000);
-      chrome.runtime.sendMessage({
-        type: "CHATVAULT_FETCH_IMAGE_BYTES",
-        url: src
-      }, function (reply) {
+      function cleanup() {
         clearTimeout(messageTimeout);
-        var lastError = chrome.runtime.lastError;
-        if (lastError) {
-          reject(new Error(lastError.message || "Background request failed."));
+        if (options && options.signal && abortListener) {
+          options.signal.removeEventListener("abort", abortListener);
+        }
+      }
+      function finish(fn, value) {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        fn(value);
+      }
+      if (options && options.signal) {
+        abortListener = function () {
+          sendBackgroundImageFetchCancel(requestId);
+          finish(reject, createAbortError());
+        };
+        if (options.signal.aborted) {
+          abortListener();
           return;
         }
-        resolve(reply);
+        options.signal.addEventListener("abort", abortListener, { once: true });
+      }
+      chrome.runtime.sendMessage({
+        type: "CHATVAULT_FETCH_IMAGE_BYTES",
+        url: src,
+        requestId: requestId
+      }, function (reply) {
+        var lastError = chrome.runtime.lastError;
+        if (lastError) {
+          finish(reject, new Error(lastError.message || "Background request failed."));
+          return;
+        }
+        finish(resolve, reply);
       });
     });
 
     if (bgResponse && bgResponse.ok && bgResponse.base64) {
       var binaryStr = atob(bgResponse.base64);
       var bytes = new Uint8Array(binaryStr.length);
+      assertImageByteLength(bytes.byteLength);
       for (var i = 0; i < binaryStr.length; i++) {
         bytes[i] = binaryStr.charCodeAt(i);
       }
+      var detectedMimeType = detectImageMimeType(bytes, bgResponse.mimeType || "image/png");
+      if (!detectedMimeType) {
+        return null;
+      }
       return {
         bytes: bytes,
-        mimeType: bgResponse.mimeType || "image/png"
+        mimeType: detectedMimeType
       };
     }
   } catch (bgErr) {
@@ -313,20 +517,16 @@ async function _fetchImageBytesDirectly(src, options) {
   }
 
   if (src.startsWith("data:")) {
-    try {
-      var parts = src.split(",");
-      var meta = parts[0] || "";
-      var base64Data = parts[1] || "";
-      var mimeType = (meta.split(";")[0] || "").split(":")[1] || "image/png";
+    var parsedDataUrl = parseImageDataUrl(src);
+    if (!parsedDataUrl) return null;
+    var parsedMimeType = detectImageMimeType(parsedDataUrl.bytes, parsedDataUrl.mimeType);
+    return parsedMimeType ? { bytes: parsedDataUrl.bytes, mimeType: parsedMimeType } : null;
+  }
 
-      var binaryStr = atob(base64Data);
-      var bytes = new Uint8Array(binaryStr.length);
-      for (var i = 0; i < binaryStr.length; i++) {
-        bytes[i] = binaryStr.charCodeAt(i);
-      }
-      return { bytes: bytes, mimeType: mimeType };
-    } catch (err) {
-      return null;
+  if (shouldFetchImageBeforeCorsLoad(src)) {
+    var earlyNetworkBytes = await fetchImageBytesViaNetwork(src, options);
+    if (earlyNetworkBytes) {
+      return earlyNetworkBytes;
     }
   }
 
@@ -366,6 +566,7 @@ async function _fetchImageBytesDirectly(src, options) {
         ctx.drawImage(imgEl, 0, 0);
         var blob = await canvasToBlob(canvas, "image/png", undefined, IMAGE_PRELOAD_CANVAS_TIMEOUT_MS);
         var buffer = await blob.arrayBuffer();
+        assertImageByteLength(buffer.byteLength);
         var bytes = new Uint8Array(buffer);
         return {
           bytes: bytes,
@@ -376,13 +577,6 @@ async function _fetchImageBytesDirectly(src, options) {
       } else {
       }
     } catch (canvasErr) {
-    }
-  }
-
-  if (shouldFetchImageBeforeCorsLoad(src)) {
-    var earlyNetworkBytes = await fetchImageBytesViaNetwork(src, options);
-    if (earlyNetworkBytes) {
-      return earlyNetworkBytes;
     }
   }
 
@@ -425,6 +619,7 @@ async function _fetchImageBytesDirectly(src, options) {
             canvasToBlob(canvas, "image/png", undefined, IMAGE_PRELOAD_CANVAS_TIMEOUT_MS).then(function (blob) {
               return blob.arrayBuffer();
             }).then(function (buffer) {
+              assertImageByteLength(buffer.byteLength);
               finish(resolve, {
                 bytes: new Uint8Array(buffer),
                 mimeType: "image/png",
@@ -461,9 +656,17 @@ async function _fetchImageBytesDirectly(src, options) {
   return null;
 }
 
-export async function preloadImageForDocx(src, index) {
+export async function preloadImageForDocx(src, index, options) {
   if (!src) return null;
-  var bytesInfo = await fetchImageBytes(src);
+  var bytesInfo = null;
+  try {
+    bytesInfo = await fetchImageBytes(src, options);
+  } catch (error) {
+    if (error && error.name === "AbortError") {
+      throw error;
+    }
+    return null;
+  }
   if (!bytesInfo) {
     return null;
   }
@@ -549,7 +752,7 @@ export async function preloadCanvasImages(messages, options) {
   var uniqueImages = Array.from(imageEntriesByKey.values()).filter(function (entry) { return entry.src; });
   if (uniqueImages.length === 0) return cache;
 
-  await mapLimit(uniqueImages, 5, async function (entry) {
+  await mapLimit(uniqueImages, IMAGE_PRELOAD_CONCURRENCY, async function (entry) {
     try {
       var src = entry.src;
       var bytesInfo = await fetchImageBytes(src, options);

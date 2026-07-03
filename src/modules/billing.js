@@ -1,10 +1,18 @@
 (function initChatVaultBilling() {
-  const checkoutUrl = "https://tabpilotpro.com/claude/checkout.html";
-  const productId = "claude_export";
-  const productSlug = "claude-export";
-  const productName = "Claude Export";
-  const checkoutIntentStorageKey = "chatvault_pending_checkout_intent_v1";
+  const productConfig = globalThis.CHATVAULT_PRODUCT_CONFIG || {};
+  const storageKey = typeof productConfig.storageKey === "function"
+    ? productConfig.storageKey
+    : (name) => `chatvault_exporter.${name}`;
+  const checkoutUrl = productConfig.checkoutUrl || "https://tabpilotpro.com/claude/checkout.html";
+  const productId = productConfig.productId || "claude_export";
+  const productSlug = productConfig.productSlug || "claude-export";
+  const productName = productConfig.productName || "Claude Export";
+  const checkoutIntentStorageKey = storageKey("pending_checkout_intent.v1");
   const checkoutIntentMaxAgeMs = 5 * 60 * 1000;
+  const billingPriceIds = productConfig.billingPriceIds || {};
+  const getConfiguredPriceId = (key, fallback) => (
+    Object.prototype.hasOwnProperty.call(billingPriceIds, key) ? billingPriceIds[key] : fallback
+  );
 
   const t = (key, def) => {
     return (globalThis.CHATVAULT_I18N && globalThis.CHATVAULT_I18N.t)
@@ -16,7 +24,7 @@
     {
       id: "monthly",
       sku: "pro_monthly",
-      priceId: "pri_01kvdgya1nx70xhax2h5d8at0n",
+      priceId: getConfiguredPriceId("monthly", ""),
       internalPlan: "pro",
       billingInterval: "monthly",
       title: t("billing_plan_title_monthly", "Pro Monthly"),
@@ -35,7 +43,7 @@
     {
       id: "yearly",
       sku: "pro_yearly",
-      priceId: "pri_01kvdh0jc0nrpbfjt60509nw6x",
+      priceId: getConfiguredPriceId("yearly", ""),
       internalPlan: "pro",
       billingInterval: "yearly",
       title: t("billing_plan_title_yearly", "Pro Yearly"),
@@ -54,7 +62,7 @@
     {
       id: "lifetime",
       sku: "pro_lifetime",
-      priceId: "pri_01kvdh1ank00x91xc3qtv2bkw2",
+      priceId: getConfiguredPriceId("lifetime", ""),
       internalPlan: "pro",
       billingInterval: "lifetime",
       title: t("billing_plan_title_lifetime", "Lifetime Early Bird"),
@@ -79,10 +87,10 @@
     t("billing_benefit_premium_styles", "Premium report styles (Oxford, McKinsey)"),
     t("billing_benefit_receipt_local", "Local export receipts"),
     t("billing_benefit_unlimited", "Unlimited daily chat exports"),
-    t("billing_benefit_watermark", "Hide Claude Export watermark"),
+    t("billing_benefit_watermark", `Hide ${productName} watermark`),
     t("billing_benefit_receipt", "Download sidecar export receipt"),
-    t("billing_benefit_shared", "Shared Pro VIP status with ChatVault AI"),
-    t("billing_benefit_platforms", "ChatGPT, Claude & Gemini support")
+    t("billing_benefit_private_account", `${productName} Pro status stays separate`),
+    t("billing_benefit_platforms", `${productName} support`)
   ];
 
   function getDefaultPlan() {
@@ -145,6 +153,7 @@
       price_id: plan.priceId,
       provider_id: "paddle",
       source,
+      checkout_url: checkoutUrl,
       ...(options.customerEmail ? { customer_email: options.customerEmail } : {}),
       ...(options.customerName ? { customer_name: options.customerName } : {})
     };
@@ -189,7 +198,7 @@
     }
 
     const plan = requirePlan(options.planId || options.plan || "yearly");
-    const result = await api.request("/functions/v1/create-checkout-session", {
+    const result = await api.request("/functions/v1/product-create-checkout-session", {
       accessToken: options.accessToken,
       body: getCheckoutRequestBody(plan.id, options.source || "extension", options),
       method: "POST",

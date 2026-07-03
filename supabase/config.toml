@@ -15,3 +15,21 @@ verify_jwt = true
 
 [functions.verify-export-entitlement]
 verify_jwt = true
+
+[functions.product-create-checkout-session]
+verify_jwt = true
+
+[functions.product-analytics-track]
+verify_jwt = false
+
+[functions.product-analytics-identify]
+verify_jwt = false
+
+[functions.product-payment-webhook]
+verify_jwt = false
+
+[functions.product-sync-subscription-status]
+verify_jwt = true
+
+[functions.product-verify-export-entitlement]
+verify_jwt = true

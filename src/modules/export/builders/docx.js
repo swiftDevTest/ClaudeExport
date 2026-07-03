@@ -1,7 +1,9 @@
 import { getPlatformLabel, t, formatDateDisplay, sanitizeFilename, notifyProgress, yieldToBrowser, sanitizeExportText, sanitizeInlineSegmentText, sanitizeImageAlt, normalizeExportLinkHref, mapLimit, formatLatexUnicode, ensureImageBlockMetadata, getImageDedupKey, parseInlineMarkdown, getPrefixedInlineSegments } from '../utils.js';
-import { preloadCanvasImages, fetchImageBytes, preloadImageForDocx, calculateWordImageDimensions } from '../media.js';
+import { preloadImageForDocx, calculateWordImageDimensions } from '../media.js';
 import { createZip } from '../zip.js';
 import { getWordTheme } from '../themes/word.js';
+
+const PRODUCT_NAME = globalThis.CHATVAULT_PRODUCT_CONFIG?.productName || "Claude Export";
 
 export function xmlEscape(value) {
   return String(value == null ? "" : value)
@@ -489,9 +491,10 @@ export async function buildDocxBlob(messages, metadata, settingsInput, options) 
   var imageCache = {};
   if (uniqueImages.length > 0) {
     var loadedImages = 0;
-    var preloadedResults = await mapLimit(uniqueImages, 5, async function (entry, index) {
+    var preloadedResults = await mapLimit(uniqueImages, 2, async function (entry, index) {
       throwIfAborted();
-      var result = await preloadImageForDocx(entry.src, index);
+      var result = await preloadImageForDocx(entry.src, index, options);
+      throwIfAborted();
       loadedImages += 1;
       notifyProgress(
         options,
@@ -590,7 +593,7 @@ export async function buildDocxBlob(messages, metadata, settingsInput, options) 
   }
 
   if (settings.show_chatvault_badge) {
-    bodyParts.push(wordParagraph(t("export_branding_footer", "Exported locally by ChatVault AI"), { color: themeWord.colorMuted, size: 9, spacing: 80 }));
+    bodyParts.push(wordParagraph("Exported locally by " + PRODUCT_NAME, { color: themeWord.colorMuted, size: 9, spacing: 80 }));
   }
   var body = bodyParts.join("");
 
@@ -608,8 +611,8 @@ export async function buildDocxBlob(messages, metadata, settingsInput, options) 
   var zipFiles = [
     { path: "_rels/.rels", content: packageRelsXml() },
     { path: "word/styles.xml", content: stylesXml(themeWord) },
-    { path: "docProps/core.xml", content: coreXml(title) },
-    { path: "docProps/app.xml", content: appXml() },
+    { path: "docProps/core.xml", content: coreXml(title, PRODUCT_NAME) },
+    { path: "docProps/app.xml", content: appXml(PRODUCT_NAME) },
     { path: "word/document.xml", content: documentXml }
   ];
 
@@ -717,15 +720,17 @@ export function stylesXml(themeWord) {
     "</w:styles>";
 }
 
-export function coreXml(title) {
+export function coreXml(title, creator) {
+  var appName = creator || PRODUCT_NAME;
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
     '<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">' +
-    "<dc:title>" + xmlEscape(title) + "</dc:title><dc:creator>ChatVault AI</dc:creator>" +
+    "<dc:title>" + xmlEscape(title) + "</dc:title><dc:creator>" + xmlEscape(appName) + "</dc:creator>" +
     '<dcterms:created xsi:type="dcterms:W3CDTF">' + new Date().toISOString() + "</dcterms:created>" +
     "</cp:coreProperties>";
 }
 
-export function appXml() {
+export function appXml(applicationName) {
+  var appName = applicationName || PRODUCT_NAME;
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
-    '<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>ChatVault AI</Application></Properties>';
+    '<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>' + xmlEscape(appName) + '</Application></Properties>';
 }

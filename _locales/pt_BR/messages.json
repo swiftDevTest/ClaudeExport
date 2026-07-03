@@ -1,6 +1,6 @@
 {
   "contextMenuExportParent": {
-    "message": "AI Chat Export"
+    "message": "Claude Export"
   },
   "contextMenuExportPdf": {
     "message": "Exportar para PDF"
@@ -21,16 +21,16 @@
     "message": "Exportar para JSON"
   },
   "extensionName": {
-    "message": "AI Chat Exporter - ChatGPT Claude Gemini para PDF, Docs, MD e mais"
+    "message": "Claude Exporter - Claude para PDF, Docs, MD e mais"
   },
   "extensionShortName": {
-    "message": "AI Chat Export"
+    "message": "Claude Export"
   },
   "extensionDescription": {
-    "message": "Exporte conversas do ChatGPT, Claude e Gemini localmente para PDF, Docs, MD e mais."
+    "message": "Exporte conversas do Claude localmente para PDF, Docs, MD e mais."
   },
   "extensionActionTitle": {
-    "message": "AI Chat Exporter - ChatGPT Claude Gemini para PDF, Docs, MD e mais"
+    "message": "Claude Exporter - Claude para PDF, Docs, MD e mais"
   },
   "brand_ai_workspace": {
     "message": "Espaço de trabalho IA"
@@ -141,7 +141,7 @@
     "message": "Nenhuma pasta ainda"
   },
   "empty_no_folders_desc": {
-    "message": "Use pastas para organizar os chats importados do ChatGPT, Claude e Gemini."
+    "message": "Use pastas para organizar os chats importados do Claude."
   },
   "empty_no_bookmarks": {
     "message": "Nenhum favorito ainda"
@@ -168,7 +168,7 @@
     "message": "Contas associadas"
   },
   "linked_accounts_desc": {
-    "message": "O ChatVault usa as contas associadas apenas para manter separados os índices de títulos do ChatGPT, Claude e Gemini. Não armazena cookies de plataforma, senhas, tokens, prompts, respostas ou corpos de chat."
+    "message": "O ChatVault usa as contas associadas apenas para manter separados os índices de títulos do Claude. Não armazena cookies de plataforma, senhas, tokens, prompts, respostas ou corpos de chat."
   },
   "settings_export_title": {
     "message": "Configurações de exportação de conteúdo"
@@ -240,7 +240,7 @@
     "message": "Ajuste preciso com matiz e valores RGB."
   },
   "billing_title": {
-    "message": "Upgrade para AI Chat Export Pro"
+    "message": "Upgrade para Claude Export Pro"
   },
   "billing_desc": {
     "message": "Desbloqueie mais exportações locais, temas refinados, fluxos em lote e saída PDF, Docs, MD e mais."
@@ -375,7 +375,7 @@
     "message": "Preparando exportação de chat: $1..."
   },
   "toast_no_open_chat": {
-    "message": "Abra uma conversa do ChatGPT, Claude ou Gemini para exportar."
+    "message": "Abra uma conversa do Claude para exportar."
   },
   "toast_image_limit_exceeded": {
     "message": "Este conteúdo é longo demais para exportar como imagem em alta qualidade. Exporte como PDF."
@@ -408,7 +408,7 @@
     "message": "Você perguntou"
   },
   "export_branding_footer": {
-    "message": "Exportado localmente pelo AI Chat Export"
+    "message": "Exportado localmente pelo Claude Export"
   },
   "export_image_footer_sub": {
     "message": "Exportação local · conteúdo não armazenado"
@@ -441,7 +441,7 @@
     "message": "Imagem - Falha ao carregar"
   },
   "export_pdf_footer_branding": {
-    "message": "AI Chat Export local"
+    "message": "Claude Export local"
   },
   "export_footer_source": {
     "message": "Export From: $1"
@@ -477,7 +477,7 @@
     "message": "Comece em seu espaço de IA"
   },
   "welcome_lede": {
-    "message": "Abra o ChatGPT, Claude ou Gemini primeiro. O ChatVault aparecerá lá para que você possa exportar, salvar ou organizar sua primeira conversa."
+    "message": "Abra o Claude primeiro. O ChatVault aparecerá lá para que você possa exportar, salvar ou organizar sua primeira conversa."
   },
   "welcome_rec_pill": {
     "message": "Recomendado"
@@ -507,7 +507,7 @@
     "message": "Fixe o ChatVault quando estiver pronto."
   },
   "welcome_pin_desc": {
-    "message": "O Chrome exige que esta etapa seja feita manualmente. Clique no ícone de quebra-cabeça, encontre o AI Chat Export e clique no ícone de alfinete (pin)."
+    "message": "O Chrome exige que esta etapa seja feita manualmente. Clique no ícone de quebra-cabeça, encontre o Claude Export e clique no ícone de alfinete (pin)."
   },
   "welcome_pin_status_init": {
     "message": "Mesmo se ainda não estiver fixado, o ChatVault funciona nas páginas de IA suportadas."
@@ -528,7 +528,7 @@
     "message": "Ótimo. O ChatVault agora está visível na barra de ferramentas do Chrome."
   },
   "welcome_pin_failed": {
-    "message": "Ainda não está fixado. Use o ícone de quebra-cabeça do Chrome na barra de ferramentas e clique no alfinete ao lado do AI Chat Export."
+    "message": "Ainda não está fixado. Use o ícone de quebra-cabeça do Chrome na barra de ferramentas e clique no alfinete ao lado do Claude Export."
   },
   "welcome_privacy_footnote": {
     "message": "O ChatVault armazena títulos, links, pastas, favoritos e configurações. Não armazena prompts, respostas, cookies de plataforma, nem tokens de acesso ou atualização."
@@ -567,7 +567,7 @@
     "message": "Acesso em múltiplos dispositivos"
   },
   "billing_benefit_platforms": {
-    "message": "Suporte para ChatGPT, Claude e Gemini"
+    "message": "Suporte para Claude"
   },
   "billing_benefit_personal": {
     "message": "Apenas uso pessoal"
@@ -654,10 +654,10 @@
     "message": "A pasta de destino não foi encontrada."
   },
   "aria_sidebar": {
-    "message": "Barra lateral do AI Chat Export"
+    "message": "Barra lateral do Claude Export"
   },
   "aria_collapsed_launcher": {
-    "message": "Iniciador recolhido do AI Chat Export"
+    "message": "Iniciador recolhido do Claude Export"
   },
   "format_pdf": {
     "message": "PDF"
@@ -1248,13 +1248,13 @@
     "message": "Pular guia"
   },
   "welcome_page_title": {
-    "message": "Bem-vindo ao AI Chat Export"
+    "message": "Bem-vindo ao Claude Export"
   },
   "welcome_aria_open_platform": {
     "message": "Abrir uma plataforma de IA"
   },
   "welcome_aria_pin_chatvault": {
-    "message": "Fixar AI Chat Export"
+    "message": "Fixar Claude Export"
   },
   "folder_empty_hint": {
     "message": "Arraste os chats aqui"
@@ -1494,10 +1494,10 @@
     "message": "Anexa os prompts originais no final (Pro)"
   },
   "popup_watermark_title": {
-    "message": "Ocultar marca d’água AI Chat Export"
+    "message": "Ocultar marca d’água Claude Export"
   },
   "popup_watermark_desc": {
-    "message": "Remove a assinatura AI Chat Export no final do documento (Pro)"
+    "message": "Remove a assinatura Claude Export no final do documento (Pro)"
   },
   "popup_source_url_desc": {
     "message": "Anexa a URL original da conversa ao documento exportado"
@@ -1620,7 +1620,7 @@
     "message": "Não foi possível abrir o checkout. Tente novamente mais tarde."
   },
   "popup_checkout_service_syncing": {
-    "message": "O serviço de checkout está sendo atualizado. Reabra o AI Chat Export e tente novamente em instantes."
+    "message": "O serviço de checkout está sendo atualizado. Reabra o Claude Export e tente novamente em instantes."
   },
   "popup_checkout_popup_blocked": {
     "message": "O navegador bloqueou o checkout. Tente novamente."

@@ -3,11 +3,18 @@
 
   const auth = globalThis.CHATVAULT_SUPABASE_AUTH;
   const billing = globalThis.CHATVAULT_BILLING;
+  const productConfig = globalThis.CHATVAULT_PRODUCT_CONFIG || {};
+  const productName = productConfig.productName || "Claude Export";
+  const isolatedMembership = productConfig.isolatedMembership === true;
   const checkoutIntentStorageKey = billing?.checkoutIntentStorageKey || "chatvault_pending_checkout_intent_v1";
   
   let currentSession = null;
-  let checkoutInlineFlowActive = false;
-  let checkoutResumeInFlight = false;
+
+  function applyProductTheme(target) {
+    if (productConfig && typeof productConfig.applyThemeVars === "function") {
+      productConfig.applyThemeVars(target || document.documentElement);
+    }
+  }
 
   function hasActiveAuthSession(session) {
     return !!(session && session.access_token);
@@ -20,7 +27,7 @@
 
   function getCheckoutErrorMessage(error) {
     if (isBackendSchemaCacheError(error)) {
-      return "结账服务正在更新，请稍后重新打开 Claude Export 再试。";
+      return `结账服务正在更新，请稍后重新打开 ${productName} 再试。`;
     }
     return error && error.message ? error.message : "请稍后再试。";
   }
@@ -71,41 +78,6 @@
     }
   }
 
-  function storageGet(key) {
-    return new Promise((resolve) => {
-      const storage = getChromeStorage();
-      if (!storage) {
-        resolve(null);
-        return;
-      }
-      storage.get(key, (result) => {
-        try {
-          if (chrome.runtime.lastError) {
-            resolve(null);
-            return;
-          }
-        } catch (error) {
-          resolve(null);
-          return;
-        }
-        resolve(result ? result[key] || null : null);
-      });
-    });
-  }
-
-  function storageSet(items) {
-    return new Promise((resolve) => {
-      const storage = getChromeStorage();
-      if (!storage) {
-        resolve(false);
-        return;
-      }
-      storage.set(items, () => {
-        resolve(true);
-      });
-    });
-  }
-
   function storageRemove(key) {
     return new Promise((resolve) => {
       const storage = getChromeStorage();
@@ -117,24 +89,6 @@
         resolve();
       });
     });
-  }
-
-  async function savePendingCheckoutIntent(planId, source) {
-    if (!billing || typeof billing.createCheckoutIntent !== "function") {
-      return;
-    }
-    await storageSet({ [checkoutIntentStorageKey]: billing.createCheckoutIntent(planId || "yearly", source || "subscribe_page") });
-  }
-
-  async function getPendingCheckoutIntent() {
-    if (!billing || typeof billing.normalizeCheckoutIntent !== "function") {
-      return null;
-    }
-    const intent = billing.normalizeCheckoutIntent(await storageGet(checkoutIntentStorageKey));
-    if (!intent) {
-      await storageRemove(checkoutIntentStorageKey);
-    }
-    return intent;
   }
 
   function clearPendingCheckoutIntent() {
@@ -188,7 +142,7 @@
       const switchBtn = document.createElement("a");
       switchBtn.href = "#";
       switchBtn.id = "btn-switch-account";
-      switchBtn.style.color = "#3b82f6";
+      switchBtn.style.color = "var(--cv-primary)";
       switchBtn.style.textDecoration = "none";
       switchBtn.style.fontWeight = "600";
       switchBtn.textContent = "切换账号";
@@ -211,7 +165,7 @@
       loginBtn.id = "btn-login-now";
       loginBtn.style.background = "none";
       loginBtn.style.border = "none";
-      loginBtn.style.color = "#10b981";
+      loginBtn.style.color = "var(--cv-primary)";
       loginBtn.style.cursor = "pointer";
       loginBtn.style.fontWeight = "700";
       loginBtn.style.padding = "0";
@@ -237,33 +191,29 @@
     }
 
     currentSession = await auth.getSession({ skipUserRefresh: false, allowStaleOnError: false }).catch(() => null);
+    let signedInOnly = false;
     if (!hasActiveAuthSession(currentSession)) {
-      if (options.planId) {
-        checkoutInlineFlowActive = true;
-        await savePendingCheckoutIntent(options.planId, options.source || "subscribe_page");
-      }
       try {
         currentSession = await auth.signInWithGoogle();
       } catch (error) {
-        if (options.planId) {
-          await clearPendingCheckoutIntent();
-        }
         throw error;
       }
       if (!hasActiveAuthSession(currentSession)) {
         currentSession = await auth.getSession({ skipUserRefresh: false, allowStaleOnError: false }).catch(() => null);
       }
+      signedInOnly = hasActiveAuthSession(currentSession);
     }
 
     if (!hasActiveAuthSession(currentSession)) {
-      if (options.planId) {
-        await clearPendingCheckoutIntent();
-      }
       throw new Error("订阅前请先登录，以便自动绑定 Pro 权益。");
     }
 
+    await clearPendingCheckoutIntent();
     updateUserHeader();
-    return currentSession;
+    return {
+      session: currentSession,
+      signedInOnly
+    };
   }
 
   async function handleCheckout(planId, buttonEl) {
@@ -273,7 +223,12 @@
 
     try {
       const source = "subscribe_page";
-      const session = await ensureCheckoutSession({ planId, source });
+      const checkoutSession = await ensureCheckoutSession({ planId, source });
+      if (checkoutSession.signedInOnly) {
+        alert("登录成功。请再次点击当前订阅按钮打开结账页面。");
+        return;
+      }
+      const session = checkoutSession.session;
       const email = session?.user?.email || "";
       const checkout = await billing.createCheckoutSession({
         accessToken: session.access_token,
@@ -295,53 +250,55 @@
     } finally {
       buttonEl.disabled = false;
       buttonEl.textContent = originalText;
-      checkoutInlineFlowActive = false;
     }
   }
 
-  async function resumePendingCheckoutAfterAuth() {
-    if (checkoutInlineFlowActive || checkoutResumeInFlight) {
-      return;
+  function applyProductCopy() {
+    applyProductTheme(document.documentElement);
+    document.title = `升级至 ${productName} Pro`;
+    document.querySelectorAll(".cv-brand span").forEach((element) => {
+      element.textContent = productName;
+    });
+    const title = document.querySelector(".cv-title");
+    if (title) {
+      title.textContent = `升级至 ${productName} Pro`;
     }
-    const intent = await getPendingCheckoutIntent();
-    if (!intent) {
-      return;
-    }
-    if (!hasActiveAuthSession(currentSession)) {
-      await checkUserSession();
-    }
-    if (!hasActiveAuthSession(currentSession)) {
-      return;
-    }
-
-    checkoutResumeInFlight = true;
-    try {
-      const checkout = await billing.createCheckoutSession({
-        accessToken: currentSession.access_token,
-        customerEmail: currentSession?.user?.email || "",
-        planId: intent.planId,
-        source: intent.source || "subscribe_page"
-      });
-      if (checkout?.checkoutUrl) {
-        await openCheckoutUrl(checkout.checkoutUrl);
-        await clearPendingCheckoutIntent();
+    document.querySelectorAll(".cv-feature-text h3").forEach((heading) => {
+      if (/隐藏 .*水印/.test(heading.textContent || "")) {
+        heading.textContent = `隐藏 ${productName} 水印`;
       }
-    } catch (error) {
-      console.warn("Pending checkout resume failed:", error);
-    } finally {
-      checkoutResumeInFlight = false;
+    });
+    document.querySelectorAll(".cv-feature-text p").forEach((paragraph) => {
+      paragraph.textContent = (paragraph.textContent || "")
+        .replace(/Claude Export/g, productName);
+    });
+    if (isolatedMembership) {
+      document.querySelectorAll(".cv-feature-item.text-highlight").forEach((element) => {
+        element.remove();
+      });
+      document.querySelectorAll(".cv-faq-item").forEach((item) => {
+        const text = item.textContent || "";
+        if (/互通 Pro|主管理器/.test(text)) {
+          item.remove();
+        }
+      });
+      const subtitle = document.querySelector(".cv-subtitle");
+      if (subtitle) {
+        subtitle.textContent = "解除额度限制，解锁出版级排版主题、本地导出凭证和独立 Pro 会员权益。";
+      }
     }
   }
 
   // Hook for Supabase OAuth redirect or login callback
   globalThis.CHATVAULT_REFRESH_AUTH_STATE = async () => {
     await checkUserSession();
-    await resumePendingCheckoutAfterAuth();
+    await clearPendingCheckoutIntent();
   };
 
   document.addEventListener("DOMContentLoaded", async () => {
+    applyProductCopy();
     await checkUserSession();
-    await resumePendingCheckoutAfterAuth();
+    await clearPendingCheckoutIntent();
 
     // Bind subscribe buttons
     document.querySelectorAll(".cv-plan-btn").forEach((btn) => {
@@ -354,7 +311,7 @@
     // Handle policy link clicks (mock links or direct to standard terms)
     document.getElementById("link-terms").onclick = (e) => {
       e.preventDefault();
-      alert("服务条款：Claude Export 仅用于个人日常提取和保存 AI 对话。严禁利用本工具抓取敏感、非法或侵犯版权的数据。");
+      alert(`服务条款：${productName} 仅用于个人日常提取和保存 AI 对话。严禁利用本工具抓取敏感、非法或侵犯版权的数据。`);
     };
 
     document.getElementById("link-privacy").onclick = (e) => {

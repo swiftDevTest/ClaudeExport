@@ -1,6 +1,6 @@
 {
   "contextMenuExportParent": {
-    "message": "AI Chat Export"
+    "message": "Claude Export"
   },
   "contextMenuExportPdf": {
     "message": "Export to PDF"
@@ -141,7 +141,7 @@
     "message": "No Folders Yet"
   },
   "empty_no_folders_desc": {
-    "message": "Use folders to organize imported ChatGPT, Claude, and Gemini chats."
+    "message": "Use folders to organize imported Claude chats."
   },
   "empty_no_bookmarks": {
     "message": "No Bookmarks Yet"
@@ -159,7 +159,7 @@
     "message": "Sign In To Unlock Unlimited Exports"
   },
   "login_desc": {
-    "message": "AI Chat Export stores settings and daily free quotas only. Chat content is never saved."
+    "message": "Claude Export stores settings and daily free quotas only. Chat content is never saved."
   },
   "login_btn_google": {
     "message": "Sign In With Google"
@@ -168,7 +168,7 @@
     "message": "Linked Accounts"
   },
   "linked_accounts_desc": {
-    "message": "AI Chat Export uses linked accounts only to keep ChatGPT, Claude, and Gemini export quotas separate. It does not store platform cookies, passwords, tokens, prompts, replies, or chat bodies."
+    "message": "Claude Export uses linked accounts only to keep Claude export quotas separate. It does not store platform cookies, passwords, tokens, prompts, replies, or chat bodies."
   },
   "settings_export_title": {
     "message": "Export Content Settings"
@@ -240,13 +240,13 @@
     "message": "Fine tune with hue and RGB values."
   },
   "billing_title": {
-    "message": "Upgrade To AI Chat Export Pro"
+    "message": "Upgrade To Claude Export Pro"
   },
   "billing_desc": {
     "message": "Unlock higher local export limits, polished themes, batch workflows, and PDF, Docs, MD and More output."
   },
   "billing_footnote": {
-    "message": "Exports are generated locally from the page you choose. Checkout opens on the AI Chat Export pricing page and is processed by a secure payment processor. AI Chat Export stores settings, sign-in email, and membership status only. Chat content is never saved."
+    "message": "Exports are generated locally from the page you choose. Checkout opens on the Claude Export pricing page and is processed by a secure payment processor. Claude Export stores settings, sign-in email, and membership status only. Chat content is never saved."
   },
   "billing_btn_restore": {
     "message": "Restore purchase"
@@ -279,13 +279,13 @@
     "message": "Align My Questions Right"
   },
   "export_privacy": {
-    "message": "Generated locally in your browser. AI Chat Export does not upload, store, or remember exported message content."
+    "message": "Generated locally in your browser. Claude Export does not upload, store, or remember exported message content."
   },
   "export_run_save": {
     "message": "Save Settings"
   },
   "launcher_tooltip": {
-    "message": "AI Chat Export"
+    "message": "Claude Export"
   },
   "toast_folder_deleted": {
     "message": "Folder deleted."
@@ -375,7 +375,7 @@
     "message": "Preparing conversation export: $1..."
   },
   "toast_no_open_chat": {
-    "message": "Open a ChatGPT, Claude, or Gemini conversation to export."
+    "message": "Open a Claude conversation to export."
   },
   "toast_image_limit_exceeded": {
     "message": "This content is too long for a high-quality image export. Export as PDF instead."
@@ -408,7 +408,7 @@
     "message": "You Asked"
   },
   "export_branding_footer": {
-    "message": "Exported locally by AI Chat Export"
+    "message": "Exported locally by Claude Export"
   },
   "export_image_footer_sub": {
     "message": "Local export · content not stored"
@@ -441,7 +441,7 @@
     "message": "Image - Load Failed"
   },
   "export_pdf_footer_branding": {
-    "message": "AI Chat Export local"
+    "message": "Claude Export local"
   },
   "export_footer_source": {
     "message": "Export From: $1"
@@ -453,7 +453,7 @@
     "message": "Sign in to continue"
   },
   "onboard_text_login_collapsed": {
-    "message": "Open AI Chat Export and sign in before exporting chats."
+    "message": "Open Claude Export and sign in before exporting chats."
   },
   "onboard_step_account": {
     "message": "Account setup"
@@ -477,7 +477,7 @@
     "message": "Start with your AI conversation"
   },
   "welcome_lede": {
-    "message": "Open ChatGPT, Claude, or Gemini first. AI Chat Export will meet you there so you can export your first conversation."
+    "message": "Open Claude first. Claude Export will meet you there so you can export your first conversation."
   },
   "welcome_rec_pill": {
     "message": "Recommended"
@@ -498,19 +498,19 @@
     "message": "Gemini"
   },
   "welcome_pin_wait": {
-    "message": "Pinning can wait. The important part is opening a supported AI page where AI Chat Export can appear."
+    "message": "Pinning can wait. The important part is opening a supported AI page where Claude Export can appear."
   },
   "welcome_kicker_pin": {
     "message": "Then make it easy to find"
   },
   "welcome_title_pin": {
-    "message": "Pin AI Chat Export when you are ready."
+    "message": "Pin Claude Export when you are ready."
   },
   "welcome_pin_desc": {
-    "message": "Chrome requires this step to be done manually. Click the puzzle icon, find AI Chat Export, then click the pin icon."
+    "message": "Chrome requires this step to be done manually. Click the puzzle icon, find Claude Export, then click the pin icon."
   },
   "welcome_pin_status_init": {
-    "message": "If it is not pinned yet, AI Chat Export still works on supported AI pages."
+    "message": "If it is not pinned yet, Claude Export still works on supported AI pages."
   },
   "welcome_btn_check_pin": {
     "message": "Check pin status"
@@ -525,13 +525,13 @@
     "message": "Check again"
   },
   "welcome_pin_success": {
-    "message": "Nice. AI Chat Export is visible in your Chrome toolbar."
+    "message": "Nice. Claude Export is visible in your Chrome toolbar."
   },
   "welcome_pin_failed": {
-    "message": "Not pinned yet. Use Chrome's puzzle icon in the toolbar, then click the pin next to AI Chat Export."
+    "message": "Not pinned yet. Use Chrome's puzzle icon in the toolbar, then click the pin next to Claude Export."
   },
   "welcome_privacy_footnote": {
-    "message": "AI Chat Export stores settings and daily free quotas only. It does not store prompts, replies, platform cookies, access tokens, or refresh tokens."
+    "message": "Claude Export stores settings and daily free quotas only. It does not store prompts, replies, platform cookies, access tokens, or refresh tokens."
   },
   "billing_benefit_pdf": {
     "message": "PDF, Docs, MD and More export"
@@ -567,7 +567,7 @@
     "message": "Multi-device access"
   },
   "billing_benefit_platforms": {
-    "message": "ChatGPT, Claude & Gemini support"
+    "message": "Claude support"
   },
   "billing_benefit_personal": {
     "message": "Personal use only"
@@ -654,10 +654,10 @@
     "message": "Target folder was not found."
   },
   "aria_sidebar": {
-    "message": "AI Chat Export sidebar"
+    "message": "Claude Export sidebar"
   },
   "aria_collapsed_launcher": {
-    "message": "AI Chat Export collapsed launcher"
+    "message": "Claude Export collapsed launcher"
   },
   "format_pdf": {
     "message": "PDF"
@@ -1248,13 +1248,13 @@
     "message": "Skip Guide"
   },
   "welcome_page_title": {
-    "message": "Welcome to AI Chat Export"
+    "message": "Welcome to Claude Export"
   },
   "welcome_aria_open_platform": {
     "message": "Open an AI platform"
   },
   "welcome_aria_pin_chatvault": {
-    "message": "Pin AI Chat Export"
+    "message": "Pin Claude Export"
   },
   "folder_empty_hint": {
     "message": "Drag chats here"
@@ -1494,10 +1494,10 @@
     "message": "Append the original prompts at the end (Pro)"
   },
   "popup_watermark_title": {
-    "message": "Hide AI Chat Export Watermark"
+    "message": "Hide Claude Export Watermark"
   },
   "popup_watermark_desc": {
-    "message": "Remove the AI Chat Export signature from the document end (Pro)"
+    "message": "Remove the Claude Export signature from the document end (Pro)"
   },
   "popup_source_url_desc": {
     "message": "Append the original conversation URL to the exported document"
@@ -1554,7 +1554,7 @@
     "message": "Code package ZIP download"
   },
   "popup_benefit_shared_pro": {
-    "message": "Shared Pro access"
+    "message": "Dedicated Pro access"
   },
   "popup_subscribe_login_prefix": {
     "message": "You are not signed in. "
@@ -1620,7 +1620,7 @@
     "message": "Could not open checkout. Please try again later."
   },
   "popup_checkout_service_syncing": {
-    "message": "Checkout service is updating. Please reopen AI Chat Export and try again in a moment."
+    "message": "Checkout service is updating. Please reopen Claude Export and try again in a moment."
   },
   "popup_checkout_popup_blocked": {
     "message": "The browser blocked checkout. Please try again."

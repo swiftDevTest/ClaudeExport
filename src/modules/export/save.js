@@ -81,6 +81,26 @@ export function scheduleBlobUrlRevoke(objectUrl) {
   }
 }
 
+var activeBlobUrls = new Map();
+
+if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.onMessage) {
+  chrome.runtime.onMessage.addListener(function (message) {
+    if (message && message.type === "CHATVAULT_DOWNLOAD_STATUS") {
+      var downloadId = message.downloadId;
+      var entry = activeBlobUrls.get(downloadId);
+      if (entry) {
+        try {
+          URL.revokeObjectURL(entry.objectUrl);
+        } catch (error) {}
+        if (entry.timer) {
+          clearTimeout(entry.timer);
+        }
+        activeBlobUrls.delete(downloadId);
+      }
+    }
+  });
+}
+
 export async function saveBlobWithDialog(blob, filename, options) {
   if (typeof chrome === "undefined" || !chrome.runtime || typeof chrome.runtime.sendMessage !== "function") {
     throw new Error("Save dialog is not available. Please reload the extension and try again.");
@@ -111,6 +131,23 @@ export async function saveBlobWithDialog(blob, filename, options) {
       var error = new Error(response && response.error || "Export save was canceled.");
       if (response && response.cancelled) error.name = "AbortError";
       throw error;
+    }
+
+    if (objectUrl && response.downloadId && response.state === "in_progress") {
+      var safetyTimer = setTimeout(function () {
+        try {
+          URL.revokeObjectURL(objectUrl);
+        } catch (e) {}
+        activeBlobUrls.delete(response.downloadId);
+      }, 5 * 60 * 1000);
+      if (safetyTimer && typeof safetyTimer.unref === "function") {
+        safetyTimer.unref();
+      }
+      activeBlobUrls.set(response.downloadId, {
+        objectUrl: objectUrl,
+        timer: safetyTimer
+      });
+      objectUrl = "";
     }
 
     return response.filename || filename;

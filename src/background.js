@@ -1,22 +1,59 @@
+try {
+  importScripts("product-config.js");
+} catch (error) {}
+
 (function initChatVaultBackground() {
   "use strict";
 
-  const ONBOARDING_STATE_KEY = "chatvault.exporter.onboarding.v1";
-  const OPEN_SUBSCRIBE_PANEL_REQUEST_KEY = "chatvault_open_subscribe_panel_request";
-  const SESSION_KEY = "chatvault_supabase_session";
-  const ENTITLEMENT_STATE_CACHE_KEY = "chatvault_exporter_entitlement_state_v1";
-  const MAX_IMAGE_FETCH_BYTES = 16 * 1024 * 1024;
+  const productConfig = globalThis.CHATVAULT_PRODUCT_CONFIG || {};
+  const storageKey = typeof productConfig.storageKey === "function"
+    ? productConfig.storageKey
+    : (name) => `chatvault_exporter.${name}`;
+  const PRODUCT_ID = productConfig.productId || "claude_export";
+  const PRODUCT_SLUG = productConfig.productSlug || "claude-export";
+  const PRODUCT_NAME = productConfig.productName || "Claude Export";
+  const PRODUCT_SHORT_NAME = productConfig.shortName || PRODUCT_NAME;
+  const ONBOARDING_STATE_KEY = storageKey("onboarding.v1");
+  const OPEN_SUBSCRIBE_PANEL_REQUEST_KEY = storageKey("open_subscribe_panel_request.v1");
+  const SESSION_KEY = storageKey("supabase_session.v1");
+  const ENTITLEMENT_STATE_CACHE_KEY = storageKey("entitlement_state.v1");
+  const MAX_IMAGE_FETCH_BYTES = 8 * 1024 * 1024;
+  const IMAGE_FETCH_TIMEOUT_MS = 8000;
+  const ANALYTICS_QUEUE_KEY = storageKey("analytics.queue.v1");
+  const ANALYTICS_GUEST_ID_KEY = storageKey("analytics.guest_id.v1");
+  const ANALYTICS_IDENTIFY_DONE_KEY = storageKey("analytics.identify_done.v1");
+  const ANALYTICS_TRACKED_ONCE_KEY = storageKey("analytics.tracked_once.v1");
+  const ANALYTICS_FLUSH_INTERVAL_MS = 15 * 1000;
+  const ANALYTICS_BATCH_SIZE = 10;
+  const ANALYTICS_MAX_QUEUE = 50;
   const SUPABASE_URL = "https://acgehhqcgreatcjcefub.supabase.co";
   const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_GH05KXWPIo42YrorR0OGyQ_XdEWzY8Q";
   const SUPABASE_REFRESH_RESULT_TTL_MS = 30 * 1000;
+  const ANALYTICS_ALLOWED_EVENTS = new Set([
+    "auth_success",
+    "export_success",
+    "export_failed",
+    "vip_view_exposure",
+    "vip_sku_click",
+    "vip_signin_required",
+    "vip_purchase_click",
+    "vip_style_click"
+  ]);
+  const ANALYTICS_ALLOWED_PLATFORMS = new Set(["chatgpt", "claude", "gemini", "unknown"]);
   const supabaseRefreshPromises = new Map();
   const supabaseRefreshResults = new Map();
-  const TRUSTED_CONTENT_HOSTS = new Set([
-    "chatgpt.com",
-    "chat.openai.com",
-    "claude.ai",
-    "gemini.google.com"
-  ]);
+  const backgroundImageFetchControllers = new Map();
+  let analyticsMutationQueue = Promise.resolve();
+  let analyticsFlushTimer = null;
+  let analyticsFlushTimeout = null;
+  const TRUSTED_CONTENT_HOSTS = new Set(
+    Array.isArray(productConfig.allowedHosts) && productConfig.allowedHosts.length
+      ? productConfig.allowedHosts
+      : ["chatgpt.com", "chat.openai.com", "claude.ai", "gemini.google.com"]
+  );
+  const CONTENT_DOCUMENT_URL_PATTERNS = Array.isArray(productConfig.documentUrlPatterns) && productConfig.documentUrlPatterns.length
+    ? productConfig.documentUrlPatterns
+    : Array.from(TRUSTED_CONTENT_HOSTS).map((host) => `https://${host}/*`);
 
   function isTrustedContentUrl(urlStr) {
     try {
@@ -137,34 +174,13 @@
     return snapshot;
   }
 
-  function blobToDataUrl(blob) {
-    if (typeof FileReader === "function") {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.onerror = () => reject(new Error("Failed to read image data."));
-        reader.readAsDataURL(blob);
-      });
+  function bytesToBase64Payload(bytes) {
+    let binary = "";
+    const chunk = 8192;
+    for (let index = 0; index < bytes.byteLength; index += chunk) {
+      binary += String.fromCharCode.apply(null, bytes.subarray(index, index + chunk));
     }
-
-    if (typeof FileReaderSync === "function") {
-      return Promise.resolve(new FileReaderSync().readAsDataURL(blob));
-    }
-
-    return blob.arrayBuffer().then((buffer) => {
-      const bytes = new Uint8Array(buffer);
-      let binary = "";
-      const chunk = 8192;
-      for (let i = 0; i < bytes.byteLength; i += chunk) {
-        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
-      }
-      return "data:" + (blob.type || "application/octet-stream") + ";base64," + btoa(binary);
-    });
-  }
-
-  function dataUrlPayload(dataUrl) {
-    const commaIndex = String(dataUrl || "").indexOf(",");
-    return commaIndex >= 0 ? String(dataUrl).slice(commaIndex + 1) : "";
+    return btoa(binary);
   }
 
   async function refreshSupabaseSession(refreshToken) {
@@ -320,13 +336,18 @@
       return null;
     }
 
-    const response = await fetch(SUPABASE_URL + "/functions/v1/sync-subscription-status", {
+    const response = await fetch(SUPABASE_URL + "/functions/v1/product-sync-subscription-status", {
       method: "POST",
       headers: {
         apikey: SUPABASE_PUBLISHABLE_KEY,
         Authorization: "Bearer " + session.access_token,
         "Content-Type": "application/json"
-      }
+      },
+      body: JSON.stringify({
+        product_id: PRODUCT_ID,
+        product_slug: PRODUCT_SLUG,
+        product_name: PRODUCT_NAME
+      })
     });
 
     const text = await response.text();
@@ -350,6 +371,75 @@
     return payload;
   }
 
+  function startGoogleOAuthSession(clientId) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const identityRedirectUri = getIdentityRedirectUri();
+        const normalizedClientId = String(clientId || "").trim();
+        if (!normalizedClientId || normalizedClientId === "YOUR_GOOGLE_CLIENT_ID") {
+          reject(new Error("Please configure googleClientId in supabase-config.js first."));
+          return;
+        }
+
+        const rawNonce = createRandomHex(32);
+        const hashedNonce = await sha256Hex(rawNonce);
+        const redirectUri = encodeURIComponent(identityRedirectUri);
+        const scope = encodeURIComponent("openid email profile");
+        const responseType = encodeURIComponent("id_token token");
+        const state = createRandomHex(16);
+        const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(normalizedClientId)}&response_type=${responseType}&redirect_uri=${redirectUri}&scope=${scope}&state=${state}&nonce=${hashedNonce}`;
+
+        chrome.identity.launchWebAuthFlow({
+          url: authUrl,
+          interactive: true
+        }, async (redirectUrl) => {
+          const lastError = chrome.runtime.lastError;
+          if (lastError) {
+            reject(new Error(lastError.message || "Failed to initiate Google Login."));
+            return;
+          }
+
+          if (!redirectUrl) {
+            reject(new Error("Authorization failed: no redirect URL."));
+            return;
+          }
+
+          try {
+            const params = getOAuthParams(redirectUrl);
+            if (params.has("error") || params.has("error_description")) {
+              reject(new Error(`${getOAuthErrorMessage(params, "Authorization failed.")} Google client ID: ${normalizedClientId}. Redirect URI: ${identityRedirectUri}`));
+              return;
+            }
+
+            const idToken = params.get("id_token");
+            const accessToken = params.get("access_token");
+            const returnedState = params.get("state");
+
+            if (returnedState !== state) {
+              reject(new Error("Google OAuth state validation failed."));
+              return;
+            }
+
+            if (!idToken) {
+              reject(new Error("Missing ID Token in Google response."));
+              return;
+            }
+
+            const session = await exchangeGoogleIdTokenForSupabaseSession(idToken, accessToken, rawNonce);
+            syncSubscriptionStatusForSession(session).catch((syncError) => {
+              console.warn("Failed to sync subscription status after sign-in:", syncError);
+            });
+            resolve({ session, redirectUri: identityRedirectUri });
+          } catch (error) {
+            reject(error);
+          }
+        });
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
   function pruneSupabaseRefreshResults() {
     const now = Date.now();
     supabaseRefreshResults.forEach((value, key) => {
@@ -369,14 +459,14 @@
   }
 
   function sanitizeDownloadFilename(value) {
-    const parts = String(value || "Claude-Export")
+    const parts = String(value || PRODUCT_SHORT_NAME.replace(/\s+/g, "-"))
       .replace(/\\/g, "/")
       .split("/")
       .map(sanitizeDownloadPathSegment)
       .filter(Boolean)
       .slice(-12);
 
-    return parts.join("/") || "Claude-Export";
+    return parts.join("/") || PRODUCT_SHORT_NAME.replace(/\s+/g, "-");
   }
 
   function isTrustedExportBlobUrl(value) {
@@ -489,6 +579,22 @@
     }
   }
 
+  function storageGet(key) {
+    return new Promise((resolve) => {
+      try {
+        chrome.storage.local.get(key, (result) => {
+          if (chrome.runtime.lastError) {
+            resolve(null);
+            return;
+          }
+          resolve(result ? result[key] : null);
+        });
+      } catch (error) {
+        resolve(null);
+      }
+    });
+  }
+
   function storageSet(value) {
     return new Promise((resolve) => {
       try {
@@ -499,44 +605,130 @@
     });
   }
 
-  function openSubscribePopupFallback(source = "extension", planId = "yearly") {
-    return new Promise((resolve) => {
-      const params = new URLSearchParams({
-        subscribe: "1",
-        source: String(source || "extension"),
-        plan: String(planId || "yearly")
+  function generateUuid() {
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+      return crypto.randomUUID();
+    }
+    const hex = createRandomHex(16);
+    return [
+      hex.slice(0, 8),
+      hex.slice(8, 12),
+      "4" + hex.slice(13, 16),
+      ((parseInt(hex.slice(16, 17), 16) & 0x3) | 0x8).toString(16) + hex.slice(17, 20),
+      hex.slice(20, 32)
+    ].join("-");
+  }
+
+  async function getOrCreateAnalyticsGuestId() {
+    const stored = await storageGet(ANALYTICS_GUEST_ID_KEY);
+    if (stored) {
+      return stored;
+    }
+    const guestId = generateUuid();
+    await storageSet({ [ANALYTICS_GUEST_ID_KEY]: guestId });
+    return guestId;
+  }
+
+  function normalizeAnalyticsQueue(value) {
+    return Array.isArray(value) ? value : [];
+  }
+
+  function normalizeTrackedOnceStore(value) {
+    return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  }
+
+  function sanitizeAnalyticsEvent(event) {
+    if (!event || typeof event !== "object") {
+      return null;
+    }
+
+    const eventName = String(event.event_name || "");
+    if (!ANALYTICS_ALLOWED_EVENTS.has(eventName)) {
+      return null;
+    }
+
+    const platform = ANALYTICS_ALLOWED_PLATFORMS.has(event.platform) ? event.platform : "unknown";
+    const properties = event.properties && typeof event.properties === "object" && !Array.isArray(event.properties)
+      ? event.properties
+      : {};
+
+    return {
+      event_name: eventName,
+      platform,
+      client_timestamp: event.client_timestamp || new Date().toISOString(),
+      properties
+    };
+  }
+
+  function enqueueAnalyticsMutation(task) {
+    const run = analyticsMutationQueue.catch(() => {}).then(task);
+    analyticsMutationQueue = run.catch(() => {});
+    return run;
+  }
+
+  async function appendAnalyticsEvent(event) {
+    return true; // 注销埋点
+  }
+
+  async function postSupabaseFunction(path, accessToken, body) {
+    const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+    const timeoutId = controller ? setTimeout(() => controller.abort(), 10000) : null;
+
+    try {
+      const response = await fetch(SUPABASE_URL + path, {
+        method: "POST",
+        signal: controller ? controller.signal : undefined,
+        headers: {
+          apikey: SUPABASE_PUBLISHABLE_KEY,
+          Authorization: "Bearer " + (accessToken || SUPABASE_PUBLISHABLE_KEY),
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          product_id: PRODUCT_ID,
+          product_slug: PRODUCT_SLUG,
+          product_name: PRODUCT_NAME,
+          ...(body || {})
+        })
       });
-      const popupUrl = chrome.runtime.getURL(`src/popup.html?${params.toString()}`);
-      if (chrome.windows && typeof chrome.windows.create === "function") {
-        chrome.windows.create({
-          url: popupUrl,
-          type: "popup",
-          width: 760,
-          height: 920,
-          focused: true
-        }, () => {
-          if (chrome.runtime.lastError) {
-            resolve({ ok: false, error: chrome.runtime.lastError.message });
-            return;
-          }
-          resolve({ ok: true, opened: "popup_window" });
-        });
-        return;
+
+      if (!response.ok) {
+        const text = await response.text();
+        const requestError = new Error(text || "Supabase request failed: " + response.status);
+        requestError.status = response.status;
+        throw requestError;
       }
 
-      if (chrome.tabs && typeof chrome.tabs.create === "function") {
-        chrome.tabs.create({ url: popupUrl }, () => {
-          if (chrome.runtime.lastError) {
-            resolve({ ok: false, error: chrome.runtime.lastError.message });
-            return;
-          }
-          resolve({ ok: true, opened: "popup_tab" });
-        });
-        return;
+      return response.status === 204 ? null : response.json();
+    } finally {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
       }
+    }
+  }
 
-      resolve({ ok: false, error: "Unable to open subscribe panel." });
-    });
+  async function flushAnalyticsQueue() {
+    return { ok: true, flushed: 0 }; // 注销埋点
+  }
+
+  async function identifyAnalyticsGuest(guestId) {
+    return { ok: true }; // 注销埋点
+  }
+
+  function scheduleAnalyticsFlush(delayMs) {
+    if (analyticsFlushTimeout) {
+      return;
+    }
+    analyticsFlushTimeout = setTimeout(() => {
+      analyticsFlushTimeout = null;
+      flushAnalyticsQueue().catch(() => {});
+    }, Math.max(0, Number(delayMs) || 0));
+    if (typeof analyticsFlushTimeout.unref === "function") {
+      analyticsFlushTimeout.unref();
+    }
+  }
+
+  function startAnalyticsFlushTimer() {
+    return; // 注销定时器
   }
 
   async function openSubscribePanel(source = "extension", planId = "yearly") {
@@ -548,20 +740,17 @@
       }
     });
 
-    if (String(source || "").startsWith("extension_vip_modal")) {
-      return openSubscribePopupFallback(source, planId);
-    }
-
     if (chrome.action && typeof chrome.action.openPopup === "function") {
       try {
         await chrome.action.openPopup();
         return { ok: true, opened: "action_popup" };
       } catch (error) {
-        console.warn("chrome.action.openPopup failed, using fallback window:", error);
+        console.warn("chrome.action.openPopup failed:", error);
+        return { ok: false, error: error && error.message ? error.message : "Unable to open extension popup." };
       }
     }
 
-    return openSubscribePopupFallback(source, planId);
+    return { ok: false, error: "Unable to open extension popup." };
   }
 
   function createContextMenus() {
@@ -570,16 +759,11 @@
     }
 
     chrome.contextMenus.removeAll(() => {
-      const targetPatterns = [
-        "https://chatgpt.com/*",
-        "https://chat.openai.com/*",
-        "https://claude.ai/*",
-        "https://gemini.google.com/*"
-      ];
+      const targetPatterns = CONTENT_DOCUMENT_URL_PATTERNS;
 
       chrome.contextMenus.create({
         id: "chatvault_export_parent",
-        title: chrome.i18n.getMessage("contextMenuExportParent") || "Claude Export",
+        title: chrome.i18n.getMessage("contextMenuExportParent") || PRODUCT_SHORT_NAME,
         contexts: ["page"],
         documentUrlPatterns: targetPatterns
       }, () => {
@@ -646,6 +830,8 @@
     });
   }
 
+  startAnalyticsFlushTimer();
+
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message && message.type === "CHATVAULT_OPEN_SUBSCRIBE") {
       if (rejectUntrustedSender(sender, sendResponse)) return false;
@@ -668,71 +854,8 @@
       if (rejectUntrustedSender(sender, sendResponse)) return false;
       (async () => {
         try {
-          const identityRedirectUri = getIdentityRedirectUri();
-          const clientId = String(message.clientId || "").trim();
-          if (!clientId || clientId === "YOUR_GOOGLE_CLIENT_ID") {
-            sendResponse({ ok: false, error: "Please configure googleClientId in supabase-config.js first." });
-            return;
-          }
-
-          const rawNonce = createRandomHex(32);
-          const hashedNonce = await sha256Hex(rawNonce);
-          const redirectUri = encodeURIComponent(identityRedirectUri);
-          const scope = encodeURIComponent("openid email profile");
-          const responseType = encodeURIComponent("id_token token");
-          const state = createRandomHex(16);
-          const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&response_type=${responseType}&redirect_uri=${redirectUri}&scope=${scope}&state=${state}&nonce=${hashedNonce}`;
-
-          chrome.identity.launchWebAuthFlow({
-            url: authUrl,
-            interactive: true
-          }, async (redirectUrl) => {
-            const lastError = chrome.runtime.lastError;
-            if (lastError) {
-              sendResponse({ ok: false, error: lastError.message });
-              return;
-            }
-
-            if (!redirectUrl) {
-              sendResponse({ ok: false, error: "Authorization failed: no redirect URL." });
-              return;
-            }
-
-            try {
-              const params = getOAuthParams(redirectUrl);
-              if (params.has("error") || params.has("error_description")) {
-                sendResponse({
-                  ok: false,
-                  error: `${getOAuthErrorMessage(params, "Authorization failed.")} Google client ID: ${clientId}. Redirect URI: ${identityRedirectUri}`
-                });
-                return;
-              }
-
-              const idToken = params.get("id_token");
-              const accessToken = params.get("access_token");
-              const returnedState = params.get("state");
-
-              if (returnedState !== state) {
-                sendResponse({ ok: false, error: "Google OAuth state validation failed." });
-                return;
-              }
-
-              if (!idToken) {
-                sendResponse({ ok: false, error: "Missing ID Token in Google response." });
-                return;
-              }
-
-              const session = await exchangeGoogleIdTokenForSupabaseSession(idToken, accessToken, rawNonce);
-              try {
-                await syncSubscriptionStatusForSession(session);
-              } catch (syncError) {
-                console.warn("Failed to sync subscription status after sign-in:", syncError);
-              }
-              sendResponse({ ok: true, session, redirectUri: identityRedirectUri });
-            } catch (err) {
-              sendResponse({ ok: false, error: err.message });
-            }
-          });
+          const result = await startGoogleOAuthSession(message.clientId);
+          sendResponse({ ok: true, session: result.session, redirectUri: result.redirectUri });
         } catch (err) {
           sendResponse({ ok: false, error: err.message });
         }
@@ -760,6 +883,54 @@
       return true;
     }
 
+    if (message && message.type === "CHATVAULT_ANALYTICS_TRACK") {
+      if (rejectUntrustedSender(sender, sendResponse)) return false;
+      appendAnalyticsEvent(message.event)
+        .then((queued) => {
+          sendResponse({ ok: Boolean(queued) });
+        })
+        .catch((error) => {
+          sendResponse({ ok: false, error: error.message || "Analytics queue failed." });
+        });
+      return true;
+    }
+
+    if (message && message.type === "CHATVAULT_ANALYTICS_FLUSH") {
+      if (rejectUntrustedSender(sender, sendResponse)) return false;
+      flushAnalyticsQueue()
+        .then((result) => {
+          sendResponse(result || { ok: true });
+        })
+        .catch((error) => {
+          sendResponse({ ok: false, error: error.message || "Analytics flush failed." });
+        });
+      return true;
+    }
+
+    if (message && message.type === "CHATVAULT_ANALYTICS_IDENTIFY") {
+      if (rejectUntrustedSender(sender, sendResponse)) return false;
+      identifyAnalyticsGuest(message.guestId)
+        .then((result) => {
+          sendResponse(result || { ok: true });
+        })
+        .catch((error) => {
+          sendResponse({ ok: false, error: error.message || "Analytics identify failed." });
+        });
+      return true;
+    }
+
+    if (message && message.type === "CHATVAULT_CANCEL_IMAGE_FETCH") {
+      if (rejectUntrustedSender(sender, sendResponse)) return false;
+      const requestId = String(message.requestId || "");
+      const controller = requestId ? backgroundImageFetchControllers.get(requestId) : null;
+      if (controller) {
+        controller.abort();
+        backgroundImageFetchControllers.delete(requestId);
+      }
+      sendResponse({ ok: true, cancelled: Boolean(controller) });
+      return false;
+    }
+
     if (message && message.type === "CHATVAULT_FETCH_IMAGE_BYTES") {
       if (rejectUntrustedSender(sender, sendResponse)) return false;
       const isTrustedImageOrigin = (urlStr) => {
@@ -769,9 +940,10 @@
           if (hostname === "chatgpt.com" || hostname === "chat.openai.com" || hostname === "claude.ai" || hostname === "gemini.google.com") {
             return true;
           }
-          if (hostname.endsWith(".oaiusercontent.com") || hostname.endsWith(".googleusercontent.com")) {
+          if (hostname.endsWith(".oaiusercontent.com")) {
             return true;
           }
+          if (/^lh\d+\.googleusercontent\.com$/.test(hostname)) return true;
           if (hostname === "images.anthropic.com" || hostname === "media.anthropic.com") {
             return true;
           }
@@ -803,7 +975,11 @@
       }
 
       const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
-      const timeoutId = controller ? setTimeout(() => controller.abort(), 8000) : null;
+      const requestId = String(message.requestId || "");
+      if (controller && requestId) {
+        backgroundImageFetchControllers.set(requestId, controller);
+      }
+      const timeoutId = controller ? setTimeout(() => controller.abort(), IMAGE_FETCH_TIMEOUT_MS) : null;
       
       const fetchOpts = {
         method: "GET",
@@ -823,16 +999,15 @@
             throw new Error("Image is too large to export safely. Reduce images or export a shorter conversation.");
           }
           const mimeType = response.headers.get("content-type") || "image/png";
-          return response.blob().then(blob => {
-            return { mimeType, blob };
+          return response.arrayBuffer().then(arrayBuffer => {
+            return { mimeType, arrayBuffer };
           });
         })
         .then(async res => {
-          if (res.blob.size > MAX_IMAGE_FETCH_BYTES) {
+          if (res.arrayBuffer.byteLength > MAX_IMAGE_FETCH_BYTES) {
             throw new Error("Image is too large to export safely. Reduce images or export a shorter conversation.");
           }
-          const dataUrl = await blobToDataUrl(res.blob);
-          sendResponse({ ok: true, base64: dataUrlPayload(dataUrl), mimeType: res.mimeType });
+          sendResponse({ ok: true, base64: bytesToBase64Payload(new Uint8Array(res.arrayBuffer)), mimeType: res.mimeType });
         })
         .catch(err => {
           sendResponse({
@@ -843,6 +1018,9 @@
         .finally(() => {
           if (timeoutId) {
             clearTimeout(timeoutId);
+          }
+          if (requestId) {
+            backgroundImageFetchControllers.delete(requestId);
           }
         });
       return true; // Keep message channel open for async response

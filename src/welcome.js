@@ -1,12 +1,26 @@
 (function initChatVaultWelcomePage() {
   "use strict";
 
-  const ONBOARDING_STATE_KEY = "chatvault.exporter.onboarding.v1";
+  const productConfig = globalThis.CHATVAULT_PRODUCT_CONFIG || {};
+  const storageKey = typeof productConfig.storageKey === "function"
+    ? productConfig.storageKey
+    : (name) => `chatvault_exporter.${name}`;
+  const productName = productConfig.productName || "Claude Export";
+  const supportedPlatforms = Array.isArray(productConfig.supportedPlatforms) && productConfig.supportedPlatforms.length
+    ? productConfig.supportedPlatforms
+    : ["chatgpt", "claude", "gemini"];
+  const ONBOARDING_STATE_KEY = storageKey("onboarding.v1");
   const PLATFORM_URLS = {
     chatgpt: "https://chatgpt.com/",
     claude: "https://claude.ai/",
     gemini: "https://gemini.google.com/"
   };
+
+  function applyProductTheme(target) {
+    if (productConfig && typeof productConfig.applyThemeVars === "function") {
+      productConfig.applyThemeVars(target || document.documentElement);
+    }
+  }
 
   function getStorage() {
     if (typeof chrome === "undefined" || !chrome.storage || !chrome.storage.local) {
@@ -91,6 +105,18 @@
     window.location.href = url;
   }
 
+  function applyProductChrome() {
+    applyProductTheme(document.documentElement);
+    document.querySelectorAll(".cv-brand span").forEach((element) => {
+      element.textContent = productName;
+    });
+
+    document.querySelectorAll("[data-platform]").forEach((button) => {
+      const platform = button.dataset.platform || "";
+      button.hidden = !supportedPlatforms.includes(platform);
+    });
+  }
+
   function markWelcomeSeen() {
     return writeState({
       status: "welcome_seen",
@@ -136,8 +162,8 @@
       button.textContent = typeof CHATVAULT_I18N !== "undefined" ? CHATVAULT_I18N.t("welcome_btn_pinned", "Pinned") : "Pinned";
       setPinStatus(
         typeof CHATVAULT_I18N !== "undefined"
-          ? CHATVAULT_I18N.t("welcome_pin_success", "Nice. Claude Export is visible in your Chrome toolbar.")
-          : "Nice. Claude Export is visible in your Chrome toolbar.",
+          ? CHATVAULT_I18N.t("welcome_pin_success", `Nice. ${productName} is visible in your Chrome toolbar.`)
+          : `Nice. ${productName} is visible in your Chrome toolbar.`,
         "success"
       );
 
@@ -151,8 +177,8 @@
     button.textContent = typeof CHATVAULT_I18N !== "undefined" ? CHATVAULT_I18N.t("welcome_btn_check_again", "Check again") : "Check again";
     setPinStatus(
       typeof CHATVAULT_I18N !== "undefined"
-        ? CHATVAULT_I18N.t("welcome_pin_failed", "Not pinned yet. Use Chrome's puzzle icon in the toolbar, then click the pin next to Claude Export.")
-        : "Not pinned yet. Use Chrome's puzzle icon in the toolbar, then click the pin next to Claude Export.",
+        ? CHATVAULT_I18N.t("welcome_pin_failed", `Not pinned yet. Use Chrome's puzzle icon in the toolbar, then click the pin next to ${productName}.`)
+        : `Not pinned yet. Use Chrome's puzzle icon in the toolbar, then click the pin next to ${productName}.`,
       "attention"
     );
 
@@ -177,6 +203,7 @@
 
   document.addEventListener("DOMContentLoaded", () => {
     applyDocumentLanguage();
+    applyProductChrome();
 
     if (typeof CHATVAULT_I18N !== "undefined") {
       CHATVAULT_I18N.translateDOM();

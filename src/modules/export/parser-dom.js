@@ -16,7 +16,7 @@ export function isCodeLikeElement(element) {
   var tag = String(element.tagName || "").toLowerCase();
   if (tag === "pre") return true;
   var label = getElementLabel(element);
-  return /\b(?:code|syntax|highlight|shiki|hljs|font-mono|whitespace-pre|language-[a-z0-9_-]+)\b/i.test(label);
+  return /\b(?:code|syntax|highlight|shiki|hljs|font-mono|language-[a-z0-9_-]+)\b/i.test(label);
 }
 
 export function extractCodeLanguage(element) {

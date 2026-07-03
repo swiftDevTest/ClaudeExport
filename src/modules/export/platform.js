@@ -18,8 +18,32 @@ import {
 } from './utils.js';
 
 import { compareElementsInDocument, pushDistinctDocumentElement } from './platforms/shared.js';
-import { PLATFORM_EXPORT_REGISTRY, parseMessagesForPlatform } from './platforms/registry.js';
+import { parseChatGPTMessages as parseChatGPTMessagesFromPlatform } from './platforms/chatgpt/extractor.js';
+import { parseClaudeMessages as parseClaudeMessagesFromPlatform } from './platforms/claude/extractor.js';
+import { parseGeminiMessages as parseGeminiMessagesFromPlatform } from './platforms/gemini/extractor.js';
+import { parseMessagesForPlatform } from './platforms/registry.js';
 import { createExportDocument, normalizeExportBlocks, validateExportDocument } from './document.js';
+
+const PRODUCT_CONFIG = globalThis.CHATVAULT_PRODUCT_CONFIG || {};
+
+function defaultPlatformLabel(platform) {
+  if (platform === "claude") return "Claude";
+  if (platform === "gemini") return "Gemini";
+  if (platform === "chatgpt") return "ChatGPT";
+  return "supported AI chat";
+}
+
+function getSupportedPlatformLabel() {
+  const platformLabels = PRODUCT_CONFIG.platformLabels || {};
+  const supportedPlatforms = Array.isArray(PRODUCT_CONFIG.supportedPlatforms) && PRODUCT_CONFIG.supportedPlatforms.length
+    ? PRODUCT_CONFIG.supportedPlatforms
+    : ["chatgpt", "claude", "gemini"];
+  const names = supportedPlatforms.map((platform) => platformLabels[platform] || defaultPlatformLabel(platform));
+  if (!names.length) return "supported AI chat";
+  if (names.length === 1) return names[0];
+  if (names.length === 2) return `${names[0]} or ${names[1]}`;
+  return `${names.slice(0, -1).join(", ")}, or ${names[names.length - 1]}`;
+}
 
 var selectionSelectedMessages = new Map();
 var selectionOrderCounter = 0;
@@ -36,26 +60,17 @@ function resetSelectionState() {
 
 
 function parseChatGPTMessages() {
-  var adapter = PLATFORM_EXPORT_REGISTRY.chatgpt;
-  return adapter && typeof adapter.parseMessages === "function"
-    ? adapter.parseMessages()
-    : [];
+  return parseChatGPTMessagesFromPlatform();
 }
 
 
 function parseClaudeMessages() {
-  var adapter = PLATFORM_EXPORT_REGISTRY.claude;
-  return adapter && typeof adapter.parseMessages === "function"
-    ? adapter.parseMessages()
-    : [];
+  return parseClaudeMessagesFromPlatform();
 }
 
 
 function parseGeminiMessages() {
-  var adapter = PLATFORM_EXPORT_REGISTRY.gemini;
-  return adapter && typeof adapter.parseMessages === "function"
-    ? adapter.parseMessages()
-    : [];
+  return parseGeminiMessagesFromPlatform();
 }
 
 
@@ -220,7 +235,7 @@ function resolveMessages(request) {
   var messages = [];
 
   if (!platform) {
-    return { ok: false, error: "Open a ChatGPT, Claude, or Gemini conversation to export." };
+    return { ok: false, error: `Open a ${getSupportedPlatformLabel()} conversation to export.` };
   }
 
   if (!allMessages.length && !hasSelectedMessages) {
@@ -236,20 +251,20 @@ function resolveMessages(request) {
       });
     }
     if (settings.export_ai_replies_only) {
-      messages = messages.filter(function (message) { return message.role === "assistant"; });
+      messages = messages.filter(function (message) { return message.role === "assistant" || message.role === "system"; });
     }
   } else if (scope === "assistant_single") {
     var message = allMessages[Number(request.messageIndex)];
     if (message && message.role === "assistant") messages = [message];
   } else if (scope === "ai_only") {
     messages = allMessages.filter(function (message) {
-      return message.role === "assistant";
+      return message.role === "assistant" || message.role === "system";
     });
   } else if (scope && scope !== "conversation") {
     messages = allMessages.slice();
   } else {
     messages = settings.export_ai_replies_only
-      ? allMessages.filter(function (message) { return message.role === "assistant"; })
+      ? allMessages.filter(function (message) { return message.role === "assistant" || message.role === "system"; })
       : allMessages.slice();
     scope = settings.export_ai_replies_only ? "ai_only" : "conversation";
   }

@@ -25,6 +25,8 @@ import {
 import { preloadCanvasImages } from '../media.js';
 import { getImageTheme } from '../themes/image.js';
 
+const PRODUCT_NAME = globalThis.CHATVAULT_PRODUCT_CONFIG?.productName || "Claude Export";
+
 var SEPARATOR_MARGIN_TOP = 25;
 var SEPARATOR_MARGIN_BOTTOM = 25;
 var IMAGE_MESSAGE_BOTTOM_GAP = 32;
@@ -967,15 +969,14 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
 
   if (settings.show_chatvault_badge) {
     var footerY = y + IMAGE_FOOTER_TOP_GAP;
-    ctx.font = "800 18px " + theme.font.body;
-    var logoGradient = ctx.createLinearGradient(pad, footerY, pad + 120, footerY);
+    ctx.font = "700 15px " + theme.font.body;
+    var footerText = PRODUCT_NAME;
+    var footerWidth = Math.max(120, ctx.measureText(footerText).width);
+    var logoGradient = ctx.createLinearGradient(pad, footerY, pad + footerWidth, footerY);
     logoGradient.addColorStop(0, theme.color.accent);
     logoGradient.addColorStop(1, theme.color.accentDark);
     ctx.fillStyle = logoGradient;
-    ctx.fillText("ChatVault AI", pad, footerY);
-    ctx.font = "500 14px " + theme.font.body;
-    ctx.fillStyle = theme.color.muted;
-    ctx.fillText(t("export_image_footer_sub", "Local export · content not stored"), pad + 130, footerY);
+    ctx.fillText(footerText, pad, footerY);
   }
 
   notifyProgress(options, t("export_progress_saving", "Saving image"), 0.94);

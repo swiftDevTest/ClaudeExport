@@ -35,6 +35,7 @@ function normalizeExportDate(value) {
 }
 
 function normalizeExportRole(role) {
+  if (role === "system") return "system";
   return role === "user" ? "user" : "assistant";
 }
 
@@ -262,8 +263,8 @@ export function validateExportDocument(document) {
     errors.push("messages must be an array.");
   } else {
     document.messages.forEach(function (message, messageIndex) {
-      if (!message || (message.role !== "user" && message.role !== "assistant")) {
-        errors.push("messages[" + messageIndex + "].role must be user or assistant.");
+      if (!message || (message.role !== "user" && message.role !== "assistant" && message.role !== "system")) {
+        errors.push("messages[" + messageIndex + "].role must be user, assistant, or system.");
       }
       if (!Array.isArray(message && message.contentBlocks)) {
         errors.push("messages[" + messageIndex + "].contentBlocks must be an array.");

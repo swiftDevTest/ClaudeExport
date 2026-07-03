@@ -6,6 +6,7 @@ import {
   sanitizeInlineSegmentText,
   formatLatexUnicode,
   hasLatexMathSyntax,
+  getExportFooterSegments,
   shouldCoalesceInlineSegments,
   getCoalescedInlineSegmentsText,
   notifyProgress,
@@ -13,6 +14,7 @@ import {
 } from '../utils.js';
 
 var MESSAGE_SEPARATOR_HTML = '<hr style="border: 0; border-top: 1px solid #d9e2ec; margin: 25px 0;" />';
+var BRANDING_FOOTER_STYLE = "display: flex; justify-content: space-between; gap: 16px; margin: 8px 0 0;";
 
 export async function buildMarkdownBlob(messages, metadata, settings, options) {
   var opts = options || {};
@@ -21,12 +23,10 @@ export async function buildMarkdownBlob(messages, metadata, settings, options) {
   notifyProgress(opts, t("export_progress_preparing_markdown", "Preparing Markdown export"), 0.06);
 
   // 1. Generate YAML Front Matter
-  var sourceUrl = getMetadataSourceUrl(metadata);
   var hasFrontMatter = Boolean(
     (settings.show_conversation_title && metadata && metadata.title) ||
     (settings.show_platform_name && metadata && metadata.platform) ||
-    (settings.show_export_time && metadata && metadata.exportedAt) ||
-    (settings.include_source_url && sourceUrl)
+    (settings.show_export_time && metadata && metadata.exportedAt)
   );
   if (hasFrontMatter) {
     lines.push("---");
@@ -38,9 +38,6 @@ export async function buildMarkdownBlob(messages, metadata, settings, options) {
     }
     if (settings.show_export_time && metadata && metadata.exportedAt) {
       lines.push('date: "' + escapeYamlDoubleQuoted(formatDateDisplay(metadata.exportedAt)) + '"');
-    }
-    if (settings.include_source_url && sourceUrl) {
-      lines.push('source: "' + escapeYamlDoubleQuoted(sourceUrl) + '"');
     }
     lines.push("---");
     lines.push("");
@@ -68,9 +65,9 @@ export async function buildMarkdownBlob(messages, metadata, settings, options) {
     }
 
     // Role Label
-    if (settings.show_role_labels) {
-      var roleName = msg.role === "user" 
-        ? t("export_role_user", "You Asked") 
+    if (settings.show_role_labels && msg.role !== "system") {
+      var roleName = msg.role === "user"
+        ? t("role_user", "User")
         : getPlatformLabel((metadata && metadata.platform) || "assistant");
       lines.push("**" + roleName + ":**");
       lines.push("");
@@ -151,14 +148,17 @@ export async function buildMarkdownBlob(messages, metadata, settings, options) {
     }
   }
 
-  // 4. Branding badge
-  if (settings.show_chatvault_badge) {
+  // 4. Local export footer
+  var footerSegments = getExportFooterSegments(settings, metadata);
+  if (footerSegments.left || footerSegments.right) {
     trimTrailingBlankLines(lines);
-    if (lines.length) lines.push("");
-    var badgeText = sanitizeExportText(t("export_pdf_footer_branding", "ChatVault AI Local Export")).replace(/\s+/g, " ").trim();
-    if (badgeText) {
-      lines.push("*" + escapeMarkdownEmphasisText(badgeText) + "*");
-    }
+    lines.push("");
+    lines.push(
+      '<div style="' + BRANDING_FOOTER_STYLE + '">' +
+      '<span>' + escapeHtmlText(footerSegments.left) + "</span>" +
+      '<span style="text-align: right;">' + escapeHtmlText(footerSegments.right) + "</span>" +
+      "</div>"
+    );
   }
 
   var outputText = lines.join("\n");
@@ -218,10 +218,6 @@ function shouldRenderLatexSegmentsAsPlainText(segments) {
   }).join(""));
 }
 
-function getMetadataSourceUrl(metadata) {
-  return metadata && (metadata.sourceUrl || metadata.url || metadata.source) || "";
-}
-
 function escapeYamlDoubleQuoted(value) {
   return String(value || "")
     .replace(/\\/g, "\\\\")
@@ -231,8 +227,16 @@ function escapeYamlDoubleQuoted(value) {
     .replace(/\t/g, "\\t");
 }
 
+function escapeHtmlText(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 function trimTrailingBlankLines(lines) {
-  while (lines.length && lines[lines.length - 1] === "") {
+  while (lines.length && !String(lines[lines.length - 1] || "").trim()) {
     lines.pop();
   }
 }

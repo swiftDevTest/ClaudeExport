@@ -22,7 +22,7 @@
     show_conversation_title: true,
     show_platform_name: true,
     show_role_labels: true,
-    show_chatvault_badge: false,
+    show_chatvault_badge: true,
     include_source_url: false,
     align_user_messages_right: true,
     export_style: "default"
@@ -199,13 +199,13 @@
 
   function buildFilename(format, scope, metadata) {
     var title = sanitizeFilename((metadata && metadata.title) || getConversationTitle());
-    var ext = format === "word" ? "docx" : format === "image" ? "png" : "pdf";
+    var ext = format === "word" ? "docx" : format === "image" ? "png" : format === "markdown" ? "md" : format === "txt" ? "txt" : format === "json" ? "json" : "pdf";
     return title + "." + ext;
   }
 
   function replaceFileExtension(filename, nextExt) {
     var cleanExt = String(nextExt || "").replace(/^\./, "");
-    var base = String(filename || "ChatVault-export").replace(/\.[^.]+$/, "");
+    var base = String(filename || "AI-Chat-Export").replace(/\.[^.]+$/, "");
     return base + (cleanExt ? "." + cleanExt : "");
   }
 
@@ -273,7 +273,9 @@
         import(resolveModulePath("src/modules/export/builders/markdown.js")),
         import(resolveModulePath("src/modules/export/ui-controller.js")),
         import(resolveModulePath("src/modules/export/platform-fetchers.js")),
-        import(resolveModulePath("src/modules/export/message-adapter.js"))
+        import(resolveModulePath("src/modules/export/message-adapter.js")),
+        import(resolveModulePath("src/modules/export/builders/txt.js")),
+        import(resolveModulePath("src/modules/export/builders/json.js"))
       ]);
     } catch (error) {
       return Promise.reject(error);
@@ -287,7 +289,8 @@
           utils: arr[0], platform: arr[1], parserDom: arr[2], selection: arr[3],
           engine: arr[4], media: arr[5], zip: arr[6],
           save: arr[7], docx: arr[8], image: arr[9], pdf: arr[10],
-          markdown: arr[11], uiController: arr[12], platformFetchers: arr[13], messageAdapter: arr[14]
+          markdown: arr[11], uiController: arr[12], platformFetchers: arr[13], messageAdapter: arr[14],
+          txt: arr[15], json: arr[16]
         };
       }).catch(function (err) {
         _ready = null;
@@ -339,6 +342,11 @@
       assertMods();
       return _mods.platformFetchers.createExportPlatformFetchers(opts);
     },
+    revokePlatformObjectUrls: function () {
+      if (_mods && _mods.platformFetchers && typeof _mods.platformFetchers.revokePlatformObjectUrls === "function") {
+        _mods.platformFetchers.revokePlatformObjectUrls();
+      }
+    },
     createExportMessageAdapter: function (opts) {
       assertMods();
       return _mods.messageAdapter.createExportMessageAdapter(opts);
@@ -360,6 +368,18 @@
     buildMarkdownBlob: function (messages, metadata, settings, options) {
       assertMods();
       return _mods.markdown.buildMarkdownBlob(messages, metadata, settings, options);
+    },
+    buildDocxBlob: function (messages, metadata, settings, options) {
+      assertMods();
+      return _mods.docx.buildDocxBlob(messages, metadata, settings, options);
+    },
+    buildTxtBlob: function (messages, metadata, settings, options) {
+      assertMods();
+      return _mods.txt.buildTxtBlob(messages, metadata, settings, options);
+    },
+    buildJsonBlob: function (messages, metadata, settings, options) {
+      assertMods();
+      return _mods.json.buildJsonBlob(messages, metadata, settings, options);
     },
     DEFAULT_EXPORT_SETTINGS: DEFAULT_EXPORT_SETTINGS,
     IMAGE_LIMITS: {

@@ -1,11 +1,28 @@
 (function initChatVaultExportMessageAdapter() {
   "use strict";
 
+  var productName = globalThis.CHATVAULT_PRODUCT_CONFIG?.productName || "Claude Export";
+  var productConfig = globalThis.CHATVAULT_PRODUCT_CONFIG || {};
+
   function defaultPlatformLabel(platform) {
     if (platform === "claude") return "Claude";
     if (platform === "gemini") return "Gemini";
     if (platform === "chatgpt") return "ChatGPT";
     return "AI";
+  }
+
+  function getSupportedPlatformLabel() {
+    var platformLabels = productConfig.platformLabels || {};
+    var supportedPlatforms = Array.isArray(productConfig.supportedPlatforms) && productConfig.supportedPlatforms.length
+      ? productConfig.supportedPlatforms
+      : ["chatgpt", "claude", "gemini"];
+    var names = supportedPlatforms.map(function (platform) {
+      return platformLabels[platform] || defaultPlatformLabel(platform);
+    });
+    if (!names.length) return "supported AI chat";
+    if (names.length === 1) return names[0];
+    if (names.length === 2) return names[0] + " or " + names[1];
+    return names.slice(0, -1).join(", ") + ", or " + names[names.length - 1];
   }
 
   function createExportMessageAdapter(options) {
@@ -31,7 +48,7 @@
           ? "https://gemini.google.com"
           : "https://chatgpt.com";
       var currentLabel = deps.getPlatformLabel ? deps.getPlatformLabel(deps.getCurrentPlatformId ? deps.getCurrentPlatformId() : "") : "";
-      return "Open " + label + " (" + host + ") and use Claude Export there to export this conversation body. " + (currentLabel || "This page") + " cannot read " + label + " message content.";
+      return "Open " + label + " (" + host + ") and use " + productName + " there to export this conversation body. " + (currentLabel || "This page") + " cannot read " + label + " message content.";
     }
 
     function getPlatformExportRequirement(platform) {
@@ -60,7 +77,7 @@
       }
 
       if (!activePlatform) {
-        return "Open ChatGPT, Claude, or Gemini before exporting conversation bodies";
+        return "Open " + getSupportedPlatformLabel() + " before exporting conversation bodies";
       }
 
       if (platform !== activePlatform) {

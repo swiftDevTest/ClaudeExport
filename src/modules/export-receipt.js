@@ -1,6 +1,8 @@
 (function initChatVaultExportReceipt() {
   "use strict";
 
+  const productName = globalThis.CHATVAULT_PRODUCT_CONFIG?.productName || "Claude Export";
+
   async function calculateSha256(arrayBuffer) {
     const hashBuffer = await crypto.subtle.digest("SHA-256", arrayBuffer);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
@@ -40,7 +42,7 @@
     const receipt = {
       version: 1,
       generatedAt: new Date().toISOString(),
-      extensionName: "Claude Export",
+      extensionName: productName,
       extensionVersion: (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.getManifest ? chrome.runtime.getManifest().version : "1.0.0"),
       platform: String(metadata.platform || "chatgpt"),
       sourceUrl: sanitizeSourceUrl(metadata.sourceUrl || (typeof window !== "undefined" ? window.location.href : "")),

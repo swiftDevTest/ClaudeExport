@@ -1,14 +1,18 @@
 /* Shadow DOM 容器基础样式 */
 :host {
-  --primary-color: #10b981;
-  --primary-hover: #059669;
-  --bg-primary: #f8fafc;
-  --bg-white: #ffffff;
-  --text-dark: #0f172a;
-  --text-secondary: #64748b;
-  --border-color: #e2e8f0;
+  --primary-color: #c96442;
+  --primary-hover: #7c2d12;
+  --accent: #c96442;
+  --accent-strong: #7c2d12;
+  --cv-primary-rgb: 201, 100, 66;
+  --cv-accent: #b4532a;
+  --bg-primary: #fbf4ed;
+  --bg-white: #fffdfb;
+  --text-dark: #2f2016;
+  --text-secondary: #735b45;
+  --border-color: #ead6c7;
   --danger-color: #ef4444;
-  --success-color: #10b981;
+  --success-color: #c96442;
   --warning-color: #f59e0b;
 }
 
@@ -104,10 +108,10 @@
   width: min(560px, calc(100vw - 32px));
   z-index: 2147483647;
   padding: 11px 12px 10px;
-  border: 1px solid rgba(22, 134, 154, 0.2);
+  border: 1px solid rgba(var(--cv-primary-rgb), 0.2);
   border-radius: 16px;
-  background: rgba(248, 253, 252, 0.98);
-  color: #123047;
+  background: rgba(255, 253, 251, 0.98);
+  color: var(--text-dark);
   box-shadow: 0 18px 46px rgba(18, 48, 71, 0.16);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   opacity: 1;
@@ -123,8 +127,8 @@
 }
 
 .cv-export-progress-strip[data-mode="batch"] {
-  border-color: rgba(15, 101, 116, 0.26);
-  background: rgba(242, 251, 249, 0.99);
+  border-color: rgba(var(--cv-primary-rgb), 0.26);
+  background: var(--bg-white);
 }
 
 .cv-export-progress-main {
@@ -162,7 +166,7 @@
 
 .cv-export-progress-percent {
   min-width: 44px;
-  color: #0f6574;
+  color: var(--primary-hover);
   font-size: 12px;
   font-variant-numeric: tabular-nums;
   font-weight: 860;
@@ -172,10 +176,10 @@
 .cv-export-progress-cancel {
   min-height: 30px;
   padding: 0 12px;
-  border: 1px solid rgba(15, 101, 116, 0.22);
+  border: 1px solid rgba(var(--cv-primary-rgb), 0.22);
   border-radius: 10px;
-  background: #f8fdfc;
-  color: #123047;
+  background: var(--bg-white);
+  color: var(--text-dark);
   cursor: pointer;
   font-size: 12px;
   font-weight: 780;
@@ -183,8 +187,8 @@
 }
 
 .cv-export-progress-cancel:hover {
-  border-color: rgba(15, 101, 116, 0.36);
-  background: #eaf7f5;
+  border-color: rgba(var(--cv-primary-rgb), 0.36);
+  background: rgba(var(--cv-primary-rgb), 0.08);
 }
 
 .cv-export-progress-cancel:active {
@@ -200,14 +204,14 @@
   margin-top: 9px;
   overflow: hidden;
   border-radius: 999px;
-  background: rgba(15, 101, 116, 0.13);
+  background: rgba(var(--cv-primary-rgb), 0.13);
 }
 
 .cv-export-progress-fill {
   width: 100%;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #16869a, #22c7b8);
+  background: linear-gradient(90deg, var(--primary-color), var(--cv-accent, var(--primary-hover)));
   transform: scaleX(0);
   transform-origin: left center;
   transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
@@ -374,7 +378,7 @@
 .cv-page-toast {
   position: fixed;
   left: 50%;
-  top: 50%;
+  top: max(18px, env(safe-area-inset-top, 0px) + 12px);
   z-index: 2147483012;
   max-width: min(420px, calc(100vw - 32px));
   min-height: 40px;
@@ -394,7 +398,7 @@
   line-height: 1.4;
   opacity: 0;
   pointer-events: none;
-  transform: translate(-50%, -50%) scale(0.92);
+  transform: translate(-50%, -10px);
   transition:
     opacity 180ms ease,
     transform 180ms ease;
@@ -403,125 +407,7 @@
 
 .cv-page-toast.active {
   opacity: 1;
-  transform: translate(-50%, -50%) scale(1);
-}
-
-/* VIP 升级提示弹窗 */
-.cv-vip-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(15, 23, 42, 0.6);
-  backdrop-filter: blur(8px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2147483010;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-}
-
-.cv-vip-modal-overlay.active {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.cv-vip-modal {
-  background: #ffffff;
-  width: 400px;
-  max-width: 90vw;
-  border-radius: 24px;
-  padding: 28px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 1px 0 rgba(0, 0, 0, 0.1) inset;
-  text-align: center;
-  transform: scale(0.9) translateY(20px);
-  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.cv-vip-modal-overlay.active .cv-vip-modal {
-  transform: scale(1) translateY(0);
-}
-
-.cv-vip-crown-container {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 64px;
-  height: 64px;
-  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-  border-radius: 50%;
-  margin-bottom: 20px;
-  box-shadow: 0 8px 16px -4px rgba(251, 191, 36, 0.3);
-}
-
-.cv-vip-crown {
-  font-size: 32px;
-  animation: float-crown 3s ease-in-out infinite;
-}
-
-@keyframes float-crown {
-  0%, 100% { transform: translateY(0) rotate(0); }
-  50% { transform: translateY(-4px) rotate(4deg); }
-}
-
-.cv-vip-modal-title {
-  font-size: 20px;
-  font-weight: 700;
-  color: #0f172a;
-  margin: 0 0 12px 0;
-}
-
-.cv-vip-modal-body {
-  font-size: 14px;
-  color: #475569;
-  line-height: 1.6;
-  margin-bottom: 28px;
-  padding: 0 8px;
-}
-
-.cv-vip-modal-actions {
-  display: flex;
-  gap: 12px;
-}
-
-.cv-vip-btn {
-  flex: 1;
-  height: 44px;
-  border-radius: 22px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: none;
-  outline: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.cv-vip-btn.secondary {
-  background: #f1f5f9;
-  color: #475569;
-}
-
-.cv-vip-btn.secondary:hover {
-  background: #e2e8f0;
-  color: #334155;
-}
-
-.cv-vip-btn.primary {
-  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
-  color: #ffffff;
-  box-shadow: 0 4px 12px rgba(180, 83, 9, 0.2);
-}
-
-.cv-vip-btn.primary:hover {
-  background: linear-gradient(135deg, #b45309 0%, #78350f 100%);
-  box-shadow: 0 6px 16px rgba(180, 83, 9, 0.3);
+  transform: translate(-50%, 0);
 }
 
 /* 批量导出弹窗遮罩层 */
@@ -1121,17 +1007,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cv-vip-crown {
-    animation: none !important;
-  }
-  .cv-vip-modal {
-    animation: none !important;
-    transition: none !important;
-    transform: none !important;
-  }
-  .cv-vip-modal-overlay {
-    transition: none !important;
-  }
   .cv-selection-bar {
     transition: none !important;
     transform: none !important;
@@ -1174,12 +1049,12 @@
 }
 
 .cv-batch-theme-option.active {
-  border: 1.5px solid #16869a;
-  background: linear-gradient(135deg, rgba(22, 134, 154, 0.08) 0%, #ffffff 100%);
-  color: #0f6574;
+  border: 1.5px solid var(--accent);
+  background: linear-gradient(135deg, rgba(var(--cv-primary-rgb), 0.08) 0%, #ffffff 100%);
+  color: var(--primary-hover);
   box-shadow: 
-    0 0 0 2px rgba(22, 134, 154, 0.1),
-    0 4px 10px rgba(22, 134, 154, 0.05);
+    0 0 0 2px rgba(var(--cv-primary-rgb), 0.1),
+    0 4px 10px rgba(var(--cv-primary-rgb), 0.05);
 }
 
 .cv-batch-theme-circle {
@@ -1231,7 +1106,7 @@
 }
 
 .cv-batch-theme-option.active .cv-batch-theme-name {
-  color: #0f6574;
+  color: var(--primary-hover);
   font-weight: 800;
 }
 

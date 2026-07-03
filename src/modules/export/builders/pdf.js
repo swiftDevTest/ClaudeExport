@@ -24,6 +24,8 @@ import {
 import { preloadCanvasImages } from '../media.js';
 import { getPdfTheme } from '../themes/pdf.js';
 
+const PRODUCT_NAME = globalThis.CHATVAULT_PRODUCT_CONFIG?.productName || "Claude Export";
+
 var SEPARATOR_MARGIN_TOP = 25;
 var SEPARATOR_MARGIN_BOTTOM = 25;
 
@@ -142,7 +144,7 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
     ctx.font = "10px " + DESIGN.font.body;
     ctx.fillStyle = DESIGN.color.muted;
     var footer = [];
-    if (settings.show_chatvault_badge) footer.push(t("export_pdf_footer_branding", "ChatVault AI Local Export"));
+    if (settings.show_chatvault_badge) footer.push(PRODUCT_NAME);
     if (settings.show_platform_name && metadata.platform) footer.push(getPlatformLabel(metadata.platform));
     if (settings.show_export_time) footer.push(formatDateDisplay(metadata.exportedAt));
     ctx.fillText(footer.join(" · "), margin, pageHeight - 36);

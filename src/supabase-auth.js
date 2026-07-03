@@ -1,8 +1,12 @@
 (function initChatVaultSupabaseAuth() {
   const api = globalThis.CHATVAULT_SUPABASE_API;
   const config = globalThis.CHATVAULT_SUPABASE_CONFIG;
-  const SESSION_KEY = "chatvault_supabase_session";
-  const ENTITLEMENT_STATE_CACHE_KEY = "chatvault_exporter_entitlement_state_v1";
+  const productConfig = globalThis.CHATVAULT_PRODUCT_CONFIG || {};
+  const storageKey = typeof productConfig.storageKey === "function"
+    ? productConfig.storageKey
+    : (name) => `chatvault_exporter.${name}`;
+  const SESSION_KEY = storageKey("supabase_session.v1");
+  const ENTITLEMENT_STATE_CACHE_KEY = storageKey("entitlement_state.v1");
   const REFRESH_MARGIN_SECONDS = 300;
   let refreshSessionPromise = null;
   let refreshSessionPromiseToken = "";
@@ -462,9 +466,8 @@
     };
 
     if (typeof chrome === "undefined" || !chrome.runtime || !chrome.runtime.sendMessage) {
-      const redirectTo = encodeURIComponent(getCleanRedirectUrl());
-      window.location.assign(`${config.url}/auth/v1/authorize?provider=google&redirect_to=${redirectTo}`);
-      return Promise.resolve(null);
+      setAuthLoading(false);
+      return Promise.reject(new Error("Google Sign-In requires the ChatVault extension background service."));
     }
 
     if (!config.googleClientId || config.googleClientId === "YOUR_GOOGLE_CLIENT_ID") {

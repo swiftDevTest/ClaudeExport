@@ -4,8 +4,15 @@
     maxExportsPerDay: 3
   });
   const PRO_LIMIT = 999999;
-  const ENTITLEMENT_STATE_CACHE_KEY = "chatvault_exporter_entitlement_state_v1";
-  const ENTITLEMENT_STATE_CACHE_TTL_MS = 30 * 60 * 1000;
+  const productConfig = globalThis.CHATVAULT_PRODUCT_CONFIG || {};
+  const storageKey = typeof productConfig.storageKey === "function"
+    ? productConfig.storageKey
+    : (name) => `chatvault_exporter.${name}`;
+  const ENTITLEMENT_STATE_CACHE_KEY = storageKey("entitlement_state.v1");
+  const ENTITLEMENT_STATE_CACHE_CRYPTO_VERSION = 1;
+  const ENTITLEMENT_STATE_CACHE_CRYPTO_ALG = "AES-GCM";
+  const ENTITLEMENT_STATE_CACHE_KEY_ID = `${productConfig.storageNamespace || "chatvault_exporter"}-entitlement-cache-v1`;
+  let entitlementCacheCryptoKeyPromise = null;
 
   const PRO_PRICES = Object.freeze({
     monthly: { sku: "pro_monthly", label: "Pro Monthly", price: "$4.99", cadence: "/ month" },
@@ -33,8 +40,9 @@
 
   function normalizeProfile(profile) {
     const normalized = {
-      id: profile?.id || "",
+      id: profile?.id || profile?.user_id || "",
       email: profile?.email || "",
+      product_slug: profile?.product_slug || productConfig.productSlug || "ai-chat-export",
       plan: profile?.plan === "pro" ? "pro" : "free",
       feature_flags: profile?.feature_flags && typeof profile.feature_flags === "object" ? profile.feature_flags : {},
       limits: profile?.limits && typeof profile.limits === "object" ? profile.limits : {},
@@ -192,6 +200,142 @@
     });
   }
 
+  function getRuntimeId() {
+    try {
+      return typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.id
+        ? chrome.runtime.id
+        : "dev";
+    } catch (error) {
+      return "dev";
+    }
+  }
+
+  function getCacheCrypto() {
+    try {
+      return typeof globalThis.crypto !== "undefined" &&
+        globalThis.crypto &&
+        globalThis.crypto.subtle &&
+        typeof globalThis.crypto.getRandomValues === "function"
+        ? globalThis.crypto
+        : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function bytesToBase64(bytes) {
+    if (typeof btoa === "function") {
+      let binary = "";
+      for (let index = 0; index < bytes.length; index += 1) {
+        binary += String.fromCharCode(bytes[index]);
+      }
+      return btoa(binary);
+    }
+    if (typeof Buffer !== "undefined") {
+      return Buffer.from(bytes).toString("base64");
+    }
+    return "";
+  }
+
+  function base64ToBytes(value) {
+    if (!value || typeof value !== "string") {
+      return null;
+    }
+    try {
+      if (typeof atob === "function") {
+        const binary = atob(value);
+        const bytes = new Uint8Array(binary.length);
+        for (let index = 0; index < binary.length; index += 1) {
+          bytes[index] = binary.charCodeAt(index);
+        }
+        return bytes;
+      }
+      if (typeof Buffer !== "undefined") {
+        return new Uint8Array(Buffer.from(value, "base64"));
+      }
+    } catch (error) {
+      return null;
+    }
+    return null;
+  }
+
+  function isEncryptedCachedEntitlementState(value) {
+    return !!(value &&
+      typeof value === "object" &&
+      value.v === ENTITLEMENT_STATE_CACHE_CRYPTO_VERSION &&
+      value.alg === ENTITLEMENT_STATE_CACHE_CRYPTO_ALG &&
+      value.kid === ENTITLEMENT_STATE_CACHE_KEY_ID &&
+      typeof value.iv === "string" &&
+      typeof value.payload === "string");
+  }
+
+  async function getEntitlementCacheCryptoKey() {
+    const cryptoRef = getCacheCrypto();
+    if (!cryptoRef || typeof TextEncoder !== "function") {
+      return null;
+    }
+    if (!entitlementCacheCryptoKeyPromise) {
+      const keySeed = `${ENTITLEMENT_STATE_CACHE_KEY_ID}:${getRuntimeId()}`;
+      entitlementCacheCryptoKeyPromise = cryptoRef.subtle
+        .digest("SHA-256", new TextEncoder().encode(keySeed))
+        .then((digest) => cryptoRef.subtle.importKey("raw", digest, ENTITLEMENT_STATE_CACHE_CRYPTO_ALG, false, ["encrypt", "decrypt"]))
+        .catch(() => null);
+    }
+    return entitlementCacheCryptoKeyPromise;
+  }
+
+  async function encryptCachedEntitlementState(snapshot) {
+    const cryptoRef = getCacheCrypto();
+    const key = await getEntitlementCacheCryptoKey();
+    if (!cryptoRef || !key || typeof TextEncoder !== "function") {
+      return snapshot;
+    }
+
+    try {
+      const iv = cryptoRef.getRandomValues(new Uint8Array(12));
+      const encoded = new TextEncoder().encode(JSON.stringify(snapshot));
+      const encrypted = await cryptoRef.subtle.encrypt({ name: ENTITLEMENT_STATE_CACHE_CRYPTO_ALG, iv }, key, encoded);
+      return {
+        v: ENTITLEMENT_STATE_CACHE_CRYPTO_VERSION,
+        alg: ENTITLEMENT_STATE_CACHE_CRYPTO_ALG,
+        kid: ENTITLEMENT_STATE_CACHE_KEY_ID,
+        iv: bytesToBase64(iv),
+        payload: bytesToBase64(new Uint8Array(encrypted))
+      };
+    } catch (error) {
+      return snapshot;
+    }
+  }
+
+  async function decryptCachedEntitlementState(value) {
+    if (!isEncryptedCachedEntitlementState(value)) {
+      return value;
+    }
+
+    const cryptoRef = getCacheCrypto();
+    const key = await getEntitlementCacheCryptoKey();
+    const iv = base64ToBytes(value.iv);
+    const payload = base64ToBytes(value.payload);
+    if (!cryptoRef || !key || !iv || !payload || typeof TextDecoder !== "function") {
+      return null;
+    }
+
+    try {
+      const decrypted = await cryptoRef.subtle.decrypt({ name: ENTITLEMENT_STATE_CACHE_CRYPTO_ALG, iv }, key, payload);
+      return JSON.parse(new TextDecoder().decode(decrypted));
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async function readCachedEntitlementSnapshot() {
+    const stored = await storageGet(ENTITLEMENT_STATE_CACHE_KEY);
+    if (!stored) {
+      return null;
+    }
+    return decryptCachedEntitlementState(stored);
+  }
+
   function sanitizeProfileForCache(profile) {
     const normalized = normalizeProfile(profile);
     return {
@@ -259,17 +403,9 @@
     };
   }
 
-  function isCachedStateFresh(cachedState, maxAgeMs) {
-    const ageLimit = Number.isFinite(Number(maxAgeMs)) ? Number(maxAgeMs) : ENTITLEMENT_STATE_CACHE_TTL_MS;
-    return !!(cachedState && Date.now() - cachedState.cachedAt <= ageLimit);
-  }
-
-  async function getCachedState(options = {}) {
-    const cachedState = normalizeCachedEntitlementState(await storageGet(ENTITLEMENT_STATE_CACHE_KEY));
+  async function getCachedState() {
+    const cachedState = normalizeCachedEntitlementState(await readCachedEntitlementSnapshot());
     if (!cachedState) {
-      return null;
-    }
-    if (!options.includeExpired && !isCachedStateFresh(cachedState, options.maxAgeMs)) {
       return null;
     }
     return cachedState;
@@ -285,7 +421,7 @@
       sessionUser: getSessionUserForCache(value, profile)
     };
 
-    await storageSet(ENTITLEMENT_STATE_CACHE_KEY, snapshot);
+    await storageSet(ENTITLEMENT_STATE_CACHE_KEY, await encryptCachedEntitlementState(snapshot));
     return normalizeCachedEntitlementState(snapshot);
   }
 
@@ -296,7 +432,8 @@
   globalThis.CHATVAULT_ENTITLEMENTS = {
     DEFAULT_FREE_LIMITS,
     ENTITLEMENT_STATE_CACHE_KEY,
-    ENTITLEMENT_STATE_CACHE_TTL_MS,
+    ENTITLEMENT_STATE_CACHE_CRYPTO_ALG,
+    ENTITLEMENT_STATE_CACHE_CRYPTO_VERSION,
     PRO_LIMIT,
     PRO_PRICES,
     canUseExport,
@@ -306,7 +443,6 @@
     getCachedState,
     getRemainingFreeExports,
     isPro,
-    isCachedStateFresh,
     normalizeLimits,
     normalizeProfile,
     normalizeDailyUsage,

@@ -3,34 +3,34 @@
   const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_GH05KXWPIo42YrorR0OGyQ_XdEWzY8Q";
   const PADDLE_CLIENT_TOKEN = "live_b4118db9924eb2b2405d641fe88";
   const PADDLE_SCRIPT_URL = "https://cdn.paddle.com/paddle/v2/paddle.js";
-  const BASE_URL = "https://tabpilotpro.com/aichatexport";
-  const SUCCESS_URL = `${BASE_URL}/checkout?status=success`;
-  const CANCEL_URL = `${BASE_URL}/checkout?status=cancelled`;
-  const CHECKOUT_PAGE_URL = `${BASE_URL}/checkout`;
+  const BASE_URL = "https://tabpilotpro.com/claude";
+  const SUCCESS_URL = `${BASE_URL}/checkout.html?status=success`;
+  const CANCEL_URL = `${BASE_URL}/checkout.html?status=cancelled`;
+  const CHECKOUT_PAGE_URL = `${BASE_URL}/checkout.html`;
 
   const PLANS = {
     monthly: {
       id: "monthly",
       title: "Pro Monthly",
       billingInterval: "monthly",
-      priceId: "pri_01kvdgya1nx70xhax2h5d8at0n"
+      priceId: ""
     },
     yearly: {
       id: "yearly",
       title: "Pro Yearly",
       billingInterval: "yearly",
-      priceId: "pri_01kvdh0jc0nrpbfjt60509nw6x"
+      priceId: ""
     },
     lifetime: {
       id: "lifetime",
       title: "Lifetime Early Bird",
       billingInterval: "lifetime",
-      priceId: "pri_01kvdh1ank00x91xc3qtv2bkw2"
+      priceId: ""
     }
   };
 
   const params = new URLSearchParams(window.location.search);
-  const source = params.get("source") || "website_aichatexport";
+  const source = params.get("source") || "website_claude";
   const requestedPlanId = params.get("plan") || "";
   const customerEmail = String(params.get("customer_email") || params.get("email") || "").trim();
   const customerName = String(params.get("customer_name") || params.get("name") || "").trim();
@@ -60,12 +60,6 @@
 
   function getCheckoutCustomer() {
     return customerEmail ? { customer: { email: customerEmail } } : {};
-  }
-
-  function requireLinkedCheckoutCustomer() {
-    if (!customerEmail) {
-      throw new Error("Please sign in inside the AI Chat Export extension and open checkout again so Pro access can be linked to your account.");
-    }
   }
 
   function loadPaddleScript() {
@@ -104,7 +98,7 @@
           setStatus("Secure checkout is open.");
         }
         if (event.name === "checkout.completed") {
-          resetCheckoutState("Payment complete. Return to AI Chat Export and use Restore purchase if Pro is not visible yet.");
+          resetCheckoutState("Payment complete. Sign in to the extension with the same email so Pro access can sync.");
         }
         if (event.name === "checkout.payment.failed" || event.name === "checkout.payment.error") {
           resetCheckoutState("Payment was not completed. Please check your payment details or contact support.", true);
@@ -118,8 +112,7 @@
   }
 
   async function createCheckoutSession(plan) {
-    requireLinkedCheckoutCustomer();
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/create-checkout-session`, {
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/product-create-checkout-session`, {
       method: "POST",
       headers: {
         apikey: SUPABASE_PUBLISHABLE_KEY,
@@ -131,14 +124,17 @@
         billing_interval: plan.billingInterval,
         currency: "USD",
         provider_id: "paddle",
-        product_id: "ai_chat_export",
-        product_slug: "ai-chat-export",
-        product_name: "AI Chat Export",
+        product_id: "claude_export",
+        product_slug: "claude-export",
+        product_name: "Claude Export",
         provider_price_id: plan.priceId,
         price_id: plan.priceId,
         source,
         ...(customerEmail ? { customer_email: customerEmail } : {}),
-        ...(customerName ? { customer_name: customerName } : {})
+        ...(customerName ? { customer_name: customerName } : {}),
+        success_url: `${SUCCESS_URL}&plan=${encodeURIComponent(plan.id)}`,
+        cancel_url: `${CANCEL_URL}&plan=${encodeURIComponent(plan.id)}`,
+        checkout_url: CHECKOUT_PAGE_URL
       })
     });
     const payload = await response.json().catch(() => null);
@@ -175,7 +171,6 @@
 
   async function openPaddleTransactionCheckout(transactionId) {
     if (!transactionId) return;
-    requireLinkedCheckoutCustomer();
     checkoutLoading = true;
     setButtonsDisabled(true);
     setStatus("Loading your secure payment session...");
@@ -203,11 +198,9 @@
   });
 
   if (params.get("status") === "success") {
-    setStatus("Payment complete. Return to AI Chat Export and use Restore purchase if Pro is not visible yet.");
+    setStatus("Payment complete. Sign in to the extension with the same email so Pro access can sync.");
   } else if (params.get("status") === "cancelled") {
     setStatus("Checkout was cancelled. You can choose a plan again later.", true);
-  } else if (!customerEmail) {
-    setStatus("Please sign in inside the AI Chat Export extension and open checkout again so Pro access can be linked to your account.", true);
   } else if (params.get("_ptxn")) {
     openPaddleTransactionCheckout(params.get("_ptxn")).catch((error) => {
       resetCheckoutState(error && error.message ? error.message : "Could not load secure checkout.", true);

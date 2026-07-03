@@ -16,10 +16,21 @@
   const developerExport = globalThis.CHATVAULT_DEVELOPER_EXPORT;
   const shareCards = globalThis.CHATVAULT_SHARE_CARDS;
   const exporter = globalThis.CHATVAULT_EXPORT;
-  const EXPORT_SETTINGS_STORAGE_KEY = "chatvault_export_settings";
+  const productConfig = globalThis.CHATVAULT_PRODUCT_CONFIG || {};
+  const storageKey = typeof productConfig.storageKey === "function"
+    ? productConfig.storageKey
+    : (name) => `chatvault_exporter.${name}`;
+  const PRODUCT_ID = productConfig.productId || "claude_export";
+  const PRODUCT_SLUG = productConfig.productSlug || "claude-export";
+  const PRODUCT_NAME = productConfig.productName || "Claude Export";
+  const PRODUCT_PLATFORM_LABELS = productConfig.platformLabels || {};
+  const SUPABASE_SESSION_STORAGE_KEY = storageKey("supabase_session.v1");
+  const ENTITLEMENT_STATE_CACHE_KEY = storageKey("entitlement_state.v1");
+  const EXPORT_SETTINGS_STORAGE_KEY = storageKey("export_settings.v1");
+  const FREE_QUOTA_EXHAUSTED_MESSAGE = "You have used today's 3 free exports.";
 
   if (!exporter) {
-    console.error("[AI Chat Export] Shared export core is missing. Refresh the page.");
+    console.error(`[${PRODUCT_NAME}] Shared export core is missing. Refresh the page.`);
     return;
   }
 
@@ -35,6 +46,7 @@
   let currentUserProfile = null;
   let currentSession = null;
   let dailyUsage = { date: "", exportedChats: 0 };
+  let usageStateLoaded = false;
   let currentPreset = "default_transcript";
   let activeFormat = "pdf";
   let abortController = null;
@@ -44,17 +56,37 @@
   let pageToastTimer = null;
   let subscribePanelRequestAt = 0;
   let runtimeMessageListenerAttached = false;
+  let authStorageListenerAttached = false;
   let contextExportReady = false;
   let pendingContextExportRequest = null;
 
-  // popup state 缓存（避免每次打开 popup 都触发 API 请求）
+  // popup state 缓存：先返回上次状态，再异步刷新服务端 entitlement。
   let _popupStateCache = null;
-  let _popupStateCacheAt = 0;
-  const POPUP_STATE_CACHE_TTL_MS = 5 * 60 * 1000; // 5 分钟
 
   function invalidatePopupStateCache() {
     _popupStateCache = null;
-    _popupStateCacheAt = 0;
+  }
+
+  function applyProductTheme(target) {
+    if (productConfig && typeof productConfig.applyThemeVars === "function") {
+      productConfig.applyThemeVars(target || document.documentElement);
+    }
+  }
+
+  function getSupportedPlatformLabel() {
+    const labels = {
+      chatgpt: "ChatGPT",
+      claude: "Claude",
+      gemini: "Gemini"
+    };
+    const platforms = Array.isArray(productConfig.supportedPlatforms) && productConfig.supportedPlatforms.length
+      ? productConfig.supportedPlatforms
+      : ["chatgpt", "claude", "gemini"];
+    const names = platforms.map((platform) => PRODUCT_PLATFORM_LABELS[platform] || labels[platform] || platform);
+    if (!names.length) return "supported AI chat";
+    if (names.length === 1) return names[0];
+    if (names.length === 2) return `${names[0]} or ${names[1]}`;
+    return `${names.slice(0, -1).join(", ")}, or ${names[names.length - 1]}`;
   }
 
   // HTML 转义工具，防止会话标题等外部文本注入 HTML
@@ -246,9 +278,9 @@
   // 初始化 DOM 注入
   async function init() {
     listenMessages();
+    listenAuthStorageChanges();
     await loadPersistedExportSettings();
     injectShadowDOM();
-    updateUIState();
     contextExportReady = true;
     flushPendingContextExportRequest();
 
@@ -257,7 +289,7 @@
       return null;
     });
 
-    await loadState();
+    await loadState({ localOnly: true, skipVerify: true });
     updateUIState();
     await preloadPromise;
 
@@ -273,14 +305,15 @@
   }
 
   // 加载登录及额度状态
-  async function loadState() {
+  async function loadState(options = {}) {
+    const skipVerify = Boolean(options.skipVerify) || !!abortController;
     let authResolved = !auth;
     try {
       if (auth) {
-        currentSession = await auth.getSession({ skipUserRefresh: false, allowStaleOnError: true });
+        currentSession = await auth.getSession({ skipUserRefresh: !options.forceRefresh, allowStaleOnError: true });
         authResolved = true;
         if (currentSession?.user) {
-          currentUserProfile = await refreshEntitlements(currentSession);
+          currentUserProfile = await refreshEntitlements(currentSession, options);
           isProUser = entitlements.isPro(currentUserProfile);
         } else {
           isProUser = false;
@@ -297,39 +330,277 @@
       }
     } catch (e) {
       console.warn("Failed to load daily usage storage:", e);
+    } finally {
+      usageStateLoaded = true;
     }
 
-    if (currentSession?.access_token && !isProUser) {
-      try {
-        const verification = await syncVerifiedExportEntitlement(1, { consume: false });
+    if (!skipVerify && currentSession?.access_token && !isProUser) {
+      // Run in background without awaiting, to prevent blocking initialization and state loads
+      syncVerifiedExportEntitlement(1, { consume: false }).then((verification) => {
         if (!verification.ok) {
-          console.warn("Failed to refresh server export usage:", verification.error);
+          console.info("Failed to refresh server export usage (non-critical):", verification.error);
         }
-      } catch (error) {
-        console.warn("Failed to refresh server export usage:", error);
-      }
+      }).catch((error) => {
+        console.info("Failed to refresh server export usage (non-critical):", error);
+      });
     }
 
-    if (authResolved) {
+    if (authResolved && !options.localOnly) {
       await cacheEntitlementState();
     }
   }
 
-  // 获取 Pro 状态
-  async function refreshEntitlements(session) {
-    if (!session?.access_token) return entitlements.normalizeProfile({ plan: "free" });
+  function sessionMatchesCachedEntitlement(session, cachedState) {
+    if (!session || !cachedState) return false;
+    const sessionEmail = session.user?.email || "";
+    const sessionUserId = session.user?.id || "";
+    if (!sessionEmail && !sessionUserId) return false;
+    return (!sessionEmail || cachedState.email === sessionEmail) &&
+      (!sessionUserId || cachedState.profile?.id === sessionUserId || !cachedState.profile?.id);
+  }
+
+  async function getStoredAuthSessionSnapshot(sessionOverride) {
+    if (sessionOverride) {
+      return sessionOverride;
+    }
+    if (!auth) {
+      return null;
+    }
+    if (typeof auth.getStoredSession === "function") {
+      const storedSession = await auth.getStoredSession().catch(() => null);
+      if (storedSession) return storedSession;
+    }
+    if (typeof auth.getSession === "function") {
+      return auth.getSession({ skipUserRefresh: true, allowStaleOnError: true }).catch(() => null);
+    }
+    return null;
+  }
+
+  async function getCachedProfileForSession(session) {
+    if (!entitlements || typeof entitlements.getCachedState !== "function") {
+      return null;
+    }
+    const cached = await entitlements.getCachedState().catch(() => null);
+    return sessionMatchesCachedEntitlement(session, cached) ? cached : null;
+  }
+
+  async function getPopupStateCacheSnapshot() {
+    if (!_popupStateCache) {
+      return null;
+    }
+
+    const cached = currentSession?.access_token
+      ? await getCachedProfileForSession(currentSession)
+      : null;
+    if (!cached?.profile || !entitlements) {
+      return _popupStateCache;
+    }
+
+    const profile = cached.profile;
+    const usage = cached.usage || _popupStateCache.dailyUsage || dailyUsage;
+    return {
+      ..._popupStateCache,
+      isProUser: entitlements.isPro(profile),
+      email: cached.email || currentSession?.user?.email || _popupStateCache.email || "",
+      avatarUrl: cached.avatarUrl || currentSession?.user?.user_metadata?.avatar_url || currentSession?.user?.user_metadata?.picture || _popupStateCache.avatarUrl || "",
+      remainingQuota: entitlements.getRemainingFreeExports(profile, usage || {}),
+      profile,
+      dailyUsage: usage
+    };
+  }
+
+  function buildEntitlementPopupStateSnapshot() {
+    const profile = currentUserProfile || (currentSession?.user && entitlements ? entitlements.normalizeProfile({
+      id: currentSession.user.id || "",
+      email: currentSession.user.email || "",
+      plan: "free"
+    }) : null);
+    const usage = dailyUsage || {};
+    const remainingQuota = profile && entitlements
+      ? entitlements.getRemainingFreeExports(profile, usage || {})
+      : 3;
+
+    return {
+      ok: true,
+      email: currentSession?.user?.email || profile?.email || "",
+      avatarUrl: currentSession?.user?.user_metadata?.avatar_url || currentSession?.user?.user_metadata?.picture || "",
+      isProUser: !!(profile && entitlements?.isPro(profile)),
+      remainingQuota,
+      profile,
+      dailyUsage: usage,
+      exportSettings
+    };
+  }
+
+  function notifyPopupEntitlementStateUpdated() {
     try {
-      const result = await globalThis.CHATVAULT_SUPABASE_API.request("/functions/v1/sync-subscription-status", {
+      if (!chrome?.runtime?.sendMessage) {
+        return;
+      }
+      chrome.runtime.sendMessage({
+        type: "CHATVAULT_ENTITLEMENT_STATE_UPDATED",
+        state: buildEntitlementPopupStateSnapshot()
+      }, () => {
+        // No popup may be open; ignore the expected "receiving end" error.
+        void chrome.runtime.lastError;
+      });
+    } catch (error) {}
+  }
+
+  async function getLocalUsageSnapshot() {
+    if (!usageStore || typeof usageStore.getDailyUsage !== "function") {
+      return null;
+    }
+    return usageStore.getDailyUsage().catch(() => null);
+  }
+
+  async function applyVerifiedServerUsage(usage) {
+    if (!usage || typeof usage !== "object") {
+      return null;
+    }
+    if (usageStore && typeof usageStore.setDailyUsage === "function") {
+      dailyUsage = await usageStore.setDailyUsage(usage);
+    } else if (entitlements && typeof entitlements.normalizeDailyUsage === "function") {
+      dailyUsage = entitlements.normalizeDailyUsage(usage);
+    } else {
+      dailyUsage = usage;
+    }
+    return dailyUsage;
+  }
+
+  async function applyStoredAuthStateImmediately(sessionOverride) {
+    const session = await getStoredAuthSessionSnapshot(sessionOverride);
+    currentSession = session || null;
+    dailyUsage = await getLocalUsageSnapshot() || dailyUsage;
+    usageStateLoaded = true;
+
+    if (session?.access_token && entitlements) {
+      const cached = await getCachedProfileForSession(session);
+      currentUserProfile = cached?.profile || entitlements.normalizeProfile({
+        id: session.user?.id || "",
+        email: session.user?.email || "",
+        plan: "free"
+      });
+      isProUser = entitlements.isPro(currentUserProfile);
+    } else {
+      currentUserProfile = null;
+      isProUser = false;
+    }
+
+    invalidatePopupStateCache();
+    updateUIState();
+    return Boolean(session?.access_token);
+  }
+
+  async function applySignedOutStateImmediately() {
+    currentSession = null;
+    currentUserProfile = null;
+    isProUser = false;
+    dailyUsage = await getLocalUsageSnapshot() || dailyUsage;
+    usageStateLoaded = true;
+    invalidatePopupStateCache();
+    updateUIState();
+  }
+
+  function refreshAuthStateInBackground() {
+    loadState({ forceRefresh: true, skipVerify: true }).then(() => {
+      invalidatePopupStateCache();
+      updateUIState();
+      notifyPopupEntitlementStateUpdated();
+    }).catch((error) => {
+      console.warn("Background auth state refresh failed:", error);
+    });
+  }
+
+  function getStorageChange(changes, key) {
+    return changes && Object.prototype.hasOwnProperty.call(changes, key) ? changes[key] : null;
+  }
+
+  function listenAuthStorageChanges() {
+    if (authStorageListenerAttached) {
+      return;
+    }
+    authStorageListenerAttached = true;
+
+    try {
+      if (!chrome?.storage?.onChanged || typeof chrome.storage.onChanged.addListener !== "function") {
+        return;
+      }
+
+      chrome.storage.onChanged.addListener((changes, areaName) => {
+        if (areaName !== "local") {
+          return;
+        }
+
+        const sessionChange = getStorageChange(changes, SUPABASE_SESSION_STORAGE_KEY);
+        const entitlementChange = getStorageChange(changes, ENTITLEMENT_STATE_CACHE_KEY);
+        if (!sessionChange && !entitlementChange) {
+          return;
+        }
+
+        if (sessionChange) {
+          if (sessionChange.newValue) {
+            applyStoredAuthStateImmediately(sessionChange.newValue).catch((error) => {
+              console.warn("Failed to apply updated auth session:", error);
+            });
+          } else {
+            applySignedOutStateImmediately().catch((error) => {
+              console.warn("Failed to apply signed-out auth state:", error);
+            });
+          }
+          return;
+        }
+
+        applyStoredAuthStateImmediately().catch((error) => {
+          console.warn("Failed to apply updated entitlement state:", error);
+        });
+      });
+    } catch (error) {
+      console.warn("Auth storage change listener unavailable:", error);
+    }
+  }
+
+  // 获取 Pro 状态
+  async function refreshEntitlements(session, options = {}) {
+    if (!session?.access_token) return entitlements.normalizeProfile({ plan: "free" });
+    if (!options.forceRefresh) {
+      try {
+        const cached = typeof entitlements.getCachedState === "function" ? await entitlements.getCachedState() : null;
+        const sessionEmail = session.user?.email || "";
+        const sessionUserId = session.user?.id || "";
+        if (cached && (!sessionEmail || cached.email === sessionEmail) && (!sessionUserId || cached.profile?.id === sessionUserId || !cached.profile?.id)) {
+          return cached.profile;
+        }
+      } catch (error) {
+        console.warn("Cached entitlement check failed:", error);
+      }
+    }
+    if (options.localOnly) {
+      return entitlements.normalizeProfile({
+        id: session.user?.id || "",
+        email: session.user?.email || "",
+        plan: "free"
+      });
+    }
+    try {
+      const result = await globalThis.CHATVAULT_SUPABASE_API.request("/functions/v1/product-sync-subscription-status", {
         accessToken: session.access_token,
-        method: "POST"
+        method: "POST",
+        body: {
+          product_id: PRODUCT_ID,
+          product_slug: PRODUCT_SLUG,
+          product_name: PRODUCT_NAME
+        }
       });
       const syncedProfile = normalizeProfileResponse(result);
       if (syncedProfile) return syncedProfile;
     } catch (err) {
-      console.warn("sync-subscription-status Edge Function failed, trying profiles fallback:", err);
+      if (globalThis.CHATVAULT_DEBUG) {
+        console.debug("product-sync-subscription-status Edge Function failed, trying profiles fallback:", err);
+      }
     }
     try {
-      const profile = await globalThis.CHATVAULT_SUPABASE_API.request("/rest/v1/profiles?id=eq." + session.user.id + "&select=id,email,plan,feature_flags,limits,updated_at", {
+      const profile = await globalThis.CHATVAULT_SUPABASE_API.request("/rest/v1/product_profiles?user_id=eq." + session.user.id + "&product_slug=eq." + encodeURIComponent(PRODUCT_SLUG) + "&select=user_id,email,product_slug,plan,feature_flags,limits,updated_at", {
         accessToken: session.access_token,
         method: "GET"
       });
@@ -388,11 +659,6 @@
     }
   }
 
-  function getUsageCount(value) {
-    const source = value && typeof value === "object" ? value : {};
-    return Math.max(0, Number(source.exportedChats || source.exported_chats || source.count || source.used || 0));
-  }
-
   function hasKnownExhaustedFreeQuota() {
     if (isProUser) {
       return false;
@@ -410,6 +676,13 @@
     }
     const profile = currentUserProfile || entitlements.normalizeProfile({ plan: "free" });
     return entitlements.canUseExport(profile, dailyUsage, count);
+  }
+
+  async function verifySignedInExportAccess(count) {
+    if (isProUser || !currentSession?.access_token) {
+      return { ok: true, allowed: true, serverVerified: false };
+    }
+    return syncVerifiedExportEntitlement(count, { consume: false });
   }
 
   async function syncVerifiedExportEntitlement(conversationCount, options = {}) {
@@ -441,12 +714,15 @@
     }
 
     try {
-      const result = await globalThis.CHATVAULT_SUPABASE_API.request("/functions/v1/verify-export-entitlement", {
+      const result = await globalThis.CHATVAULT_SUPABASE_API.request("/functions/v1/product-verify-export-entitlement", {
         accessToken: session.access_token,
         method: "POST",
         body: {
           requested_count: count,
-          consume
+          consume,
+          product_id: PRODUCT_ID,
+          product_slug: PRODUCT_SLUG,
+          product_name: PRODUCT_NAME
         }
       });
 
@@ -456,14 +732,20 @@
         currentUserProfile = syncedProfile;
         isProUser = entitlements.isPro(currentUserProfile);
       }
+      const serverUsage = result?.usage || result?.data?.usage || null;
+      if (serverUsage) {
+        await applyVerifiedServerUsage(serverUsage);
+      }
       await cacheEntitlementState();
       invalidatePopupStateCache();
-      const localAllowed = getLocalFreeQuotaAllowed(count);
+      notifyPopupEntitlementStateUpdated();
+      const serverAllowed = result?.ok !== false && result?.allowed !== false;
 
       return {
         ok: true,
-        allowed: localAllowed,
+        allowed: serverAllowed,
         serverVerified: true,
+        serverConsumed: consume && serverAllowed,
         profile: currentUserProfile,
         usage: dailyUsage,
         remaining: entitlements.getRemainingFreeExports(currentUserProfile, dailyUsage)
@@ -478,10 +760,16 @@
     }
   }
 
-  async function recordSuccessfulExportUsage(count) {
+  async function recordSuccessfulExportUsage(count, options = {}) {
     const amount = Math.max(1, Number(count) || 1);
     if (isProUser || entitlements?.isPro?.(currentUserProfile)) {
       return { ok: true, serverVerified: false, usage: dailyUsage };
+    }
+
+    if (options.serverConsumed) {
+      await cacheEntitlementState();
+      invalidatePopupStateCache();
+      return { ok: true, serverVerified: true, usage: dailyUsage };
     }
 
     if (usageStore && typeof usageStore.incrementDailyUsage === "function") {
@@ -489,11 +777,6 @@
       await cacheEntitlementState();
     }
     invalidatePopupStateCache();
-    if (currentSession?.access_token) {
-      syncVerifiedExportEntitlement(amount, { consume: true }).catch((error) => {
-        console.warn("Server export usage sync failed; local free quota remains authoritative:", error);
-      });
-    }
     return { ok: true, serverVerified: false, usage: dailyUsage };
   }
 
@@ -715,8 +998,24 @@
     exportProgressState = null;
   }
 
+  function promoteExporterRootLayer() {
+    if (!shadowContainer) return;
+    shadowContainer.style.setProperty("position", "fixed", "important");
+    shadowContainer.style.setProperty("inset", "0", "important");
+    shadowContainer.style.setProperty("width", "100vw", "important");
+    shadowContainer.style.setProperty("height", "100vh", "important");
+    shadowContainer.style.setProperty("z-index", "2147483647", "important");
+    shadowContainer.style.setProperty("pointer-events", "none", "important");
+    shadowContainer.style.setProperty("isolation", "isolate", "important");
+    const parent = shadowContainer.parentElement || document.body || document.documentElement;
+    if (parent && parent.lastElementChild !== shadowContainer) {
+      parent.appendChild(shadowContainer);
+    }
+  }
+
   function renderExportProgressRaw(format, progress, onCancel) {
     if (!shadowRoot || !exporter?.renderProgressUI) return;
+    promoteExporterRootLayer();
     exporter.renderProgressUI(format, progress, shadowRoot, onCancel);
   }
 
@@ -851,19 +1150,22 @@
   function injectShadowDOM() {
     shadowContainer = document.createElement("div");
     shadowContainer.id = "chatvault-exporter-root";
-    shadowContainer.style.position = "absolute";
-    shadowContainer.style.top = "0";
-    shadowContainer.style.left = "0";
-    shadowContainer.style.zIndex = "2147483647";
+    shadowContainer.style.setProperty("position", "fixed", "important");
+    shadowContainer.style.setProperty("inset", "0", "important");
+    shadowContainer.style.setProperty("width", "100vw", "important");
+    shadowContainer.style.setProperty("height", "100vh", "important");
+    shadowContainer.style.setProperty("z-index", "2147483647", "important");
+    shadowContainer.style.setProperty("pointer-events", "none", "important");
+    shadowContainer.style.setProperty("isolation", "isolate", "important");
     document.body.appendChild(shadowContainer);
 
     shadowRoot = shadowContainer.attachShadow({ mode: "open" });
+    applyProductTheme(shadowContainer);
 
     // 引入 CSS
     const criticalStyle = document.createElement("style");
     criticalStyle.textContent = `
       .export-progress-overlay:not(.active),
-      .cv-vip-modal-overlay:not(.active),
       .cv-selection-bar:not(.active),
       .cv-batch-modal-overlay:not(.active),
       .cv-page-toast:not(.active) {
@@ -872,7 +1174,6 @@
         pointer-events: none !important;
       }
       .export-progress-overlay.active,
-      .cv-vip-modal-overlay.active,
       .cv-selection-bar.active,
       .cv-batch-modal-overlay.active,
       .cv-page-toast.active {
@@ -886,7 +1187,7 @@
     link.href = chrome.runtime.getURL("src/content.css");
     shadowRoot.appendChild(link);
 
-    // 渲染 UI 骨架 (进度遮罩、浮动选择栏、VIP升级提示、以及批量导出弹窗)
+    // 渲染 UI 骨架 (进度遮罩、浮动选择栏、批量导出弹窗和 toast)
     const uiWrapper = document.createElement("div");
     uiWrapper.innerHTML = `
       <!-- 进度进度遮罩 -->
@@ -918,23 +1219,6 @@
           </select>
           <button class="cv-selection-btn primary" id="btn-export-selection">${t("btn_export", isChineseUi() ? "导出" : "Export")}</button>
           <button class="cv-selection-btn" id="btn-exit-selection">${tx("content_btn_exit", "Exit", "退出")}</button>
-        </div>
-      </div>
-
-      <!-- VIP 升级提示弹窗 -->
-      <div class="cv-vip-modal-overlay" id="vip-modal-overlay">
-        <div class="cv-vip-modal">
-          <div class="cv-vip-crown-container">
-            <span class="cv-vip-crown">👑</span>
-          </div>
-          <h3 class="cv-vip-modal-title">${t("billing_title", isChineseUi() ? "升级至 AI Chat Export Pro" : "Upgrade To AI Chat Export Pro")}</h3>
-          <div class="cv-vip-modal-body" id="vip-modal-body">
-            ${tx("content_upgrade_body", "You are using a Pro feature. Upgrade to unlock it.", "您正在使用 Pro 专属功能，升级后即可解锁。")}
-          </div>
-          <div class="cv-vip-modal-actions">
-            <button class="cv-vip-btn secondary" id="btn-close-vip-modal">${getBatchCancelLabel()}</button>
-            <button class="cv-vip-btn primary" id="btn-go-subscribe">${tx("content_go_subscribe", "Subscribe", "前往订阅")}</button>
-          </div>
         </div>
       </div>
 
@@ -1133,19 +1417,6 @@
       }
     });
 
-    // 绑定 VIP 升级弹窗事件
-    shadowRoot.getElementById("btn-close-vip-modal").addEventListener("click", () => {
-      shadowRoot.getElementById("vip-modal-overlay").classList.remove("active");
-    });
-    shadowRoot.getElementById("btn-go-subscribe").addEventListener("click", () => {
-      shadowRoot.getElementById("vip-modal-overlay").classList.remove("active");
-      chrome.runtime.sendMessage({ type: "CHATVAULT_OPEN_SUBSCRIBE", source: "extension_vip_modal", planId: "yearly" }, (response) => {
-        if (chrome.runtime.lastError || !response || response.ok === false) {
-          showPageToast(tx("content_open_subscribe_panel_failed", "Open the AI Chat Export toolbar popup to subscribe.", "请打开浏览器工具栏中的 AI Chat Export 弹窗完成订阅。"));
-        }
-      });
-    });
-
     // === 绑定页内批量导出弹窗事件 ===
     
     // 折叠配置面板
@@ -1224,8 +1495,8 @@
     // 绑定全局登录监听 Hook (防崩溃，因 popup 会更新状态)
     globalThis.CHATVAULT_SET_AUTH_LOADING = (isLoading, message) => {};
     globalThis.CHATVAULT_REFRESH_AUTH_STATE = async () => {
-      await loadState();
-      updateUIState();
+      await applyStoredAuthStateImmediately();
+      refreshAuthStateInBackground();
     };
   }
 
@@ -2015,7 +2286,7 @@
     const codeIndex = developerExport.extractCodeBlocks(processedMessages);
     const metadata = {
       platform,
-      title: item.title || "AI Chat Export",
+      title: item.title || PRODUCT_NAME,
       sourceUrl,
       messageCount: processedMessages.length,
       redaction: redactionSummary,
@@ -2066,7 +2337,7 @@
     const failures = [];
 
     try {
-      await loadState();
+      await loadState({ localOnly: true, skipVerify: true });
       await exporter.preload();
 
       for (let index = 0; index < selectedItems.length; index += 1) {
@@ -2209,11 +2480,6 @@
 
     if (selectedItems.length === 0) return;
 
-    if (!canUseBatchExportLocally()) {
-      showBatchExportUpgradePrompt();
-      return;
-    }
-
     batchActiveItems = selectedItems.slice();
     const preflightController = new AbortController();
     batchExportAbortController = preflightController;
@@ -2241,31 +2507,27 @@
     }
 
     globalThis.CHATVAULT_IS_BATCH_EXPORT = true;
-    batchModalOpen = true;
     setBatchExportingUi(true);
     updateBatchExportProgress({
       status: "progress",
       currentIndex: 0,
       total: selectedItems.length,
       percent: 0,
-      progressText: tx("content_progress_checking_export_access", "Checking export access...", "正在检查导出权限...")
+      progressText: tx("content_progress_checking_export_access", "Preparing export...", "正在准备导出...")
     });
+    closeBatchModal();
 
     try {
-      await loadState();
+      await loadState({ localOnly: true, skipVerify: true });
       if (isBatchPreflightCancelled()) return;
-      if (!canUseBatchExportLocally()) {
-        resetBatchPreflightUi();
-        showBatchExportUpgradePrompt();
-        return;
-      }
-
-      const verification = await syncVerifiedExportEntitlement(selectedItems.length);
-      if (isBatchPreflightCancelled()) return;
-      if (!verification.ok) {
-        resetBatchPreflightUi();
-        showPageToast(verification.error || tx("content_entitlement_verify_failed", "Could not verify your export entitlement. Check your connection and try again.", "无法验证您的导出权益，请检查网络后重试。"));
-        return;
+      if (!isProUser && currentSession?.access_token) {
+        const entitlementPreflight = await verifySignedInExportAccess(1);
+        if (isBatchPreflightCancelled()) return;
+        if (!entitlementPreflight.ok) {
+          resetBatchPreflightUi();
+          showPageToast(entitlementPreflight.error || tx("content_entitlement_verify_failed", "Could not verify your export entitlement. Check your connection and try again.", "无法验证您的导出权益，请检查网络后重试。"));
+          return;
+        }
       }
       if (!canUseBatchExportLocally()) {
         resetBatchPreflightUi();
@@ -2302,7 +2564,6 @@
         percent: 0,
         progressText: tx("content_local_batch_export_starting", "Starting local batch export...", "正在启动本地批量导出...")
       });
-      closeBatchModal();
 
       const titleTextEl = shadowRoot.getElementById("cv-batch-title-text");
       if (titleTextEl) {
@@ -2591,7 +2852,7 @@
       id: conversationId,
       conversationId,
       platform,
-      title: exporter.getConversationTitle ? exporter.getConversationTitle() : "AI Chat Export",
+      title: exporter.getConversationTitle ? exporter.getConversationTitle() : PRODUCT_NAME,
       url: window.location.href
     };
   }
@@ -2713,7 +2974,7 @@
       pad(date.getMinutes()),
       pad(date.getSeconds())
     ].join("-");
-    return sanitizeBatchPathSegment("AI Chat Export " + stamp, "AI Chat Export");
+    return sanitizeBatchPathSegment(PRODUCT_NAME + " " + stamp, PRODUCT_NAME);
   }
 
   function splitBatchFilename(filename) {
@@ -2726,7 +2987,7 @@
 
   function getAvailableBatchDownloadPath(usedPaths, rootName, preferredName) {
     const parts = splitBatchFilename(preferredName);
-    const root = sanitizeBatchPathSegment(rootName, "AI Chat Export");
+    const root = sanitizeBatchPathSegment(rootName, PRODUCT_NAME);
     for (let index = 0; index < 1000; index += 1) {
       const candidateName = index
         ? parts.base + "-" + (index + 1) + parts.ext
@@ -2770,7 +3031,7 @@
         `;
         loginBtn.style.color = "#92400e";
         loginBtn.style.borderColor = "#f59e0b";
-      } else if (currentUserProfile?.email) {
+      } else if (currentUserProfile?.email || currentSession?.access_token) {
         loginBtn.innerHTML = t("popup_free_account", isChineseUi() ? "免费账号" : "Free Account");
         loginBtn.style.color = "";
         loginBtn.style.borderColor = "";
@@ -2789,6 +3050,11 @@
     // 2. 更新配额状态
     const quotaInfo = shadowRoot.getElementById("quota-status-info");
     if (quotaInfo) {
+      if (!usageStateLoaded) {
+        quotaInfo.innerHTML = "<b>" + escapeHtml(tx("content_quota_loading_title", "Loading quota...", "正在读取额度...")) + "</b><br/>" +
+          escapeHtml(tx("content_quota_loading_desc", "Checking today's local export usage.", "正在读取今日本地导出次数。"));
+        return;
+      }
       const remaining = entitlements.getRemainingFreeExports(currentUserProfile, dailyUsage);
       if (isProUser) {
         quotaInfo.innerHTML = "<b>" + escapeHtml(t("popup_pro_quota_status", isChineseUi() ? "无限导出额度可用" : "Unlimited exports available")) + "</b><br/>" +
@@ -2804,9 +3070,7 @@
   // 登出流程
   async function performSignOut() {
     await auth.signOut();
-    invalidatePopupStateCache();
-    await loadState();
-    updateUIState();
+    await applySignedOutStateImmediately();
   }
 
   async function performSignIn() {
@@ -2819,60 +3083,19 @@
       return false;
     }
 
-    await loadState();
-    invalidatePopupStateCache();
-    updateUIState();
+    await applyStoredAuthStateImmediately(session);
+    refreshAuthStateInBackground();
     return true;
   }
 
   // 购买跳转流程
   async function triggerCheckout() {
-    try {
-      const billing = globalThis.CHATVAULT_BILLING;
-      if (!billing || typeof billing.createCheckoutSession !== "function") {
-        throw new Error(tx("content_checkout_unavailable", "Checkout is temporarily unavailable. Refresh the page and try again.", "结账服务暂时不可用，请刷新页面后重试。"));
-      }
-      if (!auth || typeof auth.getSession !== "function") {
-        throw new Error(tx("content_login_service_unavailable", "Sign-in is temporarily unavailable. Refresh the page and try again.", "登录服务暂时不可用，请刷新页面后重试。"));
-      }
-
-      let session = currentSession?.access_token ? currentSession : null;
-      if (!session) {
-        session = await auth.getSession({ skipUserRefresh: false, allowStaleOnError: false }).catch(() => null);
-      }
-      if (!session?.access_token) {
-        session = await auth.signInWithGoogle();
-        if (!session?.access_token) {
-          session = await auth.getSession({ skipUserRefresh: false, allowStaleOnError: false }).catch(() => null);
-        }
-      }
-      if (!session?.access_token) {
-        throw new Error(tx("content_checkout_login_required", "Please sign in before checkout so Pro access can be linked to your account.", "请先登录再订阅，以便自动绑定 Pro 权益。"));
-      }
-
-      currentSession = session;
-      const email = session?.user?.email || currentUserProfile?.email || "";
-      const source = "exporter_extension";
-      const checkout = await billing.createCheckoutSession({
-        accessToken: session.access_token,
-        customerEmail: email,
-        planId: "yearly",
-        source
-      });
-      const checkoutUrl = checkout?.checkoutUrl || "";
-      if (!checkoutUrl) {
-        throw new Error(tx("content_checkout_unavailable", "Checkout is temporarily unavailable. Refresh the page and try again.", "结账服务暂时不可用，请刷新页面后重试。"));
-      }
-
-      window.open(checkoutUrl, "_blank");
-    } catch (e) {
-      console.warn("Failed to build checkout URL:", e);
-      alert(tx("content_checkout_open_failed", "Could not open checkout: $1", "无法打开购买页面：$1", e && e.message ? e.message : tx("content_refresh_retry", "Refresh the page and try again.", "请刷新页面后重试。")));
-    }
+    showPageToast(tx("content_open_subscribe_panel", `Opening ${PRODUCT_NAME} Pro plans...`, `正在打开 ${PRODUCT_NAME} Pro 订阅方案...`));
+    openSubscribePanelFromPage();
   }
 
   function getUpgradePromptMessage(message) {
-    if (message === "You have used today's 3 free saved exports.") {
+    if (message === "You have used today's 3 free saved exports." || message === FREE_QUOTA_EXHAUSTED_MESSAGE) {
       return tx("content_upgrade_free_limit", "You have used today's 3 free exports.", "您今日已使用完 3 次免费导出额度限制。");
     }
     if (message === "This professional template requires Pro.") {
@@ -2888,12 +3111,16 @@
       return tx("content_upgrade_appendix", "Prompt Appendix requires Pro.", "附带 Prompt 提问附录功能需要 Pro 权限。");
     }
     if (message === "Hiding watermark requires Pro.") {
-      return tx("content_upgrade_watermark", "Hiding the AI Chat Export watermark requires Pro.", "隐藏 AI Chat Export 水印签名需要 Pro 权限。");
+      return tx("content_upgrade_watermark", `Hiding the ${PRODUCT_NAME} watermark requires Pro.`, `隐藏 ${PRODUCT_NAME} 水印签名需要 Pro 权限。`);
     }
-    return String(message || tx("content_upgrade_desc", "Upgrade to AI Chat Export Pro to remove quota limits.", "升级到 Pro 可解除额度限制。"));
+    return String(message || tx("content_upgrade_desc", `Upgrade to ${PRODUCT_NAME} Pro to remove quota limits.`, "升级到 Pro 可解除额度限制。"));
   }
 
   function openSubscribePanelFromPage() {
+    if (batchModalOpen) {
+      closeBatchModal();
+    }
+
     const now = Date.now();
     if (now - subscribePanelRequestAt < 1200) {
       return;
@@ -2901,7 +3128,7 @@
     subscribePanelRequestAt = now;
     chrome.runtime.sendMessage({ type: "CHATVAULT_OPEN_SUBSCRIBE", source: "extension_vip_modal_limit", planId: "yearly" }, (response) => {
       if (chrome.runtime.lastError || !response || response.ok === false) {
-        showPageToast(tx("content_open_subscribe_panel_failed", "Open the AI Chat Export toolbar popup to subscribe.", "请打开浏览器工具栏中的 AI Chat Export 弹窗完成订阅。"));
+        showPageToast(tx("content_open_subscribe_panel_failed", `Open the ${PRODUCT_NAME} toolbar popup to subscribe.`, `请打开浏览器工具栏中的 ${PRODUCT_NAME} 弹窗完成订阅。`));
       }
     });
   }
@@ -2913,6 +3140,7 @@
 
   function showPageToast(message) {
     if (!shadowRoot) return;
+    promoteExporterRootLayer();
     const toast = shadowRoot.getElementById("cv-page-toast");
     if (!toast) return;
     toast.textContent = message;
@@ -2992,12 +3220,7 @@
     const isSelectedExport = exportSettings.mode === "selected";
 
     if (!platformForExport) {
-      showPageToast(t("toast_no_open_chat", isChineseUi() ? "请在支持的 AI 对话页打开并加载聊天内容后再导出。" : "Open a ChatGPT, Claude, or Gemini conversation to export."));
-      return;
-    }
-
-    if (hasKnownExhaustedFreeQuota()) {
-      showUpgradePrompt("You have used today's 3 free saved exports.");
+      showPageToast(t("toast_no_open_chat", isChineseUi() ? "请在支持的 AI 对话页打开并加载聊天内容后再导出。" : `Open a ${getSupportedPlatformLabel()} conversation to export.`));
       return;
     }
 
@@ -3007,6 +3230,7 @@
     abortController = controller;
     const signal = controller.signal;
     const isSingleExport = !globalThis.CHATVAULT_IS_BATCH_EXPORT;
+    let serverConsumedExportUsage = false;
 
     function clearCurrentExportController() {
       if (abortController === controller) {
@@ -3027,29 +3251,40 @@
       renderExportProgress(formatForExport, {
         mode: "single",
         title: getSingleExportProgressTitle(formatForExport),
-        message: tx("content_progress_checking_export_access", "Checking export access...", "正在检查导出权限..."),
+        message: tx("content_progress_checking_export_access", "Preparing export...", "正在准备导出..."),
         progress: EXPORT_PROGRESS_INITIAL,
         overallProgress: EXPORT_PROGRESS_INITIAL
-      });
+      }, cancelExport);
     }
 
-    await loadState();
+    await loadState({ localOnly: true, skipVerify: true });
     if (isCurrentExportCancelled()) return;
-
-    const verification = await syncVerifiedExportEntitlement(1);
+    const entitlementPreflight = await verifySignedInExportAccess(1);
     if (isCurrentExportCancelled()) return;
-    if (!verification.ok) {
+    if (!entitlementPreflight.ok) {
       hideExportProgress();
       clearCurrentExportController();
-      showPageToast(verification.error || tx("content_entitlement_verify_failed", "Could not verify your export entitlement. Check your connection and try again.", "无法验证您的导出权益，请检查网络后重试。"));
+      showPageToast(entitlementPreflight.error || tx("content_entitlement_verify_failed", "Could not verify your export entitlement. Check your connection and try again.", "无法验证您的导出权益，请检查网络后重试。"));
+      return;
+    }
+    if (!entitlementPreflight.allowed) {
+      hideExportProgress();
+      clearCurrentExportController();
+      showUpgradePrompt(FREE_QUOTA_EXHAUSTED_MESSAGE);
+      return;
+    }
+    if (hasKnownExhaustedFreeQuota()) {
+      hideExportProgress();
+      clearCurrentExportController();
+      showUpgradePrompt(FREE_QUOTA_EXHAUSTED_MESSAGE);
       return;
     }
 
     const remaining = entitlements.getRemainingFreeExports(currentUserProfile, dailyUsage);
-    if (!isProUser && (verification.allowed === false || remaining <= 0)) {
+    if (!isProUser && remaining <= 0) {
       hideExportProgress();
       clearCurrentExportController();
-      showUpgradePrompt("You have used today's 3 free saved exports.");
+      showUpgradePrompt(FREE_QUOTA_EXHAUSTED_MESSAGE);
       return;
     }
 
@@ -3065,7 +3300,7 @@
       renderExportProgress(formatForExport, {
         mode: "single",
         title: getSingleExportProgressTitle(formatForExport),
-        message: tx("content_progress_initializing", "Initializing export engine...", "正在初始化导出引擎..."),
+        message: tx("content_progress_initializing", "Exporting...", "正在导出..."),
         progress: EXPORT_PROGRESS_INITIAL,
         overallProgress: EXPORT_PROGRESS_INITIAL
       }, cancelExport);
@@ -3116,11 +3351,11 @@
       clearCurrentExportController();
       showPageToast(isSelectedExport
         ? tx("content_select_one_before_export", "Select at least one message before exporting.", "请先选择至少一条对话后再导出。")
-        : t("toast_no_open_chat", isChineseUi() ? "请在支持的 AI 对话页打开并加载聊天内容后再导出。" : "Open a ChatGPT, Claude, or Gemini conversation to export."));
+        : t("toast_no_open_chat", isChineseUi() ? "请在支持的 AI 对话页打开并加载聊天内容后再导出。" : `Open a ${getSupportedPlatformLabel()} conversation to export.`));
       return;
     }
 
-    // 使用 ChatVault AI 3.1.5 同款顶部进度条，避免全屏遮罩挡住页面/批量列表。
+    // 使用 Claude Export 3.1.5 同款顶部进度条，避免全屏遮罩挡住页面/批量列表。
     const overlay = shadowRoot.getElementById("progress-overlay");
     if (overlay) overlay.classList.remove("active");
     let exportStatsForProgress = getExportProgressStats(rawMessagesForExport);
@@ -3146,7 +3381,7 @@
       reportBatchItemProgress(safePercent, message);
     }
 
-    setExportProgress(tx("content_progress_initializing", "Initializing export engine...", "正在初始化导出引擎..."), EXPORT_PROGRESS_INITIAL * 100);
+    setExportProgress(tx("content_progress_initializing", "Exporting...", "正在导出..."), EXPORT_PROGRESS_INITIAL * 100);
 
     try {
       // 1. 抓取聊天消息
@@ -3260,6 +3495,21 @@
         throw new Error(blobResult?.error || "Blob creation failed");
       }
 
+      if (!isProUser && currentSession?.access_token) {
+        setExportProgress(tx("content_progress_checking_export_access", "Preparing export...", "正在准备导出..."), 90);
+        const entitlementVerification = await syncVerifiedExportEntitlement(1, { consume: true });
+        if (!entitlementVerification.ok) {
+          throw new Error(entitlementVerification.error || tx("content_entitlement_verify_failed", "Could not verify your export entitlement. Check your connection and try again.", "无法验证您的导出权益，请检查网络后重试。"));
+        }
+        if (!entitlementVerification.allowed) {
+          hideExportProgress();
+          clearCurrentExportController();
+          showUpgradePrompt(FREE_QUOTA_EXHAUSTED_MESSAGE);
+          return;
+        }
+        serverConsumedExportUsage = Boolean(entitlementVerification.serverConsumed);
+      }
+
       // 7. 保存导出文件
       setExportProgress(tx("content_progress_downloading", "Preparing safe download...", "正在准备安全下载..."), 94);
 
@@ -3311,7 +3561,7 @@
 
       // 9. 扣除本地 Guest 次数
       if (!isProUser) {
-        await recordSuccessfulExportUsage(1);
+        await recordSuccessfulExportUsage(1, { serverConsumed: serverConsumedExportUsage });
         updateUIState();
       }
 
@@ -3402,6 +3652,9 @@
         (async () => {
           _popupStateCache = null;
           try {
+            await auth?.clearSession?.();
+          } catch (error) {}
+          try {
             await entitlements?.clearCachedState?.();
           } catch (error) {}
           currentSession = null;
@@ -3417,19 +3670,22 @@
       if (message.type === "CHATVAULT_GET_POPUP_STATE") {
         (async () => {
           try {
-            // 使用缓存（5分钟内复用，减少不必要的 API 请求）
-            const now = Date.now();
-            if (!message.forceRefresh && _popupStateCache && (now - _popupStateCacheAt) < POPUP_STATE_CACHE_TTL_MS) {
+            // 使用缓存快速响应 popup，服务端 entitlement 在响应后异步刷新。
+            if (!message.forceRefresh && _popupStateCache) {
+              const popupStateCacheSnapshot = await getPopupStateCacheSnapshot();
               // 缓存命中，但 lastReceipt 和 exportSettings 需实时更新
               sendResponse({
-                ..._popupStateCache,
+                ...popupStateCacheSnapshot,
                 exportSettings: exportSettings,
                 lastReceipt: lastReceipt
               });
+              if (currentSession?.access_token) {
+                refreshAuthStateInBackground();
+              }
               return;
             }
 
-            await loadState();
+            await loadState({ forceRefresh: !!message.forceRefresh, localOnly: !message.forceRefresh, skipVerify: !message.forceRefresh });
             const rawMessages = parseCurrentChatMessages();
             const mode = exportSettings.export_ai_replies_only ? "ai_only" : "conversation";
             const platform = exporter.detectPlatform();
@@ -3473,11 +3729,13 @@
 
             // 存入缓存
             _popupStateCache = stateSnapshot;
-            _popupStateCacheAt = now;
 
             updateUIState();
 
             sendResponse(stateSnapshot);
+            if (!message.forceRefresh && currentSession?.access_token) {
+              refreshAuthStateInBackground();
+            }
           } catch (e) {
             console.error("Error in CHATVAULT_GET_POPUP_STATE:", e);
             sendResponse({ ok: false, error: e.message });
@@ -3502,7 +3760,7 @@
               invalidatePopupStateCache();
             }
             await performExport();
-            await loadState();
+            await loadState({ localOnly: true, skipVerify: true });
             const remaining = entitlements.getRemainingFreeExports(currentUserProfile, dailyUsage);
             sendResponse({
               ok: true,
@@ -3559,7 +3817,7 @@
             sendResponse({ ok: true });
           } catch (error) {
             const messageText = error && error.message ? error.message : tx("content_login_failed_refresh", "Sign-in failed. Refresh the page and try again.", "登录失败，请刷新页面后重试。");
-            alert(t("popup_login_failed", isChineseUi() ? "登录失败：$1" : "Sign-in failed: $1", messageText));
+            showPageToast(t("popup_login_failed", isChineseUi() ? "登录失败：$1" : "Sign-in failed: $1", messageText));
             sendResponse({ ok: false, error: messageText });
           }
         })();

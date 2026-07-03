@@ -25,7 +25,7 @@ export function createExportUiController(options) {
   var deps = options || {};
   var menu = deps.exportFormatMenu;
   var exportState = deps.exportState || {};
-  var exportFormats = deps.exportFormats || ["pdf", "word", "image", "markdown"];
+  var exportFormats = deps.exportFormats || ["pdf", "word", "image", "markdown", "txt", "json"];
   var t = deps.t || function (key, defaultText) { return defaultText || key; };
   var escapeHtml = deps.escapeHtml || defaultEscapeHtml;
   var selectedLabel = deps.selectedLabel || function (count) { return String(count) + " Selected"; };
@@ -83,13 +83,17 @@ export function createExportUiController(options) {
       pdf: t("format_pdf", "PDF"),
       word: t("format_word", "Word"),
       image: t("format_image", "Image"),
-      markdown: t("format_markdown", "Markdown")
+      markdown: t("format_markdown", "Markdown"),
+      txt: t("content_format_text", "Text"),
+      json: "JSON"
     };
     var badges = {
       pdf: "P",
       word: "W",
       image: "I",
-      markdown: "M"
+      markdown: "M",
+      txt: "T",
+      json: "J"
     };
     return '<button class="cv-export-format-button" type="button" data-action="export-format-choice" data-export-format="' + format + '">' +
       '<span class="cv-export-format-badge">' + badges[format] + '</span><span>' + escapeHtml(labels[format]) + "</span></button>";
@@ -173,6 +177,8 @@ function getFormatDisplayName(format) {
   if (key === "word") return "DOCX";
   if (key === "markdown") return "Markdown";
   if (key === "image") return "Image";
+  if (key === "txt") return "Text";
+  if (key === "json") return "JSON";
   return key.toUpperCase();
 }
 
@@ -255,7 +261,7 @@ export function renderProgressUI(format, progress, targetShadowRoot, onCancel) {
   }
 
   var title = getProgressTitle(format, progress);
-  var status = String(progress.message || "Preparing export");
+  var status = String(progress.message || t("content_progress_checking_export_access", "Preparing export..."));
 
   progressStripElement.dataset.mode = mode;
   progressStripElement.classList.remove("is-hidden");

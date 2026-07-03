@@ -9,12 +9,56 @@
   var showSubscriptionPanel = null;
   var toastTimer = null;
   var latestCachedEntitlementState = null;
+  var latestRemainingQuota = 3;
+  var latestQuotaKnown = false;
   var pendingSubscribePanelHandled = false;
   var pendingSubscribeRequestMaxAgeMs = 2 * 60 * 1000;
-  var pendingSubscribeRequestKey = "chatvault_open_subscribe_panel_request";
-  var pendingCheckoutIntentKey = "chatvault_pending_checkout_intent_v1";
-  var pendingCheckoutInlineFlowActive = false;
-  var pendingCheckoutResumeInFlight = false;
+  var productConfig = globalThis.CHATVAULT_PRODUCT_CONFIG || {};
+  var storageKey = typeof productConfig.storageKey === "function"
+    ? productConfig.storageKey
+    : function (name) { return "chatvault_exporter." + name; };
+  var productId = productConfig.productId || "claude_export";
+  var productSlug = productConfig.productSlug || "claude-export";
+  var productName = productConfig.productName || "Claude Export";
+  var productPlatformLabels = productConfig.platformLabels || {};
+  var supportedPlatforms = Array.isArray(productConfig.supportedPlatforms) && productConfig.supportedPlatforms.length
+    ? productConfig.supportedPlatforms
+    : ["chatgpt", "claude", "gemini"];
+  var platformUrls = {
+    chatgpt: "https://chatgpt.com/",
+    claude: "https://claude.ai/",
+    gemini: "https://gemini.google.com/"
+  };
+  var supabaseSessionStorageKey = storageKey("supabase_session.v1");
+  var entitlementStateCacheKey = storageKey("entitlement_state.v1");
+  var pendingSubscribeRequestKey = storageKey("open_subscribe_panel_request.v1");
+  var pendingCheckoutIntentKey = storageKey("pending_checkout_intent.v1");
+  var recentCheckoutSessionKey = storageKey("recent_checkout_session.v1");
+  var recentCheckoutSessionMaxAgeMs = 10 * 60 * 1000;
+  var checkoutFlowPromise = null;
+  var authStorageListenerAttached = false;
+  var locallySignedOut = false;
+
+  function applyProductTheme(target) {
+    if (productConfig && typeof productConfig.applyThemeVars === "function") {
+      productConfig.applyThemeVars(target || document.documentElement);
+    }
+  }
+
+  function getSupportedPlatformLabel() {
+    var labels = {
+      chatgpt: "ChatGPT",
+      claude: "Claude",
+      gemini: "Gemini"
+    };
+    var names = supportedPlatforms.map(function (platform) {
+      return productPlatformLabels[platform] || labels[platform] || platform;
+    });
+    if (!names.length) return "supported AI chat";
+    if (names.length === 1) return names[0];
+    if (names.length === 2) return names[0] + " or " + names[1];
+    return names.slice(0, -1).join(", ") + ", or " + names[names.length - 1];
+  }
 
   function formatDefault(defaultText, args) {
     var text = String(defaultText || "");
@@ -77,7 +121,7 @@
 
   function applyPopupI18n() {
     document.documentElement.lang = getUILanguage().replace("_", "-");
-    document.title = t("extensionShortName", "Claude Export");
+    document.title = t("extensionShortName", productName);
     if (globalThis.CHATVAULT_I18N && typeof globalThis.CHATVAULT_I18N.translateDOM === "function") {
       globalThis.CHATVAULT_I18N.translateDOM();
     }
@@ -91,6 +135,7 @@
 
     setText(".platform-row-title span", "popup_current_session", "Current session");
     setText(".platform-row-title strong", "popup_auto_detect_platform", "Auto-detect platform");
+    applyProductChrome();
 
     setTitle("#banner-batch-export", "popup_batch_export_title_attr", "Batch export conversations from the current platform");
     setText("#banner-batch-export .banner-text h3", "popup_batch_export_compact", "Batch Export");
@@ -130,7 +175,7 @@
     setSettingTexts("toggle-title", "export_opt_title", "Conversation Title", "popup_title_desc", "Show the conversation title at the top of the document");
     setSettingTexts("toggle-time", "export_opt_time", "Export Time", "popup_time_desc", "Insert an export timestamp in the document header");
     setSettingTexts("toggle-ai-only", "export_opt_ai_only", "AI Replies Only", "popup_ai_only_desc", "Filter user prompts and keep only AI replies");
-    setSettingTexts("toggle-watermark", "popup_watermark_title", "Hide Claude Export Watermark", "popup_watermark_desc", "Remove the Claude Export signature from the document end (Pro)");
+    setSettingTexts("toggle-watermark", "popup_watermark_title", `Hide ${productName} Watermark`, "popup_watermark_desc", `Remove the ${productName} signature from the document end (Pro)`);
     setSettingTexts("toggle-source-url", "export_opt_url", "Source URL", "popup_source_url_desc", "Append the original conversation URL to the exported document");
     setSettingTexts("toggle-platform-name", "export_opt_platform", "Platform Name", "popup_platform_name_desc", "Show the source platform in the document header");
     setSettingTexts("toggle-role-labels", "export_opt_role", "Role Labels", "popup_role_labels_desc", "Show User / Assistant labels before chat content");
@@ -141,7 +186,7 @@
     setTitle('.footer-tab[data-tab-id="settings"]', "popup_export_settings_title", "Export settings");
     setText('.footer-tab[data-tab-id="settings"] span', "tab_settings", "Settings");
 
-    setText(".subscribe-header h2", "billing_title", "Upgrade To Claude Export Pro");
+    setText(".subscribe-header h2", "billing_title", `Upgrade To ${productName} Pro`);
     setAriaLabel("#btn-close-subscribe", "btn_cancel", "Cancel");
     setText(".subscribe-subtitle", "billing_desc", "Unlock higher local export limits, polished themes, batch workflows, and PDF, Docs, MD and More output.");
     updateSubscribeLoginWarningText();
@@ -155,12 +200,23 @@
       subscribeSubmit.textContent = t("billing_continue_with_plan", "Continue with $1", getPlanTitle("yearly"));
     }
     setText("#btn-subscribe-restore", "billing_btn_restore", "Restore purchase");
-    setText(".subscribe-footnote", "billing_footnote", "Exports are generated locally from the page you choose. Checkout opens on the Claude Export pricing page and is processed by a secure payment processor. Claude Export stores settings, sign-in email, and membership status only. Chat content is never saved.");
+    setText(".subscribe-footnote", "billing_footnote", `Exports are generated locally from the page you choose. Checkout opens on the ${productName} pricing page and is processed by a secure payment processor. ${productName} stores settings, sign-in email, and membership status only. Chat content is never saved.`);
 
     setText(".confirm-modal-header h3", "popup_confirm_logout_title", "Log out");
     setText(".confirm-modal-message", "popup_confirm_logout_message", "Log out of the current account?");
     setText("#confirm-btn-cancel", "btn_cancel", "Cancel");
-    setText("#confirm-btn-ok", "btn_logout", "Log Out");
+    setText("#confirm-btn-ok", "btn_confirm", "Confirm");
+  }
+
+  function applyProductChrome() {
+    applyProductTheme(document.documentElement);
+    document.querySelectorAll(".title-container h2").forEach(function (element) {
+      element.textContent = productName;
+    });
+    document.querySelectorAll(".platform-icon-box[data-platform-id]").forEach(function (element) {
+      var platform = element.getAttribute("data-platform-id");
+      element.hidden = supportedPlatforms.indexOf(platform) === -1;
+    });
   }
 
   function setSettingTexts(inputId, titleKey, titleDefault, descKey, descDefault) {
@@ -193,7 +249,9 @@
       ["popup_benefit_local_receipts", "Local export receipts"],
       ["popup_benefit_hide_watermark", "Hide all export watermarks"],
       ["popup_benefit_zip_download", "Code package ZIP download"],
-      ["popup_benefit_shared_pro", "Shared Pro access"]
+      productConfig.isolatedMembership === true
+        ? ["popup_benefit_dedicated_pro", productName + " Pro access only"]
+        : ["popup_benefit_shared_pro", "Dedicated Pro access"]
     ];
     document.querySelectorAll(".feature-tick-item span:last-child").forEach(function (el, index) {
       var item = features[index];
@@ -250,40 +308,6 @@
     if (typeof showSubscriptionPanel === "function") {
       showSubscriptionPanel();
     }
-  }
-
-  function createPendingCheckoutIntent(planId, source) {
-    var billing = globalThis.CHATVAULT_BILLING;
-    if (billing && typeof billing.createCheckoutIntent === "function") {
-      return billing.createCheckoutIntent(planId || "yearly", source || "popup_subscribe");
-    }
-    return {
-      at: Date.now(),
-      planId: normalizeSubscribePlanId(planId),
-      source: source || "popup_subscribe"
-    };
-  }
-
-  function normalizePendingCheckoutIntent(value) {
-    var billing = globalThis.CHATVAULT_BILLING;
-    if (billing && billing.checkoutIntentStorageKey) {
-      pendingCheckoutIntentKey = billing.checkoutIntentStorageKey;
-    }
-    if (billing && typeof billing.normalizeCheckoutIntent === "function") {
-      return billing.normalizeCheckoutIntent(value);
-    }
-    if (!value || typeof value !== "object") {
-      return null;
-    }
-    var age = Date.now() - Number(value.at || 0);
-    if (!Number.isFinite(age) || age < 0 || age > 5 * 60 * 1000) {
-      return null;
-    }
-    return {
-      at: Number(value.at),
-      planId: normalizeSubscribePlanId(value.planId || value.plan || value.sku),
-      source: value.source || "popup_subscribe"
-    };
   }
 
   function getChromeStorage() {
@@ -346,28 +370,60 @@
     });
   }
 
-  async function savePendingCheckoutIntent(planId, source) {
-    var billing = globalThis.CHATVAULT_BILLING;
-    if (billing && billing.checkoutIntentStorageKey) {
-      pendingCheckoutIntentKey = billing.checkoutIntentStorageKey;
-    }
-    await storageSet({ [pendingCheckoutIntentKey]: createPendingCheckoutIntent(planId, source) });
-  }
-
-  async function getPendingCheckoutIntent() {
-    var billing = globalThis.CHATVAULT_BILLING;
-    if (billing && billing.checkoutIntentStorageKey) {
-      pendingCheckoutIntentKey = billing.checkoutIntentStorageKey;
-    }
-    var intent = normalizePendingCheckoutIntent(await storageGet(pendingCheckoutIntentKey));
-    if (!intent) {
-      await storageRemove(pendingCheckoutIntentKey);
-    }
-    return intent;
-  }
-
   function clearPendingCheckoutIntent() {
     return storageRemove(pendingCheckoutIntentKey);
+  }
+
+  function isTrustedCheckoutUrl(url) {
+    try {
+      var parsed = new URL(String(url || ""));
+      var host = parsed.hostname.toLowerCase();
+      return parsed.protocol === "https:" && (
+        host === "checkout.paddle.com" ||
+        host.endsWith(".paddle.com") ||
+        host === "tabpilotpro.com" ||
+        host === "www.tabpilotpro.com"
+      );
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function normalizeRecentCheckoutSession(value, planId, source) {
+    if (!value || typeof value !== "object") return null;
+    var at = Number(value.at || 0);
+    var normalizedPlanId = normalizeSubscribePlanId(planId);
+    var normalizedSource = String(source || "popup_subscribe");
+    if (!Number.isFinite(at) || Date.now() - at > recentCheckoutSessionMaxAgeMs) return null;
+    if (normalizeSubscribePlanId(value.planId) !== normalizedPlanId) return null;
+    if (String(value.source || "popup_subscribe") !== normalizedSource) return null;
+    if (!isTrustedCheckoutUrl(value.checkoutUrl)) return null;
+    return {
+      ok: true,
+      provider: "paddle",
+      checkoutUrl: String(value.checkoutUrl),
+      transactionId: value.transactionId || null,
+      planId: normalizedPlanId,
+      source: normalizedSource,
+      reused: true
+    };
+  }
+
+  async function getRecentCheckoutSession(planId, source) {
+    return normalizeRecentCheckoutSession(await storageGet(recentCheckoutSessionKey), planId, source);
+  }
+
+  async function saveRecentCheckoutSession(checkout, planId, source) {
+    if (!checkout || !isTrustedCheckoutUrl(checkout.checkoutUrl)) return;
+    await storageSet({
+      [recentCheckoutSessionKey]: {
+        at: Date.now(),
+        planId: normalizeSubscribePlanId(planId),
+        source: String(source || "popup_subscribe"),
+        checkoutUrl: checkout.checkoutUrl,
+        transactionId: checkout.transactionId || null
+      }
+    });
   }
 
   async function maybeOpenPendingSubscribePanel() {
@@ -405,11 +461,86 @@
   function setQuotaInfo(quotaInfo, remainingQuota, pro) {
     if (!quotaInfo) return;
     quotaInfo.textContent = "";
+    latestRemainingQuota = Math.max(0, Number(remainingQuota) || 0);
+    latestQuotaKnown = true;
     if (pro) {
       quotaInfo.textContent = t("popup_pro_quota_status", "Unlimited exports available");
       return;
     }
     quotaInfo.textContent = t("popup_quota_remaining", "Today's remaining quota: $1 / 3 exports", remainingQuota);
+  }
+
+  function responseHasAccountIdentity(response) {
+    return Boolean(
+      response?.email ||
+      response?.profile?.email ||
+      response?.profile?.id
+    );
+  }
+
+  async function clearCachedEntitlementState() {
+    latestCachedEntitlementState = null;
+    var entitlements = globalThis.CHATVAULT_ENTITLEMENTS;
+    if (entitlements && typeof entitlements.clearCachedState === "function") {
+      await entitlements.clearCachedState();
+    }
+  }
+
+  async function getActiveStoredSessionForResponse(response) {
+    if (!responseHasAccountIdentity(response)) {
+      return null;
+    }
+
+    var auth = globalThis.CHATVAULT_SUPABASE_AUTH;
+    if (!auth || typeof auth.getStoredSession !== "function") {
+      return null;
+    }
+
+    var session = await auth.getStoredSession().catch(function () {
+      return null;
+    });
+    if (!hasActiveAuthSession(session)) {
+      return null;
+    }
+
+    var responseEmail = response.email || response.profile?.email || "";
+    var responseUserId = response.profile?.id || "";
+    var sessionEmail = session.user?.email || "";
+    var sessionUserId = session.user?.id || "";
+    var hasComparableIdentity = Boolean(
+      (responseEmail && sessionEmail) ||
+      (responseUserId && sessionUserId)
+    );
+    if (!hasComparableIdentity) {
+      return null;
+    }
+    if (responseEmail && sessionEmail && responseEmail !== sessionEmail) {
+      return null;
+    }
+    if (responseUserId && sessionUserId && responseUserId !== sessionUserId) {
+      return null;
+    }
+
+    return session;
+  }
+
+  async function applyVerifiedPopupStateResponse(response) {
+    if (!response || response.ok === false) {
+      return false;
+    }
+
+    if (responseHasAccountIdentity(response)) {
+      var session = await getActiveStoredSessionForResponse(response);
+      if (!session) {
+        await clearCachedEntitlementState().catch(function (error) {
+          console.warn("Cached entitlement state clear failed:", error);
+        });
+        await showSignedOutStateImmediately();
+        return false;
+      }
+    }
+
+    return applyPopupStateResponse(response);
   }
 
   async function hydrateCachedEntitlementState() {
@@ -426,18 +557,23 @@
       }
 
       var auth = globalThis.CHATVAULT_SUPABASE_AUTH;
-      if (cached.email && auth && typeof auth.getStoredSession === "function") {
-        var storedSession = await auth.getStoredSession().catch(function () {
-          return null;
-        });
-        var storedEmail = storedSession?.user?.email || "";
-        if ((!storedSession?.access_token && !storedEmail) || (storedEmail && storedEmail !== cached.email)) {
-          if (typeof entitlements.clearCachedState === "function") {
-            await entitlements.clearCachedState();
-          }
-          latestCachedEntitlementState = null;
-          return false;
-        }
+      if (!auth || typeof auth.getStoredSession !== "function") {
+        latestCachedEntitlementState = null;
+        return false;
+      }
+      var storedSession = await auth.getStoredSession().catch(function () {
+        return null;
+      });
+      var storedEmail = storedSession?.user?.email || "";
+      var storedUserId = storedSession?.user?.id || "";
+      var cachedEmail = cached.email || cached.profile?.email || "";
+      var cachedUserId = cached.profile?.id || cached.sessionUser?.id || "";
+      var sessionMatchesCache = hasActiveAuthSession(storedSession) &&
+        (!cachedEmail || storedEmail === cachedEmail) &&
+        (!cachedUserId || storedUserId === cachedUserId);
+      if (!sessionMatchesCache) {
+        await clearCachedEntitlementState();
+        return false;
       }
 
       latestCachedEntitlementState = cached;
@@ -456,6 +592,12 @@
     if (!response || !entitlements || typeof entitlements.saveCachedState !== "function") {
       return;
     }
+    if (!responseHasAccountIdentity(response)) {
+      clearCachedEntitlementState().catch(function (error) {
+        console.warn("Cached entitlement state clear failed:", error);
+      });
+      return;
+    }
 
     var profile = response.profile || {
       email: response.email || "",
@@ -468,6 +610,15 @@
         picture: response.avatarUrl || ""
       }
     } : null;
+    latestCachedEntitlementState = {
+      profile: profile,
+      usage: response.dailyUsage || {},
+      sessionUser: sessionUser,
+      remainingQuota: response.remainingQuota,
+      isProUser: !!response.isProUser
+    };
+    latestRemainingQuota = Math.max(0, Number(response.remainingQuota) || 0);
+    latestQuotaKnown = true;
 
     entitlements.saveCachedState({
       profile: profile,
@@ -476,6 +627,318 @@
     }).catch(function (error) {
       console.warn("Cached entitlement state save failed:", error);
     });
+  }
+
+  function applyPopupStateResponse(response) {
+    if (!response || response.ok === false) {
+      return false;
+    }
+    if (locallySignedOut && responseHasAccountIdentity(response)) {
+      return false;
+    }
+
+    cacheEntitlementStateFromResponse(response);
+
+    // 更新账号登录态与配额状态
+    var loginBtn = document.getElementById("login-btn");
+    var isLoggedIn = responseHasAccountIdentity(response);
+    var email = response.email || response.profile?.email || "";
+    var avatarUrl = response.avatarUrl || "";
+    var actualPro = isLoggedIn && !!response.isProUser;
+
+    updateAuthButton(isLoggedIn, actualPro, email, avatarUrl);
+
+    if (loginBtn) {
+      loginBtn.onclick = function () {
+        handlePopupAuthClick();
+      };
+    }
+
+    isProUser = actualPro;
+    var quotaInfo = document.getElementById("quota-status-info");
+    var upgradeBtn = document.getElementById("btn-upgrade-vip");
+    if (quotaInfo) {
+      if (actualPro) {
+        setQuotaInfo(quotaInfo, response.remainingQuota, true);
+        if (upgradeBtn) upgradeBtn.style.display = "none";
+      } else {
+        setQuotaInfo(quotaInfo, response.remainingQuota, false);
+        if (upgradeBtn) {
+          upgradeBtn.style.display = "block";
+          upgradeBtn.onclick = function (e) {
+            if (e) e.preventDefault();
+            if (typeof showSubscriptionPanel === "function") {
+              showSubscriptionPanel();
+            }
+          };
+        }
+      }
+    }
+
+    // 同步设置项到控制面板
+    localSettings = response.exportSettings || localSettings || {};
+
+    setToggleChecked("toggle-title", !!localSettings.show_conversation_title);
+    setToggleChecked("toggle-time", !!localSettings.show_export_time);
+    setToggleChecked("toggle-ai-only", !!localSettings.export_ai_replies_only);
+    setToggleChecked("toggle-watermark", !localSettings.show_chatvault_badge);
+    setToggleChecked("toggle-source-url", !!localSettings.include_source_url);
+    setToggleChecked("toggle-platform-name", !!localSettings.show_platform_name);
+    setToggleChecked("toggle-role-labels", !!localSettings.show_role_labels);
+    setToggleChecked("toggle-align-right", !!localSettings.align_user_messages_right);
+    sortSettingsRowsByChecked();
+
+    // 主题高亮
+    document.querySelectorAll(".theme-option").forEach(function (opt) {
+      opt.classList.remove("active");
+      if (opt.getAttribute("data-theme") === (localSettings.export_style || "default")) {
+        opt.classList.add("active");
+      }
+    });
+
+    // 同步健康度检查
+    if (response.health) {
+      renderHealthCheckUI(response.health);
+    }
+
+    return true;
+  }
+
+  function listenContentEntitlementUpdates() {
+    if (!chrome?.runtime?.onMessage || typeof chrome.runtime.onMessage.addListener !== "function") {
+      return;
+    }
+
+    chrome.runtime.onMessage.addListener(function (message, sender) {
+      if (!message || message.type !== "CHATVAULT_ENTITLEMENT_STATE_UPDATED") {
+        return;
+      }
+      if (activeTabId && sender?.tab?.id && sender.tab.id !== activeTabId) {
+        return;
+      }
+
+      applyVerifiedPopupStateResponse(message.state || message).catch(function (error) {
+        console.warn("Failed to apply entitlement state update:", error);
+      });
+    });
+  }
+
+  async function getLocalFreeQuotaGateState() {
+    if (isProUser) {
+      return { exhausted: false, remainingQuota: latestRemainingQuota };
+    }
+
+    var entitlements = globalThis.CHATVAULT_ENTITLEMENTS;
+    var usageStore = globalThis.CHATVAULT_USAGE_STORE;
+    if (!entitlements || !usageStore || typeof usageStore.getDailyUsage !== "function") {
+      return { exhausted: latestQuotaKnown && latestRemainingQuota <= 0, remainingQuota: latestRemainingQuota };
+    }
+
+    var profile = latestCachedEntitlementState && latestCachedEntitlementState.profile
+      ? latestCachedEntitlementState.profile
+      : entitlements.normalizeProfile({ plan: "free" });
+    if (entitlements.isPro(profile)) {
+      return { exhausted: false, remainingQuota: latestRemainingQuota };
+    }
+
+    var usage = await usageStore.getDailyUsage().catch(function () {
+      return null;
+    });
+    var remaining = entitlements.getRemainingFreeExports(profile, usage || {});
+    latestRemainingQuota = remaining;
+    latestQuotaKnown = true;
+    return { exhausted: remaining <= 0, remainingQuota: remaining };
+  }
+
+  function sessionMatchesCachedState(session, cachedState) {
+    if (!session || !cachedState) return false;
+    var sessionEmail = session.user?.email || "";
+    var sessionUserId = session.user?.id || "";
+    if (!sessionEmail && !sessionUserId) return false;
+    return (!sessionEmail || cachedState.email === sessionEmail) &&
+      (!sessionUserId || cachedState.profile?.id === sessionUserId || !cachedState.profile?.id);
+  }
+
+  async function getStoredAuthSessionSnapshot() {
+    var auth = globalThis.CHATVAULT_SUPABASE_AUTH;
+    if (!auth) return null;
+
+    if (typeof auth.getStoredSession === "function") {
+      var storedSession = await auth.getStoredSession().catch(function () {
+        return null;
+      });
+      if (storedSession) return storedSession;
+    }
+
+    if (typeof auth.getSession === "function") {
+      return auth.getSession({ skipUserRefresh: true, allowStaleOnError: true }).catch(function () {
+        return null;
+      });
+    }
+
+    return null;
+  }
+
+  async function getCachedProfileForSession(session) {
+    var entitlements = globalThis.CHATVAULT_ENTITLEMENTS;
+    if (!entitlements) return null;
+
+    if (sessionMatchesCachedState(session, latestCachedEntitlementState)) {
+      return latestCachedEntitlementState;
+    }
+
+    if (typeof entitlements.getCachedState !== "function") {
+      return null;
+    }
+
+    var cached = await entitlements.getCachedState().catch(function () {
+      return null;
+    });
+    if (!sessionMatchesCachedState(session, cached)) {
+      return null;
+    }
+
+    latestCachedEntitlementState = cached;
+    return cached;
+  }
+
+  async function getLocalUsageSnapshot() {
+    var usageStore = globalThis.CHATVAULT_USAGE_STORE;
+    if (!usageStore || typeof usageStore.getDailyUsage !== "function") {
+      return null;
+    }
+    return usageStore.getDailyUsage().catch(function () {
+      return null;
+    });
+  }
+
+  async function mergeVerifiedUsageWithLocal(usage) {
+    var usageStore = globalThis.CHATVAULT_USAGE_STORE;
+    var entitlements = globalThis.CHATVAULT_ENTITLEMENTS;
+    if (!usage || typeof usage !== "object") {
+      return getLocalUsageSnapshot();
+    }
+    if (usageStore && typeof usageStore.setDailyUsage === "function") {
+      return usageStore.setDailyUsage(usage).catch(function () {
+        return getLocalUsageSnapshot();
+      });
+    }
+    if (entitlements && typeof entitlements.normalizeDailyUsage === "function") {
+      return entitlements.normalizeDailyUsage(usage);
+    }
+    return usage;
+  }
+
+  async function showStoredAuthStateImmediately() {
+    var session = await getStoredAuthSessionSnapshot();
+    if (!hasActiveAuthSession(session)) {
+      return false;
+    }
+    locallySignedOut = false;
+
+    var entitlements = globalThis.CHATVAULT_ENTITLEMENTS;
+    var cached = await getCachedProfileForSession(session);
+    var profile = cached?.profile || null;
+    var usage = cached?.usage || await getLocalUsageSnapshot();
+    var remainingQuota = cached ? cached.remainingQuota : latestRemainingQuota;
+
+    if (entitlements) {
+      if (!profile) {
+        profile = entitlements.normalizeProfile({
+          id: session.user?.id || "",
+          email: session.user?.email || "",
+          plan: "free"
+        });
+      }
+      isProUser = entitlements.isPro(profile);
+      if (!cached || !Number.isFinite(Number(remainingQuota))) {
+        remainingQuota = entitlements.getRemainingFreeExports(profile, usage || {});
+      }
+    } else {
+      isProUser = false;
+    }
+
+    updateLocalUI(session, profile, remainingQuota);
+
+    var loginWarning = document.getElementById("subscribe-login-warning");
+    if (loginWarning) {
+      loginWarning.style.display = "none";
+    }
+
+    return true;
+  }
+
+  async function showSignedOutStateImmediately() {
+    locallySignedOut = true;
+    latestCachedEntitlementState = null;
+    isProUser = false;
+
+    var entitlements = globalThis.CHATVAULT_ENTITLEMENTS;
+    var usage = await getLocalUsageSnapshot();
+    var profile = entitlements ? entitlements.normalizeProfile({ plan: "free" }) : null;
+    var remainingQuota = entitlements ? entitlements.getRemainingFreeExports(profile, usage || {}) : latestRemainingQuota;
+    updateLocalUI(null, profile, remainingQuota);
+  }
+
+  function getStorageChange(changes, key) {
+    return changes && Object.prototype.hasOwnProperty.call(changes, key) ? changes[key] : null;
+  }
+
+  function listenAuthStorageChanges() {
+    if (authStorageListenerAttached) {
+      return;
+    }
+    authStorageListenerAttached = true;
+
+    try {
+      if (!chrome?.storage?.onChanged || typeof chrome.storage.onChanged.addListener !== "function") {
+        return;
+      }
+
+      chrome.storage.onChanged.addListener(function (changes, areaName) {
+        if (areaName !== "local") {
+          return;
+        }
+
+        var sessionChange = getStorageChange(changes, supabaseSessionStorageKey);
+        var entitlementChange = getStorageChange(changes, entitlementStateCacheKey);
+        if (!sessionChange && !entitlementChange) {
+          return;
+        }
+
+        if (sessionChange) {
+          if (sessionChange.newValue) {
+            showStoredAuthStateImmediately().catch(function (error) {
+              console.warn("Failed to apply updated auth session:", error);
+            });
+          } else {
+            showSignedOutStateImmediately().catch(function (error) {
+              console.warn("Failed to apply signed-out auth state:", error);
+            });
+          }
+          return;
+        }
+
+        showStoredAuthStateImmediately().catch(function (error) {
+          console.warn("Failed to apply updated entitlement state:", error);
+        });
+      });
+    } catch (error) {
+      console.warn("Auth storage change listener unavailable:", error);
+    }
+  }
+
+  async function blockExportIfFreeQuotaExhausted() {
+    var gate = await getLocalFreeQuotaGateState();
+    if (!gate.exhausted) {
+      return false;
+    }
+
+    showToast(t("popup_free_quota_exhausted", "You have used today's 3 free exports."));
+    if (typeof showSubscriptionPanel === "function") {
+      showSubscriptionPanel();
+    }
+    return true;
   }
 
   function updateProCrown(isPro) {
@@ -523,11 +986,14 @@
 
   document.addEventListener("DOMContentLoaded", async function () {
     applyPopupI18n();
+    listenAuthStorageChanges();
+    listenContentEntitlementUpdates();
     await hydrateCachedEntitlementState();
 
     // 1. 初始化平台及链接监听
     document.getElementById("btn-open-chatgpt").addEventListener("click", function () {
-      chrome.tabs.create({ url: "https://claude.ai/" });
+      var platform = supportedPlatforms[0] || "chatgpt";
+      chrome.tabs.create({ url: platformUrls[platform] || platformUrls.chatgpt });
       window.close();
     });
 
@@ -566,7 +1032,7 @@
       if (box) box.classList.add("active");
 
       // Cached state is already shown above; the supported page must be the source of truth.
-      fetchStateFromPage(true);
+      fetchStateFromPage(false);
     });
 
     // 3. 绑定底部 Tab 导航
@@ -586,9 +1052,10 @@
 
     // 4. 绑定格式导出按钮
     document.querySelectorAll("[data-format]").forEach(function (btn) {
-      btn.addEventListener("click", function () {
+      btn.addEventListener("click", async function () {
         var format = btn.getAttribute("data-format");
         if (!requireSupportedPage()) return;
+        if (await blockExportIfFreeQuotaExhausted()) return;
 
         // 读取 popup 当前最新设置，随导出消息一并发送给 content.js
         var themeOption = document.querySelector(".theme-option.active");
@@ -617,7 +1084,8 @@
     });
 
     // 5. 绑定自定义选择导出
-    document.getElementById("banner-custom-export").addEventListener("click", function () {
+    document.getElementById("banner-custom-export").addEventListener("click", async function () {
+      if (await blockExportIfFreeQuotaExhausted()) return;
       sendMessageToActivePage({ type: "CHATVAULT_POPUP_CUSTOM_EXPORT" });
     });
 
@@ -721,11 +1189,14 @@
       subscribeLoginLink.onclick = async function (e) {
         if (e) e.preventDefault();
         try {
-          await openAuthenticatedCheckout(getSelectedSubscribePlanId(), "popup_subscribe");
-          window.close();
+          await signInBeforeCheckoutOnly({ skipSignInConfirm: true });
+          updateSubscriptionUIState();
+          showToast(t("popup_checkout_signed_in_retry", "Signed in. Select your plan and click Continue again to open checkout."));
         } catch (err) {
-          console.error("Checkout after sign-in error:", err);
-          alert(getCheckoutErrorMessage(err));
+          console.error("Checkout sign-in error:", err);
+          if (!isAuthCancelledError(err)) {
+            showToast(getCheckoutErrorMessage(err));
+          }
         }
       };
     }
@@ -744,14 +1215,22 @@
 
         try {
           var source = "popup_subscribe";
-          await openAuthenticatedCheckout(planId, source);
+          var checkoutResult = await openAuthenticatedCheckout(planId, source);
+          if (checkoutResult && checkoutResult.signedInOnly) {
+            updateSubscriptionUIState();
+            showToast(t("popup_checkout_signed_in_retry", "Signed in. Select your plan and click Continue again to open checkout."));
+            return;
+          }
           window.close();
         } catch (err) {
           console.error("Checkout error:", err);
+          if (isAuthCancelledError(err)) {
+            return;
+          }
           if (isAuthRequiredError(err) || isLoginError(err)) {
-            alert(err && err.message ? err.message : t("popup_subscribe_signin_confirm", "Sign in with Google first to bind Pro access automatically before checkout."));
+            showToast(err && err.message ? err.message : t("popup_subscribe_signin_confirm", "Sign in with Google first to bind Pro access automatically before checkout."));
           } else {
-            alert(t("popup_checkout_error", "Checkout failed: $1", getCheckoutErrorMessage(err)));
+            showToast(t("popup_checkout_error", "Checkout failed: $1", getCheckoutErrorMessage(err)));
           }
         } finally {
           subscribeSubmitBtn.disabled = false;
@@ -774,7 +1253,7 @@
         } catch (err) {}
 
         if (!hasActiveAuthSession(session)) {
-          alert(t("popup_restore_login_required", "Please sign in first, then restore purchase to sync your Pro status."));
+          showToast(t("popup_restore_login_required", "Please sign in first, then restore purchase to sync your Pro status."));
           return;
         }
 
@@ -785,11 +1264,16 @@
         try {
           var api = globalThis.CHATVAULT_SUPABASE_API;
           if (api && session.access_token) {
-            await api.request("/functions/v1/sync-subscription-status", {
+            await api.request("/functions/v1/product-sync-subscription-status", {
               accessToken: session.access_token,
-              method: "POST"
+              method: "POST",
+              body: {
+                product_id: productId,
+                product_slug: productSlug,
+                product_name: productName
+              }
             });
-            alert(t("popup_restore_submitted", "Restore request submitted. Close and reopen the popup to see the latest status."));
+            showToast(t("popup_restore_submitted", "Restore request submitted. Close and reopen the popup to see the latest status."));
             if (isSupportedPage && activeTabId) {
               fetchStateFromPage(true);
             } else {
@@ -797,11 +1281,11 @@
             }
             if (subscribePanel) subscribePanel.style.display = "none";
           } else {
-            alert(t("popup_service_unavailable", "Service is unavailable. Please try again later."));
+            showToast(t("popup_service_unavailable", "Service is unavailable. Please try again later."));
           }
         } catch (err) {
           console.error("Restore error:", err);
-          alert(t("popup_restore_failed", "Restore purchase failed: $1", err && err.message ? err.message : t("popup_try_later", "Please try again later.")));
+          showToast(t("popup_restore_failed", "Restore purchase failed: $1", err && err.message ? err.message : t("popup_try_later", "Please try again later.")));
         } finally {
           subscribeRestoreBtn.disabled = false;
           subscribeRestoreBtn.textContent = originalText;
@@ -813,23 +1297,26 @@
     var batchBtn = document.getElementById("banner-batch-export");
 
     if (batchBtn) {
-      batchBtn.addEventListener("click", function () {
+      batchBtn.addEventListener("click", async function () {
         if (!requireSupportedPage()) return;
+        if (await blockExportIfFreeQuotaExhausted()) return;
 
-        // Send a message to the content script to display the in-page batch export modal
-        chrome.tabs.sendMessage(activeTabId, { type: "CHATVAULT_SHOW_BATCH_EXPORT" });
-        window.close(); // Close the extension popup
+        // Send a message to the content script to display the in-page batch export modal using safe wrapper
+        sendMessageToActivePage({ type: "CHATVAULT_SHOW_BATCH_EXPORT" });
       });
     }
 
     maybeOpenPendingSubscribePanel();
-    resumePendingCheckoutAfterAuth();
+    clearPendingCheckoutIntent();
   });
 
   function showUnsupportedPage() {
     isSupportedPage = false;
     activePlatform = "";
     hideUnsupportedPage();
+    document.querySelectorAll(".platform-icon-box").forEach(function (box) {
+      box.classList.remove("active");
+    });
     var panel = document.getElementById("health-warning-container");
     if (panel) panel.innerHTML = "";
   }
@@ -844,6 +1331,8 @@
 
   function getSupportedPlatform(hostname) {
     var host = String(hostname || "").toLowerCase();
+    if (host === "chatgpt.com" || host === "chat.openai.com") return "chatgpt";
+    if (host === "gemini.google.com") return "gemini";
     if (host === "claude.ai" || host.endsWith(".claude.ai")) return "claude";
     return "";
   }
@@ -855,7 +1344,7 @@
   }
 
   function showUnsupportedToast() {
-    showToast(t("toast_no_open_chat", "Open a Claude conversation to export."));
+    showToast(t("toast_no_open_chat", "Open a " + getSupportedPlatformLabel() + " conversation to export."));
   }
 
   function showToast(message) {
@@ -924,14 +1413,26 @@
     return !!(error && error.code === "CHATVAULT_LOGIN_FAILED");
   }
 
+  function isAuthCancelledError(error) {
+    return !!(error && error.code === "CHATVAULT_AUTH_CANCELLED");
+  }
+
   function isBackendSchemaCacheError(error) {
     var message = String(error && error.message ? error.message : error || "");
     return /schema cache|payment_products|Could not find the table/i.test(message);
   }
 
+  function isCheckoutRateLimitedError(error) {
+    var message = String(error && error.message ? error.message : error || "");
+    return (error && Number(error.status) === 429) || /too many checkout attempts/i.test(message);
+  }
+
   function getCheckoutErrorMessage(error) {
     if (isBackendSchemaCacheError(error)) {
-      return t("popup_checkout_service_syncing", "Checkout service is updating. Please reopen Claude Export and try again in a moment.");
+      return t("popup_checkout_service_syncing", `Checkout service is updating. Please reopen ${productName} and try again in a moment.`);
+    }
+    if (isCheckoutRateLimitedError(error)) {
+      return t("popup_checkout_rate_limited", "Checkout is already being prepared. Please wait a moment and try again.");
     }
     return error && error.message ? error.message : t("popup_checkout_unavailable", "Could not open checkout. Please try again later.");
   }
@@ -974,51 +1475,62 @@
     });
   }
 
-  async function getPurchaseSession(options) {
+  function showCheckoutSignInConfirm(options) {
     options = options || {};
+    if (options.skipSignInConfirm === true) {
+      return Promise.resolve(true);
+    }
+    return showCustomConfirm(
+      t("popup_checkout_signin_title", "Sign in before checkout"),
+      t("popup_checkout_signin_message", "Sign in with Google first. After sign-in, click Continue again to open secure checkout."),
+      {
+        okText: t("popup_checkout_signin_ok", "Sign in"),
+        cancelText: t("btn_cancel", "Cancel"),
+        variant: "checkout",
+        icon: "→"
+      }
+    );
+  }
+
+  async function signInBeforeCheckoutOnly(options) {
+    options = options || {};
+    var confirmed = await showCheckoutSignInConfirm(options);
+    if (!confirmed) {
+      throw createPopupFlowError("CHATVAULT_AUTH_CANCELLED", t("popup_subscribe_signin_confirm", "Sign in with Google first to bind Pro access automatically before checkout."));
+    }
+
     var auth = globalThis.CHATVAULT_SUPABASE_AUTH;
-    if (!auth || typeof auth.getSession !== "function") {
+    if (!auth || typeof auth.signInWithGoogle !== "function") {
       throw createPopupFlowError("CHATVAULT_LOGIN_FAILED", t("popup_login_service_unavailable", "Sign-in is temporarily unavailable. Please refresh and try again."));
     }
 
-    var session = await auth.getSession({ skipUserRefresh: false, allowStaleOnError: false }).catch(function () {
-      return null;
-    });
-
-    if (!hasActiveAuthSession(session)) {
-      if (typeof auth.signInWithGoogle !== "function") {
-        throw createPopupFlowError("CHATVAULT_LOGIN_FAILED", t("popup_login_service_unavailable", "Sign-in is temporarily unavailable. Please refresh and try again."));
-      }
-      if (options.persistIntent !== false && options.planId) {
-        pendingCheckoutInlineFlowActive = true;
-        await savePendingCheckoutIntent(options.planId, options.source || "popup_subscribe");
-      }
-      try {
-        session = await auth.signInWithGoogle();
-      } catch (error) {
-        if (options.persistIntent !== false && options.planId) {
-          await clearPendingCheckoutIntent();
-        }
-        throw createPopupFlowError("CHATVAULT_LOGIN_FAILED", t("popup_login_failed", "Sign-in failed: $1", error && error.message ? error.message : t("popup_try_later", "Please try again later.")));
-      }
-      if (!hasActiveAuthSession(session)) {
-        session = await auth.getSession({ skipUserRefresh: false, allowStaleOnError: false }).catch(function () {
-          return null;
-        });
-      }
+    var signedInSession = await auth.signInWithGoogle();
+    if (!hasActiveAuthSession(signedInSession)) {
+      signedInSession = await auth.getSession?.({ skipUserRefresh: false, allowStaleOnError: false }).catch(function () {
+        return null;
+      });
+    }
+    if (!hasActiveAuthSession(signedInSession)) {
+      throw createPopupFlowError("CHATVAULT_AUTH_CANCELLED", t("popup_subscribe_signin_confirm", "Sign in with Google first to bind Pro access automatically before checkout."));
     }
 
-    if (!hasActiveAuthSession(session)) {
-      if (options.persistIntent !== false && options.planId) {
-        await clearPendingCheckoutIntent();
-      }
-      throw createPopupFlowError("CHATVAULT_AUTH_REQUIRED", t("popup_subscribe_signin_confirm", "Sign in with Google first to bind Pro access automatically before checkout."));
-    }
-
-    return session;
+    await clearPendingCheckoutIntent();
+    await showStoredAuthStateImmediately();
+    refreshPopupState(true);
+    return signedInSession;
   }
 
-  async function openAuthenticatedCheckout(planId, source, options) {
+  function openAuthenticatedCheckout(planId, source, options) {
+    if (checkoutFlowPromise) {
+      return checkoutFlowPromise;
+    }
+    checkoutFlowPromise = runAuthenticatedCheckout(planId, source, options).finally(function () {
+      checkoutFlowPromise = null;
+    });
+    return checkoutFlowPromise;
+  }
+
+  async function runAuthenticatedCheckout(planId, source, options) {
     options = options || {};
     var billing = globalThis.CHATVAULT_BILLING;
     if (!billing || typeof billing.createCheckoutSession !== "function") {
@@ -1026,16 +1538,23 @@
     }
 
     var normalizedPlanId = normalizeSubscribePlanId(planId);
-    var session = null;
-    try {
-      session = await getPurchaseSession({
-        planId: normalizedPlanId,
-        source: source || "popup_subscribe",
-        persistIntent: options.persistIntent !== false
-      });
-    } finally {
-      pendingCheckoutInlineFlowActive = false;
+    var auth = globalThis.CHATVAULT_SUPABASE_AUTH;
+    var existingSession = auth && typeof auth.getSession === "function"
+      ? await auth.getSession({ skipUserRefresh: false, allowStaleOnError: false }).catch(function () { return null; })
+      : null;
+    if (!hasActiveAuthSession(existingSession)) {
+      await signInBeforeCheckoutOnly(options);
+      return { ok: true, signedInOnly: true };
     }
+
+    var session = existingSession;
+    var cachedCheckout = await getRecentCheckoutSession(normalizedPlanId, source || "popup_subscribe");
+    if (cachedCheckout) {
+      await openCheckoutTab(cachedCheckout.checkoutUrl);
+      await clearPendingCheckoutIntent();
+      return cachedCheckout;
+    }
+
     var checkout = await billing.createCheckoutSession({
       accessToken: session.access_token,
       customerEmail: session.user && session.user.email ? session.user.email : "",
@@ -1044,47 +1563,48 @@
     });
 
     if (!checkout || !checkout.checkoutUrl) {
+      if (hasActiveAuthSession(session)) {
+        await clearPendingCheckoutIntent();
+      }
       throw new Error(t("popup_checkout_unavailable", "Could not open checkout. Please try again later."));
     }
 
-    await openCheckoutTab(checkout.checkoutUrl);
-    await clearPendingCheckoutIntent();
+    try {
+      await saveRecentCheckoutSession(checkout, normalizedPlanId, source || "popup_subscribe");
+      await openCheckoutTab(checkout.checkoutUrl);
+      await clearPendingCheckoutIntent();
+    } catch (error) {
+      if (hasActiveAuthSession(session)) {
+        await clearPendingCheckoutIntent();
+      }
+      throw error;
+    }
     return checkout;
   }
 
-  async function resumePendingCheckoutAfterAuth() {
-    if (pendingCheckoutInlineFlowActive || pendingCheckoutResumeInFlight) {
-      return;
+  function sendLogoutToActivePage() {
+    if (!isSupportedPage || !activeTabId || !chrome?.tabs?.sendMessage) {
+      return Promise.resolve();
     }
 
-    var intent = await getPendingCheckoutIntent();
-    if (!intent) {
-      return;
-    }
-
-    var auth = globalThis.CHATVAULT_SUPABASE_AUTH;
-    var session = auth && typeof auth.getSession === "function"
-      ? await auth.getSession({ skipUserRefresh: false, allowStaleOnError: true }).catch(function () { return null; })
-      : null;
-
-    selectSubscribePlan(intent.planId);
-    if (!hasActiveAuthSession(session)) {
-      if (typeof showSubscriptionPanel === "function") {
-        showSubscriptionPanel();
+    return new Promise(function (resolve) {
+      var settled = false;
+      var finish = function () {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeoutId);
+        resolve();
+      };
+      var timeoutId = setTimeout(finish, 1500);
+      try {
+        chrome.tabs.sendMessage(activeTabId, { type: "CHATVAULT_POPUP_LOGOUT" }, function () {
+          var err = chrome.runtime.lastError; // Ignore tabs without a live content script.
+          finish();
+        });
+      } catch (e) {
+        finish();
       }
-      return;
-    }
-
-    pendingCheckoutResumeInFlight = true;
-    try {
-      await openAuthenticatedCheckout(intent.planId, intent.source || "popup_subscribe", { persistIntent: false });
-      window.close();
-    } catch (error) {
-      console.warn("Pending checkout resume failed:", error);
-      showToast(getCheckoutErrorMessage(error));
-    } finally {
-      pendingCheckoutResumeInFlight = false;
-    }
+    });
   }
 
   async function handlePopupAuthClick() {
@@ -1099,26 +1619,29 @@
       if (isProUser || hasActiveAuthSession(session)) {
         var confirmed = await showCustomConfirm(
           t("popup_confirm_logout_title", "Log out"),
-          t("popup_confirm_logout_message", "Log out of the current account?")
+          t("popup_confirm_logout_message", "Log out of the current account?"),
+          {
+            okText: t("btn_logout", "Log Out"),
+            cancelText: t("btn_cancel", "Cancel"),
+            variant: "danger",
+            icon: "!"
+          }
         );
         if (!confirmed) {
           return;
         }
-        if (isSupportedPage && activeTabId) {
-          try {
-            chrome.tabs.sendMessage(activeTabId, { type: "CHATVAULT_POPUP_LOGOUT" }, function () {
-              var err = chrome.runtime.lastError; // Ignore errors
-            });
-          } catch (e) {}
-        }
+        await sendLogoutToActivePage();
         await auth.signOut();
+        await showSignedOutStateImmediately();
         showToast(t("popup_signed_out", "Signed out."));
+        return;
       } else {
         var signedInSession = await auth.signInWithGoogle();
         if (!signedInSession) {
           showToast(t("popup_login_incomplete", "Sign-in was not completed. Please try again."));
           return;
         }
+        await showStoredAuthStateImmediately();
         showToast(t("popup_login_success", "Signed in."));
       }
 
@@ -1146,69 +1669,9 @@
         return;
       }
 
-      cacheEntitlementStateFromResponse(response);
-
-      // 更新账号登录态与配额状态
-      var loginBtn = document.getElementById("login-btn");
-      var isLoggedIn = !!response.email;
-      var email = response.email || "";
-      var avatarUrl = response.avatarUrl || "";
-      var actualPro = !!response.isProUser;
-
-      updateAuthButton(isLoggedIn, actualPro, email, avatarUrl);
-
-      if (loginBtn) {
-        loginBtn.onclick = function () {
-          handlePopupAuthClick();
-        };
-      }
-
-      isProUser = actualPro;
-      var quotaInfo = document.getElementById("quota-status-info");
-      var upgradeBtn = document.getElementById("btn-upgrade-vip");
-      if (quotaInfo) {
-        if (actualPro) {
-          setQuotaInfo(quotaInfo, response.remainingQuota, true);
-          if (upgradeBtn) upgradeBtn.style.display = "none";
-        } else {
-          setQuotaInfo(quotaInfo, response.remainingQuota, false);
-          if (upgradeBtn) {
-            upgradeBtn.style.display = "block";
-            upgradeBtn.onclick = function (e) {
-              if (e) e.preventDefault();
-              if (typeof showSubscriptionPanel === "function") {
-                showSubscriptionPanel();
-              }
-            };
-          }
-        }
-      }
-
-      // 同步设置项到控制面板
-      localSettings = response.exportSettings || {};
-      
-      setToggleChecked("toggle-title", !!localSettings.show_conversation_title);
-      setToggleChecked("toggle-time", !!localSettings.show_export_time);
-      setToggleChecked("toggle-ai-only", !!localSettings.export_ai_replies_only);
-      setToggleChecked("toggle-watermark", !localSettings.show_chatvault_badge);
-      setToggleChecked("toggle-source-url", !!localSettings.include_source_url);
-      setToggleChecked("toggle-platform-name", !!localSettings.show_platform_name);
-      setToggleChecked("toggle-role-labels", !!localSettings.show_role_labels);
-      setToggleChecked("toggle-align-right", !!localSettings.align_user_messages_right);
-      sortSettingsRowsByChecked();
-
-      // 主题高亮
-      document.querySelectorAll(".theme-option").forEach(function (opt) {
-        opt.classList.remove("active");
-        if (opt.getAttribute("data-theme") === (localSettings.export_style || "default")) {
-          opt.classList.add("active");
-        }
+      applyVerifiedPopupStateResponse(response).catch(function (error) {
+        console.warn("Failed to apply popup state response:", error);
       });
-
-      // 同步健康度检查
-      if (response.health) {
-        renderHealthCheckUI(response.health);
-      }
     });
   }
 
@@ -1287,19 +1750,6 @@
   }
 
   // 从本地存储加载状态（针对不支持的页面，无法和 content.js 通信）
-  async function mirrorVerifiedUsageLocally(usage) {
-    var usageStore = globalThis.CHATVAULT_USAGE_STORE;
-    if (!usageStore || typeof usageStore.setDailyUsage !== "function" || !usage) {
-      return usage;
-    }
-    try {
-      return await usageStore.setDailyUsage(usage);
-    } catch (error) {
-      console.warn("Local verified usage mirror failed:", error);
-      return usage;
-    }
-  }
-
   async function fetchVerifiedEntitlementState(session) {
     var api = globalThis.CHATVAULT_SUPABASE_API;
     var entitlements = globalThis.CHATVAULT_ENTITLEMENTS;
@@ -1308,12 +1758,15 @@
     }
 
     try {
-      var result = await api.request("/functions/v1/verify-export-entitlement", {
+      var result = await api.request("/functions/v1/product-verify-export-entitlement", {
         accessToken: session.access_token,
         method: "POST",
         body: {
           requested_count: 1,
-          consume: false
+          consume: false,
+          product_id: productId,
+          product_slug: productSlug,
+          product_name: productName
         }
       });
       if (!result || result.ok === false) {
@@ -1326,19 +1779,48 @@
         email: session.user?.email || "",
         plan: "free"
       });
-      var usage = entitlements.normalizeDailyUsage(result.usage || {}, entitlements.getTodayString());
-      usage = await mirrorVerifiedUsageLocally(usage);
 
       return {
         profile: profile,
-        usage: usage,
-        remainingQuota: entitlements.getRemainingFreeExports(profile, usage)
+        usage: result.usage || result.data?.usage || null
       };
     } catch (error) {
       if (globalThis.CHATVAULT_DEBUG) {
         console.debug("Verified entitlement state unavailable.", error);
       }
       return null;
+    }
+  }
+
+  async function refreshVerifiedEntitlementStateInBackground(session) {
+    var entitlements = globalThis.CHATVAULT_ENTITLEMENTS;
+    if (!session?.access_token || !entitlements) {
+      return;
+    }
+
+    var verifiedState = await fetchVerifiedEntitlementState(session);
+    if (!verifiedState || !verifiedState.profile) {
+      return;
+    }
+
+    var profile = verifiedState.profile;
+    var usage = await mergeVerifiedUsageWithLocal(verifiedState.usage) || {};
+    var remainingQuota = entitlements.getRemainingFreeExports(profile, usage || {});
+    isProUser = entitlements.isPro(profile);
+    latestRemainingQuota = remainingQuota;
+    latestQuotaKnown = true;
+    updateLocalUI(session, profile, remainingQuota);
+
+    try {
+      if (typeof entitlements.saveCachedState === "function") {
+        latestCachedEntitlementState = await entitlements.saveCachedState({
+          session: session,
+          profile: profile,
+          usage: usage || {}
+        });
+      }
+    } catch (error) {
+      console.warn("Verified entitlement cache save failed:", error);
     }
   }
 
@@ -1351,7 +1833,7 @@
     var profile = null;
     var usage = null;
     var remainingQuota = 3;
-    var verifiedState = null;
+    var shouldRefreshEntitlement = false;
 
     await hydrateCachedEntitlementState();
     if (latestCachedEntitlementState) {
@@ -1368,11 +1850,12 @@
     }
 
     if (session?.user && entitlements) {
-      verifiedState = await fetchVerifiedEntitlementState(session);
-      if (verifiedState) {
-        profile = verifiedState.profile;
-        usage = verifiedState.usage;
-        remainingQuota = verifiedState.remainingQuota;
+      var cacheMatchesUser = profile && (profile.id === session.user.id || profile.email === session.user.email);
+      if (!cacheMatchesUser) {
+        profile = null;
+        shouldRefreshEntitlement = true;
+      } else {
+        shouldRefreshEntitlement = true;
       }
       if (!profile) {
         profile = entitlements.normalizeProfile({
@@ -1386,7 +1869,7 @@
     }
 
     try {
-      if (!usage && usageStore) {
+      if (usageStore) {
         usage = await usageStore.getDailyUsage();
       }
     } catch (e) {
@@ -1395,24 +1878,16 @@
 
     if (entitlements && profile) {
       isProUser = entitlements.isPro(profile);
-      if (!verifiedState) {
-        remainingQuota = entitlements.getRemainingFreeExports(profile, usage || {});
-      }
+      remainingQuota = entitlements.getRemainingFreeExports(profile, usage || {});
     }
 
     // 更新 UI
     updateLocalUI(session, profile, remainingQuota);
 
-    try {
-      if (entitlements && typeof entitlements.saveCachedState === "function" && profile) {
-        await entitlements.saveCachedState({
-          session: session,
-          profile: profile,
-          usage: usage || {}
-        });
-      }
-    } catch (error) {
-      console.warn("Local entitlement state cache save failed:", error);
+    if (shouldRefreshEntitlement) {
+      refreshVerifiedEntitlementStateInBackground(session).catch(function (error) {
+        console.warn("Background entitlement refresh failed:", error);
+      });
     }
   }
 
@@ -1432,8 +1907,8 @@
 
   // 全局登录态更新 Hook
   globalThis.CHATVAULT_REFRESH_AUTH_STATE = async function (options) {
+    await showStoredAuthStateImmediately();
     refreshPopupState(true);
-    await resumePendingCheckoutAfterAuth();
   };
 
   // 共享更新登录状态与头像 UI 辅助函数
@@ -1473,7 +1948,8 @@
   }
 
   // 显示自定义确认弹窗
-  function showCustomConfirm(title, message) {
+  function showCustomConfirm(title, message, options) {
+    options = options || {};
     return new Promise(function (resolve) {
       var modal = document.getElementById("custom-confirm-modal");
       if (!modal) {
@@ -1481,11 +1957,20 @@
         return;
       }
 
+      modal.classList.remove("confirm-modal-checkout", "confirm-modal-danger");
+      if (options.variant === "checkout") {
+        modal.classList.add("confirm-modal-checkout");
+      } else if (options.variant === "danger") {
+        modal.classList.add("confirm-modal-danger");
+      }
+
       // 更新文本
       var titleEl = modal.querySelector(".confirm-modal-header h3");
       if (titleEl) titleEl.textContent = title;
       var msgEl = modal.querySelector(".confirm-modal-message");
       if (msgEl) msgEl.textContent = message;
+      var iconEl = modal.querySelector(".confirm-modal-icon");
+      if (iconEl) iconEl.textContent = options.icon || "?";
 
       // 显示弹窗并启动渐入动画
       modal.style.display = "flex";
@@ -1494,11 +1979,14 @@
 
       var btnCancel = document.getElementById("confirm-btn-cancel");
       var btnOk = document.getElementById("confirm-btn-ok");
+      if (btnCancel) btnCancel.textContent = options.cancelText || t("btn_cancel", "Cancel");
+      if (btnOk) btnOk.textContent = options.okText || t("btn_confirm", "Confirm");
 
       function cleanUp() {
         modal.classList.remove("active");
         setTimeout(function () {
           modal.style.display = "none";
+          modal.classList.remove("confirm-modal-checkout", "confirm-modal-danger");
         }, 180);
         btnCancel.onclick = null;
         btnOk.onclick = null;
@@ -1521,7 +2009,7 @@
   function updateLocalUI(session, profile, remainingQuota) {
     // 1. 更新登录按钮
     var loginBtn = document.getElementById("login-btn");
-    var isLoggedIn = hasActiveAuthSession(session) || !!session?.user?.email;
+    var isLoggedIn = hasActiveAuthSession(session);
     var email = session?.user?.email || "";
     var avatarUrl = session?.user?.user_metadata?.avatar_url || session?.user?.user_metadata?.picture || "";
 

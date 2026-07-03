@@ -22,6 +22,16 @@ var inlineMenu = null;
 var inlineExportHandler = null;
 var selectionChangeCallbacks = [];
 
+function getSelectionThemeVars() {
+  var productConfig = globalThis.CHATVAULT_PRODUCT_CONFIG || {};
+  var vars = typeof productConfig.getThemeVars === "function" ? productConfig.getThemeVars() : {};
+  return {
+    primary: vars["--cv-primary"] || "#c96442",
+    rgb: vars["--cv-primary-rgb"] || "201, 100, 66",
+    border: vars["--accent-wash"] || "#fff1e8"
+  };
+}
+
 function isChatVaultNode(element) {
   return element && element.classList && (
     element.classList.contains("cv-message-export-button") ||
@@ -39,16 +49,17 @@ function ensureSelectionStyles() {
   if (typeof document === "undefined" || document.getElementById(SELECTION_STYLE_ID)) return;
   var style = document.createElement("style");
   style.id = SELECTION_STYLE_ID;
+  var theme = getSelectionThemeVars();
   style.textContent = [
     ".chatvault-export-selectable{border-radius:16px!important;transition:background .14s ease,box-shadow .14s ease,padding .14s ease!important;}",
     ".chatvault-export-selectable.chatvault-export-needs-gutter{box-sizing:border-box!important;padding-left:72px!important;}",
     ".chatvault-export-selectable-content{border-radius:12px!important;cursor:pointer!important;transition:background .14s ease,box-shadow .14s ease!important;}",
-    ".chatvault-export-selected{background:rgba(22,134,154,.10)!important;box-shadow:inset 4px 0 0 rgba(22,134,154,.82),0 0 0 1px rgba(22,134,154,.18)!important;}",
-    ".chatvault-export-selected-content{background:rgba(22,134,154,.055)!important;box-shadow:0 0 0 1px rgba(22,134,154,.12)!important;}",
+    ".chatvault-export-selected{background:rgba(" + theme.rgb + ",.10)!important;box-shadow:inset 4px 0 0 rgba(" + theme.rgb + ",.82),0 0 0 1px rgba(" + theme.rgb + ",.18)!important;}",
+    ".chatvault-export-selected-content{background:rgba(" + theme.rgb + ",.055)!important;box-shadow:0 0 0 1px rgba(" + theme.rgb + ",.12)!important;}",
     ".cv-export-checkbox-wrapper{position:fixed;z-index:2147483000;pointer-events:none;width:32px;height:32px;}",
-    ".cv-export-checkbox{width:32px;height:32px;border-radius:10px;border:1px solid #b9d9e2;background:#fff;color:#fff;box-shadow:0 10px 24px rgba(15,101,116,.18);font-size:15px;font-weight:900;line-height:1;cursor:pointer;pointer-events:auto;display:inline-flex;align-items:center;justify-content:center;transition:background .14s ease,border-color .14s ease,transform .14s ease,box-shadow .14s ease;}",
-    ".cv-export-checkbox:hover{transform:translateY(-1px);border-color:#70c6d4;box-shadow:0 12px 26px rgba(15,101,116,.22);}",
-    ".cv-export-checkbox[data-selected='true']{background:#16869a;border-color:#16869a;color:#fff;}"
+    ".cv-export-checkbox{width:32px;height:32px;border-radius:10px;border:1px solid " + theme.border + ";background:#fff;color:#fff;box-shadow:0 10px 24px rgba(" + theme.rgb + ",.18);font-size:15px;font-weight:900;line-height:1;cursor:pointer;pointer-events:auto;display:inline-flex;align-items:center;justify-content:center;transition:background .14s ease,border-color .14s ease,transform .14s ease,box-shadow .14s ease;}",
+    ".cv-export-checkbox:hover{transform:translateY(-1px);border-color:" + theme.primary + ";box-shadow:0 12px 26px rgba(" + theme.rgb + ",.22);}",
+    ".cv-export-checkbox[data-selected='true']{background:" + theme.primary + ";border-color:" + theme.primary + ";color:#fff;}"
   ].join("");
   document.documentElement.appendChild(style);
 }
@@ -261,7 +272,7 @@ function exitSelectionMode() {
   selectionWrappers = [];
   selectionSelectedKeys = new Set();
   resetSelectionState();
-  selectionChangeCallbacks = [];
+  notifySelectionChange();
 }
 
 function getSelectedIndices() {

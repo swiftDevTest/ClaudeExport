@@ -994,7 +994,7 @@ function createMissingDependencyError(name) {
     return output.join("\n");
   }
 
-  function plainTextToExportBlocks(input) {
+  function plainTextToExportBlocks(input, options = {}) {
     const text = normalizeExportText(unwrapMarkdownDirectiveContainers(input));
     if (!text) {
       return [];
@@ -1125,7 +1125,7 @@ function createMissingDependencyError(name) {
         continue;
       }
 
-      if (trimmed.startsWith(">")) {
+      if (!options.preserveQuoteMarkers && trimmed.startsWith(">")) {
         flushParagraph();
         const quoteLines = [];
         while (index < lines.length && lines[index].trim().startsWith(">")) {
@@ -1204,8 +1204,8 @@ function createMissingDependencyError(name) {
     });
   }
 
-  function appendTextExportBlocks(blocks, text) {
-    plainTextToExportBlocks(text).forEach((block) => blocks.push(block));
+  function appendTextExportBlocks(blocks, text, options = {}) {
+    plainTextToExportBlocks(text, options).forEach((block) => blocks.push(block));
   }
 
   function getChatGptImageBlockFromContentPart(part) {
@@ -1414,6 +1414,8 @@ function createMissingDependencyError(name) {
     const content = message?.content;
     const parts = Array.isArray(content?.parts) ? content.parts : null;
     const seenFileIds = new Set();
+    const preserveQuoteMarkers = String(message?.author?.role || "").toLowerCase() === "user";
+    const textOptions = { preserveQuoteMarkers };
 
     if (parts) {
       parts.forEach((part) => {
@@ -1425,10 +1427,10 @@ function createMissingDependencyError(name) {
           blocks.push(imageBlock);
           return;
         }
-        appendTextExportBlocks(blocks, extractTextFromChatGptContentPart(part));
+        appendTextExportBlocks(blocks, extractTextFromChatGptContentPart(part), textOptions);
       });
     } else {
-      appendTextExportBlocks(blocks, extractTextFromChatGptContentPart(content));
+      appendTextExportBlocks(blocks, extractTextFromChatGptContentPart(content), textOptions);
     }
 
     collectChatGptImageBlocksFromValue(content)
