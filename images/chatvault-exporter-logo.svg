@@ -1,40 +1,25 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
-  <title id="title">AI Chat Export logo</title>
-  <desc id="desc">A rounded emerald app icon with an archived chat document mark.</desc>
+  <title id="title">Claude Export logo</title>
+  <desc id="desc">A light toolbar-first app icon with a dark document and export arrow.</desc>
   <defs>
-    <linearGradient id="bg" x1="168" y1="80" x2="856" y2="944" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#17c996"/>
-      <stop offset="0.46" stop-color="#078767"/>
-      <stop offset="1" stop-color="#07362f"/>
-    </linearGradient>
-    <radialGradient id="glow" cx="0" cy="0" r="1" gradientTransform="matrix(500 0 0 500 270 170)" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#d7fff0" stop-opacity="0.54"/>
-      <stop offset="0.58" stop-color="#d7fff0" stop-opacity="0.08"/>
-      <stop offset="1" stop-color="#d7fff0" stop-opacity="0"/>
-    </radialGradient>
-    <linearGradient id="paper" x1="252" y1="235" x2="744" y2="821" gradientUnits="userSpaceOnUse">
+    <linearGradient id="tile" x1="120" y1="64" x2="904" y2="960" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#ffffff"/>
-      <stop offset="1" stop-color="#e8fff6"/>
+      <stop offset="1" stop-color="#fff6e8"/>
     </linearGradient>
-    <linearGradient id="fold" x1="590" y1="270" x2="762" y2="462" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#b7ffe5"/>
-      <stop offset="1" stop-color="#5be0b0"/>
+    <linearGradient id="edge" x1="160" y1="110" x2="864" y2="914" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f59e0b"/>
+      <stop offset="1" stop-color="#c2410c"/>
     </linearGradient>
-    <filter id="markShadow" x="136" y="160" width="760" height="760" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="34" flood-color="#042d26" flood-opacity="0.28" stdDeviation="30"/>
-    </filter>
+    <linearGradient id="fold" x1="572" y1="222" x2="730" y2="406" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffedd5"/>
+      <stop offset="1" stop-color="#fb923c"/>
+    </linearGradient>
   </defs>
-  <rect width="1024" height="1024" rx="228" fill="url(#bg)"/>
-  <rect width="1024" height="1024" rx="228" fill="url(#glow)"/>
-  <path fill="#041f1c" fill-opacity="0.2" d="M786 100c86 43 138 123 138 210 0 170-196 308-438 308-159 0-298-60-375-150v330c0 73 59 132 132 132h538c73 0 132-59 132-132V229c0-61-52-112-127-129Z"/>
-  <g filter="url(#markShadow)">
-    <path fill="url(#paper)" d="M304 220h278c31 0 61 13 83 35l92 92c22 22 35 52 35 83v274c0 57-46 103-103 103H304c-57 0-103-46-103-103V323c0-57 46-103 103-103Z"/>
-    <path fill="url(#fold)" d="M591 230v127c0 40 32 72 72 72h120c-5-31-19-59-41-81l-74-74c-21-21-48-36-77-44Z"/>
-    <path fill="none" stroke="#075f4d" stroke-linecap="round" stroke-width="56" d="M330 505h230M330 614h158"/>
-    <path fill="none" stroke="#075f4d" stroke-linecap="round" stroke-linejoin="round" stroke-width="58" d="m595 610 77 77 145-170"/>
-    <circle cx="332" cy="723" r="32" fill="#13b889"/>
-    <circle cx="436" cy="723" r="32" fill="#13b889"/>
-    <circle cx="540" cy="723" r="32" fill="#13b889"/>
-  </g>
-  <path fill="none" stroke="#bff8e3" stroke-opacity="0.62" stroke-width="26" d="M233 70h558c90 0 163 73 163 163v558c0 90-73 163-163 163H233c-90 0-163-73-163-163V233c0-90 73-163 163-163Z"/>
+  <rect width="1024" height="1024" rx="224" fill="url(#tile)"/>
+  <rect x="48" y="48" width="928" height="928" rx="198" fill="none" stroke="url(#edge)" stroke-width="70"/>
+  <path fill="#3b2a1f" d="M314 178h262c30 0 59 12 80 34l94 94c22 21 34 50 34 80v430c0 50-41 91-91 91H314c-50 0-91-41-91-91V269c0-50 41-91 91-91Z"/>
+  <path fill="url(#fold)" d="M588 190v139c0 36 29 65 65 65h131c-5-34-20-65-44-89l-77-77c-21-21-47-34-75-38Z"/>
+  <path fill="none" stroke="#fff4e5" stroke-linecap="round" stroke-width="62" d="M332 512h232M332 638h164"/>
+  <path fill="none" stroke="#fb7a2a" stroke-linecap="round" stroke-linejoin="round" stroke-width="82" d="M548 371h184v184M732 371 529 574"/>
+  <path fill="none" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-opacity=".92" stroke-width="28" d="M548 371h184v184M732 371 529 574"/>
 </svg>
