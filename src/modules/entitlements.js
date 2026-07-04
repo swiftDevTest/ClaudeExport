@@ -15,9 +15,9 @@
   let entitlementCacheCryptoKeyPromise = null;
 
   const PRO_PRICES = Object.freeze({
-    monthly: { sku: "pro_monthly", label: "Pro Monthly", price: "$4.99", cadence: "/ month" },
-    yearly: { sku: "pro_yearly", label: "Pro Yearly", price: "$29.99", cadence: "/ year" },
-    lifetime: { sku: "pro_lifetime", label: "Lifetime Early Bird", price: "$49.99", cadence: "one-time" }
+    monthly: { sku: "pro_monthly", label: "Pro Monthly", price: "$3.99", cadence: "/ month" },
+    yearly: { sku: "pro_yearly", label: "Pro Yearly", price: "$24.99", cadence: "/ year" },
+    lifetime: { sku: "pro_lifetime", label: "Lifetime Early Bird", price: "$39.99", cadence: "one-time" }
   });
 
   function isPro(profile) {

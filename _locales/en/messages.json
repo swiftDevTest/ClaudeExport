@@ -603,16 +603,16 @@
     "message": "Limited-time offer"
   },
   "billing_discount_monthly": {
-    "message": "Save 44%"
+    "message": "Save 56%"
   },
   "billing_discount_yearly": {
-    "message": "Save 50%"
+    "message": "Save 58%"
   },
   "billing_discount_lifetime": {
-    "message": "Save 62%"
+    "message": "Save 69%"
   },
   "billing_checkout_pro_yearly": {
-    "message": "Continue with Pro Yearly - $$29.99 / year"
+    "message": "Continue with Pro Yearly - $$24.99 / year"
   },
   "billing_active_pro": {
     "message": "Pro is active."

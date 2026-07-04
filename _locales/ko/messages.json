@@ -603,16 +603,16 @@
     "message": "기간 한정 혜택"
   },
   "billing_discount_monthly": {
-    "message": "44% 할인"
+    "message": "56% 할인"
   },
   "billing_discount_yearly": {
-    "message": "50% 할인"
+    "message": "58% 할인"
   },
   "billing_discount_lifetime": {
-    "message": "62% 할인"
+    "message": "69% 할인"
   },
   "billing_checkout_pro_yearly": {
-    "message": "Pro 연간 요금제 계속하기 - $$29.99 / 년"
+    "message": "Pro 연간 요금제 계속하기 - $$24.99 / 년"
   },
   "billing_active_pro": {
     "message": "Pro 요금제가 활성화되었습니다."

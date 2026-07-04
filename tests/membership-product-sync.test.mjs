@@ -123,6 +123,12 @@ test("billing and entitlement refresh call product-scoped Edge Functions", () =>
   assert.equal(billing.productId, productConfig.productId);
   assert.equal(billing.productSlug, productConfig.productSlug);
   assert.equal(billing.productName, productConfig.productName);
+  assert.equal(billing.getPlan("monthly").price, "$3.99");
+  assert.equal(billing.getPlan("yearly").price, "$24.99");
+  assert.equal(billing.getPlan("lifetime").price, "$39.99");
+  assert.equal(entitlements.PRO_PRICES.monthly.price, "$3.99");
+  assert.equal(entitlements.PRO_PRICES.yearly.price, "$24.99");
+  assert.equal(entitlements.PRO_PRICES.lifetime.price, "$39.99");
   assert.match(
     billing.createCheckoutSession.toString(),
     /\/functions\/v1\/product-create-checkout-session/
@@ -216,6 +222,60 @@ test("async entitlement refresh updates the already-open popup", () => {
   assert.match(notifySource, /buildEntitlementPopupStateSnapshot\(\)/);
   assert.match(refreshSource, /notifyPopupEntitlementStateUpdated\(\)/);
   assert.match(verifySource, /notifyPopupEntitlementStateUpdated\(\)/);
+});
+
+test("export entitlement verification falls back to local quota gates", () => {
+  const contentSource = readText("../src/content.js");
+  const localResultStart = contentSource.indexOf("function getLocalExportAccessResult");
+  const verifyStart = contentSource.indexOf("async function syncVerifiedExportEntitlement");
+  const verifyEnd = contentSource.indexOf("\n  async function recordSuccessfulExportUsage", verifyStart);
+  const performStart = contentSource.indexOf("async function performExport()");
+  const performEnd = contentSource.indexOf("\n  function cancelExport()", performStart);
+  const batchStart = contentSource.indexOf("async function startInPageBatchExport()");
+  const batchEnd = contentSource.indexOf("\n  function cancelInPageBatchExport()", batchStart);
+  const verifySource = contentSource.slice(verifyStart, verifyEnd);
+  const performSource = contentSource.slice(performStart, performEnd);
+  const batchSource = contentSource.slice(batchStart, batchEnd);
+
+  assert.notEqual(localResultStart, -1);
+  assert.notEqual(verifyStart, -1);
+  assert.notEqual(verifyEnd, -1);
+  assert.notEqual(performStart, -1);
+  assert.notEqual(performEnd, -1);
+  assert.notEqual(batchStart, -1);
+  assert.notEqual(batchEnd, -1);
+  assert.match(verifySource, /const localAccess = getLocalExportAccessResult\(count\)/);
+  assert.match(verifySource, /if \(!localAccess\.allowed \|\| isProUser\)/);
+  assert.match(verifySource, /Server entitlement verification failed; using local quota fallback/);
+  assert.match(verifySource, /return localAccess;/);
+  assert.ok(performSource.indexOf("const localEntitlementPreflight = getLocalExportAccessResult(1)") < performSource.indexOf("renderExportProgress(formatForExport"));
+  assert.ok(performSource.indexOf("const entitlementIssue = getEntitlementIssue") < performSource.indexOf("renderExportProgress(formatForExport"));
+  assert.ok(performSource.indexOf("renderExportProgress(formatForExport") < performSource.indexOf("const entitlementPreflight = await verifySignedInExportAccess(1)"));
+  assert.ok(batchSource.indexOf("if (!canUseBatchExportLocally())") < batchSource.indexOf("updateBatchExportProgress({"));
+});
+
+test("popup export closes before long-running page export work", () => {
+  const popupSource = readText("../src/popup.js");
+  const exportMessageIndex = popupSource.indexOf('type: "CHATVAULT_POPUP_EXPORT"');
+  const closeImmediatelyIndex = popupSource.indexOf("closeImmediately: true", exportMessageIndex);
+  const sendMessageStart = popupSource.indexOf("function sendMessageToActivePage(payload, options)");
+  const sendMessageEnd = popupSource.indexOf("\n  // 从页面获取状态", sendMessageStart);
+  const sendMessageSource = popupSource.slice(sendMessageStart, sendMessageEnd);
+
+  assert.notEqual(exportMessageIndex, -1);
+  assert.notEqual(closeImmediatelyIndex, -1);
+  assert.notEqual(sendMessageStart, -1);
+  assert.notEqual(sendMessageEnd, -1);
+  assert.match(sendMessageSource, /options\.closeImmediately/);
+  assert.match(sendMessageSource, /window\.close\(\)/);
+});
+
+test("checkout allows valid chrome extension origins", () => {
+  const httpSource = readText("../supabase/functions/_shared/http.ts");
+  assert.match(httpSource, /function isAllowedChromeExtensionOrigin\(origin: string\)/);
+  assert.match(httpSource, /url\.protocol === "chrome-extension:"/);
+  assert.match(httpSource, /\^\[a-p\]\{32\}\$/);
+  assert.match(httpSource, /isAllowedChromeExtensionOrigin\(origin\)/);
 });
 
 test("product backend contract is present for local deployment and review", () => {

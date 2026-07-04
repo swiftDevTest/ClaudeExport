@@ -603,16 +603,16 @@
     "message": "期間限定オファー"
   },
   "billing_discount_monthly": {
-    "message": "44%割引き"
+    "message": "56%割引き"
   },
   "billing_discount_yearly": {
-    "message": "50%割引き"
+    "message": "58%割引き"
   },
   "billing_discount_lifetime": {
-    "message": "62%割引き"
+    "message": "69%割引き"
   },
   "billing_checkout_pro_yearly": {
-    "message": "Pro年額プランを継続 - $$29.99 / 年"
+    "message": "Pro年額プランを継続 - $$24.99 / 年"
   },
   "billing_active_pro": {
     "message": "Proプランが有効です。"

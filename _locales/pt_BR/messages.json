@@ -603,16 +603,16 @@
     "message": "Oferta por tempo limitado"
   },
   "billing_discount_monthly": {
-    "message": "Economize 44%"
+    "message": "Economize 56%"
   },
   "billing_discount_yearly": {
-    "message": "Economize 50%"
+    "message": "Economize 58%"
   },
   "billing_discount_lifetime": {
-    "message": "Economize 62%"
+    "message": "Economize 69%"
   },
   "billing_checkout_pro_yearly": {
-    "message": "Continuar com Pro Anual - $$29.99 / ano"
+    "message": "Continuar com Pro Anual - $$24.99 / ano"
   },
   "billing_active_pro": {
     "message": "O Pro está ativo."

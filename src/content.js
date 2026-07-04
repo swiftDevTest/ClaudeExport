@@ -112,11 +112,6 @@
     return /^zh(?:_|-|$)/i.test(getUiLanguage());
   }
 
-  function isBackendSchemaCacheError(error) {
-    const message = String(error?.message || error || "");
-    return /schema cache|payment_products|Could not find the table/i.test(message);
-  }
-
   function formatDefaultText(defaultText, args) {
     let text = String(defaultText || "");
     (args || []).forEach((arg, index) => {
@@ -608,7 +603,9 @@
         return entitlements.normalizeProfile(profile[0]);
       }
     } catch (err) {
-      console.error("Fallback query to profiles table failed:", err);
+      if (globalThis.CHATVAULT_DEBUG) {
+        console.debug("product_profiles fallback unavailable; using cached/free profile:", err);
+      }
     }
     try {
       const cached = typeof entitlements.getCachedState === "function" ? await entitlements.getCachedState() : null;
@@ -678,9 +675,27 @@
     return entitlements.canUseExport(profile, dailyUsage, count);
   }
 
+  function getLocalExportAccessResult(count) {
+    const requestedCount = Math.max(1, Number(count) || 1);
+    const profile = currentUserProfile || entitlements.normalizeProfile({ plan: "free" });
+    const pro = Boolean(isProUser || entitlements?.isPro?.(profile));
+    const remaining = entitlements.getRemainingFreeExports(profile, dailyUsage);
+
+    return {
+      ok: true,
+      allowed: pro || entitlements.canUseExport(profile, dailyUsage, requestedCount),
+      serverVerified: false,
+      serverConsumed: false,
+      profile,
+      usage: dailyUsage,
+      remaining
+    };
+  }
+
   async function verifySignedInExportAccess(count) {
-    if (isProUser || !currentSession?.access_token) {
-      return { ok: true, allowed: true, serverVerified: false };
+    const localAccess = getLocalExportAccessResult(count);
+    if (!localAccess.allowed || isProUser || !currentSession?.access_token) {
+      return localAccess;
     }
     return syncVerifiedExportEntitlement(count, { consume: false });
   }
@@ -688,29 +703,26 @@
   async function syncVerifiedExportEntitlement(conversationCount, options = {}) {
     const count = Math.max(1, Number(conversationCount) || 1);
     const consume = Boolean(options.consume);
+    const localAccess = getLocalExportAccessResult(count);
+
+    if (!localAccess.allowed || isProUser) {
+      return localAccess;
+    }
 
     if (!auth || typeof auth.getSession !== "function") {
-      return { ok: true, allowed: true, serverVerified: false };
+      return localAccess;
     }
 
     let session = null;
     try {
       session = await auth.getSession({ skipUserRefresh: false, allowStaleOnError: false });
     } catch (error) {
-      if (!consume && isBackendSchemaCacheError(error)) {
-        console.warn("Server entitlement verification schema is stale; using local quota fallback:", error);
-        return { ok: true, allowed: true, serverVerified: false };
-      }
-      return {
-        ok: false,
-        allowed: false,
-        serverVerified: false,
-        error: tx("content_entitlement_verify_failed", "Could not verify your export entitlement. Check your connection and try again.", "无法验证您的导出权益，请检查网络后重试。")
-      };
+      console.warn("Server entitlement verification unavailable; using local quota fallback:", error);
+      return localAccess;
     }
 
     if (!session?.access_token) {
-      return { ok: true, allowed: true, serverVerified: false };
+      return localAccess;
     }
 
     try {
@@ -751,12 +763,8 @@
         remaining: entitlements.getRemainingFreeExports(currentUserProfile, dailyUsage)
       };
     } catch (error) {
-      return {
-        ok: false,
-        allowed: false,
-        serverVerified: false,
-        error: tx("content_entitlement_verify_failed", "Could not verify your export entitlement. Check your connection and try again.", "无法验证您的导出权益，请检查网络后重试。")
-      };
+      console.warn("Server entitlement verification failed; using local quota fallback:", error);
+      return localAccess;
     }
   }
 
@@ -2506,17 +2514,6 @@
       return true;
     }
 
-    globalThis.CHATVAULT_IS_BATCH_EXPORT = true;
-    setBatchExportingUi(true);
-    updateBatchExportProgress({
-      status: "progress",
-      currentIndex: 0,
-      total: selectedItems.length,
-      percent: 0,
-      progressText: tx("content_progress_checking_export_access", "Preparing export...", "正在准备导出...")
-    });
-    closeBatchModal();
-
     try {
       await loadState({ localOnly: true, skipVerify: true });
       if (isBatchPreflightCancelled()) return;
@@ -2534,6 +2531,17 @@
         showBatchExportUpgradePrompt();
         return;
       }
+
+      globalThis.CHATVAULT_IS_BATCH_EXPORT = true;
+      setBatchExportingUi(true);
+      updateBatchExportProgress({
+        status: "progress",
+        currentIndex: 0,
+        total: selectedItems.length,
+        percent: 0,
+        progressText: tx("content_progress_checking_export_access", "Preparing export...", "正在准备导出...")
+      });
+      closeBatchModal();
 
       // 读取设置配置
       const showTitle = shadowRoot.getElementById("cv-toggle-title").checked;
@@ -3143,6 +3151,9 @@
     promoteExporterRootLayer();
     const toast = shadowRoot.getElementById("cv-page-toast");
     if (!toast) return;
+    if (toast.parentElement) {
+      toast.parentElement.appendChild(toast);
+    }
     toast.textContent = message;
     toast.classList.add("active");
     if (pageToastTimer) clearTimeout(pageToastTimer);
@@ -3247,28 +3258,11 @@
       return true;
     }
 
-    if (isSingleExport) {
-      renderExportProgress(formatForExport, {
-        mode: "single",
-        title: getSingleExportProgressTitle(formatForExport),
-        message: tx("content_progress_checking_export_access", "Preparing export...", "正在准备导出..."),
-        progress: EXPORT_PROGRESS_INITIAL,
-        overallProgress: EXPORT_PROGRESS_INITIAL
-      }, cancelExport);
-    }
-
     await loadState({ localOnly: true, skipVerify: true });
     if (isCurrentExportCancelled()) return;
-    const entitlementPreflight = await verifySignedInExportAccess(1);
-    if (isCurrentExportCancelled()) return;
-    if (!entitlementPreflight.ok) {
-      hideExportProgress();
-      clearCurrentExportController();
-      showPageToast(entitlementPreflight.error || tx("content_entitlement_verify_failed", "Could not verify your export entitlement. Check your connection and try again.", "无法验证您的导出权益，请检查网络后重试。"));
-      return;
-    }
-    if (!entitlementPreflight.allowed) {
-      hideExportProgress();
+
+    const localEntitlementPreflight = getLocalExportAccessResult(1);
+    if (!localEntitlementPreflight.allowed) {
       clearCurrentExportController();
       showUpgradePrompt(FREE_QUOTA_EXHAUSTED_MESSAGE);
       return;
@@ -3290,7 +3284,6 @@
 
     const entitlementIssue = getEntitlementIssue(settingsForExport, presetForExport, currentUserProfile);
     if (entitlementIssue) {
-      hideExportProgress();
       clearCurrentExportController();
       showUpgradePrompt(entitlementIssue);
       return;
@@ -3304,6 +3297,21 @@
         progress: EXPORT_PROGRESS_INITIAL,
         overallProgress: EXPORT_PROGRESS_INITIAL
       }, cancelExport);
+    }
+
+    const entitlementPreflight = await verifySignedInExportAccess(1);
+    if (isCurrentExportCancelled()) return;
+    if (!entitlementPreflight.ok) {
+      hideExportProgress();
+      clearCurrentExportController();
+      showPageToast(entitlementPreflight.error || tx("content_entitlement_verify_failed", "Could not verify your export entitlement. Check your connection and try again.", "无法验证您的导出权益，请检查网络后重试。"));
+      return;
+    }
+    if (!entitlementPreflight.allowed) {
+      hideExportProgress();
+      clearCurrentExportController();
+      showUpgradePrompt(FREE_QUOTA_EXHAUSTED_MESSAGE);
+      return;
     }
 
     try {

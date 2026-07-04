@@ -190,14 +190,14 @@
     setAriaLabel("#btn-close-subscribe", "btn_cancel", "Cancel");
     setText(".subscribe-subtitle", "billing_desc", "Unlock higher local export limits, polished themes, batch workflows, and PDF, Docs, MD and More output.");
     updateSubscribeLoginWarningText();
-    setPlanCardTexts("monthly", "billing_badge_monthly", "Monthly Pro", "billing_discount_monthly", "Save 44%", "billing_plan_title_monthly", "Pro Monthly", "billing_cadence_month", "/ month");
-    setPlanCardTexts("yearly", "billing_badge_yearly", "Yearly Pro", "billing_discount_yearly", "Save 50%", "billing_plan_title_yearly", "Pro Yearly", "billing_cadence_year", "/ year");
+    setPlanCardTexts("monthly", "billing_badge_monthly", "Monthly Pro", "billing_discount_monthly", "Save 56%", "billing_plan_title_monthly", "Pro Monthly", "billing_cadence_month", "/ month");
+    setPlanCardTexts("yearly", "billing_badge_yearly", "Yearly Pro", "billing_discount_yearly", "Save 58%", "billing_plan_title_yearly", "Pro Yearly", "billing_cadence_month", "/ month");
     setText(".recommended-tag", "popup_recommended", "Recommended");
-    setPlanCardTexts("lifetime", "billing_badge_lifetime", "Lifetime Pro", "billing_discount_lifetime", "Save 62%", "billing_plan_title_lifetime", "Lifetime Early Bird", "billing_cadence_lifetime", "one-time");
+    setPlanCardTexts("lifetime", "billing_badge_lifetime", "Lifetime Pro", "billing_discount_lifetime", "Save 69%", "billing_plan_title_lifetime", "Lifetime Early Bird", "billing_cadence_lifetime", "one-time");
     setFeatureTexts();
     var subscribeSubmit = document.getElementById("btn-subscribe-submit");
     if (subscribeSubmit) {
-      subscribeSubmit.textContent = t("billing_continue_with_plan", "Continue with $1", getPlanTitle("yearly"));
+      subscribeSubmit.textContent = getCheckoutButtonLabel("yearly");
     }
     setText("#btn-subscribe-restore", "billing_btn_restore", "Restore purchase");
     setText(".subscribe-footnote", "billing_footnote", `Exports are generated locally from the page you choose. Checkout opens on the ${productName} pricing page and is processed by a secure payment processor. ${productName} stores settings, sign-in email, and membership status only. Chat content is never saved.`);
@@ -278,6 +278,13 @@
     return t("billing_plan_title_yearly", "Pro Yearly");
   }
 
+  function getCheckoutButtonLabel(planId) {
+    if (planId === "yearly") {
+      return t("billing_checkout_pro_yearly", "Continue with Pro Yearly - $24.99 / year");
+    }
+    return t("billing_continue_with_plan", "Continue with $1", getPlanTitle(planId));
+  }
+
   function normalizeSubscribePlanId(planId) {
     var value = String(planId || "").trim();
     if (value === "monthly" || value === "yearly" || value === "lifetime") return value;
@@ -299,7 +306,7 @@
     });
     if (radio) radio.checked = true;
     if (submitBtn) {
-      submitBtn.textContent = t("billing_continue_with_plan", "Continue with $1", getPlanTitle(normalizedPlanId));
+      submitBtn.textContent = getCheckoutButtonLabel(normalizedPlanId);
     }
   }
 
@@ -1078,7 +1085,7 @@
           format: format,
           settings: currentSettings
         }, {
-          keepOpen: true
+          closeImmediately: true
         });
       });
     });
@@ -1165,7 +1172,7 @@
       if (!checkedRadio || !submitBtn) return;
 
       var planVal = checkedRadio.value;
-      submitBtn.textContent = t("billing_continue_with_plan", "Continue with $1", getPlanTitle(planVal));
+      submitBtn.textContent = getCheckoutButtonLabel(planVal);
 
       // 实时获取并展现未登录提示
       var auth = globalThis.CHATVAULT_SUPABASE_AUTH;
@@ -1361,6 +1368,12 @@
   function sendMessageToActivePage(payload, options) {
     if (!requireSupportedPage()) return;
     options = options || {};
+    var closeDelay = Number.isFinite(Number(options.closeDelay)) ? Number(options.closeDelay) : 150;
+    if (options.closeImmediately) {
+      setTimeout(function () {
+        window.close();
+      }, Number.isFinite(Number(options.closeDelay)) ? Number(options.closeDelay) : 0);
+    }
     chrome.tabs.sendMessage(activeTabId, payload, function (response) {
       if (chrome.runtime.lastError) {
         showToast(t("popup_refresh_page_retry", "Please refresh the current AI conversation page and try again."));
@@ -1380,9 +1393,12 @@
         refreshPopupState(true);
         return;
       }
+      if (options.closeImmediately) {
+        return;
+      }
       setTimeout(function () {
         window.close();
-      }, Number.isFinite(Number(options.closeDelay)) ? Number(options.closeDelay) : 150);
+      }, closeDelay);
     });
   }
 

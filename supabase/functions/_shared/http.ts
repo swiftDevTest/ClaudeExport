@@ -22,6 +22,15 @@ function getConfiguredAllowedOrigins() {
     .filter(Boolean);
 }
 
+function isAllowedChromeExtensionOrigin(origin: string) {
+  try {
+    const url = new URL(origin);
+    return url.protocol === "chrome-extension:" && /^[a-p]{32}$/.test(url.hostname);
+  } catch (_error) {
+    return false;
+  }
+}
+
 export function isAllowedBrowserOrigin(request: Request) {
   const origin = request.headers.get("origin") || "";
   if (!origin) {
@@ -30,6 +39,10 @@ export function isAllowedBrowserOrigin(request: Request) {
 
   const allowedOrigins = getConfiguredAllowedOrigins();
   if (allowedOrigins.includes(origin)) {
+    return true;
+  }
+
+  if (isAllowedChromeExtensionOrigin(origin)) {
     return true;
   }
 

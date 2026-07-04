@@ -603,16 +603,16 @@
     "message": "限时特惠"
   },
   "billing_discount_monthly": {
-    "message": "省 44%"
+    "message": "省 56%"
   },
   "billing_discount_yearly": {
-    "message": "省 50%"
+    "message": "省 58%"
   },
   "billing_discount_lifetime": {
-    "message": "省 62%"
+    "message": "省 69%"
   },
   "billing_checkout_pro_yearly": {
-    "message": "继续使用 Pro 年付计划 - $$29.99 / 年"
+    "message": "继续使用 Pro 年付计划 - $$24.99 / 年"
   },
   "billing_active_pro": {
     "message": "Pro 已激活。"

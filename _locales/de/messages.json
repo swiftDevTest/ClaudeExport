@@ -603,16 +603,16 @@
     "message": "Befristetes Angebot"
   },
   "billing_discount_monthly": {
-    "message": "Sparen Sie 44%"
+    "message": "Sparen Sie 56%"
   },
   "billing_discount_yearly": {
-    "message": "Sparen Sie 50%"
+    "message": "Sparen Sie 58%"
   },
   "billing_discount_lifetime": {
-    "message": "Sparen Sie 62%"
+    "message": "Sparen Sie 69%"
   },
   "billing_checkout_pro_yearly": {
-    "message": "Weiter mit Pro Jährlich - $$29.99 / Jahr"
+    "message": "Weiter mit Pro Jährlich - $$24.99 / Jahr"
   },
   "billing_active_pro": {
     "message": "Pro ist aktiv."
