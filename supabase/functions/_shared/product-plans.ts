@@ -57,9 +57,9 @@ const PRODUCT_DEFAULTS: Record<string, ProductBillingConfig> = {
     productName: "ChatGPT Export",
     checkoutUrl: "https://tabpilotpro.com/chatgpt/checkout.html",
     prices: {
-      monthly: Deno.env.get("CHATGPT_EXPORT_MONTHLY_PRICE_ID") || "",
-      yearly: Deno.env.get("CHATGPT_EXPORT_YEARLY_PRICE_ID") || "",
-      lifetime: Deno.env.get("CHATGPT_EXPORT_LIFETIME_PRICE_ID") || ""
+      monthly: Deno.env.get("CHATGPT_EXPORT_MONTHLY_PRICE_ID") || "pri_01kwkjv6hp7vvd49r12gf43jpq",
+      yearly: Deno.env.get("CHATGPT_EXPORT_YEARLY_PRICE_ID") || "pri_01kwkjw7mgfjzt6qvkw0ncx5ag",
+      lifetime: Deno.env.get("CHATGPT_EXPORT_LIFETIME_PRICE_ID") || "pri_01kwkk01daqp2vd5exwam7wafr"
     }
   }),
   "claude-export": createProductConfig({
@@ -68,9 +68,9 @@ const PRODUCT_DEFAULTS: Record<string, ProductBillingConfig> = {
     productName: "Claude Export",
     checkoutUrl: "https://tabpilotpro.com/claude/checkout.html",
     prices: {
-      monthly: Deno.env.get("CLAUDE_EXPORT_MONTHLY_PRICE_ID") || "",
-      yearly: Deno.env.get("CLAUDE_EXPORT_YEARLY_PRICE_ID") || "",
-      lifetime: Deno.env.get("CLAUDE_EXPORT_LIFETIME_PRICE_ID") || ""
+      monthly: Deno.env.get("CLAUDE_EXPORT_MONTHLY_PRICE_ID") || "pri_01kwkkbazhrwpgttsa18j4g1pg",
+      yearly: Deno.env.get("CLAUDE_EXPORT_YEARLY_PRICE_ID") || "pri_01kwkkd4065nnr6b6ktsx3w2qa",
+      lifetime: Deno.env.get("CLAUDE_EXPORT_LIFETIME_PRICE_ID") || "pri_01kwkke4mdmre2xme8t4n5mya3"
     }
   }),
   "gemini-export": createProductConfig({
@@ -79,9 +79,9 @@ const PRODUCT_DEFAULTS: Record<string, ProductBillingConfig> = {
     productName: "Gemini Export",
     checkoutUrl: "https://tabpilotpro.com/gemini/checkout.html",
     prices: {
-      monthly: Deno.env.get("GEMINI_EXPORT_MONTHLY_PRICE_ID") || "",
-      yearly: Deno.env.get("GEMINI_EXPORT_YEARLY_PRICE_ID") || "",
-      lifetime: Deno.env.get("GEMINI_EXPORT_LIFETIME_PRICE_ID") || ""
+      monthly: Deno.env.get("GEMINI_EXPORT_MONTHLY_PRICE_ID") || "pri_01kwkk5fmnk5xepdzn5nex7x3z",
+      yearly: Deno.env.get("GEMINI_EXPORT_YEARLY_PRICE_ID") || "pri_01kwkk78xb8fnnda0rzfnwjvn8",
+      lifetime: Deno.env.get("GEMINI_EXPORT_LIFETIME_PRICE_ID") || "pri_01kwkk8611y95my6dgmzhbynvp"
     }
   })
 };

@@ -270,12 +270,37 @@ test("popup export closes before long-running page export work", () => {
   assert.match(sendMessageSource, /window\.close\(\)/);
 });
 
-test("checkout allows valid chrome extension origins", () => {
+test("checkout allows valid browser extension origins", () => {
   const httpSource = readText("../supabase/functions/_shared/http.ts");
   assert.match(httpSource, /function isAllowedChromeExtensionOrigin\(origin: string\)/);
   assert.match(httpSource, /url\.protocol === "chrome-extension:"/);
   assert.match(httpSource, /\^\[a-p\]\{32\}\$/);
   assert.match(httpSource, /isAllowedChromeExtensionOrigin\(origin\)/);
+
+  const runtimeSource = httpSource
+    .slice(
+      httpSource.indexOf("const DEFAULT_ALLOWED_BROWSER_ORIGINS"),
+      httpSource.indexOf("export function corsHeadersForRequest")
+    )
+    .replace("export function isAllowedBrowserOrigin(request: Request)", "function isAllowedBrowserOrigin(request)")
+    .replace("function isAllowedChromeExtensionOrigin(origin: string)", "function isAllowedChromeExtensionOrigin(origin)");
+  const loadHttpRuntime = new Function("Deno", runtimeSource + "; return { isAllowedBrowserOrigin };");
+  const { isAllowedBrowserOrigin } = loadHttpRuntime({ env: { get() { return ""; } } });
+  const requestWithOrigin = (origin) => ({
+    headers: {
+      get(name) {
+        return String(name || "").toLowerCase() === "origin" ? origin : null;
+      }
+    }
+  });
+
+  assert.equal(isAllowedBrowserOrigin(requestWithOrigin("chrome-extension://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")), true);
+  assert.equal(isAllowedBrowserOrigin(requestWithOrigin("chrome-extension://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/")), true);
+  assert.equal(isAllowedBrowserOrigin(requestWithOrigin("chrome-extension://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/path")), false);
+  assert.equal(isAllowedBrowserOrigin(requestWithOrigin("chrome-extension://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaq")), false);
+  assert.equal(isAllowedBrowserOrigin(requestWithOrigin("moz-extension://123e4567-e89b-12d3-a456-426614174000")), true);
+  assert.equal(isAllowedBrowserOrigin(requestWithOrigin("safari-web-extension://123e4567-e89b-12d3-a456-426614174000")), true);
+  assert.equal(isAllowedBrowserOrigin(requestWithOrigin("https://evil.example")), false);
 });
 
 test("product backend contract is present for local deployment and review", () => {

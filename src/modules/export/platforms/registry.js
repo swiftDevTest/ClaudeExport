@@ -1,28 +1,15 @@
+// 由同步脚本自动重写生成，只引入当前平台的提取逻辑
 import {
-  PLATFORM_CHATGPT,
   PLATFORM_CLAUDE,
-  PLATFORM_GEMINI,
   detectPlatform
 } from '../utils.js';
-import { parseChatGPTMessages } from './chatgpt/extractor.js';
 import { parseClaudeMessages } from './claude/extractor.js';
-import { parseGeminiMessages } from './gemini/extractor.js';
 
 export var PLATFORM_EXPORT_REGISTRY = {
-  chatgpt: {
-    id: PLATFORM_CHATGPT,
-    label: "ChatGPT",
-    parseMessages: parseChatGPTMessages
-  },
   claude: {
     id: PLATFORM_CLAUDE,
     label: "Claude",
     parseMessages: parseClaudeMessages
-  },
-  gemini: {
-    id: PLATFORM_GEMINI,
-    label: "Gemini",
-    parseMessages: parseGeminiMessages
   }
 };
 
