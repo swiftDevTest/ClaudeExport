@@ -23,12 +23,15 @@ function getConfiguredAllowedOrigins() {
 }
 
 function isAllowedChromeExtensionOrigin(origin: string) {
-  try {
-    const url = new URL(origin);
-    return url.protocol === "chrome-extension:" && /^[a-p]{32}$/.test(url.hostname);
-  } catch (_error) {
-    return false;
+  // Support Chrome/Edge extensions: chrome-extension://[32-letter-id]
+  if (/^chrome-extension:\/\/([a-p]{32})\/?$/.test(origin)) {
+    return true;
   }
+  // Support Firefox & Safari extensions: moz-extension://[uuid] or safari-web-extension://[uuid]
+  if (/^(moz|safari-web)-extension:\/\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/?$/i.test(origin)) {
+    return true;
+  }
+  return false;
 }
 
 export function isAllowedBrowserOrigin(request: Request) {
