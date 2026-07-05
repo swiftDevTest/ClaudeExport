@@ -1,4 +1,4 @@
-AI Chat Exporter - Long-Context Edition es una herramienta de exportación de chat de IA que prioriza la privacidad y se ejecuta localmente en su navegador. Convierte sus conversaciones con la plataforma del asistente de IA de contexto largo en archivos locales PDF, Docs, MD and More para su edición, uso compartido, archivado y entrega.
+Claude Exporter es una herramienta de exportación de chat de IA que prioriza la privacidad y se ejecuta localmente en su navegador. Convierte sus conversaciones en Claude en archivos locales PDF, Docs, MD y más para su edición, uso compartido, archivado y entrega.
 
 Características destacadas:
 1. Conversión local privada: La generación de archivos se realiza completamente en su navegador. Los cuerpos de los mensajes de chat no se cargan a servidores ni a un servicio de conversión remoto, lo que ayuda a proteger el trabajo confidencial, la investigación y la privacidad personal.
@@ -8,12 +8,12 @@ Características destacadas:
 5. Exportación de código para desarrolladores: Indexe automáticamente todos los bloques de código en la conversación y guarde múltiples fragmentos de código como archivos específicos del lenguaje en un paquete descargable.
 
 Instrucciones de uso:
-- Instale la extensión y abra cualquier página de conversación en la plataforma de contexto largo compatible.
+- Instale la extensión y abra cualquier página de conversación en Claude.
 - Aparecerá un botón Exportar ligero en la esquina inferior derecha de la página.
-- Elija un tipo de salida: PDF, Docs, MD and More.
+- Elija un tipo de salida: PDF, Docs, MD y más.
 - Seleccione el rango de exportación y el tema, luego genere y descargue el archivo localmente.
 
-AI Chat Exporter - Long-Context Edition está diseñado para informes, notas de investigación, entregas de proyectos, archivos de código, entregables de clientes, materiales de estudio y copias de seguridad personales que deben seguir siendo legibles y portátiles.
+Claude Exporter está diseñado para informes, notas de investigación, entregas de proyectos, archivos de código, entregables de clientes, materiales de estudio y copias de seguridad personales que deben seguir siendo legibles y portátiles.
 
 Soporte:
 Para preguntas, comentarios o solicitudes de soporte, contáctenos en chatvaultaisupport@gmail.com.

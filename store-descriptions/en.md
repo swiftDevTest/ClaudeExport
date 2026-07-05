@@ -1,4 +1,4 @@
-AI Chat Exporter - Long-Context Edition is a privacy-first, local-first AI chat export tool that runs in your browser. It turns your conversations with the long-context AI assistant platform into PDF, Docs, MD and More local files for editing, sharing, archiving, and handoff.
+Claude Exporter is a privacy-first, local-first AI chat export tool that runs in your browser. It turns your conversations on Claude into PDF, Docs, MD and More local files for editing, sharing, archiving, and handoff.
 
 Key highlights:
 1. Private local conversion: File generation happens in your browser. Chat message bodies are not uploaded to remote servers or a remote conversion service, helping protect sensitive work, research, and personal privacy.
@@ -8,12 +8,12 @@ Key highlights:
 5. Developer code export: Automatically index code blocks in the conversation and save multiple code snippets as language-specific files in a downloadable package.
 
 How to use:
-- Install the extension and open any conversation page on the supported long-context AI platform.
+- Install the extension and open any conversation page on Claude.
 - A lightweight Export button appears in the lower-right corner of the page.
 - Choose a PDF, Docs, MD and More output type.
 - Select the export range and theme, then generate and download the file locally.
 
-AI Chat Exporter - Long-Context Edition is designed for reports, research notes, project handoff, code archives, client deliverables, study materials, and personal backups that should remain readable and portable.
+Claude Exporter is designed for reports, research notes, project handoff, code archives, client deliverables, study materials, and personal backups that should remain readable and portable.
 
 Support:
 For questions, feedback, or support requests, contact chatvaultaisupport@gmail.com.

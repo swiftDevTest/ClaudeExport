@@ -1,4 +1,4 @@
-O AI Chat Exporter - Long-Context Edition é uma ferramenta de exportação de chat de IA que prioriza a privacidade e é executada localmente no seu navegador. Ele converte suas conversas com a plataforma de assistente de IA de longo contexto em arquivos locais nos formatos PDF, Docs, MD and More para edição, compartilhamento, arquivamento e entrega.
+O Claude Exporter é uma ferramenta de exportação de chat de IA que prioriza a privacidade e é executada localmente no seu navegador. Ele converte suas conversas no Claude em arquivos locais nos formatos PDF, Docs, MD e mais para edição, compartilhamento, arquivamento e entrega.
 
 Destaques principais:
 1. Conversão local privada: A geração de arquivos ocorre inteiramente no seu navegador. Os corpos das mensagens não são enviados para servidores ou serviços de conversão remotos, protegendo o trabalho confidencial, pesquisas e a privacidade pessoal.
@@ -8,12 +8,12 @@ Destaques principais:
 5. Exportação de código para desenvolvedores: Indexa automaticamente todos os blocos de código na conversa e salva múltiplos trechos de código em arquivos de linguagem específica num pacote baixável.
 
 Instruções de uso:
-- Instale a extensão e abra qualquer página de conversa na plataforma de longo contexto compatível.
+- Instale a extensão e abra qualquer página de conversa no Claude compatível.
 - Um botão Export leve aparecerá no canto inferior direito da página.
-- Escolha o tipo de saída: PDF, Docs, MD and More.
+- Escolha o tipo de saída: PDF, Docs, MD e mais.
 - Selecione o intervalo de exportação e o tema, depois gere e baixe o arquivo localmente.
 
-O AI Chat Exporter - Long-Context Edition é projetado para relatórios, notas de pesquisa, entregas de projetos, arquivos de código e backups pessoais que devem permanecer legíveis e portáteis.
+O Claude Exporter é projetado para relatórios, notas de pesquisa, entregas de projetos, arquivos de código e backups pessoais que devem permanecer legíveis e portáteis.
 
 Suporte:
 Para dúvidas, comentários ou solicitações de suporte, entre em contato em chatvaultaisupport@gmail.com.
