@@ -1148,11 +1148,12 @@ input:checked + .slider::before {
 }
 
 .popup-toast {
-  position: absolute;
+  position: fixed;
   left: 18px;
   right: 18px;
   top: 54px;
-  z-index: 4000;
+  z-index: 2147483647;
+  box-sizing: border-box;
   min-height: 36px;
   padding: 9px 12px;
   color: #ffffff;

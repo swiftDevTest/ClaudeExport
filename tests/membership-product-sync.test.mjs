@@ -251,7 +251,10 @@ test("export entitlement verification falls back to local quota gates", () => {
   assert.ok(performSource.indexOf("const localEntitlementPreflight = getLocalExportAccessResult(1)") < performSource.indexOf("renderExportProgress(formatForExport"));
   assert.ok(performSource.indexOf("const entitlementIssue = getEntitlementIssue") < performSource.indexOf("renderExportProgress(formatForExport"));
   assert.ok(performSource.indexOf("renderExportProgress(formatForExport") < performSource.indexOf("const entitlementPreflight = await verifySignedInExportAccess(1)"));
-  assert.ok(batchSource.indexOf("if (!canUseBatchExportLocally())") < batchSource.indexOf("updateBatchExportProgress({"));
+  assert.ok(batchSource.indexOf("setBatchExportingUi(true)") < batchSource.indexOf("closeBatchModal();"));
+  assert.ok(batchSource.indexOf("updateBatchExportProgress({") < batchSource.indexOf("closeBatchModal();"));
+  assert.ok(batchSource.indexOf("closeBatchModal();") < batchSource.indexOf("await loadState({ localOnly: true, skipVerify: true })"));
+  assert.ok(batchSource.indexOf("if (!canUseBatchExportLocally())") < batchSource.indexOf("runInPageBatchExport("));
 });
 
 test("popup export closes before long-running page export work", () => {

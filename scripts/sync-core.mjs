@@ -125,7 +125,7 @@ function updateSupabaseConfig() {
   const configCode = `globalThis.CHATVAULT_SUPABASE_CONFIG = {
   url: "https://acgehhqcgreatcjcefub.supabase.co",
   publishableKey: "sb_publishable_GH05KXWPIo42YrorR0OGyQ_XdEWzY8Q",
-  googleClientId: "666614439104-f4hlm7c2vsdk9kepnmbgsk1olqca0n9s.apps.googleusercontent.com"
+  googleClientId: "285963973789-94pbkh7qlk0o04d2ji3uggecs27td888.apps.googleusercontent.com"
 };
 
 globalThis.CHATVAULT_ENV = {

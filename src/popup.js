@@ -1357,6 +1357,9 @@
   function showToast(message) {
     var toast = document.getElementById("popup-toast");
     if (!toast) return;
+    if (toast.parentElement !== document.body) {
+      document.body.appendChild(toast);
+    }
     toast.textContent = message;
     toast.classList.add("active");
     if (toastTimer) clearTimeout(toastTimer);

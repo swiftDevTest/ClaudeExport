@@ -1015,9 +1015,9 @@
     shadowContainer.style.setProperty("z-index", "2147483647", "important");
     shadowContainer.style.setProperty("pointer-events", "none", "important");
     shadowContainer.style.setProperty("isolation", "isolate", "important");
-    const parent = shadowContainer.parentElement || document.body || document.documentElement;
-    if (parent && parent.lastElementChild !== shadowContainer) {
-      parent.appendChild(shadowContainer);
+    const root = document.documentElement || document.body;
+    if (root && (shadowContainer.parentElement !== root || root.lastElementChild !== shadowContainer)) {
+      root.appendChild(shadowContainer);
     }
   }
 
@@ -1165,7 +1165,7 @@
     shadowContainer.style.setProperty("z-index", "2147483647", "important");
     shadowContainer.style.setProperty("pointer-events", "none", "important");
     shadowContainer.style.setProperty("isolation", "isolate", "important");
-    document.body.appendChild(shadowContainer);
+    (document.documentElement || document.body).appendChild(shadowContainer);
 
     shadowRoot = shadowContainer.attachShadow({ mode: "open" });
     applyProductTheme(shadowContainer);
@@ -2398,6 +2398,7 @@
             failureCount: failures.length,
             title: item.title || ""
           });
+          await new Promise(function (resolve) { setTimeout(resolve, 80); });
         } catch (error) {
           if (error?.message === "Export cancelled." || error?.name === "AbortError") {
             throw error;
@@ -2414,6 +2415,7 @@
             title: item.title || "",
             error: error.message || "Export failed."
           });
+          await new Promise(function (resolve) { setTimeout(resolve, 80); });
         }
       }
 
@@ -2514,6 +2516,17 @@
       return true;
     }
 
+    globalThis.CHATVAULT_IS_BATCH_EXPORT = true;
+    setBatchExportingUi(true);
+    updateBatchExportProgress({
+      status: "progress",
+      currentIndex: 0,
+      total: selectedItems.length,
+      percent: 0,
+      progressText: tx("content_progress_checking_export_access", "Preparing export...", "正在准备导出...")
+    });
+    closeBatchModal();
+
     try {
       await loadState({ localOnly: true, skipVerify: true });
       if (isBatchPreflightCancelled()) return;
@@ -2531,17 +2544,6 @@
         showBatchExportUpgradePrompt();
         return;
       }
-
-      globalThis.CHATVAULT_IS_BATCH_EXPORT = true;
-      setBatchExportingUi(true);
-      updateBatchExportProgress({
-        status: "progress",
-        currentIndex: 0,
-        total: selectedItems.length,
-        percent: 0,
-        progressText: tx("content_progress_checking_export_access", "Preparing export...", "正在准备导出...")
-      });
-      closeBatchModal();
 
       // 读取设置配置
       const showTitle = shadowRoot.getElementById("cv-toggle-title").checked;
@@ -3146,14 +3148,26 @@
     openSubscribePanelFromPage();
   }
 
-  function showPageToast(message) {
+  function getPageToastElement() {
     if (!shadowRoot) return;
     promoteExporterRootLayer();
-    const toast = shadowRoot.getElementById("cv-page-toast");
-    if (!toast) return;
-    if (toast.parentElement) {
-      toast.parentElement.appendChild(toast);
+    let toast = shadowRoot.getElementById("cv-page-toast");
+    if (!toast) {
+      toast = document.createElement("div");
+      toast.id = "cv-page-toast";
+      toast.className = "cv-page-toast";
+      toast.setAttribute("role", "status");
+      toast.setAttribute("aria-live", "polite");
     }
+    if (toast.parentNode !== shadowRoot) {
+      shadowRoot.appendChild(toast);
+    }
+    return toast;
+  }
+
+  function showPageToast(message) {
+    const toast = getPageToastElement();
+    if (!toast) return;
     toast.textContent = message;
     toast.classList.add("active");
     if (pageToastTimer) clearTimeout(pageToastTimer);

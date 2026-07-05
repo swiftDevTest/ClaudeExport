@@ -67,7 +67,7 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
   var topMargin = 54;
   var bottomMargin = 74;
   var contentWidth = pageWidth - margin * 2;
-  var pageJobs = [];
+  var pageCanvases = [];
   var current = null;
   var currentCanvas = null;
   var ctx = null;
@@ -145,34 +145,20 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
     ctx.fillStyle = DESIGN.color.muted;
     var footer = [];
     if (settings.show_chatvault_badge) footer.push(PRODUCT_NAME);
-    if (settings.show_platform_name && metadata.platform) footer.push(getPlatformLabel(metadata.platform));
+    if (settings.show_platform_name && metadata.platform) {
+      var platformLabel = getPlatformLabel(metadata.platform);
+      if (!PRODUCT_NAME.toLowerCase().includes(platformLabel.toLowerCase())) {
+        footer.push(platformLabel);
+      }
+    }
     if (settings.show_export_time) footer.push(formatDateDisplay(metadata.exportedAt));
     ctx.fillText(footer.join(" · "), margin, pageHeight - 36);
   }
 
   function finalizeCurrentPage() {
     if (!currentCanvas) return;
-    var canvas = currentCanvas;
+    pageCanvases.push(currentCanvas);
     currentCanvas = null;
-    pageJobs.push((async function () {
-      try {
-        // Use async canvas encoding so repeated PDF exports do not monopolize the page thread.
-        var blob = await canvasToBlob(canvas, "image/jpeg", 0.85);
-        var bytes = new Uint8Array(await blob.arrayBuffer());
-        return {
-          width: canvas.width,
-          height: canvas.height,
-          bytes: bytes
-        };
-      } catch (e) {
-        return null;
-      } finally {
-        try {
-          canvas.width = 1;
-          canvas.height = 1;
-        } catch (e) {}
-      }
-    })());
   }
 
   function drawLines(lines, font, color, lineHeight, x) {
@@ -229,7 +215,27 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
   }
   notifyProgress(options, t("export_progress_paginating_doc", "Paginating export"), 0.74);
   finalizeCurrentPage();
-  var encodedPages = (await Promise.all(pageJobs)).filter(Boolean);
+  var encodedPages = await mapLimit(pageCanvases, 2, async function (canvas, index) {
+    try {
+      notifyProgress(options, t("export_progress_rendering_pdf", "Encoding PDF page $1 of $2", index + 1, pageCanvases.length), 0.74 + 0.22 * ((index + 1) / pageCanvases.length));
+      var blob = await canvasToBlob(canvas, "image/jpeg", 0.85);
+      var bytes = new Uint8Array(await blob.arrayBuffer());
+      await yieldToBrowser();
+      return {
+        width: canvas.width,
+        height: canvas.height,
+        bytes: bytes
+      };
+    } catch (e) {
+      return null;
+    } finally {
+      try {
+        canvas.width = 1;
+        canvas.height = 1;
+      } catch (e) {}
+    }
+  });
+  encodedPages = encodedPages.filter(Boolean);
   if (!encodedPages.length) {
     throw new Error(t("export_pdf_encode_failed", "PDF page rendering failed. Please try again."));
   }

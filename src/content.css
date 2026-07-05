@@ -376,10 +376,11 @@
 }
 
 .cv-page-toast {
-  position: fixed;
+  position: fixed !important;
   left: 50%;
-  top: max(18px, env(safe-area-inset-top, 0px) + 12px);
-  z-index: 2147483647;
+  top: max(68px, env(safe-area-inset-top, 0px) + 62px);
+  z-index: 2147483647 !important;
+  box-sizing: border-box;
   max-width: min(420px, calc(100vw - 32px));
   min-height: 40px;
   padding: 12px 20px;

@@ -28,11 +28,11 @@ The Chrome Web Store upload package must not include `key`; `npm run package` st
 
 Register this exact Google OAuth redirect URI on the Google OAuth client configured in `src/supabase-config.js`:
 
-`https://cjkfchfnmbhcpmbhobdanongbjkcbagj.chromiumapp.org/`
+`https://ljlmljccgbogejkhlnldgolahihniebj.chromiumapp.org/`
 
 Current Google OAuth client ID:
 
-`666614439104-f4hlm7c2vsdk9kepnmbgsk1olqca0n9s.apps.googleusercontent.com`
+`285963973789-94pbkh7qlk0o04d2ji3uggecs27td888.apps.googleusercontent.com`
 
 For production, also register the Chrome Web Store extension ID redirect URI on that same Google OAuth client:
 
