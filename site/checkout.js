@@ -7,25 +7,26 @@
   const SUCCESS_URL = `${BASE_URL}/checkout.html?status=success`;
   const CANCEL_URL = `${BASE_URL}/checkout.html?status=cancelled`;
   const CHECKOUT_PAGE_URL = `${BASE_URL}/checkout.html`;
+  const EXTENSION_CHECKOUT_MESSAGE = "Open the extension, sign in with Google, then choose this plan again. Secure checkout starts from the extension so Pro access can sync to your account.";
 
   const PLANS = {
     monthly: {
       id: "monthly",
       title: "Pro Monthly",
       billingInterval: "monthly",
-      priceId: ""
+      priceId: "pri_01kwkkbazhrwpgttsa18j4g1pg"
     },
     yearly: {
       id: "yearly",
       title: "Pro Yearly",
       billingInterval: "yearly",
-      priceId: ""
+      priceId: "pri_01kwkkd4065nnr6b6ktsx3w2qa"
     },
     lifetime: {
       id: "lifetime",
       title: "Lifetime Early Bird",
       billingInterval: "lifetime",
-      priceId: ""
+      priceId: "pri_01kwkke4mdmre2xme8t4n5mya3"
     }
   };
 
@@ -56,6 +57,10 @@
     checkoutLoading = false;
     setButtonsDisabled(false);
     setStatus(message || "", isError);
+  }
+
+  function canCreateCheckoutSessionFromPage() {
+    return false;
   }
 
   function getCheckoutCustomer() {
@@ -147,6 +152,10 @@
   async function openCheckout(planId) {
     if (checkoutLoading) return;
     const plan = PLANS[planId] || PLANS.yearly;
+    if (!canCreateCheckoutSessionFromPage()) {
+      resetCheckoutState(EXTENSION_CHECKOUT_MESSAGE, true);
+      return;
+    }
     checkoutLoading = true;
     setButtonsDisabled(true);
     setStatus(`Creating a secure checkout for ${plan.title}...`);

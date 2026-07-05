@@ -129,6 +129,10 @@ test("billing and entitlement refresh call product-scoped Edge Functions", () =>
   assert.equal(entitlements.PRO_PRICES.monthly.price, "$3.99");
   assert.equal(entitlements.PRO_PRICES.yearly.price, "$24.99");
   assert.equal(entitlements.PRO_PRICES.lifetime.price, "$39.99");
+  assert.deepEqual(
+    Object.entries(productConfig.billingPriceIds).filter(([, priceId]) => !/^pri_/.test(String(priceId || ""))),
+    []
+  );
   assert.match(
     billing.createCheckoutSession.toString(),
     /\/functions\/v1\/product-create-checkout-session/
@@ -142,6 +146,8 @@ test("billing and entitlement refresh call product-scoped Edge Functions", () =>
   assert.equal(body.product_name, productConfig.productName);
   assert.equal(body.customer_email, "buyer@example.com");
   assert.equal(body.provider_id, "paddle");
+  assert.equal(body.price_id, productConfig.billingPriceIds.yearly);
+  assert.equal(body.provider_price_id, productConfig.billingPriceIds.yearly);
 
   assert.match(backgroundSource, /\/functions\/v1\/product-sync-subscription-status/);
   assert.match(contentSource, /\/functions\/v1\/product-sync-subscription-status/);

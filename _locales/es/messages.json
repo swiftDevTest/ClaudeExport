@@ -471,13 +471,13 @@
     "message": "Consejo"
   },
   "welcome_title": {
-    "message": "Convierte tus chats de IA en un espacio de trabajo de búsqueda fácil."
+    "message": "Exporta tus chats de IA localmente en segundos."
   },
   "welcome_kicker_hero": {
-    "message": "Comienza en tu espacio de IA"
+    "message": "Empieza con tu conversación de IA"
   },
   "welcome_lede": {
-    "message": "Abre Claude primero. ChatVault aparecerá allí para que puedas exportar, guardar o planificar tu primera conversación."
+    "message": "Abre $1 primero. $2 aparecerá allí para ayudarte a exportar tu primera conversación."
   },
   "welcome_rec_pill": {
     "message": "Recomendado"
@@ -486,10 +486,10 @@
     "message": "Exporta tu primer chat en segundos"
   },
   "welcome_open_gpt": {
-    "message": "Abrir ChatGPT"
+    "message": "Abrir $1"
   },
   "welcome_sub_gpt": {
-    "message": "Primer paso ideal: exportar chat actual"
+    "message": "Primer paso: exportar el chat actual"
   },
   "welcome_btn_claude": {
     "message": "Claude"
@@ -498,19 +498,19 @@
     "message": "Gemini"
   },
   "welcome_pin_wait": {
-    "message": "Fijar la extensión puede esperar. Lo importante es abrir una página de IA compatible donde ChatVault pueda aparecer."
+    "message": "Fijarlo puede esperar. Lo importante es abrir $1 para que $2 pueda aparecer."
   },
   "welcome_kicker_pin": {
     "message": "Para volver a encontrarla fácilmente"
   },
   "welcome_title_pin": {
-    "message": "Fija ChatVault cuando estés listo."
+    "message": "Fija $1 cuando estés listo."
   },
   "welcome_pin_desc": {
-    "message": "Chrome requiere realizar este paso manualmente. Haz clic en el ícono del rompecabezas, busca Claude Export y luego haz clic en el ícono de la chincheta (pin)."
+    "message": "Chrome requiere que este paso se haga manualmente. Haz clic en el icono de rompecabezas, busca $1 y luego haz clic en el icono de fijar."
   },
   "welcome_pin_status_init": {
-    "message": "Incluso si aún no está fijado, ChatVault funciona en las páginas de IA compatibles."
+    "message": "Si aún no está fijado, $1 seguirá funcionando en las páginas de $2."
   },
   "welcome_btn_check_pin": {
     "message": "Comprobar estado"
@@ -525,13 +525,13 @@
     "message": "Comprobar de nuevo"
   },
   "welcome_pin_success": {
-    "message": "Genial. ChatVault es visible en la barra de herramientas de tu Chrome."
+    "message": "Listo. $1 está visible en la barra de herramientas de Chrome."
   },
   "welcome_pin_failed": {
-    "message": "No está fijado aún. Usa el ícono de rompecabezas de Chrome y haz clic en el pin al lado de Claude Export."
+    "message": "Todavía no está fijado. Usa el icono de rompecabezas de Chrome en la barra de herramientas y haz clic en el pin junto a $1."
   },
   "welcome_privacy_footnote": {
-    "message": "ChatVault almacena títulos, enlaces, carpetas, marcadores y ajustes. No guarda prompts, respuestas, cookies de plataforma, ni tokens de acceso o actualización."
+    "message": "$1 solo guarda ajustes y cuotas gratuitas diarias. No guarda prompts, respuestas, cookies de la plataforma, tokens de acceso ni tokens de actualización."
   },
   "billing_benefit_pdf": {
     "message": "Exportación PDF, Docs, MD y más"
@@ -1248,13 +1248,13 @@
     "message": "Omitir guía"
   },
   "welcome_page_title": {
-    "message": "Bienvenido a Claude Export"
+    "message": "Bienvenido a $1"
   },
   "welcome_aria_open_platform": {
-    "message": "Abrir una plataforma de IA"
+    "message": "Abrir $1"
   },
   "welcome_aria_pin_chatvault": {
-    "message": "Fijar Claude Export"
+    "message": "Fijar $1"
   },
   "folder_empty_hint": {
     "message": "Arrastra los chats aquí"

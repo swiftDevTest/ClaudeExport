@@ -471,13 +471,13 @@
     "message": "提示"
   },
   "welcome_title": {
-    "message": "將您的 AI 對話變成可搜尋的工作區。"
+    "message": "本機匯出您的 AI 聊天，只需幾秒。"
   },
   "welcome_kicker_hero": {
-    "message": "在您的 AI 工作區中開始"
+    "message": "從您的 AI 對話開始"
   },
   "welcome_lede": {
-    "message": "請先開啟 Claude。ChatVault 會在那裡與您會合，以便您可以匯出、加入書籤或整理您的第一個對話。"
+    "message": "請先開啟 $1。$2 會在那裡出現，協助您匯出第一個對話。"
   },
   "welcome_rec_pill": {
     "message": "推薦"
@@ -486,10 +486,10 @@
     "message": "在數秒內匯出您的第一個對話"
   },
   "welcome_open_gpt": {
-    "message": "開啟 ChatGPT"
+    "message": "開啟 $1"
   },
   "welcome_sub_gpt": {
-    "message": "最佳第一步：匯出目前對話"
+    "message": "第一步：匯出目前聊天"
   },
   "welcome_btn_claude": {
     "message": "Claude"
@@ -498,19 +498,19 @@
     "message": "Gemini"
   },
   "welcome_pin_wait": {
-    "message": "固定的動作可以稍後進行。最重要的是開啟一個支援的 AI 頁面，讓 ChatVault 可以出現。"
+    "message": "釘選操作可以稍後進行。最重要的是先開啟 $1 頁面，讓 $2 可以出現。"
   },
   "welcome_kicker_pin": {
     "message": "然後讓它易於找到"
   },
   "welcome_title_pin": {
-    "message": "在準備好時固定 ChatVault。"
+    "message": "準備好後釘選 $1。"
   },
   "welcome_pin_desc": {
-    "message": "Chrome 要求手動完成此步驟。點選拼圖圖示，找到 Claude Export，然後點選固定圖示。"
+    "message": "Chrome 要求手動完成此步驟。點選拼圖圖示，找到 $1，然後點選釘選圖示。"
   },
   "welcome_pin_status_init": {
-    "message": "如果尚未固定，ChatVault 仍可在受支援的 AI 頁面上正常工作。"
+    "message": "如果尚未釘選，$1 仍可在 $2 頁面上正常運作。"
   },
   "welcome_btn_check_pin": {
     "message": "檢查固定狀態"
@@ -525,13 +525,13 @@
     "message": "重新檢查"
   },
   "welcome_pin_success": {
-    "message": "太棒了。ChatVault 在您的 Chrome 工具列中已可見。"
+    "message": "太好了。$1 已顯示在您的 Chrome 工具列中。"
   },
   "welcome_pin_failed": {
-    "message": "尚未固定。請使用工具列中的 Chrome 拼圖圖示，然後點選 Claude Export 旁的固定圖示。"
+    "message": "尚未釘選。請使用工具列中的 Chrome 拼圖圖示，然後點選 $1 旁邊的釘選圖示。"
   },
   "welcome_privacy_footnote": {
-    "message": "ChatVault 僅儲存標題、連結、資料夾、書籤和設定。它不會儲存提示詞、回覆、平台 Cookie、存取 Token 或重新整理 Token。"
+    "message": "$1 僅儲存設定和每日免費額度。它不會儲存提示詞、回覆、平台 Cookie、存取 Token 或更新 Token。"
   },
   "billing_benefit_pdf": {
     "message": "PDF、Docs、MD 等匯出"
@@ -1248,13 +1248,13 @@
     "message": "跳過指南"
   },
   "welcome_page_title": {
-    "message": "歡迎來到 Claude Export"
+    "message": "歡迎使用 $1"
   },
   "welcome_aria_open_platform": {
-    "message": "開啟一個 AI 平台"
+    "message": "開啟 $1"
   },
   "welcome_aria_pin_chatvault": {
-    "message": "固定 Claude Export"
+    "message": "釘選 $1"
   },
   "folder_empty_hint": {
     "message": "拖拽聊天記錄到這裡"

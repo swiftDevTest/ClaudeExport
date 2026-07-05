@@ -471,13 +471,13 @@
     "message": "팁"
   },
   "welcome_title": {
-    "message": "AI 채팅을 검색 가능한 워크스페이스로."
+    "message": "AI 채팅을 몇 초 만에 로컬로 내보내세요."
   },
   "welcome_kicker_hero": {
-    "message": "AI 워크스페이스 시작하기"
+    "message": "AI 대화에서 시작하기"
   },
   "welcome_lede": {
-    "message": "먼저 Claude를 열어주세요. ChatVault가 지원되는 AI 대화방에 자동으로 표시되어 첫 대화를 내보내거나 북마크하고 정리할 수 있게 도와줍니다."
+    "message": "먼저 $1을 여세요. $2가 그곳에 나타나 첫 대화를 내보낼 수 있게 도와줍니다."
   },
   "welcome_rec_pill": {
     "message": "추천"
@@ -486,10 +486,10 @@
     "message": "몇 초 만에 첫 채팅 내보내기"
   },
   "welcome_open_gpt": {
-    "message": "ChatGPT 열기"
+    "message": "$1 열기"
   },
   "welcome_sub_gpt": {
-    "message": "가장 추천하는 첫 단계: 현재 채팅 내보내기"
+    "message": "첫 단계: 현재 채팅 내보내기"
   },
   "welcome_btn_claude": {
     "message": "Claude"
@@ -498,19 +498,19 @@
     "message": "Gemini"
   },
   "welcome_pin_wait": {
-    "message": "고정은 나중에 하셔도 됩니다. 중요한 것은 ChatVault가 나타날 수 있도록 지원되는 AI 페이지를 여는 것입니다."
+    "message": "고정은 나중에 해도 됩니다. 중요한 것은 $2가 나타날 수 있도록 $1 페이지를 여는 것입니다."
   },
   "welcome_kicker_pin": {
     "message": "쉽게 다시 찾으려면"
   },
   "welcome_title_pin": {
-    "message": "준비가 되면 ChatVault를 고정하세요."
+    "message": "준비되면 $1을 고정하세요."
   },
   "welcome_pin_desc": {
-    "message": "Chrome 정책상 이 단계는 수동으로 진행해야 합니다. 툴바에서 퍼즐 아이콘을 클릭하고 Claude Export를 찾은 다음 고정 아이콘을 클릭하세요."
+    "message": "Chrome에서는 이 단계를 수동으로 해야 합니다. 퍼즐 아이콘을 클릭하고 $1을 찾은 다음 고정 아이콘을 클릭하세요."
   },
   "welcome_pin_status_init": {
-    "message": "아직 고정하지 않았더라도 ChatVault는 지원되는 AI 페이지에서 계속 작동합니다."
+    "message": "아직 고정하지 않아도 $1은 $2 페이지에서 계속 작동합니다."
   },
   "welcome_btn_check_pin": {
     "message": "고정 상태 확인"
@@ -525,13 +525,13 @@
     "message": "다시 확인"
   },
   "welcome_pin_success": {
-    "message": "좋습니다. Chrome 툴바에 ChatVault가 표시됩니다."
+    "message": "좋습니다. $1이 Chrome 툴바에 표시됩니다."
   },
   "welcome_pin_failed": {
-    "message": "아직 고정되지 않았습니다. Chrome 툴바의 퍼즐 아이콘을 클릭하고 Claude Export 옆의 고정 핀을 클릭해 주세요."
+    "message": "아직 고정되지 않았습니다. 툴바의 Chrome 퍼즐 아이콘을 사용한 다음 $1 옆의 고정을 클릭하세요."
   },
   "welcome_privacy_footnote": {
-    "message": "ChatVault는 제목, 링크, 폴더, 북마크, 설정만 저장합니다. 프롬프트, 응답, 플랫폼 쿠키, 액세스 토큰 또는 리프레시 토큰은 저장하지 않습니다."
+    "message": "$1은 설정과 일일 무료 할당량만 저장합니다. 프롬프트, 답변, 플랫폼 쿠키, 액세스 토큰 또는 갱신 토큰은 저장하지 않습니다."
   },
   "billing_benefit_pdf": {
     "message": "PDF, Docs, MD 등 내보내기"
@@ -1248,13 +1248,13 @@
     "message": "가이드 건너뛰기"
   },
   "welcome_page_title": {
-    "message": "Claude Export에 오신 것을 환영합니다"
+    "message": "$1에 오신 것을 환영합니다"
   },
   "welcome_aria_open_platform": {
-    "message": "AI 플랫폼 열기"
+    "message": "$1 열기"
   },
   "welcome_aria_pin_chatvault": {
-    "message": "Claude Export 고정"
+    "message": "$1 고정"
   },
   "folder_empty_hint": {
     "message": "여기로 대화 드래그"

@@ -471,13 +471,13 @@
     "message": "ヒント"
   },
   "welcome_title": {
-    "message": "AIチャットを検索可能なワークスペースに。"
+    "message": "AIチャットをローカルに数秒でエクスポート。"
   },
   "welcome_kicker_hero": {
-    "message": "AI ワークスペースを始める"
+    "message": "AIの会話から始める"
   },
   "welcome_lede": {
-    "message": "まず、ChatGPT、Claude、またはGeminiを開いてください。ChatVaultがそこに出現し、最初のチャットのエクスポート、ブックマーク、または整理ができるようになります。"
+    "message": "まず$1を開いてください。$2がそこで表示され、最初の会話をエクスポートできます。"
   },
   "welcome_rec_pill": {
     "message": "おすすめ"
@@ -486,7 +486,7 @@
     "message": "数秒で最初のチャットをエクスポート"
   },
   "welcome_open_gpt": {
-    "message": "ChatGPTを開く"
+    "message": "$1を開く"
   },
   "welcome_sub_gpt": {
     "message": "最初のステップ：現在のチャットをエクスポート"
@@ -498,19 +498,19 @@
     "message": "Gemini"
   },
   "welcome_pin_wait": {
-    "message": "ピン留めは後回しでも構いません。重要なのは、ChatVaultが表示される、対応するAIページを開くことです。"
+    "message": "ピン留めは後でかまいません。大切なのは、$2が表示される$1ページを開くことです。"
   },
   "welcome_kicker_pin": {
     "message": "見つけやすくするために"
   },
   "welcome_title_pin": {
-    "message": "準備ができたらChatVaultをピン留めします。"
+    "message": "準備ができたら$1をピン留めしてください。"
   },
   "welcome_pin_desc": {
-    "message": "Chromeの仕様により、この手順は手動で行う必要があります。パズルアイコンをクリックし、Claude Exportを見つけて、ピンのアイコンをクリックします。"
+    "message": "Chromeではこの手順を手動で行う必要があります。パズルアイコンをクリックし、$1を見つけて、ピンのアイコンをクリックしてください。"
   },
   "welcome_pin_status_init": {
-    "message": "まだピン留めしていなくても、対応するAIページ上でChatVaultは動作します。"
+    "message": "まだピン留めされていなくても、$1は$2ページで動作します。"
   },
   "welcome_btn_check_pin": {
     "message": "ピン留め状態を確認"
@@ -525,13 +525,13 @@
     "message": "もう一度確認"
   },
   "welcome_pin_success": {
-    "message": "確認できました。ChromeツールバーにChatVaultが表示されています。"
+    "message": "完了です。$1がChromeツールバーに表示されています。"
   },
   "welcome_pin_failed": {
-    "message": "まだピン留めされていません。ツールバーのパズルアイコンをクリックし、Claude Exportの横にあるピンをクリックしてください。"
+    "message": "まだピン留めされていません。ツールバーのChromeパズルアイコンを使い、$1の横にあるピンをクリックしてください。"
   },
   "welcome_privacy_footnote": {
-    "message": "ChatVaultはタイトル、リンク、フォルダ、ブックマーク、および設定を保存します。プロンプト、回答、プラットフォームのクッキー、アクセストークン、またはリフレッシュトークンは保存しません。"
+    "message": "$1は設定と1日の無料利用枠のみを保存します。プロンプト、返信、プラットフォームCookie、アクセストークン、更新トークンは保存しません。"
   },
   "billing_benefit_pdf": {
     "message": "PDF、Docs、MD などの書き出し"
@@ -1248,13 +1248,13 @@
     "message": "ガイドをスキップ"
   },
   "welcome_page_title": {
-    "message": "Claude Exportへようこそ"
+    "message": "$1へようこそ"
   },
   "welcome_aria_open_platform": {
-    "message": "AIプラットフォームを開く"
+    "message": "$1を開く"
   },
   "welcome_aria_pin_chatvault": {
-    "message": "Claude Exportを固定"
+    "message": "$1をピン留め"
   },
   "folder_empty_hint": {
     "message": "チャットをここにドラッグ"

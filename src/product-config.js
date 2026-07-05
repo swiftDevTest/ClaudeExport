@@ -28,9 +28,9 @@
       border: "#e8c5b0"
     },
     billingPriceIds: {
-      monthly: "",
-      yearly: "",
-      lifetime: ""
+      monthly: "pri_01kwkkbazhrwpgttsa18j4g1pg",
+      yearly: "pri_01kwkkd4065nnr6b6ktsx3w2qa",
+      lifetime: "pri_01kwkke4mdmre2xme8t4n5mya3"
     }
   };
 

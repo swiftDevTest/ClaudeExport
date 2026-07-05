@@ -18,9 +18,6 @@ import {
 } from './utils.js';
 
 import { compareElementsInDocument, pushDistinctDocumentElement } from './platforms/shared.js';
-import { parseChatGPTMessages as parseChatGPTMessagesFromPlatform } from './platforms/chatgpt/extractor.js';
-import { parseClaudeMessages as parseClaudeMessagesFromPlatform } from './platforms/claude/extractor.js';
-import { parseGeminiMessages as parseGeminiMessagesFromPlatform } from './platforms/gemini/extractor.js';
 import { parseMessagesForPlatform } from './platforms/registry.js';
 import { createExportDocument, normalizeExportBlocks, validateExportDocument } from './document.js';
 
@@ -60,17 +57,17 @@ function resetSelectionState() {
 
 
 function parseChatGPTMessages() {
-  return parseChatGPTMessagesFromPlatform();
+  return parseMessagesForPlatform("chatgpt");
 }
 
 
 function parseClaudeMessages() {
-  return parseClaudeMessagesFromPlatform();
+  return parseMessagesForPlatform("claude");
 }
 
 
 function parseGeminiMessages() {
-  return parseGeminiMessagesFromPlatform();
+  return parseMessagesForPlatform("gemini");
 }
 
 

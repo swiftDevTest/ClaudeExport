@@ -111,6 +111,18 @@ function applyPlatformFallbacks() {
   }
 }
 
+function isolatePlatformModule() {
+  const platformPath = join(TARGET_EXPORT_DIR, "platform.js");
+  if (!existsSync(platformPath)) return;
+
+  const source = readFileSync(platformPath, "utf8")
+    .replace(/\nimport \{ parseChatGPTMessages as parseChatGPTMessagesFromPlatform \} from '\.\/platforms\/chatgpt\/extractor\.js';\nimport \{ parseClaudeMessages as parseClaudeMessagesFromPlatform \} from '\.\/platforms\/claude\/extractor\.js';\nimport \{ parseGeminiMessages as parseGeminiMessagesFromPlatform \} from '\.\/platforms\/gemini\/extractor\.js';/g, "")
+    .replace(/function parseChatGPTMessages\(\) {\n  return parseChatGPTMessagesFromPlatform\(\);\n}/g, 'function parseChatGPTMessages() {\n  return parseMessagesForPlatform("chatgpt");\n}')
+    .replace(/function parseClaudeMessages\(\) {\n  return parseClaudeMessagesFromPlatform\(\);\n}/g, 'function parseClaudeMessages() {\n  return parseMessagesForPlatform("claude");\n}')
+    .replace(/function parseGeminiMessages\(\) {\n  return parseGeminiMessagesFromPlatform\(\);\n}/g, 'function parseGeminiMessages() {\n  return parseMessagesForPlatform("gemini");\n}');
+  writeFileSync(platformPath, source, "utf8");
+}
+
 function updateVersion() {
   const sharePkg = JSON.parse(readFileSync(join(SHARE_ROOT, "package.json"), "utf8"));
   const localPkgPath = join(REPO_ROOT, "package.json");
@@ -153,6 +165,7 @@ function main() {
   // 2. 恢复当前产品的品牌 fallback，并生成隔离平台的 registry.js
   applyPlatformFallbacks();
   generateRegistry();
+  isolatePlatformModule();
 
   // 3. 更新本地 package.json 依赖版本与 supabase-config
   updateVersion();

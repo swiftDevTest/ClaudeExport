@@ -471,13 +471,13 @@
     "message": "Astuce"
   },
   "welcome_title": {
-    "message": "Transformez vos discussions IA en un espace de travail consultable."
+    "message": "Exportez vos chats IA localement, en quelques secondes."
   },
   "welcome_kicker_hero": {
-    "message": "Démarrez dans votre espace IA"
+    "message": "Commencez avec votre conversation IA"
   },
   "welcome_lede": {
-    "message": "Ouvrez d'abord Claude. ChatVault s'y affichera afin que vous puissiez exporter, ajouter aux favoris ou organiser votre première conversation."
+    "message": "Ouvrez d'abord $1. $2 y apparaîtra pour vous aider à exporter votre première conversation."
   },
   "welcome_rec_pill": {
     "message": "Recommandé"
@@ -486,10 +486,10 @@
     "message": "Exportez votre premier chat en quelques secondes"
   },
   "welcome_open_gpt": {
-    "message": "Ouvrir ChatGPT"
+    "message": "Ouvrir $1"
   },
   "welcome_sub_gpt": {
-    "message": "Première étape idéale : exporter la discussion actuelle"
+    "message": "Première étape : exporter le chat actuel"
   },
   "welcome_btn_claude": {
     "message": "Claude"
@@ -498,19 +498,19 @@
     "message": "Gemini"
   },
   "welcome_pin_wait": {
-    "message": "L'épinglage peut attendre. L'important est d'ouvrir une page d'IA prise en charge où ChatVault peut s'afficher."
+    "message": "L'épinglage peut attendre. L'important est d'ouvrir $1 pour que $2 puisse apparaître."
   },
   "welcome_kicker_pin": {
     "message": "Pour le retrouver facilement"
   },
   "welcome_title_pin": {
-    "message": "Épinglez ChatVault quand vous le souhaitez."
+    "message": "Épinglez $1 quand vous êtes prêt."
   },
   "welcome_pin_desc": {
-    "message": "Les politiques de Chrome exigent que cette étape soit effectuée manuellement. Cliquez sur l'icône de puzzle, recherchez Claude Export, puis cliquez sur l'icône d'épingle."
+    "message": "Chrome exige cette étape manuellement. Cliquez sur l'icône puzzle, trouvez $1, puis cliquez sur l'icône d'épinglage."
   },
   "welcome_pin_status_init": {
-    "message": "Même s'il n'est pas encore épinglé, ChatVault fonctionne sur les pages d'IA prises en charge."
+    "message": "S'il n'est pas encore épinglé, $1 fonctionne toujours sur les pages $2."
   },
   "welcome_btn_check_pin": {
     "message": "Vérifier le statut"
@@ -525,13 +525,13 @@
     "message": "Vérifier à nouveau"
   },
   "welcome_pin_success": {
-    "message": "Super. ChatVault est désormais visible dans votre barre d'outils Chrome."
+    "message": "Parfait. $1 est visible dans votre barre d'outils Chrome."
   },
   "welcome_pin_failed": {
-    "message": "Pas encore épinglé. Utilisez l'icône de puzzle de Chrome dans la barre d'outils, puis cliquez sur l'épingle à côté de Claude Export."
+    "message": "Pas encore épinglé. Utilisez l'icône puzzle de Chrome dans la barre d'outils, puis cliquez sur l'épingle à côté de $1."
   },
   "welcome_privacy_footnote": {
-    "message": "ChatVault stocke uniquement les titres, les liens, les dossiers, les favoris et les paramètres. Il ne stocke pas les invites, les réponses, les cookies de plateforme, ni les jetons d'accès ou d'actualisation."
+    "message": "$1 stocke uniquement les paramètres et les quotas gratuits quotidiens. Il ne stocke pas les prompts, réponses, cookies de plateforme, jetons d'accès ni jetons d'actualisation."
   },
   "billing_benefit_pdf": {
     "message": "Export PDF, Docs, MD et plus"
@@ -1248,13 +1248,13 @@
     "message": "Ignorer le guide"
   },
   "welcome_page_title": {
-    "message": "Bienvenue dans Claude Export"
+    "message": "Bienvenue dans $1"
   },
   "welcome_aria_open_platform": {
-    "message": "Ouvrir une plateforme IA"
+    "message": "Ouvrir $1"
   },
   "welcome_aria_pin_chatvault": {
-    "message": "Épingler Claude Export"
+    "message": "Épingler $1"
   },
   "folder_empty_hint": {
     "message": "Faites glisser les chats ici"

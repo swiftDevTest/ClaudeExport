@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title data-i18n="welcome_page_title">Welcome to Claude Export</title>
+    <title>Welcome to Claude Export</title>
     <link rel="stylesheet" href="src/welcome.css">
     <script src="src/modules/i18n.js" defer></script>
     <script src="src/product-config.js" defer></script>
@@ -21,34 +21,24 @@
           <div class="cv-hero-copy">
             <p class="cv-kicker" data-i18n="welcome_kicker_hero">Start with your AI conversation</p>
             <h1 id="welcome-title" data-i18n="welcome_title">Export your AI chats locally, in seconds.</h1>
-            <p class="cv-lede" data-i18n="welcome_lede">Open Claude first. Claude Export will meet you there so you can export your first conversation.</p>
+            <p class="cv-lede" data-role="welcome-lede">Open Claude first. Claude Export will meet you there so you can export your first conversation.</p>
           </div>
 
-          <div class="cv-activation-panel" aria-label="Open an AI platform" data-i18n-aria-label="welcome_aria_open_platform">
+          <div class="cv-activation-panel" aria-label="Open Claude" data-role="activation-panel">
             <div class="cv-activation-header">
               <span class="cv-step-pill" data-i18n="welcome_rec_pill">Recommended</span>
               <span class="cv-step-copy" data-i18n="welcome_rec_copy">Export your first chat in seconds</span>
             </div>
-            <button class="cv-primary-platform" type="button" data-platform="chatgpt" data-intent="export">
+            <button class="cv-primary-platform" type="button" data-role="primary-platform" data-platform="claude" data-intent="export">
               <span class="cv-primary-icon">
-                <img src="images/platform-chatgpt.png" alt="" aria-hidden="true">
+                <img data-role="platform-icon" src="images/platform-claude.svg" alt="" aria-hidden="true">
               </span>
               <span>
-                <span class="cv-platform-main" data-i18n="welcome_open_gpt">Open ChatGPT</span>
-                <span class="cv-platform-sub" data-i18n="welcome_sub_gpt">Best first step: export current chat</span>
+                <span class="cv-platform-main" data-role="platform-main">Open Claude</span>
+                <span class="cv-platform-sub" data-role="platform-sub">Best first step: export current chat</span>
               </span>
             </button>
-            <div class="cv-secondary-platforms">
-              <button class="cv-mini-platform" type="button" data-platform="claude" data-intent="organize">
-                <img src="images/platform-claude.svg" alt="" aria-hidden="true">
-                <span data-i18n="welcome_btn_claude">Claude</span>
-              </button>
-              <button class="cv-mini-platform" type="button" data-platform="gemini" data-intent="export">
-                <img src="images/platform-gemini.svg" alt="" aria-hidden="true">
-                <span data-i18n="welcome_btn_gemini">Gemini</span>
-              </button>
-            </div>
-            <div class="cv-activation-note" data-i18n="welcome_pin_wait">Pinning can wait. The important part is opening a Claude page where Claude Export can appear.</div>
+            <div class="cv-activation-note" data-role="activation-note">Pinning can wait. The important part is opening Claude where Claude Export can appear.</div>
           </div>
         </div>
       </section>
@@ -56,10 +46,10 @@
       <section class="cv-start-panel" aria-labelledby="start-title">
         <div class="cv-section-heading">
           <p class="cv-kicker" data-i18n="welcome_kicker_pin">Then make it easy to find</p>
-          <h2 id="start-title" data-i18n="welcome_title_pin">Pin Claude Export when you are ready.</h2>
+          <h2 id="start-title" data-role="title-pin">Pin Claude Export when you are ready.</h2>
         </div>
 
-        <div class="cv-pin-row" aria-label="Pin Claude Export" data-i18n-aria-label="welcome_aria_pin_chatvault">
+        <div class="cv-pin-row" aria-label="Pin Claude Export" data-role="pin-row">
           <div class="cv-pin-steps">
             <span class="cv-puzzle-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24">
@@ -74,13 +64,13 @@
             </span>
           </div>
           <div class="cv-pin-copy">
-            <p data-i18n="welcome_pin_desc">Chrome requires this step to be done manually. Click the puzzle icon, find Claude Export, then click the pin icon.</p>
-            <div class="cv-pin-status" data-role="pin-status" data-i18n="welcome_pin_status_init">If it is not pinned yet, Claude Export still works on Claude pages.</div>
+            <p data-role="pin-desc">Chrome requires this step to be done manually. Click the puzzle icon, find Claude Export, then click the pin icon.</p>
+            <div class="cv-pin-status" data-role="pin-status">If it is not pinned yet, Claude Export still works on Claude pages.</div>
           </div>
           <button class="cv-secondary-button" type="button" data-action="confirm-pin" data-i18n="welcome_btn_check_pin">Check pin status</button>
         </div>
 
-        <div class="cv-privacy-note" data-i18n="welcome_privacy_footnote">
+        <div class="cv-privacy-note" data-role="privacy-note">
           Claude Export stores settings and daily free quotas only. It does not store prompts, replies, platform cookies, access tokens, or refresh tokens.
         </div>
       </section>

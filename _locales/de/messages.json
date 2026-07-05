@@ -471,13 +471,13 @@
     "message": "Tipp"
   },
   "welcome_title": {
-    "message": "Machen Sie Ihre AI-Chats zu einem durchsuchbaren Arbeitsbereich."
+    "message": "Exportiere deine KI-Chats lokal in Sekunden."
   },
   "welcome_kicker_hero": {
-    "message": "Starten Sie in Ihrem AI-Arbeitsbereich"
+    "message": "Starte mit deiner KI-Unterhaltung"
   },
   "welcome_lede": {
-    "message": "Öffnen Sie zuerst Claude. ChatVault wird dort erscheinen, damit Sie Ihre erste Unterhaltung exportieren, speichern oder organisieren können."
+    "message": "Öffne zuerst $1. $2 erscheint dort, damit du deine erste Unterhaltung exportieren kannst."
   },
   "welcome_rec_pill": {
     "message": "Empfohlen"
@@ -486,10 +486,10 @@
     "message": "Exportieren Sie Ihren ersten Chat in Sekunden"
   },
   "welcome_open_gpt": {
-    "message": "ChatGPT öffnen"
+    "message": "$1 öffnen"
   },
   "welcome_sub_gpt": {
-    "message": "Bester erster Schritt: Aktuellen Chat exportieren"
+    "message": "Erster Schritt: aktuellen Chat exportieren"
   },
   "welcome_btn_claude": {
     "message": "Claude"
@@ -498,19 +498,19 @@
     "message": "Gemini"
   },
   "welcome_pin_wait": {
-    "message": "Das Anheften kann warten. Wichtig ist nur, eine unterstützte AI-Seite zu öffnen, auf der ChatVault erscheinen kann."
+    "message": "Das Anheften kann warten. Wichtig ist, $1 zu öffnen, damit $2 dort erscheinen kann."
   },
   "welcome_kicker_pin": {
     "message": "Um es leicht wiederzufinden"
   },
   "welcome_title_pin": {
-    "message": "Heften Sie ChatVault an, wenn Sie bereit sind."
+    "message": "Hefte $1 an, wenn du bereit bist."
   },
   "welcome_pin_desc": {
-    "message": "Chrome erfordert, dass dieser Schritt manuell durchgeführt wird. Klicken Sie auf das Puzzle-Symbol, suchen Sie Claude Export und klicken Sie dann auf das Stecknadel-Symbol."
+    "message": "Chrome verlangt diesen Schritt manuell. Klicke auf das Puzzle-Symbol, suche $1 und klicke dann auf das Pin-Symbol."
   },
   "welcome_pin_status_init": {
-    "message": "Auch wenn es noch nicht angeheftet ist, funktioniert ChatVault auf unterstützten AI-Seiten."
+    "message": "Wenn es noch nicht angeheftet ist, funktioniert $1 weiterhin auf $2-Seiten."
   },
   "welcome_btn_check_pin": {
     "message": "Anheft-Status prüfen"
@@ -525,13 +525,13 @@
     "message": "Erneut prüfen"
   },
   "welcome_pin_success": {
-    "message": "Hervorragend. ChatVault ist jetzt in Ihrer Chrome-Symbolleiste sichtbar."
+    "message": "Sehr gut. $1 ist in deiner Chrome-Symbolleiste sichtbar."
   },
   "welcome_pin_failed": {
-    "message": "Noch nicht angeheftet. Nutzen Sie das Puzzle-Symbol von Chrome in der Leiste und klicken Sie auf die Nadel neben Claude Export."
+    "message": "Noch nicht angeheftet. Verwende das Chrome-Puzzle-Symbol in der Symbolleiste und klicke dann auf den Pin neben $1."
   },
   "welcome_privacy_footnote": {
-    "message": "ChatVault speichert Titel, Links, Ordner, Lesezeichen und Einstellungen. Es speichert keine Prompts, Antworten, Plattform-Cookies, Zugangs- oder Aktualisierungstoken."
+    "message": "$1 speichert nur Einstellungen und tägliche kostenlose Kontingente. Prompts, Antworten, Plattform-Cookies, Zugriffstokens oder Aktualisierungstokens werden nicht gespeichert."
   },
   "billing_benefit_pdf": {
     "message": "PDF, Docs, MD und mehr Export"
@@ -1248,13 +1248,13 @@
     "message": "Anleitung überspringen"
   },
   "welcome_page_title": {
-    "message": "Willkommen bei Claude Export"
+    "message": "Willkommen bei $1"
   },
   "welcome_aria_open_platform": {
-    "message": "AI-Plattform öffnen"
+    "message": "$1 öffnen"
   },
   "welcome_aria_pin_chatvault": {
-    "message": "Claude Export anheften"
+    "message": "$1 anheften"
   },
   "folder_empty_hint": {
     "message": "Chats hierher ziehen"

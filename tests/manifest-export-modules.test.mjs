@@ -47,6 +47,21 @@ function collectRuntimeModuleGraph() {
   return Array.from(seen).sort();
 }
 
+function getExposedExtractorResources(manifest) {
+  return (manifest.web_accessible_resources || [])
+    .flatMap((entry) => entry.resources || [])
+    .filter((resource) => /^src\/modules\/export\/platforms\/[^/]+\/extractor\.js$/.test(resource))
+    .sort();
+}
+
+function getRegistryExtractorImports() {
+  const registrySource = readText("../src/modules/export/platforms/registry.js");
+  return Array.from(
+    registrySource.matchAll(/from\s+["']\.\/([^/]+)\/extractor\.js["']/g),
+    (match) => `src/modules/export/platforms/${match[1]}/extractor.js`
+  ).sort();
+}
+
 test("manifest exposes every export module loaded at runtime", () => {
   const manifest = readJson("../manifest.json");
   const runtimeModules = collectRuntimeModuleGraph();
@@ -59,4 +74,12 @@ test("manifest exposes every export module loaded at runtime", () => {
     runtimeModules.filter((modulePath) => !exposedResources.has(modulePath)),
     []
   );
+});
+
+test("manifest exposes only the registered platform extractor", () => {
+  const manifest = readJson("../manifest.json");
+  const registryExtractors = getRegistryExtractorImports();
+
+  assert.notEqual(registryExtractors.length, 0, "expected registry.js to import a platform extractor");
+  assert.deepEqual(getExposedExtractorResources(manifest), registryExtractors);
 });

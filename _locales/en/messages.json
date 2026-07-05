@@ -477,7 +477,7 @@
     "message": "Start with your AI conversation"
   },
   "welcome_lede": {
-    "message": "Open Claude first. Claude Export will meet you there so you can export your first conversation."
+    "message": "Open $1 first. $2 will meet you there so you can export your first conversation."
   },
   "welcome_rec_pill": {
     "message": "Recommended"
@@ -486,7 +486,7 @@
     "message": "Export your first chat in seconds"
   },
   "welcome_open_gpt": {
-    "message": "Open ChatGPT"
+    "message": "Open $1"
   },
   "welcome_sub_gpt": {
     "message": "Best first step: export current chat"
@@ -498,19 +498,19 @@
     "message": "Gemini"
   },
   "welcome_pin_wait": {
-    "message": "Pinning can wait. The important part is opening a supported AI page where Claude Export can appear."
+    "message": "Pinning can wait. The important part is opening $1 where $2 can appear."
   },
   "welcome_kicker_pin": {
     "message": "Then make it easy to find"
   },
   "welcome_title_pin": {
-    "message": "Pin Claude Export when you are ready."
+    "message": "Pin $1 when you are ready."
   },
   "welcome_pin_desc": {
-    "message": "Chrome requires this step to be done manually. Click the puzzle icon, find Claude Export, then click the pin icon."
+    "message": "Chrome requires this step to be done manually. Click the puzzle icon, find $1, then click the pin icon."
   },
   "welcome_pin_status_init": {
-    "message": "If it is not pinned yet, Claude Export still works on supported AI pages."
+    "message": "If it is not pinned yet, $1 still works on $2 pages."
   },
   "welcome_btn_check_pin": {
     "message": "Check pin status"
@@ -525,13 +525,13 @@
     "message": "Check again"
   },
   "welcome_pin_success": {
-    "message": "Nice. Claude Export is visible in your Chrome toolbar."
+    "message": "Nice. $1 is visible in your Chrome toolbar."
   },
   "welcome_pin_failed": {
-    "message": "Not pinned yet. Use Chrome's puzzle icon in the toolbar, then click the pin next to Claude Export."
+    "message": "Not pinned yet. Use Chrome's puzzle icon in the toolbar, then click the pin next to $1."
   },
   "welcome_privacy_footnote": {
-    "message": "Claude Export stores settings and daily free quotas only. It does not store prompts, replies, platform cookies, access tokens, or refresh tokens."
+    "message": "$1 stores settings and daily free quotas only. It does not store prompts, replies, platform cookies, access tokens, or refresh tokens."
   },
   "billing_benefit_pdf": {
     "message": "PDF, Docs, MD and More export"
@@ -1248,13 +1248,13 @@
     "message": "Skip Guide"
   },
   "welcome_page_title": {
-    "message": "Welcome to Claude Export"
+    "message": "Welcome to $1"
   },
   "welcome_aria_open_platform": {
-    "message": "Open an AI platform"
+    "message": "Open $1"
   },
   "welcome_aria_pin_chatvault": {
-    "message": "Pin Claude Export"
+    "message": "Pin $1"
   },
   "folder_empty_hint": {
     "message": "Drag chats here"
