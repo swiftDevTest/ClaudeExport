@@ -1,19 +1,19 @@
-AI Chat Export é uma ferramenta de exportação de conversas de IA com foco em privacidade, execução local no navegador e saída com qualidade de relatório. Ela transforma conversas do ChatGPT, Claude e Gemini em arquivos locais como PDF, Docs, MD e mais para edição, compartilhamento, arquivamento e entrega.
+O AI Chat Exporter - Long-Context Edition é uma ferramenta de exportação de chat de IA que prioriza a privacidade e é executada localmente no seu navegador. Ele converte suas conversas com a plataforma de assistente de IA de longo contexto em arquivos locais nos formatos PDF, Docs, MD and More para edição, compartilhamento, arquivamento e entrega.
 
-Principais recursos:
-1. Conversão local e privada: A geração de arquivos acontece no seu navegador. O conteúdo das mensagens não é enviado aos servidores da ChatVault nem a um serviço remoto de conversão, ajudando a proteger informações de trabalho, pesquisa e conteúdo pessoal.
-2. Formatação com qualidade de relatório: Arquivos gerados usam layouts bem acabados com hierarquia de títulos, blocos de código, tabelas, citações, fórmulas matemáticas, imagens e temas profissionais para fluxos acadêmicos, corporativos e de arquivamento.
-3. Modo de relatório AI-only: Filtre as perguntas do usuário e combine respostas consecutivas da IA em um relatório limpo com sumário automático. Transforme uma conversa em tutorial, plano técnico, resumo de pesquisa ou documento de síntese.
-4. Recibo de exportação e prova de arquivamento: Crie um recibo de exportação com horário da exportação, URL de origem, nome da plataforma e checksum SHA-256 do arquivo para pesquisa, auditoria, conformidade ou registros de trabalho.
-5. Exportação de código para desenvolvedores: Indexe automaticamente os blocos de código da conversa e salve vários trechos como arquivos específicos de linguagem em um pacote para download.
+Destaques principais:
+1. Conversão local privada: A geração de arquivos ocorre inteiramente no seu navegador. Os corpos das mensagens não são enviados para servidores ou serviços de conversão remotos, protegendo o trabalho confidencial, pesquisas e a privacidade pessoal.
+2. Layouts com qualidade de relatório: Os arquivos gerados utilizam designs de documentos polidos com hierarquia correta de títulos, blocos de código, tabelas, citações, fórmulas matemáticas, imagens e temas profissionais para fluxos de trabalho acadêmicos e comerciais.
+3. Modo de relatório apenas com respostas da IA: Filtre as perguntas do usuário e reúna apenas as respostas consecutivas da IA em um relatório limpo com sumário gerado automaticamente.
+4. Comprovante de arquivamento e verificação: Cria um recibo de exportação contendo a data/hora, URL de origem, nome da plataforma e soma de verificação SHA-256 para auditorias e conformidade.
+5. Exportação de código para desenvolvedores: Indexa automaticamente todos os blocos de código na conversa e salva múltiplos trechos de código em arquivos de linguagem específica num pacote baixável.
 
-Como usar:
-- Instale a extensão e abra qualquer conversa do ChatGPT, Claude ou Gemini.
-- Um botão leve de Export aparecerá no canto inferior direito da página.
-- Escolha um tipo de saída como PDF, Docs, MD e mais.
+Instruções de uso:
+- Instale a extensão e abra qualquer página de conversa na plataforma de longo contexto compatível.
+- Um botão Export leve aparecerá no canto inferior direito da página.
+- Escolha o tipo de saída: PDF, Docs, MD and More.
 - Selecione o intervalo de exportação e o tema, depois gere e baixe o arquivo localmente.
 
-AI Chat Export foi criado para relatórios, notas de pesquisa, transferência de projetos, arquivos de código, entregas para clientes, materiais de estudo e backups pessoais que precisam continuar legíveis e portáteis.
+O AI Chat Exporter - Long-Context Edition é projetado para relatórios, notas de pesquisa, entregas de projetos, arquivos de código e backups pessoais que devem permanecer legíveis e portáteis.
 
 Suporte:
-Para dúvidas, feedback ou solicitações de suporte, entre em contato pelo e-mail chatvaultaisupport@gmail.com.
+Para dúvidas, comentários ou solicitações de suporte, entre em contato em chatvaultaisupport@gmail.com.

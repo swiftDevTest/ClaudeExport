@@ -1,19 +1,19 @@
-AI Chat Export est un outil d'exportation de conversations IA axé sur la confidentialité, exécuté localement dans le navigateur et conçu pour produire des documents de qualité professionnelle. Il transforme les conversations ChatGPT, Claude et Gemini en fichiers locaux comme PDF, Docs, MD et plus pour l'édition, le partage, l'archivage et la transmission.
+AI Chat Exporter - Long-Context Edition est un outil d'exportation de chat IA respectueux de la vie privée et exécuté localement dans votre navigateur. Il convertit vos conversations avec la plateforme d'assistant IA à contexte large en fichiers locaux PDF, Docs, MD and More pour l'édition, le partage, l'archivage et la livraison.
 
-Principales fonctionnalités :
-1. Conversion privée et locale : La génération des fichiers se fait dans votre navigateur. Le contenu des messages n'est pas envoyé aux serveurs ChatVault ni à un service distant de conversion, ce qui aide à protéger les informations professionnelles, les travaux de recherche et les contenus personnels.
-2. Mise en page de qualité rapport : Les fichiers générés utilisent des mises en page soignées avec hiérarchie de titres, blocs de code, tableaux, citations, formules mathématiques, images et thèmes professionnels pour les usages académiques, professionnels et d'archivage.
-3. Mode rapport AI-only : Filtrez les questions de l'utilisateur et combinez les réponses consécutives de l'IA dans un rapport clair avec table des matières automatique. Transformez une conversation en tutoriel, plan technique, note de recherche ou document de synthèse.
-4. Reçu d'exportation et preuve d'archivage : Créez un reçu d'exportation avec l'heure d'exportation, l'URL source, le nom de la plateforme et la somme de contrôle SHA-256 du fichier pour la recherche, l'audit, la conformité ou les dossiers de travail.
-5. Exportation de code pour les développeurs : Indexez automatiquement les blocs de code de la conversation et enregistrez plusieurs extraits sous forme de fichiers propres à chaque langage dans un paquet téléchargeable.
+Points clés :
+1. Conversion locale privée : La génération de fichiers se fait entièrement dans votre navigateur. Les corps des messages ne sont pas téléchargés sur des serveurs ou sur un service de conversion à distance, protégeant le travail confidentiel, la recherche et la vie privée.
+2. Formatage de qualité rapport : Les fichiers générés utilisent des mises en page de documents soignées avec hiérarchie des titres, blocs de code, tableaux, citations, formules mathématiques, images et thèmes professionnels.
+3. Mode rapport réservé à l'IA : Filtrez les questions de l'utilisateur et combinez les réponses consécutives de l'IA en un rapport propre avec une table des matières automatique.
+4. Reçu d'exportation et preuve d'archivage : Créez un reçu d'exportation contenant l'heure d'exportation, l'URL source, le nom de la plateforme et la somme de contrôle SHA-256 du fichier pour vos dossiers.
+5. Exportation de code pour développeurs : Indexez automatiquement tous les blocs de code de la conversation et enregistrez plusieurs extraits de code sous forme de fichiers spécifiques au langage dans un package téléchargeable.
 
 Mode d'emploi :
-- Installez l'extension et ouvrez une conversation ChatGPT, Claude ou Gemini.
-- Un bouton léger Export apparaît dans le coin inférieur droit de la page.
-- Choisissez un type de sortie comme PDF, Docs, MD et plus.
-- Sélectionnez la portée de l'exportation et le thème, puis générez et téléchargez le fichier localement.
+- Installez l'extension et ouvrez n'importe quelle page de conversation sur la plateforme à contexte large prise en charge.
+- Un bouton Export léger apparaît dans le coin inférieur droit de la page.
+- Choisissez un type de sortie : PDF, Docs, MD and More.
+- Sélectionnez la plage d'exportation et le thème, puis générez et téléchargez le fichier localement.
 
-AI Chat Export est conçu pour les rapports, notes de recherche, transmissions de projet, archives de code, livrables clients, supports d'étude et sauvegardes personnelles qui doivent rester lisibles et portables.
+AI Chat Exporter - Long-Context Edition est conçu pour les rapports, les notes de recherche, les livrables de projets, les archives de code et les sauvegardes personnelles qui doivent rester lisibles et portables.
 
-Assistance :
-Pour toute question, suggestion ou demande d'assistance, contactez chatvaultaisupport@gmail.com.
+Support :
+Pour toute question, commentaire ou demande de support, contactez-nous à chatvaultaisupport@gmail.com.

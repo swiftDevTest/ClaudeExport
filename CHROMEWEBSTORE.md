@@ -1,8 +1,8 @@
-# Chrome Web Store 上架清单 — ChatVault Exporter
+# Chrome Web Store 上架清单 — Claude Exporter
 
-> 最后更新日期：2026-06-25
+> 最后更新日期：2026-07-05
 
-该文档是 ChatVault Exporter 上架 Chrome Web Store（CWS）的元数据与配置指南，开发者可直接复制相应内容填入 Chrome 开发者控制台（Chrome Developer Dashboard）。
+该文档是 Claude Exporter 上架 Chrome Web Store（CWS）的元数据与配置指南，开发者可直接复制相应内容填入 Chrome 开发者控制台（Chrome Developer Dashboard）。
 
 ---
 
@@ -10,15 +10,15 @@
 
 ### 扩展名称 (Extension Name)
 <!-- 必须与 manifest.json 中的 name 保持一致。最多 75 个字符。 -->
-AI Chat Exporter - Local ChatGPT Claude Gemini to PDF, Docs, MD and More
+Claude Exporter - Local Chat PDF, Docs, Markdown & JSON
 
 ### 简短描述 (Short Description)
 <!-- 最多 132 个字符。显示在搜索结果中。 -->
-本地将 ChatGPT、Claude、Gemini 对话导出为 PDF、Docs、MD 等，保留清晰排版与浏览器内处理。
+本地将 Claude 对话导出为 PDF、Docs、MD 等，保留清晰排版与浏览器内处理。
 
 ### 详细描述 (Detailed Description)
 <!-- 最多 16,000 个字符。 -->
-ChatVault Exporter 是一款隐私优先、完全运行在浏览器本地的 AI 聊天导出工具。支持将 ChatGPT、Claude 和 Gemini 对话转换为适合编辑、分享、归档和交付的 PDF、Docs、MD 等本地文件。
+Claude Exporter 是一款隐私优先、完全运行在浏览器本地的 Claude 聊天导出工具。支持将 Claude 对话转换为适合编辑、分享、归档和交付的 PDF、Docs、MD、图片、文本及 JSON 等本地 file。
 
 主要功能亮点：
 1. 【隐私安全，本地转换】所有文件的生成和转换过程 100% 在您的浏览器本地完成，聊天正文绝不上传到任何第三方服务器，确保商业敏感信息和个人隐私不外泄。
@@ -28,7 +28,7 @@ ChatVault Exporter 是一款隐私优先、完全运行在浏览器本地的 AI 
 5. 【开发者代码导出】自动为对话中的代码块生成索引，并支持将多段代码另存为对应的语言文件打包导出。
 
 使用说明：
-- 安装扩展后，打开任一 ChatGPT、Claude 或 Gemini 聊天页面。
+- 安装扩展后，打开任一 Claude 聊天页面 (https://claude.ai/)。
 - 页面右下角将出现轻量的“Export”按钮。
 - 点击按钮选择 PDF、Docs、MD 等输出类型和导出主题，一键点击即可在本地完成下载。
 
@@ -36,16 +36,13 @@ ChatVault Exporter 是一款隐私优先、完全运行在浏览器本地的 AI 
 如有任何问题或建议，欢迎发送邮件至 chatvaultaisupport@gmail.com。
 
 ### 类别 (Category)
-<!-- 推荐选择 Productivity 或 Developer Tools -->
 Productivity (效率)
 
 ### 单一用途声明 (Single Purpose)
-<!-- 简短的一句话，说明核心功能 -->
-在用户浏览器本地将 ChatGPT、Claude 和 Gemini 网页端的聊天对话导出为 PDF、Docs、MD 等本地文件。
+在用户浏览器本地将 Claude 网页端的聊天对话导出为 PDF、Docs、MD 等本地文件。
 
 ### 主要语言 (Primary Language)
 English (United States) / Chinese (Simplified)
-<!-- 注：本扩展支持多语言，但需设定一个主要语言。 -->
 
 ---
 
@@ -66,19 +63,15 @@ English (United States) / Chinese (Simplified)
 
 ## 3. 权限声明与合理性释义 (Permissions Justification)
 
-<!-- 针对 manifest.json 中声明的每一项权限，向审核团队给出合理性解释。不当或模糊的释义会导致驳回。 -->
-
 | 权限 / 域名 | 类型 | 合理性释义 (Justification) |
 | :--- | :--- | :--- |
 | `storage` | permissions | 用于在本地存储用户的导出选项（如隐藏水印、显示时间等参数）、每日免费额度计数和临时会话状态（如 Supabase 登录 session 缓存）。 |
 | `downloads` | permissions | 用于在浏览器本地生成导出文件后，调用 Chrome 下载管理器将其保存到用户的本地磁盘。 |
-| `contextMenus` | permissions | 用于在 ChatGPT、Claude 和 Gemini 网页右键菜单中添加快捷导出入口（如右键“导出到 PDF”），提升用户在聊天页面时的操作便捷性。 |
+| `contextMenus` | permissions | 用于在 Claude 网页右键菜单中添加快捷导出入口（如右键“导出到 PDF”），提升用户在聊天页面时的操作便捷性。 |
 | `identity` | permissions | 用于发起 Google 登录流程（LaunchWebAuthFlow），从而让已购买主产品 Pro 订阅的用户激活并恢复其 Pro 会员权益。 |
-| `https://acgehhqcgreatcjcefub.supabase.co/*` | host_permissions | 用于与后端 Supabase 数据库和 Edge Functions 进行安全通信，以验证登录状态、同步 Pro 会员订阅和查询服务器验证的每日免费导出次数。 |
-| `https://chatgpt.com/*`<br>`https://chat.openai.com/*` | host_permissions | 允许内容脚本在 ChatGPT 聊天页面运行，用于捕获聊天 DOM 树进行本地转换；允许背景脚本检测活动标签页以确定导出是否可用。 |
-| `https://claude.ai/*` | host_permissions | 允许内容脚本在 Claude 聊天页面运行，用于捕获聊天 DOM 树进行本地转换。 |
-| `https://gemini.google.com/*` | host_permissions | 允许内容脚本在 Gemini 聊天页面运行，用于捕获聊天 DOM 树进行本地转换。 |
-| `https://*.oaiusercontent.com/*`<br>`https://*.googleusercontent.com/*`<br>`https://images.anthropic.com/*`<br>`https://media.anthropic.com/*`<br>`https://lh0.google.com/*` 至 `https://lh9.google.com/*` | host_permissions | 允许背景脚本从原 AI 平台或其受信任的 CDN 安全抓取聊天对话中嵌入的图片字节，以使本地生成的文件包含完整插图，避免因跨域导致图裂或缺失。 |
+| `https://acgehhqcgreatcjcefub.supabase.co/*` | host_permissions | 用于与后端 Supabase 数据库和 Edge Functions 进行安全通信，以验证登录状态、同步 Pro 会员订阅 and 查询服务器验证的每日免费导出次数。 |
+| `https://claude.ai/*` | host_permissions | 允许内容脚本在 Claude 聊天页面运行，用于捕获聊天 DOM 树进行本地转换；允许背景脚本检测活动标签页以确定导出是否可用。 |
+| `https://images.anthropic.com/*`<br>`https://media.anthropic.com/*` | host_permissions | 允许背景脚本从 Claude 受信任的图片 CDN 安全抓取聊天对话中嵌入的用户上传图片或附件字节，以使本地生成的文件（如 PDF、Docs、Image）包含完整插图，避免因跨域导致图裂或缺失。 |
 
 ---
 
@@ -92,12 +85,12 @@ English (United States) / Chinese (Simplified)
 1. **个人身份信息 (Personally identifiable info)**: 
    - *是否收集*: 是
    - *是否传输*: 是
-   - *用途*: 仅用于用户账号登录和 Pro 订阅激活（通过 Supabase 账户注册邮箱）。
+   - *用途*: 仅用于用户账户登录和 Pro 订阅激活（通过 Supabase 账户注册邮箱）。
    - *是否共享给第三方*: 否。
 2. **身份验证信息 (Authentication info)**: 
    - *是否收集*: 是
    - *是否传输*: 是
-   - *用途*: 临时传输并缓存 Supabase 返回的安全 Access Token / Refresh Token，仅用于保持登录状态和验证 Pro 权益。扩展也可能在用户浏览器本地使用当前 AI 平台会话 cookie 或 access token 拉取用户选择导出的历史/图片，但不会把这些平台凭证上传或保存到我们的服务器。
+   - *用途*: 临时传输并缓存 Supabase 返回的安全 Access Token / Refresh Token，仅用于保持登录状态和验证 Pro 权益。扩展也可能在用户浏览器本地使用当前 Claude 会话 cookie 或 access token 拉取用户选择导出的历史/图片，但不会把这些平台凭证上传或保存到我们的服务器。
    - *是否共享给第三方*: 否。
 3. **财务/付款信息 (Financial info)**: 
    - *是否收集*: 是
@@ -108,10 +101,10 @@ English (United States) / Chinese (Simplified)
    - *是否收集*: 否
    - *是否传输*: 否
    - *说明*: 扩展虽然在本地读取当前网页的 DOM（聊天对话），并可能用当前平台会话在浏览器本地请求用户选择导出的历史和图片进行格式排版和保存，但聊天正文和导出文件内容不传输（不上传）到我们的远程服务器。
-5. **用户活动/网络历史 (User activity / Web history)**:
+5. **用户 activity / 网络历史 (User activity / Web history)**:
    - *是否收集*: 否
    - *是否传输*: 否
-   - *说明*: 扩展仅限在 ChatGPT、Claude 和 Gemini 这三个受支持的域名下运作。不追踪也不记录用户的浏览历史或搜索行为。
+   - *说明*: 扩展仅限在 Claude 域名下运作。不追踪也不记录用户的浏览历史或搜索行为。
 
 ### 数据安全与合规保证 (Data Use Certification)
 - [x] 我们保证不将收集的数据出售给第三方。
@@ -138,4 +131,4 @@ English (United States) / Chinese (Simplified)
 
 | 版本号 | 提交日期 | 变更说明 | 审核状态 |
 | :--- | :--- | :--- | :--- |
-| `1.0.0` | 2026-06-25 | 1.0.0 稳定发版。支持 ChatGPT、Claude、Gemini 本地导出 PDF、Docs、MD 等；增加导出凭证 (Receipt) 及代码索引等功能；优化了大图分段导出。 | 待提交 (Draft) |
+| `1.0.0` | 2026-07-05 | 1.0.0 稳定发版。支持 Claude 聊天记录本地导出为 PDF、Docs、MD、图片等功能，内置图片 CDN 安全下载，保障导出文档内嵌图的完整性。 | 待提交 (Draft) |

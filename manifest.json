@@ -32,7 +32,9 @@
   },
   "host_permissions": [
     "https://acgehhqcgreatcjcefub.supabase.co/*",
-    "https://claude.ai/*"
+    "https://claude.ai/*",
+    "https://images.anthropic.com/*",
+    "https://media.anthropic.com/*"
   ],
   "web_accessible_resources": [
     {
