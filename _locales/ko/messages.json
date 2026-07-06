@@ -21,16 +21,16 @@
     "message": "JSON으로 내보내기"
   },
   "extensionName": {
-    "message": "Claude Exporter - Claude를 PDF, Docs, MD 등으로"
+    "message": "Claude Exporter - 채팅을 PDF, Word, Markdown 등으로 일괄 내보내기"
   },
   "extensionShortName": {
     "message": "Claude Export"
   },
   "extensionDescription": {
-    "message": "Claude 대화를 브라우저에서 PDF, Docs, MD 등으로 로컬 내보내기."
+    "message": "Claude 대화를 PDF, Docs, MD 등으로 로컬 내보내기. 정교한 레이아웃으로 개별 및 일괄 내보내기를 지원합니다."
   },
   "extensionActionTitle": {
-    "message": "Claude Exporter - Claude를 PDF, Docs, MD 등으로"
+    "message": "Claude Exporter - 채팅을 PDF, Word, Markdown 등으로 일괄 내보내기"
   },
   "brand_ai_workspace": {
     "message": "AI 워크스페이스"

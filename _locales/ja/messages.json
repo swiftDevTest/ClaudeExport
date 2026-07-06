@@ -21,16 +21,16 @@
     "message": "JSON にエクスポート"
   },
   "extensionName": {
-    "message": "Claude Exporter - Claude を PDF、Docs、MD などへ"
+    "message": "Claude Exporter - チャットを PDF、Word、Markdown などへ一括エクスポート"
   },
   "extensionShortName": {
     "message": "Claude Export"
   },
   "extensionDescription": {
-    "message": "Claudeの会話をブラウザ内で PDF、Docs、MD などへローカル書き出し。"
+    "message": "Claudeの会話をPDF、Docs、MDなどへローカル書き出し。個別および一括エクスポートに対応し、美しいレイアウトで保存。"
   },
   "extensionActionTitle": {
-    "message": "Claude Exporter - Claude を PDF、Docs、MD などへ"
+    "message": "Claude Exporter - チャットを PDF、Word、Markdown などへ一括エクスポート"
   },
   "brand_ai_workspace": {
     "message": "AI ワークスペース"

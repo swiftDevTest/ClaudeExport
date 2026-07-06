@@ -21,16 +21,16 @@
     "message": "导出为 JSON"
   },
   "extensionName": {
-    "message": "Claude 导出助手 - 浏览器本地导出 PDF、Word、MD 与 JSON"
+    "message": "Claude Exporter - 批量导出聊天为 PDF、Word、Markdown 等"
   },
   "extensionShortName": {
-    "message": "Claude 导出"
+    "message": "Claude Export"
   },
   "extensionDescription": {
-    "message": "在浏览器本地将 Claude 对话导出为 PDF、Word、Markdown、纯文本与 JSON，保留美观排版。"
+    "message": "本地将 Claude 对话导出为 PDF、Word、Markdown 与 JSON。支持单个和批量导出，保留美观且专业的排版。"
   },
   "extensionActionTitle": {
-    "message": "Claude 导出助手 - 浏览器本地导出 PDF、Word、MD 与 JSON"
+    "message": "Claude Exporter - 批量导出聊天为 PDF、Word、Markdown 等"
   },
   "brand_ai_workspace": {
     "message": "AI 工作区"

@@ -21,16 +21,16 @@
     "message": "Exporter en JSON"
   },
   "extensionName": {
-    "message": "Claude Exporter - Claude en PDF, Docs, MD et plus"
+    "message": "Claude Exporter - Exporter des chats en lot vers PDF, Word, MD et plus"
   },
   "extensionShortName": {
     "message": "Claude Export"
   },
   "extensionDescription": {
-    "message": "Exportez localement vos chats Claude en PDF, Docs, MD et plus."
+    "message": "Exportez vos chats Claude localement en PDF, Docs, MD et plus. Prend en charge l'exportation individuelle et en lot."
   },
   "extensionActionTitle": {
-    "message": "Claude Exporter - Claude en PDF, Docs, MD et plus"
+    "message": "Claude Exporter - Exporter des chats en lot vers PDF, Word, MD et plus"
   },
   "brand_ai_workspace": {
     "message": "Espace de travail IA"

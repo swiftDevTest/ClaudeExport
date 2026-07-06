@@ -21,16 +21,16 @@
     "message": "Export to JSON"
   },
   "extensionName": {
-    "message": "Claude Exporter - Local Chat PDF, Docs, Markdown & JSON"
+    "message": "Claude Exporter - Bulk Export Chats to PDF, Word, Markdown and More"
   },
   "extensionShortName": {
     "message": "Claude Export"
   },
   "extensionDescription": {
-    "message": "Export Claude chats locally to PDF, Docs, MD and More with polished layouts and browser processing."
+    "message": "Export Claude chats locally to PDF, Docs, MD and More. Supports single and bulk export with polished layouts."
   },
   "extensionActionTitle": {
-    "message": "Claude Exporter - Local Chat PDF, Docs, Markdown & JSON"
+    "message": "Claude Exporter - Bulk Export Chats to PDF, Word, Markdown and More"
   },
   "brand_ai_workspace": {
     "message": "AI Workspace"

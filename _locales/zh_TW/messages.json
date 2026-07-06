@@ -21,16 +21,16 @@
     "message": "匯出為 JSON"
   },
   "extensionName": {
-    "message": "Claude Exporter - Claude 到 PDF、Docs、MD 等"
+    "message": "Claude Exporter - 批量匯出聊天為 PDF、Word、Markdown 等"
   },
   "extensionShortName": {
     "message": "Claude Export"
   },
   "extensionDescription": {
-    "message": "將 Claude 對話在瀏覽器本機匯出為 PDF、Docs、MD 等，保留清晰排版。"
+    "message": "本機將 Claude 對話匯出為 PDF、Docs、MD 等。支援單個和批量匯出，保留精美且清晰的排版。"
   },
   "extensionActionTitle": {
-    "message": "Claude Exporter - Claude 到 PDF、Docs、MD 等"
+    "message": "Claude Exporter - 批量匯出聊天為 PDF、Word、Markdown 等"
   },
   "brand_ai_workspace": {
     "message": "AI 工作區"
