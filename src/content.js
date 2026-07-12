@@ -844,6 +844,7 @@
   let batchChatGptNextOffset = 0;
   let batchChatGptWebTotal = null;
   let batchChatGptLoadedAll = false;
+  let batchHistoryLoadingActive = false;
   const exportFormats = ["pdf", "word", "image", "markdown", "txt", "json"];
   const EXPORT_PROGRESS_INITIAL = 0.04;
   const EXPORT_PROGRESS_ESTIMATE_CAP = 0.9;
@@ -1246,7 +1247,10 @@
             </button>
           </div>
 
-
+          <!-- 搜索过滤输入框 -->
+          <div class="cv-batch-search-container">
+            <input type="text" class="cv-batch-search-box" id="cv-batch-search" placeholder="${tx("placeholder_batch_search", "Search by conversation title...", "搜索会话标题...")}">
+          </div>
 
           <!-- 同步进度条 -->
           <div class="cv-batch-loading-bar" id="cv-batch-loading-indicator" style="display: none;">
@@ -1482,6 +1486,12 @@
         updateBatchSelectedCount();
       }
     });
+
+    // 绑定搜索输入框事件
+    const searchInput = shadowRoot.getElementById("cv-batch-search");
+    if (searchInput) {
+      searchInput.addEventListener("input", filterBatchList);
+    }
 
     // 点击 X 关闭按钮
     shadowRoot.getElementById("cv-batch-btn-close").addEventListener("click", () => {
@@ -1921,7 +1931,7 @@
     return getVisibleBatchConversations(platform, maxItems);
   }
 
-  function appendBatchListItems(list, startIndex) {
+  function appendBatchListItems(list, startIndex, selectedIds = new Set()) {
     const itemsContainer = shadowRoot.getElementById("cv-batch-list-items");
     if (!itemsContainer) return;
 
@@ -1933,12 +1943,15 @@
     }
 
     const platform = exporter.detectPlatform();
+    const query = shadowRoot.getElementById("cv-batch-search")?.value.toLowerCase().trim() || "";
     const listHtml = list.map(function (item, index) {
       const realIndex = startIndex + index;
       const safeTitle = escapeHtml(item.title);
       const safeId = escapeHtml(item.id);
+      const isSelected = selectedIds.has(item.id);
+      const isVisible = !query || safeTitle.toLowerCase().indexOf(query) !== -1;
       return `
-        <div class="cv-batch-item-row" data-index="${realIndex}" data-chat-id="${safeId}" id="cv-batch-row-${realIndex}">
+        <div class="cv-batch-item-row${isSelected ? " selected" : ""}" data-index="${realIndex}" data-chat-id="${safeId}" id="cv-batch-row-${realIndex}" style="display: ${isVisible ? "flex" : "none"};">
           <div class="cv-batch-checkbox-wrap">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="20 6 9 17 4 12"></polyline>
@@ -2025,6 +2038,24 @@
       }
       hasMoreConversations = batchList.length > displayedConversationsCount || !batchChatGptLoadedAll;
       updateLoadMoreUi();
+
+      await writeBatchChatHistoryCache(platform, batchList, {
+        total: batchChatGptWebTotal,
+        loadedAll: batchChatGptLoadedAll,
+        nextOffset: batchChatGptNextOffset
+      });
+
+      // 自动拉取后续所有页面
+      if (!batchChatGptLoadedAll) {
+        (async () => {
+          try {
+            const session = await getChatGptWebSession();
+            await loadRemainingChatGptHistory(session);
+          } catch (err) {
+            console.warn(err);
+          }
+        })();
+      }
       return;
     }
 
@@ -2047,6 +2078,11 @@
                            syncResult.mayHaveMore;
 
     updateLoadMoreUi();
+
+    await writeBatchChatHistoryCache(platform, batchList, {
+      total: batchList.length,
+      loadedAll: !hasMoreConversations
+    });
   }
 
   async function onLoadMoreClick() {
@@ -2069,6 +2105,13 @@
       return;
     }
 
+    const platform = exporter.detectPlatform();
+    if (platform === "chatgpt" && batchHistoryLoadingActive) {
+      loadMoreContainer.style.display = "flex";
+      loadMoreContainer.innerHTML = `<span class="cv-batch-all-loaded">${tx("content_background_loading", "Loading more conversations in background...", "正在后台加载更多会话...")}</span>`;
+      return;
+    }
+
     if (hasMoreConversations) {
       loadMoreContainer.style.display = "flex";
       loadMoreContainer.innerHTML = `<button type="button" id="cv-batch-btn-load-more" class="cv-batch-btn-load-more">${t("folders_load_more", tx("content_load_more", "Load More", "加载更多"))}</button>`;
@@ -2081,6 +2124,244 @@
         loadMoreContainer.style.display = "none";
       }
     }
+  }
+
+  function getBatchCacheKey(platform) {
+    const userId = currentSession?.user?.id || "guest";
+    const safeUserId = String(userId).replace(/[^a-zA-Z0-9_-]/g, "_");
+    return `chatvault_exporter_chats:${safeUserId}:${platform}`;
+  }
+
+  async function readBatchChatHistoryCache(platform) {
+    return new Promise((resolve) => {
+      if (!chrome?.storage?.local) {
+        resolve(null);
+        return;
+      }
+      const key = getBatchCacheKey(platform);
+      chrome.storage.local.get(key, (result) => {
+        if (chrome.runtime.lastError) {
+          resolve(null);
+        } else {
+          resolve(result && result[key] ? result[key] : null);
+        }
+      });
+    });
+  }
+
+  async function writeBatchChatHistoryCache(platform, list, patch = {}) {
+    if (!chrome?.storage?.local) return;
+    const key = getBatchCacheKey(platform);
+    const data = {
+      cachedAt: Date.now(),
+      total: typeof patch.total === "number" ? patch.total : list.length,
+      loadedAll: Boolean(patch.loadedAll),
+      nextOffset: patch.nextOffset || 0,
+      chats: list
+    };
+    chrome.storage.local.set({ [key]: data }, () => {
+      if (chrome.runtime.lastError) {
+        console.warn("Failed to write batch cache:", chrome.runtime.lastError.message);
+      }
+    });
+  }
+
+  async function performBackgroundSync(platform) {
+    const loader = shadowRoot.getElementById("cv-batch-loading-indicator");
+    if (platform === "chatgpt") {
+      try {
+        const session = await getChatGptWebSession();
+        const payload = await fetchChatGptConversationPage(session, 0, historyPageSize);
+        const rawItems = getConversationItems(payload);
+        if (typeof payload.total === "number") {
+          batchChatGptWebTotal = payload.total;
+        }
+        const normalizedItems = rawItems.map(normalizeChatGptHistoryItem).filter(Boolean);
+
+        const existingById = new Map(batchList.map(item => [item.id, item]));
+        const merged = [];
+        normalizedItems.forEach(item => {
+          existingById.delete(item.id);
+          merged.push(item);
+        });
+        existingById.forEach(item => {
+          merged.push(item);
+        });
+        batchList = merged;
+
+        // A cache may contain removed or reordered chats, so its item count is
+        // not a valid API cursor. Continue from the server's first-page boundary.
+        batchChatGptNextOffset = rawItems.length;
+        batchChatGptLoadedAll = !rawItems.length ||
+          rawItems.length < historyPageSize ||
+          payload?.has_more === false ||
+          (typeof batchChatGptWebTotal === "number" && batchChatGptNextOffset >= batchChatGptWebTotal);
+
+        await writeBatchChatHistoryCache(platform, batchList, {
+          total: batchChatGptWebTotal,
+          loadedAll: batchChatGptLoadedAll,
+          nextOffset: batchChatGptNextOffset
+        });
+
+        rebuildBatchListUI();
+
+        // 自动触发拉取后续历史
+        if (!batchChatGptLoadedAll) {
+          loadRemainingChatGptHistory(session).catch(e => console.warn(e));
+        } else {
+          renderRemainingBatchListItems();
+          hasMoreConversations = false;
+          updateLoadMoreUi();
+        }
+      } catch (error) {
+        console.warn("Background ChatGPT history sync failed:", error);
+      } finally {
+        if (loader) loader.style.display = "none";
+      }
+      return;
+    }
+
+    try {
+      const mergedItems = await getVisibleBatchConversations(platform, 800);
+      const existingById = new Map(batchList.map(item => [item.id, item]));
+      const merged = [];
+      mergedItems.forEach(item => {
+        existingById.delete(item.id);
+        merged.push(item);
+      });
+      existingById.forEach(item => {
+        merged.push(item);
+      });
+      batchList = merged;
+
+      await writeBatchChatHistoryCache(platform, batchList, {
+        total: batchList.length,
+        loadedAll: false
+      });
+
+      rebuildBatchListUI();
+    } catch (error) {
+      console.warn("Background sidebar sync failed:", error);
+    } finally {
+      if (loader) loader.style.display = "none";
+    }
+  }
+
+  function rebuildBatchListUI() {
+    const itemsContainer = shadowRoot.getElementById("cv-batch-list-items");
+    if (!itemsContainer) return;
+
+    const selectedIds = new Set(
+      Array.from(shadowRoot.querySelectorAll(".cv-batch-item-row.selected"))
+        .map(row => row.getAttribute("data-chat-id"))
+    );
+
+    itemsContainer.innerHTML = "";
+    const originalCount = displayedConversationsCount;
+    displayedConversationsCount = 0;
+
+    const pageItems = batchList.slice(0, Math.max(batchPageSize, originalCount));
+    appendBatchListItems(pageItems, 0, selectedIds);
+    displayedConversationsCount = pageItems.length;
+
+    hasMoreConversations = batchList.length > displayedConversationsCount || !batchChatGptLoadedAll;
+    updateLoadMoreUi();
+  }
+
+  function renderRemainingBatchListItems() {
+    if (displayedConversationsCount >= batchList.length) return;
+
+    const selectedIds = new Set(
+      Array.from(shadowRoot.querySelectorAll(".cv-batch-item-row.selected"))
+        .map(row => row.getAttribute("data-chat-id"))
+    );
+    const startIndex = displayedConversationsCount;
+    appendBatchListItems(batchList.slice(startIndex), startIndex, selectedIds);
+    displayedConversationsCount = batchList.length;
+  }
+
+  async function loadRemainingChatGptHistory(session) {
+    if (batchHistoryLoadingActive) return;
+    batchHistoryLoadingActive = true;
+
+    const platform = "chatgpt";
+    const loader = shadowRoot.getElementById("cv-batch-loading-indicator");
+
+    updateLoadMoreUi();
+
+    while (batchModalOpen && !batchChatGptLoadedAll && !globalThis.CHATVAULT_IS_BATCH_EXPORT) {
+      try {
+        const payload = await fetchChatGptConversationPage(session, batchChatGptNextOffset, historyPageSize);
+        if (!batchModalOpen || globalThis.CHATVAULT_IS_BATCH_EXPORT) break;
+
+        const rawItems = getConversationItems(payload);
+        if (typeof payload.total === "number") {
+          batchChatGptWebTotal = payload.total;
+        }
+
+        const normalizedItems = rawItems.map(normalizeChatGptHistoryItem).filter(Boolean);
+        const beforeCount = batchList.length;
+        if (normalizedItems.length > 0) {
+          const knownIds = new Set(batchList.map(item => item.id));
+          let addedCount = 0;
+
+          normalizedItems.forEach(item => {
+            if (knownIds.has(item.id)) return;
+            knownIds.add(item.id);
+            batchList.push(item);
+            addedCount++;
+          });
+
+          if (addedCount > 0) {
+            const selectedIds = new Set(
+              Array.from(shadowRoot.querySelectorAll(".cv-batch-item-row.selected"))
+                .map(row => row.getAttribute("data-chat-id"))
+            );
+            appendBatchListItems(batchList.slice(beforeCount), beforeCount, selectedIds);
+            displayedConversationsCount = batchList.length;
+          }
+        }
+
+        // Always advance over the raw page, including cached duplicates. This
+        // prevents a stale cache from making the automatic paginator loop.
+        batchChatGptNextOffset += rawItems.length;
+
+        if (
+          !rawItems.length ||
+          rawItems.length < historyPageSize ||
+          payload?.has_more === false ||
+          (typeof batchChatGptWebTotal === "number" && batchChatGptNextOffset >= batchChatGptWebTotal)
+        ) {
+          batchChatGptLoadedAll = true;
+        }
+
+        hasMoreConversations = batchList.length > displayedConversationsCount || !batchChatGptLoadedAll;
+        updateLoadMoreUi();
+
+        await writeBatchChatHistoryCache(platform, batchList, {
+          total: batchChatGptWebTotal,
+          loadedAll: batchChatGptLoadedAll,
+          nextOffset: batchChatGptNextOffset
+        });
+
+        if (batchChatGptLoadedAll) {
+          break;
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 300));
+      } catch (error) {
+        console.warn("Background history loading failed page chunk:", error);
+        break;
+      }
+    }
+
+    batchHistoryLoadingActive = false;
+    if (batchChatGptLoadedAll && batchModalOpen && !globalThis.CHATVAULT_IS_BATCH_EXPORT) {
+      renderRemainingBatchListItems();
+      hasMoreConversations = false;
+    }
+    if (loader) loader.style.display = "none";
+    updateLoadMoreUi();
   }
 
   function showBatchExportModal() {
@@ -2124,6 +2405,11 @@
     overlay.classList.add("active");
     batchModalOpen = true;
 
+    // Reset search
+    const searchInput = shadowRoot.getElementById("cv-batch-search");
+    if (searchInput) searchInput.value = "";
+
+    batchHistoryLoadingActive = false;
     batchList = [];
     batchActiveItems = [];
     resetBatchChatGptHistoryState();
@@ -2140,7 +2426,42 @@
 
     (async () => {
       try {
-        await loadNextPageOfConversations(platform);
+        const cached = await readBatchChatHistoryCache(platform);
+        if (cached && Array.isArray(cached.chats) && cached.chats.length > 0) {
+          batchList = cached.chats;
+          batchChatGptNextOffset = cached.nextOffset || 0;
+          batchChatGptWebTotal = cached.total || null;
+          batchChatGptLoadedAll = Boolean(cached.loadedAll);
+          displayedConversationsCount = 0;
+
+          // Render cache instantly
+          const pageItems = batchList.slice(0, batchPageSize);
+          appendBatchListItems(pageItems, 0);
+          displayedConversationsCount = pageItems.length;
+          hasMoreConversations = batchList.length > displayedConversationsCount || !batchChatGptLoadedAll;
+          updateLoadMoreUi();
+
+          // Background sync
+          if (loader) {
+            loader.style.display = "flex";
+            loader.querySelector("span").textContent = tx("content_background_syncing", "Updating conversation history in background...", "正在后台更新会话历史...");
+            loader.querySelector(".cv-batch-dot-spinner").style.display = "block";
+          }
+          await performBackgroundSync(platform);
+        } else {
+          // Sync blockingly
+          if (loader) {
+            loader.style.display = "flex";
+            loader.querySelector("span").textContent = tx("content_syncing_sidebar", "Syncing sidebar history and loading more chats...", "正在同步侧边栏历史，加载更多聊天...");
+            loader.querySelector(".cv-batch-dot-spinner").style.display = "block";
+          }
+          await loadNextPageOfConversations(platform);
+          await writeBatchChatHistoryCache(platform, batchList, {
+            total: batchChatGptWebTotal,
+            loadedAll: batchChatGptLoadedAll,
+            nextOffset: batchChatGptNextOffset
+          });
+        }
       } catch (err) {
         console.error("Batch sidebar sync failed:", err);
         if (loader) {

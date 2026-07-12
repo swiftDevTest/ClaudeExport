@@ -1550,9 +1550,6 @@
   "popup_benefit_hide_watermark": {
     "message": "すべての透かしを非表示"
   },
-  "popup_benefit_zip_download": {
-    "message": "コードパッケージZIPダウンロード"
-  },
   "popup_benefit_shared_pro": {
     "message": "共有Proアクセス"
   },

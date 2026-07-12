@@ -14,10 +14,11 @@
     Object.prototype.hasOwnProperty.call(billingPriceIds, key) ? billingPriceIds[key] : fallback
   );
 
-  const t = (key, def) => {
-    return (globalThis.CHATVAULT_I18N && globalThis.CHATVAULT_I18N.t)
-      ? globalThis.CHATVAULT_I18N.t(key, def)
-      : def;
+  const t = (key, def, ...args) => {
+    if (globalThis.CHATVAULT_I18N && globalThis.CHATVAULT_I18N.t) {
+      return globalThis.CHATVAULT_I18N.t(key, def, ...args);
+    }
+    return args.reduce((text, arg, index) => text.replace(new RegExp(`\\$${index + 1}`, "g"), String(arg)), def);
   };
 
   const plans = [
@@ -50,6 +51,10 @@
       originalPrice: "$59.99",
       price: "$24.99",
       cadence: t("billing_cadence_year", "/ year"),
+      displayOriginalPrice: "$5.00",
+      displayPrice: "$2.08",
+      displayCadence: t("billing_cadence_month", "/ month"),
+      billingDetail: t("billing_billed_yearly", "Billed $1 yearly", "$24.99"),
       badge: t("billing_badge_yearly", "Yearly VIP"),
       shortLabel: t("billing_badge_yearly", "Yearly VIP"),
       activeLabel: t("billing_badge_yearly", "Yearly VIP"),

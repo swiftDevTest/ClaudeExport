@@ -1550,9 +1550,6 @@
   "popup_benefit_hide_watermark": {
     "message": "모든 내보내기 워터마크 숨기기"
   },
-  "popup_benefit_zip_download": {
-    "message": "코드 패키지 ZIP 다운로드"
-  },
   "popup_benefit_shared_pro": {
     "message": "공유 Pro 액세스"
   },

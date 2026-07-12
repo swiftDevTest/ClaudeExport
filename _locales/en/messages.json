@@ -1550,9 +1550,6 @@
   "popup_benefit_hide_watermark": {
     "message": "Hide all export watermarks"
   },
-  "popup_benefit_zip_download": {
-    "message": "Code package ZIP download"
-  },
   "popup_benefit_shared_pro": {
     "message": "Dedicated Pro access"
   },

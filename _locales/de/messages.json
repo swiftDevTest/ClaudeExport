@@ -1550,9 +1550,6 @@
   "popup_benefit_hide_watermark": {
     "message": "Alle Export-Wasserzeichen ausblenden"
   },
-  "popup_benefit_zip_download": {
-    "message": "Codepaket als ZIP herunterladen"
-  },
   "popup_benefit_shared_pro": {
     "message": "Gemeinsamer Pro-Zugang"
   },

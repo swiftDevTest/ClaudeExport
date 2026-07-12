@@ -1550,9 +1550,6 @@
   "popup_benefit_hide_watermark": {
     "message": "隐藏全部导出水印"
   },
-  "popup_benefit_zip_download": {
-    "message": "代码打包 ZIP 下载"
-  },
   "popup_benefit_shared_pro": {
     "message": "共享 Pro 权益"
   },

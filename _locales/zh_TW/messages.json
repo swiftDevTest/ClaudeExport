@@ -1550,9 +1550,6 @@
   "popup_benefit_hide_watermark": {
     "message": "隱藏全部匯出浮水印"
   },
-  "popup_benefit_zip_download": {
-    "message": "程式碼打包 ZIP 下載"
-  },
   "popup_benefit_shared_pro": {
     "message": "共享 Pro 權益"
   },

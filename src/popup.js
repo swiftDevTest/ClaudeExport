@@ -194,6 +194,7 @@
     setPlanCardTexts("yearly", "billing_badge_yearly", "Yearly Pro", "billing_discount_yearly", "Save 58%", "billing_plan_title_yearly", "Pro Yearly", "billing_cadence_month", "/ month");
     setText(".recommended-tag", "popup_recommended", "Recommended");
     setPlanCardTexts("lifetime", "billing_badge_lifetime", "Lifetime Pro", "billing_discount_lifetime", "Save 69%", "billing_plan_title_lifetime", "Lifetime Early Bird", "billing_cadence_lifetime", "one-time");
+    ["monthly", "yearly", "lifetime"].forEach(updatePlanPriceDisplay);
     setFeatureTexts();
     var subscribeSubmit = document.getElementById("btn-subscribe-submit");
     if (subscribeSubmit) {
@@ -248,7 +249,6 @@
       ["popup_benefit_report_themes", "Publication-grade themes"],
       ["popup_benefit_local_receipts", "Local export receipts"],
       ["popup_benefit_hide_watermark", "Hide all export watermarks"],
-      ["popup_benefit_zip_download", "Code package ZIP download"],
       productConfig.isolatedMembership === true
         ? ["popup_benefit_dedicated_pro", productName + " Pro access only"]
         : ["popup_benefit_shared_pro", "Dedicated Pro access"]
@@ -278,11 +278,32 @@
     return t("billing_plan_title_yearly", "Pro Yearly");
   }
 
+  function getBillingPlan(planId) {
+    var billing = globalThis.CHATVAULT_BILLING;
+    return billing && typeof billing.getPlan === "function" ? billing.getPlan(planId) : null;
+  }
+
   function getCheckoutButtonLabel(planId) {
-    if (planId === "yearly") {
-      return t("billing_checkout_pro_yearly", "Continue with Pro Yearly - $24.99 / year");
-    }
-    return t("billing_continue_with_plan", "Continue with $1", getPlanTitle(planId));
+    var plan = getBillingPlan(planId);
+    var title = (plan && plan.title) || getPlanTitle(planId);
+    var prefix = t("billing_continue_with_plan", "Continue with $1", title);
+    if (!plan || !plan.price) return prefix;
+    return prefix + " - " + plan.price + (plan.cadence ? " " + plan.cadence : "");
+  }
+
+  function updatePlanPriceDisplay(planId) {
+    var plan = getBillingPlan(planId);
+    var card = document.querySelector('[data-plan-id="' + planId + '"]');
+    if (!plan || !card) return;
+
+    var originalPrice = card.querySelector(".plan-price-original");
+    var price = card.querySelector(".plan-price");
+    var cadence = card.querySelector(".plan-price-cadence");
+    var detail = card.querySelector(".plan-price-detail");
+    if (originalPrice) originalPrice.textContent = plan.displayOriginalPrice || plan.originalPrice || "";
+    if (price) price.textContent = plan.displayPrice || plan.price || "";
+    if (cadence) cadence.textContent = plan.displayCadence || plan.cadence || "";
+    if (detail) detail.textContent = plan.billingDetail || "";
   }
 
   function normalizeSubscribePlanId(planId) {
@@ -1145,6 +1166,14 @@
         updateSubscriptionUIState();
       }
     };
+
+    var proCrown = document.getElementById("pro-crown-indicator");
+    if (proCrown) {
+      proCrown.onclick = function (e) {
+        if (e) e.preventDefault();
+        showSubscriptionPanel();
+      };
+    }
 
     var closeSubscribeBtn = document.getElementById("btn-close-subscribe");
     if (closeSubscribeBtn) {

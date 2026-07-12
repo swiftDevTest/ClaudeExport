@@ -33,7 +33,9 @@ export var IMAGE_EXPORT_SCALE = 4;
 export var IMAGE_PREVIEW_SCALE = 1.5;
 export var IMAGE_MAX_CANVAS_PIXELS = 72000000;
 export var IMAGE_MAX_CANVAS_DIMENSION = 32767;
-export var IMAGE_MIN_EXPORT_SCALE = 2.5;
+// Preserve legibility for long conversations while staying within Chromium's
+// canvas height and pixel-area limits.
+export var IMAGE_MIN_EXPORT_SCALE = 1.5;
 export var IMAGE_MAX_RENDER_HEIGHT = Math.floor(IMAGE_MAX_CANVAS_PIXELS / (IMAGE_RENDER_WIDTH * IMAGE_EXPORT_SCALE * IMAGE_EXPORT_SCALE));
 export var CANVAS_TO_BLOB_TIMEOUT_MS = 30000;
 export var SELECTION_STYLE_ID = "chatvault-export-selection-style";

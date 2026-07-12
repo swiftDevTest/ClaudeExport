@@ -27,17 +27,17 @@
 }
 
 html {
-  width: 360px;
-  max-width: 360px;
+  width: 340px;
+  max-width: 340px;
   overflow-x: hidden;
 }
 
 body {
   margin: 0;
   padding: 0;
-  width: 360px;
-  max-width: 360px;
-  min-height: 540px;
+  width: 340px;
+  max-width: 340px;
+  min-height: 0;
   color: var(--text-dark);
   background:
     linear-gradient(180deg, #f8fbfa 0%, var(--bg-primary) 100%);
@@ -90,10 +90,10 @@ button:focus-visible,
   position: relative;
   display: flex;
   flex-direction: column;
-  width: 360px;
-  max-width: 360px;
-  height: 540px;
-  max-height: 540px;
+  width: 340px;
+  max-width: 340px;
+  height: 478px;
+  max-height: 478px;
   overflow: hidden;
   background: transparent;
 }
@@ -167,6 +167,9 @@ button:focus-visible,
   justify-content: center;
   width: 22px;
   height: 22px;
+  padding: 0;
+  appearance: none;
+  cursor: pointer;
   color: #8a4b00;
   border: 1px solid rgba(217, 119, 6, 0.24);
   border-radius: 999px;
@@ -178,6 +181,15 @@ button:focus-visible,
 
 .pro-crown-indicator.active {
   display: inline-flex;
+}
+
+.pro-crown-indicator:hover {
+  filter: brightness(1.04);
+}
+
+.pro-crown-indicator:focus-visible {
+  outline: 2px solid #b45309;
+  outline-offset: 2px;
 }
 
 .popup-header p {
@@ -1692,6 +1704,12 @@ input:checked + .slider::before {
   display: flex;
   align-items: center;
   gap: 6px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.plan-badge-row > * {
+  flex: 0 0 auto;
 }
 
 .plan-tag {
@@ -1743,6 +1761,14 @@ input:checked + .slider::before {
   font-size: 15px;
   font-weight: 850;
   color: var(--accent-strong);
+}
+
+.plan-price-original {
+  color: var(--text-secondary);
+  font-size: 9px;
+  font-weight: 600;
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
 }
 
 .plan-price-cadence {
@@ -2441,19 +2467,20 @@ body {
 }
 
 .popup-body {
-  padding: 12px 12px 8px;
-  gap: 10px;
+  flex: 1;
+  padding: 10px 10px 10px;
+  gap: 7px;
 }
 
 #panel-dashboard {
-  gap: 10px;
-}
-
-#panel-dashboard .one-click-section {
-  order: 1;
+  gap: 7px;
 }
 
 #panel-dashboard .banners-row {
+  order: 1;
+}
+
+#panel-dashboard .one-click-section {
   order: 2;
 }
 
@@ -2468,7 +2495,7 @@ body {
 .one-click-section {
   position: relative;
   overflow: hidden;
-  padding: 12px;
+  padding: 9px;
   border-color: rgba(var(--cv-primary-rgb), 0.22);
   border-radius: 18px;
   background:
@@ -2482,37 +2509,37 @@ body {
   content: "";
   position: absolute;
   inset: 0 0 auto;
-  height: 4px;
+  height: 3px;
   background: linear-gradient(90deg, var(--accent) 0%, rgba(var(--cv-primary-rgb), 0.2) 100%);
 }
 
 .section-header {
-  margin-bottom: 10px;
+  margin-bottom: 6px;
 }
 
 .section-header h3,
 .section-card h3,
 .notion-section h3 {
   color: var(--text-dark);
-  font-size: 14px;
+  font-size: 12.5px;
   font-weight: 830;
 }
 
 .export-button-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 7px;
+  gap: 5px;
 }
 
 .export-grid-item {
-  min-height: 66px;
-  padding: 8px 4px 7px;
+  min-height: 54px;
+  padding: 6px 4px 5px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 3px;
   border-color: rgba(211, 224, 218, 0.9);
-  border-radius: 16px;
+  border-radius: 14px;
   background:
     linear-gradient(180deg, #ffffff 0%, rgba(248, 250, 252, 0.9) 100%);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.66);
@@ -2551,15 +2578,15 @@ body {
 .banners-row {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  gap: 6px;
   width: 100%;
   margin: 0;
 }
 
 .banners-row .custom-export-banner {
-  min-height: 74px;
-  padding: 11px;
-  border-radius: 18px;
+  min-height: 56px;
+  padding: 8px;
+  border-radius: 14px;
   align-items: flex-start;
 }
 
@@ -2583,14 +2610,14 @@ body {
 
 .banners-row .banner-left {
   align-items: flex-start;
-  gap: 8px;
+  gap: 6px;
   padding-right: 0;
 }
 
 .banners-row .banner-icon-badge {
-  width: 29px;
-  height: 29px;
-  border-radius: 11px;
+  width: 24px;
+  height: 24px;
+  border-radius: 9px;
 }
 
 .banners-row .banner-text h3 {
@@ -2652,7 +2679,7 @@ body {
 
 .quota-bar-row {
   margin-top: 0;
-  padding: 8px 2px 0;
+  padding: 6px 2px 0;
   border-top-color: rgba(var(--cv-primary-rgb), 0.18);
 }
 
