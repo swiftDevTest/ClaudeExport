@@ -350,7 +350,7 @@ function openInlineMenu(anchor, index) {
   inlineMenu = document.createElement("div");
   inlineMenu.className = "cv-message-export-menu";
   inlineMenu.style.cssText = "position:fixed;z-index:2147483001;min-width:148px;background:#fff;border:1px solid #d9e2ec;border-radius:12px;box-shadow:0 18px 45px rgba(15,23,42,.18);padding:6px;";
-  ["pdf", "word", "image"].forEach(function (format) {
+  ["pdf", "word", "image", "html"].forEach(function (format) {
     var item = document.createElement("button");
     item.type = "button";
     item.textContent = format === "word" ? "Word DOCX" : format.toUpperCase();

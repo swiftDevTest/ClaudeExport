@@ -1,4 +1,5 @@
 import { normalizeContent, chooseMoreCompleteBlocks, collectContentElements, getBlockSourceElement } from '../../parser-dom.js';
+import { captureExportHtmlStyle } from '../../html-style.js';
 
 var CHATGPT_TURN_SELECTOR = "[data-testid^='conversation-turn-']";
 var CHATGPT_ROLE_OWNER_SELECTOR = "[data-message-author-role='user'], [data-message-author-role='assistant']";
@@ -115,6 +116,7 @@ export function parseChatGPTMessages() {
     if (!blocks.length) return;
     messages.push({
       role: role,
+      htmlStyle: captureExportHtmlStyle(contentEl),
       turnElement: turn,
       contentElement: contentEl,
       contentBlocks: blocks

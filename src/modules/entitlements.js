@@ -95,7 +95,7 @@
   }
 
   function canUseExportStyle(profile, styleId) {
-    if (!styleId || styleId === "default") {
+    if (!styleId || styleId === "default" || styleId === "natural") {
       return true;
     }
     return isPro(profile);

@@ -25,7 +25,7 @@ export function createExportUiController(options) {
   var deps = options || {};
   var menu = deps.exportFormatMenu;
   var exportState = deps.exportState || {};
-  var exportFormats = deps.exportFormats || ["pdf", "word", "image", "markdown", "txt", "json"];
+  var exportFormats = deps.exportFormats || ["pdf", "word", "image", "markdown", "html", "txt", "json"];
   var t = deps.t || function (key, defaultText) { return defaultText || key; };
   var escapeHtml = deps.escapeHtml || defaultEscapeHtml;
   var selectedLabel = deps.selectedLabel || function (count) { return String(count) + " Selected"; };
@@ -84,6 +84,7 @@ export function createExportUiController(options) {
       word: t("format_word", "Word"),
       image: t("format_image", "Image"),
       markdown: t("format_markdown", "Markdown"),
+      html: t("format_html", "HTML"),
       txt: t("content_format_text", "Text"),
       json: "JSON"
     };
@@ -92,6 +93,7 @@ export function createExportUiController(options) {
       word: "W",
       image: "I",
       markdown: "M",
+      html: "H",
       txt: "T",
       json: "J"
     };
@@ -176,6 +178,7 @@ function getFormatDisplayName(format) {
   var key = String(format || "pdf").toLowerCase();
   if (key === "word") return "DOCX";
   if (key === "markdown") return "Markdown";
+  if (key === "html") return "HTML";
   if (key === "image") return "Image";
   if (key === "txt") return "Text";
   if (key === "json") return "JSON";

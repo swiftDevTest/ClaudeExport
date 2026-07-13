@@ -1,4 +1,5 @@
 import { normalizeContent, chooseMoreCompleteBlocks, collectContentElements, getBlockSourceElement } from '../../parser-dom.js';
+import { captureExportHtmlStyle } from '../../html-style.js';
 
 export function parseClaudeMessages() {
   var messages = [];
@@ -101,6 +102,7 @@ export function parseClaudeMessages() {
     }
     messages.push({
       role: role,
+      htmlStyle: captureExportHtmlStyle(contentEl),
       turnElement: el,
       contentElement: contentEl,
       contentBlocks: blocks

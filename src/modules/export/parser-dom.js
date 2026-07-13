@@ -1,4 +1,5 @@
 import { isChatVaultNode, isIgnoredContentNode, isTrustedConversationImageSrc, isPlatformOrSystemIcon, isSubstantialSvg, convertSvgToDataUrl, isDalleMetadataText, isGeminiImagePlaceholderText, hasImageAttachment, cleanText, cleanInlineSegments, stripThoughtText, isIgnoredRoleLabel, isGeminiUINoiseText, isImageOrFileSignature, sanitizeExportText, decodeVisibleTextEscapes, getBlockText, getPlainText, dedupeImageBlocksWithinMessage } from './utils.js';
+import { captureExportHtmlStyle, getExportHtmlStyleDifference } from './html-style.js';
 
 export function getElementLabel(element) {
   if (!element) return "";
@@ -49,6 +50,103 @@ export function cleanCodeText(element) {
     .trim();
 }
 
+function getCodeTextElement(element) {
+  if (!element) return null;
+  if (!element.querySelector) return element;
+  return element.querySelector("pre code") || element.querySelector("pre") || element.querySelector("code") || element;
+}
+
+function isTransparentBackground(value) {
+  var color = String(value || "").replace(/\s+/g, "").toLowerCase();
+  return !color || color === "transparent" || color === "rgba(0,0,0,0)" || color === "hsla(0,0%,0%,0)";
+}
+
+function captureCodeBlockVisualStyle(element) {
+  var current = element && (String(element.tagName || "").toLowerCase() === "pre"
+    ? element
+    : element.querySelector && element.querySelector("pre") || element);
+  var fallback;
+  for (var depth = 0; current && depth < 5; depth += 1) {
+    var style = captureExportHtmlStyle(current);
+    if (!fallback && style) fallback = { ...style };
+    if (style && !isTransparentBackground(style["background-color"])) return style;
+    var parent = current.parentElement;
+    if (!parent) break;
+    var preCount = parent.querySelectorAll ? parent.querySelectorAll("pre").length : 0;
+    if (depth > 0 && preCount > 1) break;
+    current = parent;
+  }
+  if (fallback && isTransparentBackground(fallback["background-color"])) {
+    delete fallback["background-color"];
+  }
+  return fallback;
+}
+
+function attachCodeBlockPresentation(block, element) {
+  var result = attachBlockSource(block, element);
+  var visualStyle = captureCodeBlockVisualStyle(element);
+  if (visualStyle) result.htmlStyle = visualStyle;
+  return result;
+}
+
+function sameCodeSegmentStyle(first, second) {
+  return JSON.stringify(first && first.htmlStyle || {}) === JSON.stringify(second && second.htmlStyle || {});
+}
+
+function trimCodeSegments(segments) {
+  var result = (segments || []).filter(function (segment) {
+    return segment && segment.text !== "";
+  }).map(function (segment) {
+    return Object.assign({}, segment);
+  });
+  while (result.length && /^\s*$/.test(result[0].text)) result.shift();
+  while (result.length && /^\s*$/.test(result[result.length - 1].text)) result.pop();
+  if (!result.length) return [];
+  result[0].text = result[0].text.replace(/^\s+/, "");
+  result[result.length - 1].text = result[result.length - 1].text.replace(/\s+$/, "");
+  return result.filter(function (segment) { return segment.text !== ""; });
+}
+
+export function extractCodeSegments(element) {
+  var target = getCodeTextElement(element);
+  if (!target) return undefined;
+  var segments = [];
+  var baseStyle = captureExportHtmlStyle(target);
+
+  function push(text, htmlStyle) {
+    var value = String(text || "").replace(/\u00a0/g, " ");
+    if (!value) return;
+    var segment = { text: value };
+    if (htmlStyle) segment.htmlStyle = htmlStyle;
+    var previous = segments[segments.length - 1];
+    if (previous && sameCodeSegmentStyle(previous, segment)) previous.text += value;
+    else segments.push(segment);
+  }
+
+  function walk(node, inheritedStyle) {
+    if (!node) return;
+    if (node.nodeType === 3) {
+      push(node.textContent || "", getExportHtmlStyleDifference(inheritedStyle, baseStyle));
+      return;
+    }
+    if (node.nodeType !== 1) return;
+    if (node.matches && node.matches("button,svg,path,[data-testid*='copy'],[class*='copy'],[class*='toolbar'],[data-testid*='toolbar']")) return;
+    var computedStyle = captureExportHtmlStyle(node) || inheritedStyle;
+    var htmlStyle = getExportHtmlStyleDifference(computedStyle, baseStyle);
+    if (String(node.tagName || "").toLowerCase() === "br") {
+      push("\n", htmlStyle);
+      return;
+    }
+    Array.prototype.forEach.call(node.childNodes || [], function (child) {
+      walk(child, computedStyle);
+    });
+  }
+
+  walk(target, baseStyle);
+  var result = trimCodeSegments(segments);
+  return result.length ? result : undefined;
+}
+
 export function isSubstantialCodeText(text) {
   var value = String(text || "");
   return value.length > 80 || /\n/.test(value) || /[{};#@]/.test(value);
@@ -76,7 +174,10 @@ export function collectContentElements(root, selectors) {
 }
 
 export function attachBlockSource(block, element) {
-  if (!block || !element || typeof Object.defineProperty !== "function") return block;
+  if (!block || !element) return block;
+  var htmlStyle = captureExportHtmlStyle(element);
+  if (htmlStyle) block.htmlStyle = htmlStyle;
+  if (typeof Object.defineProperty !== "function") return block;
   try {
     Object.defineProperty(block, "__sourceElement", {
       value: element,
@@ -96,14 +197,19 @@ function createInlineTextBlock(type, text, element, extra) {
   var segments = cleanInlineSegments(element);
   if (hasMeaningfulInlineSegments(segments)) {
     block.segments = segments;
+    if (segments.some(function (segment) { return Boolean(segment && segment.marks && segment.marks.math); })) {
+      block.text = segments.map(function (segment) { return String(segment && segment.text || ""); }).join("").trim();
+    }
   }
-  return block;
+  return attachBlockSource(block, element);
 }
 
 function hasMeaningfulInlineSegments(segments) {
   return Array.isArray(segments) && segments.some(function (segment) {
     var marks = segment && segment.marks || {};
-    return Boolean(segment && segment.href) || Boolean(marks.bold || marks.italic || marks.code);
+    return Boolean(segment && segment.href) || Boolean(marks.bold || marks.italic || marks.code || marks.strike ||
+      marks.superscript || marks.subscript || marks.highlight || marks.underline || marks.math) ||
+      Boolean(segment && segment.htmlStyle && Object.keys(segment.htmlStyle).length);
   });
 }
 
@@ -113,7 +219,7 @@ export function markStructuralNodes(root) {
     return structSet;
   }
   try {
-    var leaves = root.querySelectorAll("h1,h2,h3,h4,p,pre,code,ul,ol,table,blockquote,hr,img,svg");
+    var leaves = root.querySelectorAll("h1,h2,h3,h4,h5,h6,p,pre,code,ul,ol,table,blockquote,hr,img,svg");
     Array.prototype.forEach.call(leaves, function (leaf) {
       var curr = leaf;
       while (curr && curr !== root) {
@@ -142,7 +248,7 @@ export function mergeAdjacentParagraphs(blocks) {
     if (!block || !block.type) return;
     if (block.type === "paragraph" && !block.text) return;
     if (block.type === "paragraph" && out.length && out[out.length - 1].type === "paragraph") {
-      if (block.segments || out[out.length - 1].segments) {
+      if (block.segments || out[out.length - 1].segments || block.htmlStyle || out[out.length - 1].htmlStyle) {
         out.push(block);
         return;
       }
@@ -166,11 +272,13 @@ export function walkElement(parent, blocks, structSet, depth) {
     var parentCodeText = cleanCodeText(parent);
     if (parentCodeText && (parentTag === "pre" || isSubstantialCodeText(parentCodeText))) {
       if (!isDalleMetadataText(parentCodeText) && !isGeminiImagePlaceholderText(parentCodeText)) {
-        blocks.push({
+        blocks.push(attachCodeBlockPresentation({
           type: "code",
           language: extractCodeLanguage(parent),
-          text: parentCodeText
-        });
+          text: parentCodeText,
+          codeSegments: extractCodeSegments(parent),
+          codeStyle: captureExportHtmlStyle(getCodeTextElement(parent))
+        }, parent));
       }
       return;
     }
@@ -186,7 +294,7 @@ export function walkElement(parent, blocks, structSet, depth) {
     directText = "";
   }
   if (directText && !isDalleMetadataText(directText) && !isGeminiImagePlaceholderText(directText) && !isGeminiUINoiseText(directText, parent)) {
-    blocks.push({ type: "paragraph", text: directText });
+    blocks.push(attachBlockSource({ type: "paragraph", text: directText }, parent));
   }
 
   var children = Array.prototype.slice.call(parent.children || []).filter(function (child) {
@@ -208,16 +316,16 @@ export function walkElement(parent, blocks, structSet, depth) {
     var tag = String(child.tagName || "").toLowerCase();
     if (!tag) return;
 
-    if (/^h[1-4]$/.test(tag)) {
+    if (/^h[1-6]$/.test(tag)) {
       var headingText = cleanText(child);
       if (isIgnoredRoleLabel(headingText) || isGeminiUINoiseText(headingText, child)) {
         return;
       }
-      blocks.push({
+      blocks.push(attachBlockSource({
         type: "heading",
         level: Number(tag.slice(1)),
         text: headingText
-      });
+      }, child));
       var headingSegments = cleanInlineSegments(child);
       if (hasMeaningfulInlineSegments(headingSegments)) {
         blocks[blocks.length - 1].segments = headingSegments;
@@ -240,27 +348,29 @@ export function walkElement(parent, blocks, structSet, depth) {
       var codeText = cleanCodeText(child);
       if (codeText && (tag === "pre" || isSubstantialCodeText(codeText))) {
         if (!isDalleMetadataText(codeText) && !isGeminiImagePlaceholderText(codeText)) {
-          blocks.push({
+          blocks.push(attachCodeBlockPresentation({
             type: "code",
             language: extractCodeLanguage(child),
-            text: codeText
-          });
+            text: codeText,
+            codeSegments: extractCodeSegments(child),
+            codeStyle: captureExportHtmlStyle(getCodeTextElement(child))
+          }, child));
         }
         return;
       }
     }
 
     if (tag === "ul" || tag === "ol") {
-      blocks.push({
+      blocks.push(attachBlockSource({
         type: "list",
         ordered: tag === "ol",
         items: extractListItems(child)
-      });
+      }, child));
       return;
     }
 
     if (tag === "table") {
-      blocks.push(extractTable(child));
+      blocks.push(attachBlockSource(extractTable(child), child));
       return;
     }
 
@@ -276,7 +386,7 @@ export function walkElement(parent, blocks, structSet, depth) {
     }
 
     if (tag === "hr") {
-      blocks.push({ type: "separator" });
+      blocks.push(attachBlockSource({ type: "separator" }, child));
       return;
     }
 

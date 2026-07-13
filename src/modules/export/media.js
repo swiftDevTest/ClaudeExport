@@ -10,6 +10,10 @@ var _imageBytesCache = new Map();
 var _imageBytesCacheBytes = 0;
 var _imageBytesInFlight = new Map();
 
+// Standalone consumers can inject an image loader without coupling the core
+// package to extension-only runtime APIs.
+export var activeAdapters = { current: null };
+
 function normalizeImageMimeType(value) {
   var mimeType = String(value || "").split(";")[0].trim().toLowerCase();
   if (mimeType === "image/jpg") return "image/jpeg";
@@ -216,6 +220,27 @@ export async function fetchImageBytes(src, options) {
   }
   if (_imageBytesInFlight.has(src)) {
     return _imageBytesInFlight.get(src);
+  }
+  if (activeAdapters.current && typeof activeAdapters.current.imageFetcher === "function") {
+    var customPending = Promise.resolve().then(function () {
+      return activeAdapters.current.imageFetcher(src, {
+        signal: options && options.signal
+      });
+    }).then(function (result) {
+      if (result && result.bytes) {
+        assertImageByteLength(result.bytes.byteLength);
+      }
+      if (!isTestEnv && result) {
+        imageBytesCache.set(src, result);
+      }
+      return result;
+    }).catch(function () {
+      return null;
+    }).finally(function () {
+      _imageBytesInFlight.delete(src);
+    });
+    _imageBytesInFlight.set(src, customPending);
+    return await customPending;
   }
   var pending = _fetchImageBytesDirectly(src, options).then(function (result) {
     if (result && result.bytes) {

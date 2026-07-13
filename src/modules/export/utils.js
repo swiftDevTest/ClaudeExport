@@ -1,5 +1,6 @@
+import { captureExportHtmlStyle, getExportHtmlStyleDifference, sanitizeExportHtmlStyle } from './html-style.js';
+
 const i18n = globalThis.CHATVAULT_I18N;
-const PRODUCT_NAME = globalThis.CHATVAULT_PRODUCT_CONFIG?.productName || "Claude Export";
 
 export function t(key, defaultText, ...args) {
   if (i18n && typeof i18n.t === "function") {
@@ -324,7 +325,7 @@ export function formatDateDisplay(date) {
 
 export function buildFilename(format, scope, metadata) {
   var title = sanitizeFilename((metadata && metadata.title) || getConversationTitle());
-  var ext = format === "word" ? "docx" : format === "image" ? "png" : format === "markdown" ? "md" : format === "txt" ? "txt" : format === "json" ? "json" : "pdf";
+  var ext = format === "word" ? "docx" : format === "image" ? "png" : format === "markdown" ? "md" : format === "html" ? "html" : format === "txt" ? "txt" : format === "json" ? "json" : "pdf";
   return title + "." + ext;
 }
 
@@ -350,7 +351,7 @@ export function getExportFooterSegments(settings, metadata) {
   var sourceUrl = getExportSourceUrl(metadata);
   return {
     left: settings && settings.show_chatvault_badge
-      ? PRODUCT_NAME
+      ? t("export_pdf_footer_branding", "AI Chat Export")
       : "",
     right: settings && settings.include_source_url && sourceUrl
       ? t("export_footer_source", "Export From: $1", sourceUrl)
@@ -977,7 +978,103 @@ function getInlineElementMarks(element, inheritedMarks) {
   if (tag === "b" || tag === "strong") marks.bold = true;
   if (tag === "i" || tag === "em") marks.italic = true;
   if (tag === "code" || tag === "kbd" || tag === "samp") marks.code = true;
+  if (tag === "s" || tag === "del" || tag === "strike") marks.strike = true;
+  if (tag === "sup") marks.superscript = true;
+  if (tag === "sub") marks.subscript = true;
+  if (tag === "mark") marks.highlight = true;
+  if (tag === "u" || tag === "ins") marks.underline = true;
   return marks;
+}
+
+function isRenderedMathElement(element) {
+  if (!element || element.nodeType !== 1) return false;
+  var tag = String(element.tagName || "").toLowerCase();
+  if (tag === "math" || tag === "mjx-container") return true;
+  if (element.classList && element.classList.contains("katex")) return true;
+  var className = String(element.getAttribute && element.getAttribute("class") || "");
+  return /(?:^|\s)MathJax(?:\s|$)/.test(className) || Boolean(
+    element.hasAttribute && (element.hasAttribute("data-latex") || element.hasAttribute("data-tex"))
+  );
+}
+
+function normalizeInlineMathSource(value) {
+  var source = String(value == null ? "" : value)
+    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "")
+    .trim();
+  if (/^\$\$[\s\S]*\$\$$/.test(source)) source = source.slice(2, -2).trim();
+  else if (/^\$[^$][\s\S]*\$$/.test(source)) source = source.slice(1, -1).trim();
+  else if (/^\\\([\s\S]*\\\)$/.test(source) || /^\\\[[\s\S]*\\\]$/.test(source)) source = source.slice(2, -2).trim();
+  return source.slice(0, 8000);
+}
+
+var SAFE_MATHML_TAGS = new Set([
+  "math", "semantics", "annotation", "mrow", "mi", "mn", "mo", "mtext", "ms", "mspace",
+  "mfrac", "msqrt", "mroot", "mstyle", "merror", "mpadded", "mphantom", "mfenced", "menclose",
+  "msub", "msup", "msubsup", "munder", "mover", "munderover", "mmultiscripts", "mprescripts", "none",
+  "mtable", "mtr", "mtd", "maligngroup", "malignmark"
+]);
+
+var SAFE_MATHML_ATTRIBUTES = new Set([
+  "xmlns", "display", "displaystyle", "scriptlevel", "mathvariant", "mathsize", "mathcolor", "mathbackground",
+  "dir", "lspace", "rspace", "stretchy", "symmetric", "maxsize", "minsize", "largeop", "movablelimits",
+  "accent", "accentunder", "fence", "separator", "form", "linebreak", "columnalign", "rowalign",
+  "columnspacing", "rowspacing", "columnspan", "rowspan", "width", "height", "depth", "voffset",
+  "notation", "open", "close", "separators", "encoding"
+]);
+
+function isSafeMathMlAttributeValue(value) {
+  var text = String(value == null ? "" : value).trim();
+  return text.length <= 300 && !/[<>"'{}\r\n]/.test(text) && !/(?:url\s*\(|javascript\s*:|data\s*:|expression\s*\()/i.test(text);
+}
+
+export function sanitizeExportMathMl(input, documentRef) {
+  var source = String(input || "").trim();
+  if (!source || source.length > 50000) return "";
+  var ownerDocument = documentRef || globalThis.document || globalThis.window && globalThis.window.document;
+  var Parser = ownerDocument && ownerDocument.defaultView && ownerDocument.defaultView.DOMParser || globalThis.DOMParser;
+  if (typeof Parser !== "function") return "";
+  try {
+    var parsed = new Parser().parseFromString(source, "text/html");
+    var math = parsed && parsed.querySelector && parsed.querySelector("math");
+    if (!math) return "";
+    var nodes = [math].concat(Array.prototype.slice.call(math.querySelectorAll("*")));
+    for (var index = nodes.length - 1; index >= 0; index -= 1) {
+      var node = nodes[index];
+      var tag = String(node.localName || node.tagName || "").toLowerCase();
+      if (!SAFE_MATHML_TAGS.has(tag)) {
+        node.remove();
+        continue;
+      }
+      Array.prototype.slice.call(node.attributes || []).forEach(function (attribute) {
+        var name = String(attribute.name || "").toLowerCase();
+        if (!SAFE_MATHML_ATTRIBUTES.has(name) || !isSafeMathMlAttributeValue(attribute.value)) {
+          node.removeAttribute(attribute.name);
+        }
+      });
+    }
+    return String(math.outerHTML || "").slice(0, 50000);
+  } catch (error) {
+    return "";
+  }
+}
+
+function getRenderedMathMl(element) {
+  if (!element) return "";
+  var tag = String(element.tagName || "").toLowerCase();
+  var math = tag === "math" ? element : element.querySelector && element.querySelector("math");
+  return math ? sanitizeExportMathMl(math.outerHTML || "", element.ownerDocument) : "";
+}
+
+function getRenderedMathSource(element) {
+  if (!element) return "";
+  var annotation = element.querySelector && element.querySelector('annotation[encoding*="tex" i], annotation[encoding*="latex" i]');
+  var script = element.querySelector && element.querySelector('script[type^="math/tex"]');
+  var source = annotation && annotation.textContent || script && script.textContent ||
+    element.getAttribute && (element.getAttribute("data-latex") || element.getAttribute("data-tex") || element.getAttribute("aria-label")) || "";
+  if (!source && String(element.tagName || "").toLowerCase() === "math") {
+    source = element.textContent || "";
+  }
+  return normalizeInlineMathSource(source);
 }
 
 function sameInlineSegmentStyle(first, second) {
@@ -985,12 +1082,20 @@ function sameInlineSegmentStyle(first, second) {
   if ((first.href || "") !== (second.href || "")) return false;
   var a = first.marks || {};
   var b = second.marks || {};
+  if (a.math || b.math) return false;
   return Boolean(a.bold) === Boolean(b.bold) &&
     Boolean(a.italic) === Boolean(b.italic) &&
-    Boolean(a.code) === Boolean(b.code);
+    Boolean(a.code) === Boolean(b.code) &&
+    Boolean(a.strike) === Boolean(b.strike) &&
+    Boolean(a.superscript) === Boolean(b.superscript) &&
+    Boolean(a.subscript) === Boolean(b.subscript) &&
+    Boolean(a.highlight) === Boolean(b.highlight) &&
+    Boolean(a.underline) === Boolean(b.underline) &&
+    Boolean(a.math) === Boolean(b.math) &&
+    JSON.stringify(first.htmlStyle || {}) === JSON.stringify(second.htmlStyle || {});
 }
 
-function pushInlineSegment(segments, text, href, marks) {
+function pushInlineSegment(segments, text, href, marks, htmlStyle, mathMl) {
   var value = sanitizeInlineSegmentText(text);
   if (value === "") return;
   var segment = { text: value };
@@ -999,7 +1104,16 @@ function pushInlineSegment(segments, text, href, marks) {
   if (marks && marks.bold) normalizedMarks.bold = true;
   if (marks && marks.italic) normalizedMarks.italic = true;
   if (marks && marks.code) normalizedMarks.code = true;
+  if (marks && marks.strike) normalizedMarks.strike = true;
+  if (marks && marks.superscript) normalizedMarks.superscript = true;
+  if (marks && marks.subscript) normalizedMarks.subscript = true;
+  if (marks && marks.highlight) normalizedMarks.highlight = true;
+  if (marks && marks.underline) normalizedMarks.underline = true;
+  if (marks && marks.math) normalizedMarks.math = true;
   if (Object.keys(normalizedMarks).length) segment.marks = normalizedMarks;
+  var normalizedStyle = sanitizeExportHtmlStyle(htmlStyle);
+  if (normalizedStyle) segment.htmlStyle = normalizedStyle;
+  if (normalizedMarks.math && mathMl) segment.mathMl = mathMl;
 
   var previous = segments[segments.length - 1];
   if (sameInlineSegmentStyle(previous, segment)) {
@@ -1011,47 +1125,51 @@ function pushInlineSegment(segments, text, href, marks) {
 
 export function cleanInlineSegments(element) {
   if (!element) return undefined;
-  var target = element;
-  if (element.cloneNode && element.querySelectorAll) {
-    target = element.cloneNode(true);
-    Array.prototype.forEach.call(target.querySelectorAll(".sr-only, [class*=\"sr-only\"]"), function (el) {
-      el.remove();
-    });
-  }
-
   var segments = [];
+  var rootStyle = captureExportHtmlStyle(element);
 
-  function walk(node, inheritedHref, inheritedMarks) {
+  function walk(node, inheritedHref, inheritedMarks, inheritedComputedStyle) {
     if (!node) return;
     if (node.nodeType === 3) {
-      pushInlineSegment(segments, node.textContent || "", inheritedHref, inheritedMarks);
+      pushInlineSegment(segments, node.textContent || "", inheritedHref, inheritedMarks, getExportHtmlStyleDifference(inheritedComputedStyle, rootStyle));
       return;
     }
     if (node.nodeType !== 1) return;
+    if (node.matches && node.matches(".sr-only, [class*=\"sr-only\"]")) return;
 
     var tag = String(node.tagName || "").toLowerCase();
+    var computedStyle = captureExportHtmlStyle(node) || inheritedComputedStyle;
+    var htmlStyle = getExportHtmlStyleDifference(computedStyle, rootStyle);
     if (tag === "br") {
-      pushInlineSegment(segments, "\n", inheritedHref, inheritedMarks);
+      pushInlineSegment(segments, "\n", inheritedHref, inheritedMarks, htmlStyle);
       return;
     }
 
     var marks = getInlineElementMarks(node, inheritedMarks);
+    if (isRenderedMathElement(node)) {
+      var mathSource = getRenderedMathSource(node);
+      if (mathSource) {
+        marks.math = true;
+        pushInlineSegment(segments, mathSource, inheritedHref, marks, htmlStyle, getRenderedMathMl(node));
+        return;
+      }
+    }
     var href = inheritedHref;
     if (tag === "a") {
       href = normalizeExportLinkHref(node.getAttribute && node.getAttribute("href"));
       var cleanedText = getCleanedAnchorText(node);
       if (cleanedText) {
-        pushInlineSegment(segments, cleanedText, href, marks);
+        pushInlineSegment(segments, cleanedText, href, marks, htmlStyle);
         return;
       }
     }
 
     Array.prototype.forEach.call(node.childNodes || [], function (child) {
-      walk(child, href, marks);
+      walk(child, href, marks, computedStyle);
     });
   }
 
-  walk(target, "", {});
+  walk(element, "", {}, rootStyle);
   var text = segments.map(function (segment) { return segment.text; }).join("").trim();
   return text ? segments : undefined;
 }
@@ -1617,7 +1735,11 @@ var mathSymbols = {
   "\\\\cdot": "·", "\\\\partial": "∂", "\\\\nabla": "∇", "\\\\in": "∈", "\\\\notin": "∉",
   "\\\\forall": "∀", "\\\\exists": "∃", "\\\\varnothing": "∅", "\\\\subset": "⊂",
   "\\\\supset": "⊃", "\\\\cap": "∩", "\\\\cup": "∪", "\\\\rightarrow": "→",
-  "\\\\leftarrow": "←", "\\\\neq": "≠", "\\\\leq": "≤", "\\\\geq": "≥", "\\\\sqrt": "√"
+  "\\\\leftarrow": "←", "\\\\leftrightarrow": "↔", "\\\\Rightarrow": "⇒", "\\\\Leftarrow": "⇐",
+  "\\\\Leftrightarrow": "⇔", "\\\\to": "→", "\\\\mapsto": "↦", "\\\\neq": "≠",
+  "\\\\leq": "≤", "\\\\geq": "≥", "\\\\equiv": "≡", "\\\\propto": "∝", "\\\\sim": "∼",
+  "\\\\perp": "⊥", "\\\\parallel": "∥", "\\\\angle": "∠", "\\\\degree": "°",
+  "\\\\cdots": "⋯", "\\\\ldots": "…", "\\\\therefore": "∴", "\\\\because": "∵", "\\\\sqrt": "√"
 };
 
 var superscripts = {
@@ -1663,6 +1785,13 @@ export function formatLatexUnicode(text) {
   }
 
   function cleanLatexMath(math) {
+    math = math.replace(/\\left|\\right/g, "");
+    math = math.replace(/\\sqrt(?:\[([^\]]+)\])?\{([^{}]+)\}/g, function(match, root, value) {
+      return root ? root + "√(" + value + ")" : "√(" + value + ")";
+    });
+    math = math.replace(/\\frac\{([^{}]+)\}\{([^{}]+)\}/g, "($1)/($2)");
+    math = math.replace(/\\(?:overline|bar)\{([^{}]+)\}/g, "$1̅");
+    math = math.replace(/\\hat\{([^{}]+)\}/g, "$1̂");
     Object.keys(mathSymbols).forEach(function(cmd) {
       math = math.replace(new RegExp(cmd + "(?![a-zA-Z])", "g"), mathSymbols[cmd]);
     });
@@ -1670,8 +1799,10 @@ export function formatLatexUnicode(text) {
     math = math.replace(/\\mathbf\{([^}]+)\}/g, "$1");
     math = math.replace(/\\mathit\{([^}]+)\}/g, "$1");
     math = math.replace(/\\text\{([^}]+)\}/g, "$1");
-    math = math.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, "($1)/($2)");
+    math = math.replace(/\\operatorname\{([^}]+)\}/g, "$1");
+    math = math.replace(/\\(?:quad|qquad|,|;|!)/g, " ");
     math = replaceSupersSubscripts(math);
+    math = math.replace(/[{}]/g, "");
     math = math.replace(/\\/g, "");
     return math.trim();
   }
@@ -1718,6 +1849,13 @@ function hasInlineCodeSegment(segments) {
   return (segments || []).some(function (segment) {
     var marks = segment && segment.marks || {};
     return Boolean(segment && (segment.code || marks.code));
+  });
+}
+
+function hasInlineMathSegment(segments) {
+  return (segments || []).some(function (segment) {
+    var marks = segment && segment.marks || {};
+    return Boolean(segment && (segment.math || marks.math));
   });
 }
 
@@ -2180,9 +2318,20 @@ export function getInlinePlainText(value) {
     if (shouldCoalesceInlineSegments(value.segments)) {
       return formatLatexUnicode(getCoalescedInlineSegmentsText(value.segments, value.text));
     }
-    return formatLatexUnicode(value.segments.map(function (segment) {
-      return sanitizeInlineSegmentText(segment && segment.text || "");
-    }).join(""));
+    return value.segments.map(function (segment) {
+      var text = sanitizeInlineSegmentText(segment && segment.text || "");
+      var marks = segment && segment.marks || {};
+      if (marks.math || segment && segment.math) {
+        return formatLatexUnicode("\\(" + text.trim() + "\\)");
+      }
+      if (marks.superscript || segment && segment.superscript) {
+        return formatLatexUnicode("\\(X^{" + text.trim() + "}\\)").replace(/^X/, "");
+      }
+      if (marks.subscript || segment && segment.subscript) {
+        return formatLatexUnicode("\\(X_{" + text.trim() + "}\\)").replace(/^X/, "");
+      }
+      return formatLatexUnicode(text);
+    }).join("");
   }
   return formatExportTextForDisplay(value && value.text || "");
 }
@@ -2198,13 +2347,20 @@ export function getInlineRichText(value) {
   if (shouldCoalesceInlineSegments(value.segments)) {
     return formatLatexUnicode(getCoalescedInlineSegmentsText(value.segments, value.text));
   }
-  if (!hasInlineCodeSegment(value.segments) && hasLatexMathSyntax(getInlineSegmentsRawText(value.segments))) {
+  if (!hasInlineCodeSegment(value.segments) && !hasInlineMathSegment(value.segments) && hasLatexMathSyntax(getInlineSegmentsRawText(value.segments))) {
     return formatLatexUnicode(getInlineSegmentsSanitizedText(value.segments));
   }
   return value.segments.map(function (segment) {
     var marks = segment.marks || {};
     var isCode = Boolean(marks.code || segment.code);
-    var text = isCode
+    var isMath = Boolean(marks.math || segment.math);
+    var text = isMath
+      ? formatLatexUnicode("\\(" + sanitizeInlineSegmentText(segment && segment.text || "").trim() + "\\)")
+      : marks.superscript || segment.superscript
+      ? formatLatexUnicode("\\(X^{" + sanitizeInlineSegmentText(segment && segment.text || "").trim() + "}\\)").replace(/^X/, "")
+      : marks.subscript || segment.subscript
+      ? formatLatexUnicode("\\(X_{" + sanitizeInlineSegmentText(segment && segment.text || "").trim() + "}\\)").replace(/^X/, "")
+      : isCode
       ? sanitizeInlineSegmentText(segment && segment.text || "")
       : formatInlineTextForDisplay(segment && segment.text || "");
     if (!text) return "";

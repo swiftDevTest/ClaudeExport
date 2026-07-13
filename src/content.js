@@ -205,7 +205,7 @@
   }
 
   function normalizeContextExportFormat(format) {
-    return /^(pdf|word|image|markdown|txt|json|select)$/.test(format || "") ? format : "pdf";
+    return /^(pdf|word|image|markdown|html|txt|json|select)$/.test(format || "") ? format : "pdf";
   }
 
   function isContextExportReady() {
@@ -845,7 +845,7 @@
   let batchChatGptWebTotal = null;
   let batchChatGptLoadedAll = false;
   let batchHistoryLoadingActive = false;
-  const exportFormats = ["pdf", "word", "image", "markdown", "txt", "json"];
+  const exportFormats = ["pdf", "word", "image", "markdown", "html", "txt", "json"];
   const EXPORT_PROGRESS_INITIAL = 0.04;
   const EXPORT_PROGRESS_ESTIMATE_CAP = 0.9;
   const EXPORT_PROGRESS_TICK_MS = 1600;
@@ -859,6 +859,7 @@
       word: "DOCX",
       image: "Image",
       markdown: "Markdown",
+      html: "HTML",
       txt: "Text",
       json: "JSON"
     };
@@ -944,6 +945,7 @@
     const codeBlockCount = Math.max(0, Number(stats.codeBlocks || stats.codeBlockCount) || 0);
     const baseByFormat = {
       markdown: 7000,
+      html: 8000,
       txt: 5000,
       json: 5000,
       word: 11000,
@@ -952,6 +954,7 @@
     };
     const messageCostByFormat = {
       markdown: 160,
+      html: 190,
       txt: 90,
       json: 90,
       word: 260,
@@ -960,6 +963,7 @@
     };
     const imageCostByFormat = {
       markdown: 120,
+      html: 700,
       txt: 40,
       json: 40,
       word: 850,
@@ -1222,6 +1226,7 @@
             <option value="pdf">PDF</option>
             <option value="word">Word</option>
             <option value="markdown">Markdown</option>
+            <option value="html">HTML</option>
             <option value="image">${t("format_image", isChineseUi() ? "图片" : "Image")}</option>
             <option value="txt">${tx("content_format_text", "Text", "文本")}</option>
             <option value="json">JSON</option>
@@ -1282,6 +1287,10 @@
                   <div class="cv-batch-theme-option active" data-theme="default">
                     <span class="cv-batch-theme-circle cv-batch-theme-circle--default"></span>
                     <span class="cv-batch-theme-name">${t("export_theme_default", isChineseUi() ? "极简纯白" : "Minimalist")}</span>
+                  </div>
+                  <div class="cv-batch-theme-option" data-theme="natural">
+                    <span class="cv-batch-theme-circle cv-batch-theme-circle--natural"></span>
+                    <span class="cv-batch-theme-name">${t("export_theme_natural", isChineseUi() ? "自然原生" : "Natural")}</span>
                   </div>
                   <div class="cv-batch-theme-option" data-theme="midnight">
                     <span class="cv-batch-theme-circle cv-batch-theme-circle--midnight"></span>
@@ -1368,6 +1377,7 @@
                 <button type="button" class="cv-batch-format-btn active" data-format="pdf">PDF</button>
                 <button type="button" class="cv-batch-format-btn" data-format="word">Word</button>
                 <button type="button" class="cv-batch-format-btn" data-format="markdown">Markdown</button>
+                <button type="button" class="cv-batch-format-btn" data-format="html">HTML</button>
                 <button type="button" class="cv-batch-format-btn" data-format="image">${t("format_image", isChineseUi() ? "图片" : "Image")}</button>
                 <button type="button" class="cv-batch-format-btn" data-format="txt">${tx("content_format_text", "Text", "文本")}</button>
                 <button type="button" class="cv-batch-format-btn" data-format="json">JSON</button>
@@ -1457,7 +1467,7 @@
     shadowRoot.querySelectorAll(".cv-batch-theme-option").forEach(btn => {
       btn.addEventListener("click", () => {
         const theme = btn.getAttribute("data-theme");
-        if (!isProUser && theme !== "default") {
+        if (!isProUser && theme !== "default" && theme !== "natural") {
           showUpgradePrompt("Premium report themes require Pro.");
           return;
         }
@@ -3264,6 +3274,11 @@
       }
 
       if (Array.isArray(messages) && messages.length > 0) {
+        if ((options.preserveHtmlPresentation || options.preserveMarkdownSemantics) && pageMessages.length > 0 && typeof fetchers.mergePageHtmlPresentation === "function") {
+          return fetchers.mergePageHtmlPresentation(messages, pageMessages, {
+            includeHtmlStyles: options.preserveHtmlPresentation === true
+          });
+        }
         return cloneExportMessages(messages);
       }
       if (pageMessages.length > 0) {
@@ -3279,10 +3294,14 @@
     }
   }
 
-  async function getCurrentConversationMessagesForExport(pageMessages) {
+  async function getCurrentConversationMessagesForExport(pageMessages, options = {}) {
     const chat = getCurrentConversationForExport();
     if (!chat) return pageMessages;
-    return fetchConversationMessagesForExport(chat, { pageMessages });
+    return fetchConversationMessagesForExport(chat, {
+      pageMessages,
+      preserveHtmlPresentation: options.preserveHtmlPresentation === true,
+      preserveMarkdownSemantics: options.preserveMarkdownSemantics === true
+    });
   }
 
   function sanitizeBatchPathSegment(value, fallback = "Untitled") {
@@ -3682,7 +3701,10 @@
         });
       }
       try {
-        rawMessagesForExport = await getCurrentConversationMessagesForExport(pageMessagesForExport);
+        rawMessagesForExport = await getCurrentConversationMessagesForExport(pageMessagesForExport, {
+          preserveHtmlPresentation: formatForExport === "html",
+          preserveMarkdownSemantics: formatForExport === "markdown"
+        });
         if (isCurrentExportCancelled()) return;
       } catch (error) {
         console.warn("Full conversation fetch failed before export, using parsed page messages:", error);

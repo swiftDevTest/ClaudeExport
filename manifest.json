@@ -3,7 +3,7 @@
   "default_locale": "en",
   "name": "__MSG_extensionName__",
   "short_name": "__MSG_extensionShortName__",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "__MSG_extensionDescription__",
   "icons": {
     "16": "images/toolbar-icon-16.png",
@@ -49,6 +49,7 @@
     {
       "resources": [
         "src/modules/export/utils.js",
+        "src/modules/export/html-style.js",
         "src/modules/export/platform.js",
         "src/modules/export/parser-dom.js",
         "src/modules/export/media.js",
@@ -63,6 +64,7 @@
         "src/modules/export/builders/markdown.js",
         "src/modules/export/builders/txt.js",
         "src/modules/export/builders/json.js",
+        "src/modules/export/builders/html.js",
         "src/modules/export/ui-controller.js",
         "src/modules/export/platform-fetchers.js",
         "src/modules/export/message-adapter.js",

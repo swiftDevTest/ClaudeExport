@@ -1,5 +1,32 @@
 import { getPlainText, notifyProgress, t, yieldToBrowser } from '../utils.js';
 
+function stripHtmlPresentationFromSegment(segment) {
+  if (!segment || typeof segment !== "object") return segment;
+  var copy = { ...segment };
+  delete copy.htmlStyle;
+  delete copy.mathMl;
+  return copy;
+}
+
+function stripHtmlPresentationFromListItem(item) {
+  if (!item || typeof item !== "object") return item;
+  var copy = { ...item };
+  if (Array.isArray(copy.segments)) copy.segments = copy.segments.map(stripHtmlPresentationFromSegment);
+  if (Array.isArray(copy.subItems)) copy.subItems = copy.subItems.map(stripHtmlPresentationFromListItem);
+  return copy;
+}
+
+function stripHtmlPresentationFromBlock(block) {
+  if (!block || typeof block !== "object") return block;
+  var copy = { ...block };
+  delete copy.htmlStyle;
+  delete copy.codeStyle;
+  delete copy.codeSegments;
+  if (Array.isArray(copy.segments)) copy.segments = copy.segments.map(stripHtmlPresentationFromSegment);
+  if (Array.isArray(copy.items)) copy.items = copy.items.map(stripHtmlPresentationFromListItem);
+  return copy;
+}
+
 export async function buildJsonBlob(messages, metadata, settings, options) {
   var opts = options || {};
   var signal = opts.signal;
@@ -30,7 +57,7 @@ export async function buildJsonBlob(messages, metadata, settings, options) {
     data.messages.push({
       role: msg.role,
       content: textContent,
-      contentBlocks: msg.contentBlocks || []
+      contentBlocks: (msg.contentBlocks || []).map(stripHtmlPresentationFromBlock)
     });
 
     if (i % 5 === 0 || i === messages.length - 1) {

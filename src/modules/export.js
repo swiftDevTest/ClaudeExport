@@ -30,6 +30,7 @@
 
   var EXPORT_THEMES = {
     default: true,
+    natural: true,
     oxford: true,
     mckinsey: true,
     newsprint: true,
@@ -199,7 +200,7 @@
 
   function buildFilename(format, scope, metadata) {
     var title = sanitizeFilename((metadata && metadata.title) || getConversationTitle());
-    var ext = format === "word" ? "docx" : format === "image" ? "png" : format === "markdown" ? "md" : format === "txt" ? "txt" : format === "json" ? "json" : "pdf";
+    var ext = format === "word" ? "docx" : format === "image" ? "png" : format === "markdown" ? "md" : format === "html" ? "html" : format === "txt" ? "txt" : format === "json" ? "json" : "pdf";
     return title + "." + ext;
   }
 
@@ -275,7 +276,8 @@
         import(resolveModulePath("src/modules/export/platform-fetchers.js")),
         import(resolveModulePath("src/modules/export/message-adapter.js")),
         import(resolveModulePath("src/modules/export/builders/txt.js")),
-        import(resolveModulePath("src/modules/export/builders/json.js"))
+        import(resolveModulePath("src/modules/export/builders/json.js")),
+        import(resolveModulePath("src/modules/export/builders/html.js"))
       ]);
     } catch (error) {
       return Promise.reject(error);
@@ -290,7 +292,7 @@
           engine: arr[4], media: arr[5], zip: arr[6],
           save: arr[7], docx: arr[8], image: arr[9], pdf: arr[10],
           markdown: arr[11], uiController: arr[12], platformFetchers: arr[13], messageAdapter: arr[14],
-          txt: arr[15], json: arr[16]
+          txt: arr[15], json: arr[16], html: arr[17]
         };
       }).catch(function (err) {
         _ready = null;

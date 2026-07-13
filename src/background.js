@@ -774,6 +774,7 @@ try {
         { id: "pdf", titleMsg: "contextMenuExportPdf", defaultTitle: "Export to PDF" },
         { id: "word", titleMsg: "contextMenuExportWord", defaultTitle: "Export to Word" },
         { id: "markdown", titleMsg: "contextMenuExportMarkdown", defaultTitle: "Export to Markdown" },
+        { id: "html", titleMsg: "contextMenuExportHtml", defaultTitle: "Export to HTML" },
         { id: "image", titleMsg: "contextMenuExportImage", defaultTitle: "Export to Image" },
         { id: "txt", titleMsg: "contextMenuExportText", defaultTitle: "Export to Text" },
         { id: "json", titleMsg: "contextMenuExportJson", defaultTitle: "Export to JSON" }

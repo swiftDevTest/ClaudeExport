@@ -1,5 +1,6 @@
 import { isGeminiUINoiseText, isGeminiUINoiseContainer, isIgnoredRoleLabel, isIgnoredContentNode } from '../../utils.js';
 import { normalizeContent, chooseMoreCompleteBlocks, collectContentElements, getBlockSourceElement } from '../../parser-dom.js';
+import { captureExportHtmlStyle } from '../../html-style.js';
 import { compareElementsInDocument, pushDistinctDocumentElement } from '../shared.js';
 
 export function parseGeminiMessages() {
@@ -410,6 +411,7 @@ export function parseGeminiMessages() {
             rememberGeminiUserImageBlocks(blocks);
             messages.push({
               role: "user",
+              htmlStyle: captureExportHtmlStyle(contentEl),
               turnElement: turn,
               contentElement: contentEl,
               contentBlocks: blocks
@@ -437,6 +439,7 @@ export function parseGeminiMessages() {
           if (responseBlocks.length) {
             messages.push({
               role: "assistant",
+              htmlStyle: captureExportHtmlStyle(responseContentEl),
               turnElement: turn,
               contentElement: responseContentEl,
               contentBlocks: responseBlocks
@@ -466,6 +469,7 @@ export function parseGeminiMessages() {
           }
           messages.push({
             role: role,
+            htmlStyle: captureExportHtmlStyle(contentEl),
             turnElement: el,
             contentElement: contentEl,
             contentBlocks: blocks

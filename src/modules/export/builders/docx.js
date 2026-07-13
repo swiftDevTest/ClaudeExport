@@ -3,8 +3,6 @@ import { preloadImageForDocx, calculateWordImageDimensions } from '../media.js';
 import { createZip } from '../zip.js';
 import { getWordTheme } from '../themes/word.js';
 
-const PRODUCT_NAME = globalThis.CHATVAULT_PRODUCT_CONFIG?.productName || "Claude Export";
-
 export function xmlEscape(value) {
   return String(value == null ? "" : value)
     .replace(/&/g, "&amp;")
@@ -20,7 +18,11 @@ export function wordRun(text, options) {
   var opts = options || {};
   if (opts.bold) props += "<w:b/>";
   if (opts.italic) props += "<w:i/>";
+  if (opts.strike) props += "<w:strike/>";
   if (opts.underline) props += '<w:u w:val="single"/>';
+  if (opts.superscript) props += '<w:vertAlign w:val="superscript"/>';
+  if (opts.subscript) props += '<w:vertAlign w:val="subscript"/>';
+  if (opts.highlight) props += '<w:highlight w:val="yellow"/>';
   if (opts.color) props += '<w:color w:val="' + xmlEscape(opts.color) + '"/>';
   if (opts.size) props += '<w:sz w:val="' + Math.round(Number(opts.size) * 2) + '"/>';
   if (opts.font) props += '<w:rFonts w:ascii="' + xmlEscape(opts.font) + '" w:hAnsi="' + xmlEscape(opts.font) + '"/>';
@@ -97,16 +99,24 @@ export function wordParagraph(text, options) {
     runsXml = opts.segments.map(function (segment) {
       var marks = segment.marks || {};
       var isCode = Boolean(marks.code || segment.code);
+      var isMath = Boolean(marks.math || segment.math);
       var chunkOpts = Object.assign({}, opts, {
         bold: opts.bold || marks.bold || segment.bold,
         italic: opts.italic || marks.italic || segment.italic,
-        underline: opts.underline || Boolean(segment.href),
+        strike: opts.strike || marks.strike || segment.strike,
+        superscript: opts.superscript || marks.superscript || segment.superscript,
+        subscript: opts.subscript || marks.subscript || segment.subscript,
+        highlight: opts.highlight || marks.highlight || segment.highlight,
+        underline: opts.underline || marks.underline || segment.underline || Boolean(segment.href),
         font: isCode ? "Consolas" : opts.font,
         shading: isCode ? (opts.inlineCodeBg || "F1F5F9") : opts.textShading,
         color: isCode ? (opts.inlineCodeText || "0F6574") : (segment.href ? "0563C1" : opts.color),
         preserveSegmentSpace: true
       });
-      var runXml = wordRun(segment.text, chunkOpts);
+      var segmentText = isMath
+        ? formatLatexUnicode("\\(" + sanitizeInlineSegmentText(segment.text || "").trim() + "\\)")
+        : segment.text;
+      var runXml = wordRun(segmentText, chunkOpts);
       var relId = getDocxHyperlinkRelId(opts.hyperlinks, segment.href);
       return relId
         ? '<w:hyperlink r:id="' + xmlEscape(relId) + '" w:history="1">' + runXml + "</w:hyperlink>"
@@ -593,7 +603,7 @@ export async function buildDocxBlob(messages, metadata, settingsInput, options) 
   }
 
   if (settings.show_chatvault_badge) {
-    bodyParts.push(wordParagraph("Exported locally by " + PRODUCT_NAME, { color: themeWord.colorMuted, size: 9, spacing: 80 }));
+    bodyParts.push(wordParagraph(t("export_branding_footer", "Exported locally by AI Chat Export"), { color: themeWord.colorMuted, size: 9, spacing: 80 }));
   }
   var body = bodyParts.join("");
 
@@ -611,8 +621,8 @@ export async function buildDocxBlob(messages, metadata, settingsInput, options) 
   var zipFiles = [
     { path: "_rels/.rels", content: packageRelsXml() },
     { path: "word/styles.xml", content: stylesXml(themeWord) },
-    { path: "docProps/core.xml", content: coreXml(title, PRODUCT_NAME) },
-    { path: "docProps/app.xml", content: appXml(PRODUCT_NAME) },
+    { path: "docProps/core.xml", content: coreXml(title) },
+    { path: "docProps/app.xml", content: appXml() },
     { path: "word/document.xml", content: documentXml }
   ];
 
@@ -720,17 +730,15 @@ export function stylesXml(themeWord) {
     "</w:styles>";
 }
 
-export function coreXml(title, creator) {
-  var appName = creator || PRODUCT_NAME;
+export function coreXml(title) {
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
     '<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">' +
-    "<dc:title>" + xmlEscape(title) + "</dc:title><dc:creator>" + xmlEscape(appName) + "</dc:creator>" +
+    "<dc:title>" + xmlEscape(title) + "</dc:title><dc:creator>AI Chat Export</dc:creator>" +
     '<dcterms:created xsi:type="dcterms:W3CDTF">' + new Date().toISOString() + "</dcterms:created>" +
     "</cp:coreProperties>";
 }
 
-export function appXml(applicationName) {
-  var appName = applicationName || PRODUCT_NAME;
+export function appXml() {
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
-    '<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>' + xmlEscape(appName) + '</Application></Properties>';
+    '<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>AI Chat Export</Application></Properties>';
 }

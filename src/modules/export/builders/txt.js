@@ -3,6 +3,8 @@ import {
   t,
   formatDateDisplay,
   sanitizeExportText,
+  formatLatexUnicode,
+  getInlinePlainText,
   getExportFooterText,
   notifyProgress,
   yieldToBrowser
@@ -78,12 +80,12 @@ export async function buildTxtBlob(messages, metadata, settings, options) {
           var level = Math.min(6, block.level || 1);
           var hashes = "";
           for (var k = 0; k < level; k++) hashes += "#";
-          lines.push(hashes + " " + sanitizeExportText(block.text || ""));
+          lines.push(hashes + " " + getInlinePlainText(block));
           lines.push("");
           break;
 
         case "paragraph":
-          lines.push(sanitizeExportText(block.text || ""));
+          lines.push(getInlinePlainText(block));
           lines.push("");
           break;
 
@@ -107,7 +109,7 @@ export async function buildTxtBlob(messages, metadata, settings, options) {
         case "blockquote":
         case "quote":
           if (block.text) {
-            lines.push(block.text.split("\n").map(function (line) {
+            lines.push(getInlinePlainText(block).split("\n").map(function (line) {
               return "> " + line;
             }).join("\n"));
             lines.push("");
@@ -116,7 +118,12 @@ export async function buildTxtBlob(messages, metadata, settings, options) {
 
         case "math":
         case "latex":
-          lines.push("$$\n" + (block.text || "") + "\n$$");
+          lines.push(formatLatexUnicode("\\[" + (block.text || "") + "\\]"));
+          lines.push("");
+          break;
+
+        case "separator":
+          lines.push("--------------------------------------------------");
           lines.push("");
           break;
 
@@ -167,7 +174,7 @@ function trimTrailingBlankLines(lines) {
 
 function renderListItem(item, lines, prefix, indent) {
   var baseIndent = indent || "";
-  lines.push(baseIndent + prefix + " " + sanitizeExportText((item && item.text) || ""));
+  lines.push(baseIndent + prefix + " " + getInlinePlainText(item));
 
   var childIndent = baseIndent + "  ";
   var subItems = (item && item.subItems) || [];
@@ -238,7 +245,7 @@ function renderTableBlock(block, lines) {
 
   var headerParts = [];
   for (var i = 0; i < colCount; i++) {
-    headerParts.push(sanitizeExportText(headers[i] || ""));
+    headerParts.push(formatLatexUnicode(sanitizeExportText(headers[i] || "")));
   }
   lines.push("| " + headerParts.join(" | ") + " |");
   
@@ -251,7 +258,7 @@ function renderTableBlock(block, lines) {
   rows.forEach(function (row) {
     var rowParts = [];
     for (var i = 0; i < colCount; i++) {
-      rowParts.push(sanitizeExportText(row[i] || ""));
+      rowParts.push(formatLatexUnicode(sanitizeExportText(row[i] || "")));
     }
     lines.push("| " + rowParts.join(" | ") + " |");
   });

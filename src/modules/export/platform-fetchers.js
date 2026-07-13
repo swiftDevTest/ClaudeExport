@@ -259,12 +259,145 @@ function createMissingDependencyError(name) {
         const finalBlocks = dedupeImageBlocksWithinMessage(blocks);
 
         const contentBlocks = orderUserImageBlocksFirst(message.role, finalBlocks);
-        return {
+        var clonedMessage = {
           role: message.role,
           contentBlocks
         };
+        if (message.htmlStyle && typeof message.htmlStyle === "object") {
+          clonedMessage.htmlStyle = { ...message.htmlStyle };
+        }
+        return clonedMessage;
       })
       .filter((message) => message.contentBlocks.length);
+  }
+
+  function getPresentationBlockText(block) {
+    if (!block) return "";
+    if (block.type === "table") {
+      return (block.headers && block.headers.length ? [block.headers] : []).concat(block.rows || [])
+        .map(function (row) { return (row || []).join(" "); })
+        .join("\n");
+    }
+    if (block.type === "list") {
+      return (block.items || []).map(function flatten(item) {
+        if (!item) return "";
+        return [item.text || ""].concat((item.subItems || []).map(flatten)).filter(Boolean).join("\n");
+      }).filter(Boolean).join("\n");
+    }
+    return String(block.text || "");
+  }
+
+  function getPresentationMessageText(message) {
+    return (message && message.contentBlocks || []).map(getPresentationBlockText).filter(Boolean).join("\n");
+  }
+
+  function normalizePresentationMatchText(value) {
+    return String(value || "").replace(/\s+/g, " ").trim();
+  }
+
+  function stripInlineMarkdownForPresentationMatch(value) {
+    return String(value || "")
+      .replace(/\$\$([\s\S]*?)\$\$/g, "$1")
+      .replace(/\\\[([\s\S]*?)\\\]/g, "$1")
+      .replace(/\\\(([\s\S]*?)\\\)/g, "$1")
+      .replace(/\$([^$\n]+)\$/g, "$1")
+      .replace(/!\[([^\]]*)\]\([^)]*\)/g, "$1")
+      .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+      .replace(/(`+)([\s\S]*?)\1/g, "$2")
+      .replace(/(\*\*|__)([\s\S]*?)\1/g, "$2")
+      .replace(/~~([\s\S]*?)~~/g, "$1")
+      .replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, "$1$2")
+      .replace(/(^|[^_])_([^_\n]+)_(?!_)/g, "$1$2")
+      .replace(/\\([`*_~\[\]\\])/g, "$1");
+  }
+
+  function getPresentationBlockMatchText(block) {
+    var text = getPresentationBlockText(block);
+    return normalizePresentationMatchText(block && block.type === "code"
+      ? text
+      : stripInlineMarkdownForPresentationMatch(text));
+  }
+
+  function getPresentationMessageMatchText(message) {
+    return (message && message.contentBlocks || []).map(function (block) {
+      return (block && block.type || "") + ":" + getPresentationBlockMatchText(block);
+    }).join("\n");
+  }
+
+  function copyPagePresentation(target, source, includeHtmlStyles) {
+    if (!target || !source) return;
+    if (target.type === "code" && Array.isArray(source.codeSegments)) {
+      var pageCodeText = source.codeSegments.map(function (segment) {
+        return String(segment && segment.text || "");
+      }).join("");
+      if (pageCodeText && normalizePresentationMatchText(pageCodeText) === normalizePresentationMatchText(target.text)) {
+        target.text = pageCodeText;
+      }
+    }
+    if (includeHtmlStyles) {
+      ["htmlStyle", "codeStyle", "codeSegments"].forEach(function (key) {
+        if (source[key] != null) target[key] = source[key];
+      });
+    }
+    if (Array.isArray(source.segments)) {
+      var sourceText = source.segments.map(function (segment) { return String(segment && segment.text || ""); }).join("");
+      if (normalizePresentationMatchText(sourceText) === normalizePresentationMatchText(stripInlineMarkdownForPresentationMatch(target.text))) {
+        target.text = sourceText;
+        target.segments = includeHtmlStyles ? source.segments : source.segments.map(function (segment) {
+          var cleanSegment = segment && typeof segment === "object" ? { ...segment } : { text: String(segment || "") };
+          delete cleanSegment.htmlStyle;
+          delete cleanSegment.mathMl;
+          return cleanSegment;
+        });
+      }
+    }
+  }
+
+  export function mergePageHtmlPresentation(messages, pageMessages, options) {
+    var output = cloneExportMessages(messages || []);
+    var page = cloneExportMessages(pageMessages || []);
+    var includeHtmlStyles = !options || options.includeHtmlStyles !== false;
+    var usedMessageIndexes = new Set();
+    var messageIndexesByKey = new Map();
+    output.forEach(function (message, index) {
+      var key = message.role + "\n" + getPresentationMessageMatchText(message);
+      if (!messageIndexesByKey.has(key)) messageIndexesByKey.set(key, []);
+      messageIndexesByKey.get(key).push(index);
+    });
+
+    page.forEach(function (pageMessage, pageIndex) {
+      var pageText = getPresentationMessageMatchText(pageMessage);
+      var key = pageMessage.role + "\n" + pageText;
+      var candidates = messageIndexesByKey.get(key) || [];
+      var matchIndex = candidates.find(function (candidateIndex) {
+        return !usedMessageIndexes.has(candidateIndex);
+      });
+      if (!Number.isFinite(matchIndex)) matchIndex = -1;
+      if (matchIndex < 0 && output[pageIndex] && output[pageIndex].role === pageMessage.role) {
+        matchIndex = pageIndex;
+      }
+      if (matchIndex < 0 || usedMessageIndexes.has(matchIndex)) return;
+      usedMessageIndexes.add(matchIndex);
+
+      var targetMessage = output[matchIndex];
+      if (includeHtmlStyles && pageMessage.htmlStyle) targetMessage.htmlStyle = pageMessage.htmlStyle;
+      var usedBlockIndexes = new Set();
+      (pageMessage.contentBlocks || []).forEach(function (pageBlock, blockIndex) {
+        var pageBlockText = getPresentationBlockMatchText(pageBlock);
+        var targetIndex = (targetMessage.contentBlocks || []).findIndex(function (candidate, candidateIndex) {
+          return !usedBlockIndexes.has(candidateIndex) && candidate.type === pageBlock.type &&
+            getPresentationBlockMatchText(candidate) === pageBlockText;
+        });
+        if (targetIndex < 0 && targetMessage.contentBlocks[blockIndex] && targetMessage.contentBlocks[blockIndex].type === pageBlock.type) {
+          targetIndex = blockIndex;
+        }
+        if (targetIndex < 0 || usedBlockIndexes.has(targetIndex)) return;
+        usedBlockIndexes.add(targetIndex);
+        copyPagePresentation(targetMessage.contentBlocks[targetIndex], pageBlock, includeHtmlStyles);
+      });
+    });
+
+    return output;
   }
 
   function extractChatGptFileId(value) {
@@ -2944,6 +3077,7 @@ function createMissingDependencyError(name) {
       fetchGeminiConversationMessages: fetchGeminiConversationMessages,
       cloneExportMessages: cloneExportMessages,
       mergeChatGptExportMessages: mergeChatGptExportMessages,
-      mergeGeminiExportMessages: mergeGeminiExportMessages
+      mergeGeminiExportMessages: mergeGeminiExportMessages,
+      mergePageHtmlPresentation: mergePageHtmlPresentation
     };
   }

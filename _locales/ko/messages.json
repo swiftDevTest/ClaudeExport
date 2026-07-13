@@ -1645,5 +1645,29 @@
   },
   "popup_health_attention": {
     "message": "주의 필요"
+  },
+  "contextMenuExportHtml": {
+    "message": "HTML로 내보내기"
+  },
+  "format_html": {
+    "message": "HTML"
+  },
+  "popup_format_html_hint": {
+    "message": "오프라인 웹페이지"
+  },
+  "export_theme_natural": {
+    "message": "내추럴"
+  },
+  "export_progress_preparing_html": {
+    "message": "HTML 내보내기 준비 중..."
+  },
+  "export_progress_building_html": {
+    "message": "HTML 내보내기 생성 중..."
+  },
+  "export_progress_embedding_images": {
+    "message": "이미지 삽입 중..."
+  },
+  "export_image_unavailable": {
+    "message": "오프라인 내보내기에서 이미지를 사용할 수 없습니다"
   }
 }

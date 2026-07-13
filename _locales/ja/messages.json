@@ -1645,5 +1645,29 @@
   },
   "popup_health_attention": {
     "message": "注意が必要"
+  },
+  "contextMenuExportHtml": {
+    "message": "HTML にエクスポート"
+  },
+  "format_html": {
+    "message": "HTML"
+  },
+  "popup_format_html_hint": {
+    "message": "オフラインWebページ"
+  },
+  "export_theme_natural": {
+    "message": "ナチュラル"
+  },
+  "export_progress_preparing_html": {
+    "message": "HTML エクスポートを準備中..."
+  },
+  "export_progress_building_html": {
+    "message": "HTML エクスポートを作成中..."
+  },
+  "export_progress_embedding_images": {
+    "message": "画像を埋め込み中..."
+  },
+  "export_image_unavailable": {
+    "message": "オフラインエクスポートでは画像を利用できません"
   }
 }

@@ -688,6 +688,7 @@ button:focus-visible,
 
 .pdf-color,
 .md-color,
+.html-color,
 .txt-color,
 .docx-color,
 .img-color,
@@ -705,6 +706,12 @@ button:focus-visible,
   --format-bg: #f3f0ff;
   --format-border: #d8d0ff;
   --format-ink: #4c3b96;
+}
+
+.html-color {
+  --format-bg: #eefbf8;
+  --format-border: #b7eadf;
+  --format-ink: #0f766e;
 }
 
 .txt-color {
@@ -896,6 +903,10 @@ button:focus-visible,
 .theme-circle--default {
   background: #f1f5f9;
   border: 1px solid #cbd5e1;
+}
+.theme-circle--natural {
+  background: #ffffff;
+  border: 1px solid #94a3b8;
 }
 .theme-circle--midnight {
   background: #1e293b;

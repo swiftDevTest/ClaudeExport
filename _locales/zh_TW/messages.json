@@ -1645,5 +1645,29 @@
   },
   "popup_health_attention": {
     "message": "注意"
+  },
+  "contextMenuExportHtml": {
+    "message": "匯出為 HTML"
+  },
+  "format_html": {
+    "message": "HTML"
+  },
+  "popup_format_html_hint": {
+    "message": "離線網頁"
+  },
+  "export_theme_natural": {
+    "message": "自然原生"
+  },
+  "export_progress_preparing_html": {
+    "message": "正在準備 HTML 匯出..."
+  },
+  "export_progress_building_html": {
+    "message": "正在產生 HTML 匯出..."
+  },
+  "export_progress_embedding_images": {
+    "message": "正在內嵌圖片..."
+  },
+  "export_image_unavailable": {
+    "message": "圖片無法用於離線匯出"
   }
 }

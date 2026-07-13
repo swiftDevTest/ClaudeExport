@@ -1645,5 +1645,29 @@
   },
   "popup_health_attention": {
     "message": "Attention Required"
+  },
+  "contextMenuExportHtml": {
+    "message": "Export to HTML"
+  },
+  "format_html": {
+    "message": "HTML"
+  },
+  "popup_format_html_hint": {
+    "message": "Offline webpage"
+  },
+  "export_theme_natural": {
+    "message": "Natural"
+  },
+  "export_progress_preparing_html": {
+    "message": "Preparing HTML export..."
+  },
+  "export_progress_building_html": {
+    "message": "Building HTML export..."
+  },
+  "export_progress_embedding_images": {
+    "message": "Embedding images..."
+  },
+  "export_image_unavailable": {
+    "message": "Image unavailable in offline export"
   }
 }

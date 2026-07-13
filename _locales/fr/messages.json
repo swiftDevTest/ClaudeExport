@@ -1645,5 +1645,29 @@
   },
   "popup_health_attention": {
     "message": "Attention requise"
+  },
+  "contextMenuExportHtml": {
+    "message": "Exporter en HTML"
+  },
+  "format_html": {
+    "message": "HTML"
+  },
+  "popup_format_html_hint": {
+    "message": "Page hors ligne"
+  },
+  "export_theme_natural": {
+    "message": "Naturel"
+  },
+  "export_progress_preparing_html": {
+    "message": "Préparation de l’export HTML..."
+  },
+  "export_progress_building_html": {
+    "message": "Création de l’export HTML..."
+  },
+  "export_progress_embedding_images": {
+    "message": "Intégration des images..."
+  },
+  "export_image_unavailable": {
+    "message": "Image indisponible dans l’export hors ligne"
   }
 }

@@ -1645,5 +1645,29 @@
   },
   "popup_health_attention": {
     "message": "Atenção necessária"
+  },
+  "contextMenuExportHtml": {
+    "message": "Exportar para HTML"
+  },
+  "format_html": {
+    "message": "HTML"
+  },
+  "popup_format_html_hint": {
+    "message": "Página offline"
+  },
+  "export_theme_natural": {
+    "message": "Natural"
+  },
+  "export_progress_preparing_html": {
+    "message": "Preparando exportação HTML..."
+  },
+  "export_progress_building_html": {
+    "message": "Criando exportação HTML..."
+  },
+  "export_progress_embedding_images": {
+    "message": "Incorporando imagens..."
+  },
+  "export_image_unavailable": {
+    "message": "Imagem indisponível na exportação offline"
   }
 }

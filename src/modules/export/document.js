@@ -3,6 +3,7 @@ import {
   sanitizeExportText,
   sanitizeInlineSegmentText,
   sanitizeImageAlt,
+  sanitizeExportMathMl,
   normalizeExportLinkHref,
   ensureImageBlockMetadata,
   dedupeImageBlocksWithinMessage,
@@ -12,6 +13,7 @@ import {
   isDalleMetadataText,
   isGeminiImagePlaceholderText
 } from './utils.js';
+import { captureExportHtmlStyle, sanitizeExportHtmlStyle } from './html-style.js';
 
 export var EXPORT_DOCUMENT_VERSION = 1;
 export var EXPORT_BLOCK_TYPES = {
@@ -68,7 +70,19 @@ export function normalizeInlineSegments(segments, fallbackText) {
     if (segment.bold || marks.bold) normalizedMarks.bold = true;
     if (segment.italic || marks.italic) normalizedMarks.italic = true;
     if (segment.code || marks.code) normalizedMarks.code = true;
+    if (segment.strike || marks.strike) normalizedMarks.strike = true;
+    if (segment.superscript || marks.superscript) normalizedMarks.superscript = true;
+    if (segment.subscript || marks.subscript) normalizedMarks.subscript = true;
+    if (segment.highlight || marks.highlight) normalizedMarks.highlight = true;
+    if (segment.underline || marks.underline) normalizedMarks.underline = true;
+    if (segment.math || marks.math) normalizedMarks.math = true;
     if (Object.keys(normalizedMarks).length) out.marks = normalizedMarks;
+    if (normalizedMarks.math && segment.mathMl) {
+      var mathMl = sanitizeExportMathMl(segment.mathMl);
+      if (mathMl) out.mathMl = mathMl;
+    }
+    var htmlStyle = sanitizeExportHtmlStyle(segment.htmlStyle);
+    if (htmlStyle) out.htmlStyle = htmlStyle;
     return out;
   }).filter(Boolean);
 
@@ -81,12 +95,36 @@ export function normalizeInlineSegments(segments, fallbackText) {
 
 function copyTextBlock(block, type, index) {
   var copy = { ...block, type: type };
-  copy.text = sanitizeExportText(copy.text);
+  copy.text = type === "code"
+    ? String(copy.text == null ? "" : copy.text).replace(/\u00a0/g, " ").trim()
+    : sanitizeExportText(copy.text);
   var segments = normalizeInlineSegments(copy.segments, copy.text);
   if (segments) copy.segments = segments;
+  var htmlStyle = sanitizeExportHtmlStyle(copy.htmlStyle);
+  if (htmlStyle) copy.htmlStyle = htmlStyle;
+  else delete copy.htmlStyle;
+  if (type === "code") {
+    var codeStyle = sanitizeExportHtmlStyle(copy.codeStyle);
+    if (codeStyle) copy.codeStyle = codeStyle;
+    else delete copy.codeStyle;
+    var codeSegments = Array.isArray(copy.codeSegments) ? copy.codeSegments.map(function (segment) {
+      if (!segment || typeof segment !== "object") return null;
+      var text = String(segment.text == null ? "" : segment.text).replace(/\u00a0/g, " ");
+      if (!text) return null;
+      var out = { text: text };
+      var segmentStyle = sanitizeExportHtmlStyle(segment.htmlStyle);
+      if (segmentStyle) out.htmlStyle = segmentStyle;
+      return out;
+    }).filter(Boolean) : [];
+    if (codeSegments.length && codeSegments.map(function (segment) { return segment.text; }).join("") === copy.text) {
+      copy.codeSegments = codeSegments;
+    } else {
+      delete copy.codeSegments;
+    }
+  }
   if (type === "heading") {
     var level = Number(copy.level);
-    copy.level = Number.isFinite(level) ? Math.min(4, Math.max(1, Math.round(level))) : 2;
+    copy.level = Number.isFinite(level) ? Math.min(6, Math.max(1, Math.round(level))) : 2;
   }
   copy.originalIndex = Number.isFinite(Number(copy.originalIndex))
     ? Number(copy.originalIndex)
@@ -145,6 +183,8 @@ export function normalizeExportBlock(block, index) {
       ordered: Boolean(block.ordered),
       items: normalizeListItems(block.items)
     };
+    var listHtmlStyle = sanitizeExportHtmlStyle(block.htmlStyle);
+    if (listHtmlStyle) listBlock.htmlStyle = listHtmlStyle;
     return listBlock.items.length ? listBlock : null;
   }
 
@@ -155,6 +195,8 @@ export function normalizeExportBlock(block, index) {
       headers: normalizeTableRows([block.headers || []])[0] || [],
       rows: normalizeTableRows(block.rows)
     };
+    var tableHtmlStyle = sanitizeExportHtmlStyle(block.htmlStyle);
+    if (tableHtmlStyle) tableBlock.htmlStyle = tableHtmlStyle;
     return tableBlock.headers.length || tableBlock.rows.length ? tableBlock : null;
   }
 
@@ -171,7 +213,10 @@ export function normalizeExportBlock(block, index) {
   }
 
   if (type === "separator") {
-    return { type: "separator" };
+    var separator = { type: "separator" };
+    var separatorHtmlStyle = sanitizeExportHtmlStyle(block.htmlStyle);
+    if (separatorHtmlStyle) separator.htmlStyle = separatorHtmlStyle;
+    return separator;
   }
 
   return null;
@@ -190,6 +235,8 @@ export function normalizeExportMessage(message, index) {
     role: role,
     contentBlocks: contentBlocks
   };
+  var messageHtmlStyle = sanitizeExportHtmlStyle(message.htmlStyle) || captureExportHtmlStyle(message.contentElement);
+  if (messageHtmlStyle) out.htmlStyle = messageHtmlStyle;
   if (Number.isFinite(Number(message.index))) {
     out.index = Number(message.index);
   } else if (Number.isFinite(Number(index))) {

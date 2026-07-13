@@ -6,6 +6,7 @@ import { renderPdfDocument } from './renderers/pdf/index.js';
 import { buildMarkdownBlob } from './builders/markdown.js';
 import { buildTxtBlob } from './builders/txt.js';
 import { buildJsonBlob } from './builders/json.js';
+import { buildHtmlBlob } from './builders/html.js';
 import { saveBlobWithDialog, saveBlob } from './save.js';
 
 export { saveBlobWithDialog, saveBlob };
@@ -14,7 +15,7 @@ var PLATFORM_GEMINI = "gemini";
 
 export async function createExportBlob(request) {
   var format = request && request.format;
-  if (!/^(pdf|word|image|markdown|txt|json)$/.test(format || "")) {
+  if (!/^(pdf|word|image|markdown|html|txt|json)$/.test(format || "")) {
     return { ok: false, error: "Unsupported export format." };
   }
 
@@ -58,6 +59,11 @@ export async function createExportBlob(request) {
       });
     } else if (format === "json") {
       blob = await buildJsonBlob(document.messages, document.metadata, document.settings, {
+        signal: request && request.signal,
+        onProgress: request && request.onProgress
+      });
+    } else if (format === "html") {
+      blob = await buildHtmlBlob(document.messages, document.metadata, document.settings, {
         signal: request && request.signal,
         onProgress: request && request.onProgress
       });

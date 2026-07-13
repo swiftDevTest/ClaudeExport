@@ -58,7 +58,7 @@ export async function buildMarkdownBlob(messages, metadata, settings, options) {
     }
 
     var msg = messages[i];
-    
+
     // Filter out user messages if "Export AI Replies Only" is enabled
     if (settings.export_ai_replies_only && msg.role === "user") {
       continue;
@@ -117,11 +117,16 @@ export async function buildMarkdownBlob(messages, metadata, settings, options) {
         case "blockquote":
         case "quote":
           if (block.text) {
-            lines.push(renderMarkdownText(block.text).split("\n").map(function (line) {
+            lines.push(renderInlineSegments(block).split("\n").map(function (line) {
               return "> " + line;
             }).join("\n"));
             lines.push("");
           }
+          break;
+
+        case "separator":
+          lines.push("---");
+          lines.push("");
           break;
 
         case "image":
@@ -155,7 +160,7 @@ export async function buildMarkdownBlob(messages, metadata, settings, options) {
     lines.push("");
     lines.push(
       '<div style="' + BRANDING_FOOTER_STYLE + '">' +
-      '<span>' + escapeHtmlText(footerSegments.left) + "</span>" +
+      '<span><em>' + escapeHtmlText(footerSegments.left) + "</em></span>" +
       '<span style="text-align: right;">' + escapeHtmlText(footerSegments.right) + "</span>" +
       "</div>"
     );
@@ -184,14 +189,22 @@ function renderInlineSegments(block) {
     if (!seg) return "";
     var marks = seg.marks || {};
     var isCode = Boolean(marks.code || seg.code);
-    var text = isCode ? sanitizeInlineSegmentText(seg.text || "") : renderMarkdownInlineText(seg.text || "");
+    var isMath = Boolean(marks.math || seg.math);
+    var text = isMath
+      ? formatLatexUnicode("\\(" + sanitizeInlineSegmentText(seg.text || "").trim() + "\\)")
+      : isCode ? sanitizeInlineSegmentText(seg.text || "") : renderMarkdownInlineText(seg.text || "");
     var isBold = Boolean(marks.bold || seg.bold);
     var isItalic = Boolean(marks.italic || seg.italic);
     var href = seg.href || "";
 
     if (isCode) text = renderInlineCode(text);
-    if (isBold) text = "**" + text + "**";
-    if (isItalic) text = "*" + text + "*";
+    if (marks.superscript || seg.superscript) text = "<sup>" + escapeHtmlText(text) + "</sup>";
+    if (marks.subscript || seg.subscript) text = "<sub>" + escapeHtmlText(text) + "</sub>";
+    if (marks.highlight || seg.highlight) text = "<mark>" + escapeHtmlText(text) + "</mark>";
+    if (marks.underline || seg.underline) text = "<u>" + escapeHtmlText(text) + "</u>";
+    if (marks.strike || seg.strike) text = wrapMarkdownSpan(text, "~~");
+    if (isBold) text = wrapMarkdownSpan(text, "**");
+    if (isItalic) text = wrapMarkdownSpan(text, "*");
     if (href) text = "[" + escapeMarkdownLinkText(text) + "](" + escapeMarkdownLinkDestination(href) + ")";
 
     return text;
@@ -206,13 +219,23 @@ function renderMarkdownInlineText(value) {
   return formatLatexUnicode(sanitizeInlineSegmentText(value));
 }
 
+function wrapMarkdownSpan(value, marker) {
+  var text = String(value || "");
+  var leading = text.match(/^\s+/);
+  var trailing = text.match(/\s+$/);
+  var start = leading ? leading[0] : "";
+  var end = trailing ? trailing[0] : "";
+  var core = text.slice(start.length, text.length - end.length);
+  return core ? start + marker + core + marker + end : text;
+}
+
 function shouldRenderLatexSegmentsAsPlainText(segments) {
   if (!Array.isArray(segments) || !segments.length) return false;
-  var hasCode = segments.some(function (seg) {
+  var hasCodeOrSemanticMath = segments.some(function (seg) {
     var marks = seg && seg.marks || {};
-    return Boolean(seg && (seg.code || marks.code));
+    return Boolean(seg && (seg.code || marks.code || seg.math || marks.math));
   });
-  if (hasCode) return false;
+  if (hasCodeOrSemanticMath) return false;
   return hasLatexMathSyntax(segments.map(function (seg) {
     return seg && seg.text || "";
   }).join(""));
@@ -304,7 +327,7 @@ function escapeMarkdownLinkDestination(href) {
 function renderTableBlock(block, lines) {
   var headers = block.headers || [];
   var rows = block.rows || [];
-  
+
   if (!headers.length && !rows.length) return;
 
   var colCount = headers.length;
@@ -318,7 +341,7 @@ function renderTableBlock(block, lines) {
     headerParts.push(renderTableCell(headers[i] || ""));
   }
   lines.push("| " + headerParts.join(" | ") + " |");
-  
+
   // Divider line
   var dividerParts = [];
   for (var i = 0; i < colCount; i++) {

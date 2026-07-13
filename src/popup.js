@@ -151,6 +151,8 @@
     setText('[data-format="pdf"] small', "popup_format_pdf_hint", "Formatted save");
     setText('[data-format="word"] small', "popup_format_word_hint", "Editable");
     setText('[data-format="markdown"] small', "popup_format_markdown_hint", "Knowledge base");
+    setText('[data-format="html"] .format-name', "format_html", "HTML");
+    setText('[data-format="html"] small', "popup_format_html_hint", "Offline webpage");
     setText('[data-format="image"] .format-name', "format_image", "Image");
     setText('[data-format="image"] small', "popup_format_image_hint", "Share card");
     setText('[data-format="txt"] .format-name', "popup_format_text_name", "Text");
@@ -163,6 +165,7 @@
 
     setText("#panel-settings .section-card:nth-of-type(1) h3", "export_theme_label", "Export Theme & Styling");
     setText('[data-theme="default"] .theme-name', "export_theme_default", "Minimalist");
+    setText('[data-theme="natural"] .theme-name', "export_theme_natural", "Natural");
     setText('[data-theme="midnight"] .theme-name', "export_theme_midnight", "Midnight Dark");
     setText('[data-theme="editorial"] .theme-name', "export_theme_editorial", "Editorial");
     setText('[data-theme="terminal"] .theme-name', "export_theme_terminal", "Terminal");
@@ -1145,7 +1148,7 @@
     document.querySelectorAll(".theme-option").forEach(function (opt) {
       opt.addEventListener("click", function () {
         var theme = opt.getAttribute("data-theme");
-        if (!isProUser && theme !== "default") {
+        if (!isProUser && theme !== "default" && theme !== "natural") {
           if (typeof showSubscriptionPanel === "function") {
             showSubscriptionPanel();
           }
@@ -1790,6 +1793,11 @@
       type: "CHATVAULT_POPUP_UPDATE_SETTINGS",
       settings: nextSettings
     }, function () {
+      var lastError = chrome.runtime.lastError;
+      if (lastError) {
+        showToast(t("popup_refresh_page_retry", "Please refresh the current AI conversation page and try again."));
+        return;
+      }
       // settings 已同步到 content.js，content.js 端会自动使缓存失效。
       // 不需要在这里再次全量拉取状态（会触发不必要的健康检查和隐私断言计算）。
       // 本地 localSettings 记录最新值即可。
