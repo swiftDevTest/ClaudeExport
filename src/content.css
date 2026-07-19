@@ -1,18 +1,14 @@
 /* Shadow DOM 容器基础样式 */
 :host {
-  --primary-color: #c96442;
-  --primary-hover: #7c2d12;
-  --accent: #c96442;
-  --accent-strong: #7c2d12;
-  --cv-primary-rgb: 201, 100, 66;
-  --cv-accent: #b4532a;
-  --bg-primary: #fbf4ed;
-  --bg-white: #fffdfb;
-  --text-dark: #2f2016;
-  --text-secondary: #735b45;
-  --border-color: #ead6c7;
+  --primary-color: #10b981;
+  --primary-hover: #059669;
+  --bg-primary: #f8fafc;
+  --bg-white: #ffffff;
+  --text-dark: #0f172a;
+  --text-secondary: #64748b;
+  --border-color: #e2e8f0;
   --danger-color: #ef4444;
-  --success-color: #c96442;
+  --success-color: #10b981;
   --warning-color: #f59e0b;
 }
 
@@ -30,7 +26,7 @@
   align-items: center;
   justify-content: center;
   gap: 12px;
-  z-index: 2147483647;
+  z-index: 2147483005;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s ease;
@@ -108,10 +104,10 @@
   width: min(560px, calc(100vw - 32px));
   z-index: 2147483647;
   padding: 11px 12px 10px;
-  border: 1px solid rgba(var(--cv-primary-rgb), 0.2);
+  border: 1px solid rgba(22, 134, 154, 0.2);
   border-radius: 16px;
-  background: rgba(255, 253, 251, 0.98);
-  color: var(--text-dark);
+  background: rgba(248, 253, 252, 0.98);
+  color: #123047;
   box-shadow: 0 18px 46px rgba(18, 48, 71, 0.16);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   opacity: 1;
@@ -127,8 +123,8 @@
 }
 
 .cv-export-progress-strip[data-mode="batch"] {
-  border-color: rgba(var(--cv-primary-rgb), 0.26);
-  background: var(--bg-white);
+  border-color: rgba(15, 101, 116, 0.26);
+  background: rgba(242, 251, 249, 0.99);
 }
 
 .cv-export-progress-main {
@@ -166,7 +162,7 @@
 
 .cv-export-progress-percent {
   min-width: 44px;
-  color: var(--primary-hover);
+  color: #0f6574;
   font-size: 12px;
   font-variant-numeric: tabular-nums;
   font-weight: 860;
@@ -176,10 +172,10 @@
 .cv-export-progress-cancel {
   min-height: 30px;
   padding: 0 12px;
-  border: 1px solid rgba(var(--cv-primary-rgb), 0.22);
+  border: 1px solid rgba(15, 101, 116, 0.22);
   border-radius: 10px;
-  background: var(--bg-white);
-  color: var(--text-dark);
+  background: #f8fdfc;
+  color: #123047;
   cursor: pointer;
   font-size: 12px;
   font-weight: 780;
@@ -187,8 +183,8 @@
 }
 
 .cv-export-progress-cancel:hover {
-  border-color: rgba(var(--cv-primary-rgb), 0.36);
-  background: rgba(var(--cv-primary-rgb), 0.08);
+  border-color: rgba(15, 101, 116, 0.36);
+  background: #eaf7f5;
 }
 
 .cv-export-progress-cancel:active {
@@ -204,14 +200,14 @@
   margin-top: 9px;
   overflow: hidden;
   border-radius: 999px;
-  background: rgba(var(--cv-primary-rgb), 0.13);
+  background: rgba(15, 101, 116, 0.13);
 }
 
 .cv-export-progress-fill {
   width: 100%;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--primary-color), var(--cv-accent, var(--primary-hover)));
+  background: linear-gradient(90deg, #16869a, #22c7b8);
   transform: scaleX(0);
   transform-origin: left center;
   transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
@@ -224,6 +220,43 @@
   font-variant-numeric: tabular-nums;
   font-weight: 650;
   line-height: 1.25;
+}
+
+.cv-export-progress-notice {
+  position: relative;
+  margin-top: 7px;
+  padding: 7px 9px 7px 22px;
+  border-radius: 8px;
+  background: rgba(233, 120, 11, 0.08);
+  color: #8a5a13;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.4;
+  white-space: pre-line;
+}
+
+.cv-export-progress-notice::before {
+  position: absolute;
+  top: 12px;
+  left: 9px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #e9780b;
+  content: "";
+}
+
+.cv-export-progress-notice[data-severity="high_risk"] {
+  background: rgba(220, 38, 38, 0.08);
+  color: #a51d1d;
+}
+
+.cv-export-progress-notice[data-severity="high_risk"]::before {
+  background: #dc2626;
+}
+
+.cv-export-progress-notice[hidden] {
+  display: none;
 }
 
 @media (max-width: 640px) {
@@ -361,26 +394,32 @@
 }
 
 .cv-selection-select {
-  flex: 0 0 142px;
-  min-height: 30px;
+  flex: 0 0 136px;
+  height: 28px;
+  min-height: 28px;
   background-color: var(--bg-white);
   border: 1px solid var(--border-color);
   border-radius: 999px;
-  padding: 0 28px 0 12px;
+  padding: 0 24px 0 10px;
   font-size: 11.5px;
   font-weight: 760;
   line-height: 1;
   color: var(--text-dark);
   outline: none;
   cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23667085' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 10 5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 12px 12px;
 }
 
 .cv-page-toast {
-  position: fixed !important;
+  position: fixed;
   left: 50%;
-  top: max(68px, env(safe-area-inset-top, 0px) + 62px);
-  z-index: 2147483647 !important;
-  box-sizing: border-box;
+  top: max(18px, env(safe-area-inset-top, 0px) + 12px);
+  z-index: 2147483012;
   max-width: min(420px, calc(100vw - 32px));
   min-height: 40px;
   padding: 12px 20px;
@@ -409,6 +448,303 @@
 .cv-page-toast.active {
   opacity: 1;
   transform: translate(-50%, 0);
+}
+
+.cv-notion-success-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483011;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.44);
+  backdrop-filter: blur(5px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.cv-notion-success-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.cv-notion-success-card {
+  position: relative;
+  width: min(390px, calc(100vw - 40px));
+  padding: 30px 28px 24px;
+  color: #17202a;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 28px 80px rgba(15, 23, 42, 0.26);
+  transform: translateY(8px) scale(0.98);
+  transition: transform 180ms ease;
+}
+
+.cv-notion-success-overlay.active .cv-notion-success-card {
+  transform: translateY(0) scale(1);
+}
+
+.cv-notion-success-close {
+  position: absolute;
+  top: 12px;
+  right: 13px;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  color: #64748b;
+  font-size: 24px;
+  line-height: 28px;
+  background: transparent;
+  border: 0;
+  border-radius: 9px;
+  cursor: pointer;
+}
+
+.cv-notion-success-close:hover {
+  color: #0f172a;
+  background: #f1f5f9;
+}
+
+.cv-notion-success-confetti {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 54px;
+  margin-bottom: 8px;
+  color: #f59e0b;
+}
+
+.cv-notion-success-confetti strong {
+  font-size: 42px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.cv-notion-success-confetti span:nth-child(2) { color: #ef4444; }
+.cv-notion-success-confetti span:nth-child(4) { color: #10b981; }
+.cv-notion-success-confetti span:nth-child(5) { color: #8b5cf6; }
+
+.cv-notion-success-card h2 {
+  margin: 0;
+  color: #111827;
+  font-size: 20px;
+  font-weight: 760;
+  line-height: 1.3;
+}
+
+.cv-notion-success-card p {
+  margin: 9px auto 18px;
+  max-width: 310px;
+  color: #64748b;
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+.cv-notion-success-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.cv-notion-success-done {
+  min-height: 40px;
+  box-sizing: border-box;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 18px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.cv-notion-success-done {
+  color: #334155;
+  background: #f8fafc;
+  border: 1px solid #dbe3ec;
+}
+
+.cv-notion-success-open {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-height: 62px;
+  box-sizing: border-box;
+  padding: 11px 44px 11px 14px;
+  color: #17202a;
+  text-align: left;
+  text-decoration: none;
+  background: #f8fafc;
+  border: 1px solid #dbe3ec;
+  border-radius: 12px;
+}
+
+.cv-notion-success-open:hover {
+  color: #17202a;
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.cv-notion-success-open-label {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 16px;
+}
+
+.cv-notion-success-open strong {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  color: #111827;
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 20px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cv-notion-success-open-arrow {
+  position: absolute;
+  top: 50%;
+  right: 16px;
+  color: #d97706;
+  font-size: 18px;
+  transform: translateY(-50%);
+}
+
+.cv-batch-result-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483646;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.46);
+  backdrop-filter: blur(5px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 160ms ease;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.cv-batch-result-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.cv-batch-result-card {
+  position: relative;
+  width: min(560px, calc(100vw - 40px));
+  box-sizing: border-box;
+  padding: 26px 26px 22px;
+  color: #17202a;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid #dbe3ec;
+  border-radius: 16px;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.26);
+}
+
+.cv-batch-result-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  color: #64748b;
+  font: inherit;
+  font-size: 22px;
+  line-height: 1;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.cv-batch-result-close:hover { background: #f1f5f9; }
+
+.cv-batch-result-mark {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  margin: 0 auto 12px;
+  color: #ffffff;
+  font-size: 19px;
+  font-weight: 800;
+  background: #0f9f6e;
+  border-radius: 12px;
+}
+
+.cv-batch-result-mark[data-status="partial"] { background: #c9871a; }
+.cv-batch-result-mark[data-status="failed"] { background: #c94b5c; }
+
+.cv-batch-result-card h2 {
+  margin: 0;
+  color: #17202a;
+  font-size: 19px;
+  line-height: 1.3;
+}
+
+.cv-batch-result-card > p {
+  margin: 7px auto 16px;
+  color: #64748b;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.cv-batch-result-items {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.cv-batch-result-item {
+  position: relative;
+  min-width: 0;
+  min-height: 58px;
+  box-sizing: border-box;
+  padding: 9px 34px 9px 12px;
+  color: #17202a;
+  text-align: left;
+  background: #f8fafc;
+  border: 1px solid #dbe3ec;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.cv-batch-result-item:hover:not(:disabled) { background: #f1f5f9; border-color: #cbd5e1; }
+.cv-batch-result-item:disabled { cursor: default; opacity: 0.58; }
+.cv-batch-result-item span { display: block; color: #64748b; font-size: 10px; line-height: 1.35; }
+.cv-batch-result-item strong { display: block; overflow: hidden; margin-top: 2px; font-size: 12px; line-height: 1.45; text-overflow: ellipsis; white-space: nowrap; }
+.cv-batch-result-item b { position: absolute; top: 50%; right: 12px; color: #d97706; font-size: 17px; transform: translateY(-50%); }
+
+.cv-batch-result-actions { display: flex; justify-content: center; margin-top: 16px; }
+.cv-batch-result-actions button { min-height: 36px; padding: 0 16px; color: #334155; font: inherit; font-size: 12px; font-weight: 700; background: #f8fafc; border: 1px solid #dbe3ec; border-radius: 9px; cursor: pointer; }
+.cv-batch-result-actions button:hover { background: #f1f5f9; }
+
+.cv-batch-result-close:focus-visible,
+.cv-batch-result-item:focus-visible,
+.cv-batch-result-actions button:focus-visible {
+  outline: 2px solid #d97706;
+  outline-offset: 2px;
+}
+
+@media (max-width: 560px) {
+  .cv-batch-result-items { grid-template-columns: 1fr; }
+  .cv-batch-result-card { padding-inline: 18px; }
 }
 
 /* 批量导出弹窗遮罩层 */
@@ -441,7 +777,7 @@
   background: #ffffff;
   width: 520px;
   max-width: 90vw;
-  height: 520px;
+  height: 600px;
   max-height: 90vh;
   border-radius: 16px;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04), 0 0 1px rgba(0,0,0,0.1);
@@ -450,6 +786,228 @@
   overflow: hidden;
   animation: modal-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
   overscroll-behavior: contain;
+}
+
+.cv-batch-mode-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  margin: 12px 24px 0;
+  padding: 3px;
+  background: #f1f5f9;
+  border-radius: 10px;
+}
+
+.cv-batch-mode-tab {
+  height: 32px;
+  padding: 0 12px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+  background: transparent;
+  border: 0;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.cv-batch-mode-tab.active {
+  color: #17202a;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+}
+
+.cv-batch-mode-tab:focus-visible,
+.cv-batch-row-open:focus-visible,
+.cv-batch-btn:focus-visible,
+.cv-notion-success-open:focus-visible,
+.cv-notion-success-done:focus-visible {
+  outline: 2px solid #d97706;
+  outline-offset: 2px;
+}
+
+.cv-batch-notion-destination {
+  margin: 6px 24px 0;
+  padding: 8px 12px;
+  background: #fffaf3;
+  border: 1px solid #fed7aa;
+  border-radius: 10px;
+}
+
+.cv-batch-notion-destination[hidden] {
+  display: none;
+}
+
+.cv-batch-notion-destination label {
+  display: block;
+  margin-bottom: 4px;
+  color: #7c2d12;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.cv-batch-notion-destination select {
+  width: 100%;
+  height: 30px;
+  box-sizing: border-box;
+  padding: 0 28px 0 10px;
+  color: #17202a;
+  font-size: 12px;
+  background-color: #ffffff;
+  border: 1px solid #fdba74;
+  border-radius: 6px;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237c2d12' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 12px 12px;
+}
+
+.cv-batch-notion-destination select:disabled {
+  color: #94a3b8;
+  background-color: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+.cv-batch-notion-connect {
+  width: 100%;
+  height: 34px;
+  padding: 0 14px;
+  color: #ffffff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 750;
+  background: #111827;
+  border: 1px solid #111827;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: transform 140ms ease, background 140ms ease, opacity 140ms ease;
+}
+
+.cv-batch-notion-connect:hover:not(:disabled) {
+  background: #000000;
+  transform: translateY(-1px);
+}
+
+.cv-batch-notion-connect:disabled {
+  cursor: wait;
+  opacity: 0.58;
+}
+
+.cv-batch-notion-destination p {
+  margin: 4px 0 0;
+  color: #9a3412;
+  font-size: 10.5px;
+  line-height: 1.35;
+}
+
+.cv-notion-auth-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.48);
+  backdrop-filter: blur(5px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.cv-notion-auth-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.cv-notion-auth-card {
+  width: min(360px, calc(100vw - 40px));
+  box-sizing: border-box;
+  padding: 24px;
+  color: #17202a;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 28px 80px rgba(15, 23, 42, 0.28);
+  transform: translateY(8px) scale(0.97);
+  transition: transform 180ms ease;
+}
+
+.cv-notion-auth-overlay.active .cv-notion-auth-card {
+  transform: translateY(0) scale(1);
+}
+
+.cv-notion-auth-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid #dbe3ec;
+  border-radius: 11px;
+}
+
+.cv-notion-auth-mark img {
+  width: 34px;
+  height: 34px;
+  display: block;
+  object-fit: contain;
+}
+
+.cv-notion-auth-card h2 {
+  margin: 0;
+  color: #111827;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.cv-notion-auth-card > p {
+  margin: 10px 0 20px;
+  color: #64748b;
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+
+.cv-notion-auth-actions {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  gap: 10px;
+}
+
+.cv-notion-auth-actions button {
+  height: 38px;
+  padding: 0 14px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 750;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.cv-notion-auth-cancel {
+  color: #475569;
+  background: #ffffff;
+  border: 1px solid #dbe3ec;
+}
+
+.cv-notion-auth-confirm {
+  color: #ffffff;
+  background: #111827;
+  border: 1px solid #111827;
+}
+
+.cv-notion-auth-actions button:focus-visible,
+.cv-batch-notion-connect:focus-visible {
+  outline: 2px solid #d97706;
+  outline-offset: 2px;
 }
 
 @keyframes modal-pop {
@@ -546,57 +1104,6 @@
   flex-shrink: 0;
 }
 
-.cv-batch-export-progress-panel {
-  margin: 4px 24px 8px 24px;
-  padding: 12px 14px;
-  background: #fff7ed;
-  border: 1px solid #fed7aa;
-  border-radius: 8px;
-  color: #7c2d12;
-  box-sizing: border-box;
-}
-
-.cv-batch-export-progress-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  font-size: 12px;
-  font-weight: 800;
-  margin-bottom: 8px;
-}
-
-.cv-batch-export-progress-head span:first-child {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.cv-batch-export-progress-bar {
-  width: 100%;
-  height: 7px;
-  background: rgba(217, 119, 6, 0.16);
-  border-radius: 999px;
-  overflow: hidden;
-}
-
-.cv-batch-export-progress-fill {
-  width: 0%;
-  height: 100%;
-  background: #d97706;
-  border-radius: inherit;
-  transition: width 0.25s ease;
-}
-
-.cv-batch-export-progress-detail {
-  margin-top: 7px;
-  font-size: 11px;
-  color: #9a3412;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 /* 折叠设置段 */
 .cv-batch-settings-toggle {
   margin: 0 24px 4px 24px;
@@ -644,6 +1151,13 @@
   gap: 6px;
 }
 
+.cv-batch-group-title-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+}
+
 .cv-batch-group-title {
   font-size: 11px;
   font-weight: 700;
@@ -652,9 +1166,77 @@
   letter-spacing: 0.5px;
 }
 
+.cv-batch-help-tooltip {
+  position: static;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  cursor: pointer;
+  color: #94a3b8;
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  transition: color 0.2s ease;
+}
+
+.cv-batch-help-tooltip:hover,
+.cv-batch-help-tooltip:focus-visible {
+  color: #0f6574;
+}
+
+.cv-batch-help-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: rgba(148, 163, 184, 0.2);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  user-select: none;
+  font-family: inherit;
+}
+
+.cv-batch-help-tooltip .cv-batch-tooltip-text {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  width: auto;
+  padding: 8px 12px;
+  background: #1e293b;
+  color: #f8fafc;
+  font-size: 11.5px;
+  font-weight: 400;
+  line-height: 1.45;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  z-index: 999;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  white-space: normal;
+  word-break: break-word;
+  text-transform: none;
+  letter-spacing: normal;
+  text-align: left;
+}
+
+.cv-batch-help-tooltip:hover .cv-batch-tooltip-text,
+.cv-batch-help-tooltip:focus-visible .cv-batch-tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
+
 .cv-batch-format-btns {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 6px;
 }
 
@@ -663,7 +1245,9 @@
   background: #f1f5f9;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
-  font-size: 11px;
+  min-width: 0;
+  padding: 0 4px;
+  font-size: 10.5px;
   font-weight: 600;
   color: #475569;
   cursor: pointer;
@@ -714,21 +1298,27 @@
 .cv-batch-item-row {
   display: flex;
   align-items: center;
-  height: 28px;
-  padding: 0 12px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0 10px;
   border-radius: 6px;
   background: #f8fafc;
   border: 1px solid #f1f5f9;
   cursor: pointer;
   transition: all 0.15s;
   user-select: none;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
   box-sizing: border-box;
 }
 
 .cv-batch-item-row:hover {
   background: #f1f5f9;
   border-color: #e2e8f0;
+}
+
+.cv-batch-item-row:focus-visible {
+  outline: 2px solid #d97706;
+  outline-offset: 1px;
 }
 
 .cv-batch-item-row.selected {
@@ -819,45 +1409,6 @@
   margin-top: 4px;
 }
 
-/* 进度条与状态细节 */
-.cv-batch-row-progress-container {
-  display: none;
-  align-items: center;
-  gap: 8px;
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  background: #fbfbfe;
-  box-sizing: border-box;
-  padding: 0 4px;
-  z-index: 1;
-}
-
-.cv-batch-row-progress-bg {
-  flex: 1;
-  height: 5px;
-  background: #e2e8f0;
-  border-radius: 3px;
-  overflow: hidden;
-}
-
-.cv-batch-row-progress-fill {
-  height: 100%;
-  background: #d97706;
-  width: 0%;
-  transition: width 0.25s ease;
-}
-
-.cv-batch-row-progress-text {
-  font-size: 11px;
-  font-weight: 700;
-  color: #64748b;
-  width: 30px;
-  text-align: right;
-}
-
 /* 固定展示的导出方式 */
 .cv-batch-fixed-format-container {
   padding: 10px 24px;
@@ -866,8 +1417,28 @@
 }
 
 .cv-batch-item-row-status {
+  display: flex;
+  align-items: center;
   margin-left: 12px;
   flex-shrink: 0;
+}
+
+.cv-batch-row-open {
+  height: 26px;
+  margin-right: 7px;
+  padding: 0 9px;
+  color: #9a3412;
+  font-size: 10.5px;
+  font-weight: 750;
+  background: #fff7ed;
+  border: 1px solid #fdba74;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.cv-batch-row-open:hover {
+  color: #7c2d12;
+  background: #ffedd5;
 }
 
 .cv-batch-badge {
@@ -970,6 +1541,25 @@
   box-shadow: none;
 }
 
+.cv-batch-modal.notion-mode .cv-batch-btn.primary {
+  background: #0f172a;
+  color: #ffffff;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.2);
+}
+
+.cv-batch-modal.notion-mode .cv-batch-btn.primary:hover:not(:disabled) {
+  background: #020617;
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.3);
+}
+
+.cv-batch-modal.notion-mode .cv-batch-btn.primary:disabled {
+  background: #e5e7eb;
+  color: #64748b;
+  border: 1px solid #cbd5e1;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
 .cv-batch-load-more-container {
   display: flex;
   justify-content: center;
@@ -1013,7 +1603,13 @@
     transform: none !important;
   }
   .cv-page-toast,
-  #cv-page-toast {
+  #cv-page-toast,
+  .cv-notion-success-overlay,
+  .cv-notion-success-card {
+    transition: none !important;
+    animation: none !important;
+  }
+  .cv-batch-modal {
     transition: none !important;
     animation: none !important;
   }
@@ -1050,12 +1646,12 @@
 }
 
 .cv-batch-theme-option.active {
-  border: 1.5px solid var(--accent);
-  background: linear-gradient(135deg, rgba(var(--cv-primary-rgb), 0.08) 0%, #ffffff 100%);
-  color: var(--primary-hover);
+  border: 1.5px solid #16869a;
+  background: linear-gradient(135deg, rgba(22, 134, 154, 0.08) 0%, #ffffff 100%);
+  color: #0f6574;
   box-shadow: 
-    0 0 0 2px rgba(var(--cv-primary-rgb), 0.1),
-    0 4px 10px rgba(var(--cv-primary-rgb), 0.05);
+    0 0 0 2px rgba(22, 134, 154, 0.1),
+    0 4px 10px rgba(22, 134, 154, 0.05);
 }
 
 .cv-batch-theme-circle {
@@ -1111,7 +1707,7 @@
 }
 
 .cv-batch-theme-option.active .cv-batch-theme-name {
-  color: var(--primary-hover);
+  color: #0f6574;
   font-weight: 800;
 }
 

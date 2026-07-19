@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Claude Export</title>
   <link rel="stylesheet" href="popup.css">
+  <link rel="stylesheet" href="obsidian-popup.css">
 </head>
 <body>
   <div class="popup-container">
@@ -12,7 +13,7 @@
     <div class="popup-header">
       <div class="header-logo-title">
         <div class="header-logo-badge">
-          <img src="../images/chatvault-exporter-logo-1024.png" alt="" width="30" height="30">
+          <img src="../images/store-icon-48.png" alt="" width="40" height="40">
         </div>
         <div>
           <div class="title-container">
@@ -58,7 +59,6 @@
             <button class="action-btn" id="btn-open-chatgpt">打开 Claude</button>
           </div>
         </div>
-
         <!-- 导出模式 Banner 行 -->
         <div class="banners-row">
           <!-- 批量导出 Banner -->
@@ -84,7 +84,7 @@
           <div class="custom-export-banner" id="banner-custom-export" title="进入对话选择模式">
             <div class="banner-left">
               <div class="banner-icon-badge">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                   <polyline points="14 2 14 8 20 8"></polyline>
                   <line x1="9" y1="15" x2="15" y2="15"></line>
@@ -103,10 +103,11 @@
         <!-- 一键导出网格 -->
         <div class="one-click-section">
           <div class="section-header">
-            <h3>One-click Export</h3>
+            <h3>One-Click Export</h3>
+            <button type="button" class="copy-json-btn" id="btn-copy-json">Copy JSON</button>
           </div>
 
-          <div class="export-button-grid">
+                                                                      <div class="export-button-grid">
             <div class="export-grid-item" data-format="pdf">
               <div class="format-icon pdf-color" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
@@ -117,7 +118,6 @@
                 </svg>
               </div>
               <span class="format-name">PDF</span>
-              <small>排版保存</small>
             </div>
             <div class="export-grid-item" data-format="word">
               <div class="format-icon docx-color" aria-hidden="true">
@@ -130,7 +130,6 @@
                 </svg>
               </div>
               <span class="format-name">Word</span>
-              <small>可编辑</small>
             </div>
             <div class="export-grid-item" data-format="markdown">
               <div class="format-icon md-color" aria-hidden="true">
@@ -141,7 +140,6 @@
                 </svg>
               </div>
               <span class="format-name">Markdown</span>
-              <small>知识库</small>
             </div>
             <div class="export-grid-item" data-format="html">
               <div class="format-icon html-color" aria-hidden="true">
@@ -152,7 +150,6 @@
                 </svg>
               </div>
               <span class="format-name">HTML</span>
-              <small>离线网页</small>
             </div>
             <div class="export-grid-item" data-format="image">
               <div class="format-icon img-color" aria-hidden="true">
@@ -162,8 +159,7 @@
                   <path d="m6 17 4.2-4.2a1.5 1.5 0 0 1 2.1 0L17 17"></path>
                 </svg>
               </div>
-              <span class="format-name">图片</span>
-              <small>分享卡片</small>
+              <span class="format-name">Image</span>
             </div>
             <div class="export-grid-item" data-format="txt">
               <div class="format-icon txt-color" aria-hidden="true">
@@ -174,48 +170,108 @@
                   <path d="M5 18h7"></path>
                 </svg>
               </div>
-              <span class="format-name">文本</span>
-              <small>纯内容</small>
+              <span class="format-name">Text</span>
             </div>
-            <div class="export-grid-item" data-format="json">
-              <div class="format-icon json-color" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M8 4H6a2 2 0 0 0-2 2v3a2 2 0 0 1-2 2 2 2 0 0 1 2 2v3a2 2 0 0 0 2 2h2"></path>
-                  <path d="M16 4h2a2 2 0 0 1 2 2v3a2 2 0 0 0 2 2 2 2 0 0 0-2 2v3a2 2 0 0 1-2 2h-2"></path>
-                </svg>
+          </div>
+        </div>
+
+        <div class="sync-destinations">
+          <!-- Notion 同步卡片 -->
+          <div class="notion-sync-card" id="notion-sync-section" style="display: none;">
+            <div class="notion-section">
+              <div class="notion-sync-heading">
+                <h3>Save to Notion</h3>
+                <p id="notion-connection-status">正在检查连接</p>
               </div>
-              <span class="format-name">JSON</span>
-              <small>结构化</small>
+              <!-- 未绑定状态 -->
+              <div id="notion-unlinked-view" style="display: none;">
+                <button class="notion-save-btn notion-connect-btn" id="btn-oauth-notion">
+                  连接 Notion
+                </button>
+              </div>
+
+              <!-- OAuth 已绑定状态 -->
+              <div id="notion-oauth-view" style="display: none;">
+                <div class="notion-sync-main">
+                  <select id="notion-db-select" aria-label="Notion Database"></select>
+                  <button class="notion-save-btn" id="btn-sync-notion-oauth">Save</button>
+                </div>
+              </div>
+
             </div>
           </div>
-        </div>
 
-        <!-- 纯本地运行声明卡片 -->
-        <div class="local-privacy-notice-card">
-          <svg class="privacy-lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-          </svg>
-          <div class="privacy-text">
-            <strong>100% 本地安全运行</strong>
-            <span>所有解析与导出均在本地完成，不使用任何云端服务器，保障您的数据与隐私绝对安全。</span>
+          <!-- Obsidian 同步：与 Notion 使用同一层级的简洁操作行 -->
+          <div class="obsidian-sync-section" id="obsidian-sync-section" style="display: none;">
+            <div class="obsidian-sync-heading">
+              <h3>Save to Obsidian</h3>
+              <p id="obsidian-connection-status">本地 Markdown 与资源</p>
+            </div>
+            <div class="obsidian-sync-main">
+              <button type="button" class="obsidian-sync-state" id="obsidian-sync-state" aria-label="Change Obsidian folders">
+                <div class="obsidian-sync-skeleton"></div>
+                <div class="obsidian-sync-skeleton is-short"></div>
+              </button>
+              <button type="button" class="obsidian-sync-primary" id="obsidian-sync-current" disabled>检查中</button>
           </div>
         </div>
 
-        <!-- 横向配额与升级栏 -->
-        <div class="quota-bar-row">
-          <div id="quota-status-info" class="quota-status-text">
-            正在加载使用额度状态...
+        <div class="export-footer-status">
+          <div class="quota-bar-row">
+            <div id="quota-status-info" class="quota-status-text">Loading usage quota...</div>
           </div>
         </div>
 
       </div>
+      </div>
 
       <!-- 设置与排版微调面板 (Tab 4) -->
       <div class="tab-panel" id="panel-settings">
-        <div class="section-card">
-          <h3>排版风格主题 / Theme</h3>
-          <div class="settings-theme-grid">
+        <div class="section-card connection-settings-card" id="connection-settings-card">
+          <h3>Connections</h3>
+          <div class="connection-settings-list">
+            <div class="connection-settings-row">
+              <div class="connection-settings-brand">
+                <span class="connection-brand-icon is-notion" aria-hidden="true">
+                  <img src="../images/notion-app-icon.svg" alt="">
+                </span>
+                <div class="connection-settings-copy">
+                  <strong>Notion</strong>
+                  <span id="notion-settings-status">正在检查连接</span>
+                </div>
+              </div>
+              <div class="connection-settings-actions">
+                <button type="button" class="connection-primary-action" id="btn-connect-notion-settings" hidden>Connect Notion</button>
+                <button type="button" class="connection-danger-action" id="btn-disconnect-oauth" hidden>Disconnect</button>
+              </div>
+            </div>
+            <div class="connection-settings-row">
+              <div class="connection-settings-brand">
+                <span class="connection-brand-icon is-obsidian" aria-hidden="true">
+                  <img src="../images/obsidian-app-icon.svg" alt="">
+                </span>
+                <div class="connection-settings-copy">
+                  <strong>Obsidian</strong>
+                  <span id="obsidian-settings-status">正在检查 Vault</span>
+                </div>
+              </div>
+              <div class="connection-settings-actions">
+                <button type="button" class="connection-primary-action" id="obsidian-settings-configure" hidden>Config Obsidian</button>
+                <button type="button" class="connection-danger-action" id="obsidian-sync-disconnect" hidden>断开连接</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-card" id="theme-settings-card">
+          <h3 class="section-title-with-help">
+            <span id="theme-settings-title">排版风格主题 / Theme</span>
+            <button type="button" class="cv-help-tooltip" id="theme-help-tooltip" aria-label="Theme export support">
+              <span class="cv-help-icon">?</span>
+              <span class="cv-tooltip-text" id="theme-tooltip-text">Themes apply only to PDF and Image exports. Other formats are not affected.</span>
+            </button>
+          </h3>
+          <div class="settings-theme-grid is-initializing" aria-busy="true">
             <div class="theme-option active" data-theme="default">
               <span class="theme-circle theme-circle--default"></span>
               <span class="theme-name">极简纯白</span>
@@ -289,6 +345,39 @@
 
           <div class="settings-toggle-row" data-sortable-setting>
             <div>
+              <div class="toggle-title">仅导出 AI 回答</div>
+              <div class="toggle-desc">过滤用户 Prompt，只保留 AI 报告正文</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-ai-only">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="settings-toggle-row" data-sortable-setting>
+            <div>
+              <div class="toggle-title">隐藏 AI Chat Export 水印</div>
+              <div class="toggle-desc">移除文档末尾的 AI Chat Export 签名 (Pro)</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-watermark">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="settings-toggle-row" data-sortable-setting>
+            <div>
+              <div class="toggle-title">附带对话原始链接</div>
+              <div class="toggle-desc">在导出的文档尾部附加对话的原始网址</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-source-url">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="settings-toggle-row" data-sortable-setting>
+            <div>
               <div class="toggle-title">显示平台来源名称</div>
               <div class="toggle-desc">在文档头部显示来源平台 (如 ChatGPT / Claude)</div>
             </div>
@@ -322,41 +411,48 @@
 
           <div class="settings-toggle-row" data-sortable-setting>
             <div>
-              <div class="toggle-title">仅导出 AI 回答</div>
-              <div class="toggle-desc">过滤用户 Prompt，只保留 AI 报告正文</div>
+              <div class="toggle-title">显示 Obsidian 同步</div>
+              <div class="toggle-desc">在导出面板显示单个与批量 Obsidian 同步</div>
             </div>
             <label class="switch">
-              <input type="checkbox" id="toggle-ai-only">
-              <span class="slider"></span>
-            </label>
-          </div>
-
-          <div class="settings-toggle-row" data-sortable-setting>
-            <div>
-              <div class="toggle-title">隐藏 Claude Export 水印</div>
-              <div class="toggle-desc">移除文档末尾的 Claude Export 签名 (Pro)</div>
-            </div>
-            <label class="switch">
-              <input type="checkbox" id="toggle-watermark">
-              <span class="slider"></span>
-            </label>
-          </div>
-
-          <div class="settings-toggle-row" data-sortable-setting>
-            <div>
-              <div class="toggle-title">附带对话原始链接</div>
-              <div class="toggle-desc">在导出的文档尾部附加对话的原始网址</div>
-            </div>
-            <label class="switch">
-              <input type="checkbox" id="toggle-source-url">
+              <input type="checkbox" id="toggle-obsidian-sync" checked>
               <span class="slider"></span>
             </label>
           </div>
         </div>
+
+        <div class="section-card language-settings-card">
+          <label for="ui-language-select" class="language-settings-copy">
+            <span class="toggle-title">Language</span>
+          </label>
+          <select id="ui-language-select" class="language-settings-select">
+            <option value="system">System Default</option>
+            <option value="en">English</option>
+            <option value="zh_CN">简体中文</option>
+            <option value="zh_TW">繁體中文</option>
+            <option value="ja">日本語</option>
+            <option value="ko">한국어</option>
+            <option value="de">Deutsch</option>
+            <option value="fr">Français</option>
+            <option value="es">Español</option>
+            <option value="pt_BR">Português (Brasil)</option>
+          </select>
+        </div>
+
+        <div class="settings-footer-status">
+          <div class="local-privacy-notice-card">
+            <svg class="privacy-lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            <div class="privacy-text">
+              <strong>100% local and private</strong>
+              <span>All parsing and exports happen locally in your browser. Your chat data is not uploaded.</span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <!-- 健康度警告区 -->
-      <div id="health-warning-container" class="health-warning-container"></div>
     </div>
 
     <!-- Bottom Navigation Bar -->
@@ -408,14 +504,14 @@
               <div class="plan-card-info">
                 <div class="plan-badge-row">
                   <span class="plan-tag monthly-tag">月度 Pro</span>
-                  <span class="plan-discount-badge">省 56%</span>
+                  <span class="plan-discount-badge">省 44%</span>
                 </div>
                 <span class="plan-title">Pro 月付计划</span>
               </div>
             </div>
             <div class="plan-card-right">
               <span class="plan-price-original">$8.99</span>
-              <span class="plan-price">$3.99</span>
+              <span class="plan-price">$4.99</span>
               <span class="plan-price-cadence">/ 月</span>
             </div>
           </label>
@@ -428,16 +524,16 @@
               <div class="plan-card-info">
                 <div class="plan-badge-row">
                   <span class="plan-tag yearly-tag">年度 Pro</span>
-                  <span class="plan-discount-badge">省 58%</span>
+                  <span class="plan-discount-badge">省 50%</span>
                 </div>
                 <span class="plan-title">Pro 年付计划</span>
               </div>
             </div>
             <div class="plan-card-right">
               <span class="plan-price-original">$5.00</span>
-              <span class="plan-price">$2.08</span>
+              <span class="plan-price">$2.50</span>
               <span class="plan-price-cadence">/ 月</span>
-              <span class="plan-price-detail">按年支付 $24.99</span>
+              <span class="plan-price-detail">按年支付 $29.99</span>
             </div>
           </label>
 
@@ -448,14 +544,14 @@
               <div class="plan-card-info">
                 <div class="plan-badge-row">
                   <span class="plan-tag lifetime-tag">终身 Pro</span>
-                  <span class="plan-discount-badge">省 69%</span>
+                  <span class="plan-discount-badge">省 62%</span>
                 </div>
                 <span class="plan-title">终身买断计划</span>
               </div>
             </div>
             <div class="plan-card-right">
               <span class="plan-price-original">$129.99</span>
-              <span class="plan-price">$39.99</span>
+              <span class="plan-price">$49.99</span>
               <span class="plan-price-cadence">一次性</span>
             </div>
           </label>
@@ -463,6 +559,10 @@
 
         <!-- Pro Feature List -->
         <div class="pro-features-container">
+          <div class="feature-tick-item">
+            <span class="tick-icon">✓</span>
+            <span>Notion / Obsidian 同步</span>
+          </div>
           <div class="feature-tick-item">
             <span class="tick-icon">✓</span>
             <span>无限制本地导出</span>
@@ -473,21 +573,21 @@
           </div>
           <div class="feature-tick-item">
             <span class="tick-icon">✓</span>
-            <span>本地生成导出凭证</span>
-          </div>
-          <div class="feature-tick-item">
-            <span class="tick-icon">✓</span>
             <span>隐藏全部导出水印</span>
           </div>
           <div class="feature-tick-item">
             <span class="tick-icon">✓</span>
-            <span>独立 Pro 会员</span>
+            <span>本地生成导出凭证</span>
+          </div>
+          <div class="feature-tick-item">
+            <span class="tick-icon">✓</span>
+            <span>主管理器 Pro 互通</span>
           </div>
         </div>
       </div>
 
       <div class="subscribe-footer">
-        <button class="subscribe-cta-btn" id="btn-subscribe-submit">继续使用 Pro 年付计划</button>
+        <button class="subscribe-cta-btn" id="btn-subscribe-submit">支付 $29.99</button>
         <button class="restore-purchase-btn" id="btn-subscribe-restore">恢复购买</button>
         <p class="subscribe-footnote">所有导出均在本地浏览器安全运行。结账页面将在 tabpilotpro.com 打开并进行安全支付。本插件不收集也不上传任何对话内容。</p>
       </div>

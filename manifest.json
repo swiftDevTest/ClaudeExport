@@ -25,7 +25,11 @@
     "storage",
     "downloads",
     "contextMenus",
-    "identity"
+    "identity",
+    "offscreen",
+    "alarms",
+    "notifications",
+    "clipboardWrite"
   ],
   "background": {
     "service_worker": "src/background.js"
@@ -34,13 +38,18 @@
     "https://acgehhqcgreatcjcefub.supabase.co/*",
     "https://claude.ai/*",
     "https://images.anthropic.com/*",
-    "https://media.anthropic.com/*"
+    "https://media.anthropic.com/*",
+    "https://api.notion.com/*"
   ],
   "web_accessible_resources": [
     {
       "resources": [
         "src/content.css",
-        "images/*.png"
+        "images/*.png",
+        "src/offscreen.html",
+        "src/obsidian-content.css",
+        "src/obsidian-settings.html",
+        "images/*"
       ],
       "matches": [
         "https://claude.ai/*"

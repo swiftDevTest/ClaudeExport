@@ -1,0 +1,392 @@
+/* Obsidian-only content UI. Keep this file independent from Notion styles. */
+:host {
+  --cv-obsidian-accent: #7652d8;
+  --cv-obsidian-accent-dark: #5f3fc0;
+  --cv-obsidian-soft: #f5f2ff;
+  --cv-obsidian-border: #ddd4fb;
+  --cv-obsidian-ink: #201a31;
+}
+
+.cv-batch-mode-tabs {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.cv-batch-obsidian-destination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 6px 24px 0;
+  padding: 8px 12px;
+  color: var(--cv-obsidian-ink);
+  background: var(--cv-obsidian-soft);
+  border: 1px solid var(--cv-obsidian-border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.cv-batch-obsidian-destination[hidden] {
+  display: none;
+}
+
+.cv-batch-obsidian-destination.is-unconfigured {
+  display: block;
+}
+
+.cv-batch-obsidian-destination.is-unconfigured[hidden] {
+  display: none;
+}
+
+.cv-batch-obsidian-destination.is-unconfigured .cv-batch-destination-info {
+  display: none;
+}
+
+.cv-batch-obsidian-destination.is-unconfigured #cv-batch-obsidian-configure {
+  width: 100%;
+  height: 34px;
+  color: #ffffff;
+  background: var(--cv-obsidian-accent);
+  border-color: var(--cv-obsidian-accent);
+  border-radius: 7px;
+}
+
+.cv-batch-obsidian-destination.is-unconfigured #cv-batch-obsidian-configure:hover:not(:disabled) {
+  background: var(--cv-obsidian-accent-dark);
+  border-color: var(--cv-obsidian-accent-dark);
+}
+
+.cv-batch-destination-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.cv-batch-path-wrap {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.cv-batch-folder-icon {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  color: var(--cv-obsidian-accent-dark);
+  flex-shrink: 0;
+}
+
+.cv-batch-folder-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.cv-batch-obsidian-destination strong {
+  display: block;
+  overflow: hidden;
+  color: var(--cv-obsidian-accent-dark);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#cv-batch-obsidian-configure {
+  flex: 0 0 auto;
+  height: 28px;
+  padding: 0 10px;
+  color: var(--cv-obsidian-accent-dark);
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 700;
+  background: #ffffff;
+  border: 1px solid #c4b5fd;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+#cv-batch-obsidian-configure:hover:not(:disabled) {
+  background: #eee8ff;
+}
+
+#cv-batch-obsidian-configure:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.cv-batch-modal.obsidian-mode .cv-batch-btn.primary {
+  background: var(--cv-obsidian-accent);
+  color: #ffffff;
+  box-shadow: 0 4px 10px rgba(118, 82, 216, 0.24);
+}
+
+.cv-batch-modal.obsidian-mode .cv-batch-btn.primary:hover:not(:disabled) {
+  background: var(--cv-obsidian-accent-dark);
+}
+
+.cv-batch-modal.obsidian-mode .cv-batch-btn.primary:disabled {
+  color: #a78bfa;
+  background: #ede9fe;
+  border: 1px solid #ddd6fe;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.cv-batch-modal.obsidian-mode .cv-batch-selected-count,
+.cv-batch-modal.obsidian-mode #cv-batch-selected-count {
+  color: var(--cv-obsidian-accent) !important;
+}
+
+
+
+.cv-batch-modal.obsidian-mode .cv-batch-item-row.selected {
+  background: rgba(118, 82, 216, 0.06);
+  border-color: rgba(118, 82, 216, 0.24);
+}
+
+.cv-batch-modal.obsidian-mode .cv-batch-row-open {
+  color: var(--cv-obsidian-accent-dark);
+  background: var(--cv-obsidian-soft);
+  border-color: var(--cv-obsidian-border);
+}
+
+.cv-obsidian-result-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483646;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.44);
+  backdrop-filter: blur(5px);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.cv-obsidian-result-overlay.active {
+  display: flex;
+}
+
+.cv-obsidian-result-card {
+  position: relative;
+  width: min(390px, calc(100vw - 40px));
+  max-height: min(650px, calc(100vh - 32px));
+  overflow: auto;
+  box-sizing: border-box;
+  padding: 30px 28px 24px;
+  color: #17202a;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 28px 80px rgba(15, 23, 42, 0.26);
+  animation: cv-obsidian-result-in 180ms ease-out both;
+}
+
+@keyframes cv-obsidian-result-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.cv-obsidian-result-close {
+  position: absolute;
+  top: 12px;
+  right: 13px;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  color: #64748b;
+  font-size: 24px;
+  line-height: 28px;
+  background: transparent;
+  border: 0;
+  border-radius: 9px;
+  cursor: pointer;
+}
+
+.cv-obsidian-result-close:hover {
+  color: #0f172a;
+  background: #f1f5f9;
+}
+
+.cv-obsidian-result-mark {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  margin: 0 auto 15px;
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 800;
+  background: #7c3aed;
+  border-radius: 12px;
+  box-shadow: 0 7px 18px rgba(124, 58, 237, 0.25);
+}
+
+.cv-obsidian-result-mark[data-status="partial"] {
+  background: #c9871a;
+  box-shadow: 0 7px 18px rgba(201, 135, 26, 0.22);
+}
+
+.cv-obsidian-result-mark[data-status="failed"] {
+  background: #c94b5c;
+  box-shadow: 0 7px 18px rgba(201, 75, 92, 0.2);
+}
+
+.cv-obsidian-result-card h2 {
+  margin: 0;
+  color: #111827;
+  font-size: 20px;
+  font-weight: 760;
+  line-height: 1.3;
+}
+
+.cv-obsidian-result-card > p {
+  margin: 9px auto 18px;
+  max-width: 310px;
+  color: #64748b;
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+.cv-obsidian-result-open {
+  position: relative;
+  display: flex;
+  width: 100%;
+  min-height: 62px;
+  box-sizing: border-box;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 11px 44px 11px 14px;
+  color: #17202a;
+  text-align: left;
+  background: #f8fafc;
+  border: 1px solid #dbe3ec;
+  border-radius: 12px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.cv-obsidian-result-open:hover:not([hidden]) {
+  color: #17202a;
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.cv-obsidian-result-open-label {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 16px;
+}
+
+.cv-obsidian-result-open strong {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  color: #111827;
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 20px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cv-obsidian-result-open-arrow {
+  position: absolute;
+  top: 50%;
+  right: 16px;
+  color: #7c3aed;
+  font-size: 18px;
+  transform: translateY(-50%);
+}
+
+.cv-obsidian-result-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.cv-obsidian-result-actions button {
+  min-height: 40px;
+  box-sizing: border-box;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 18px;
+  cursor: pointer;
+}
+
+.cv-obsidian-result-secondary {
+  color: #334155;
+  background: #f8fafc;
+  border: 1px solid #dbe3ec;
+}
+
+.cv-obsidian-result-open[hidden] {
+  display: none;
+}
+
+.cv-obsidian-result-close:focus-visible,
+.cv-obsidian-result-actions button:focus-visible,
+.cv-obsidian-result-open:focus-visible,
+#cv-batch-obsidian-configure:focus-visible,
+.cv-batch-mode-tab-obsidian:focus-visible {
+  outline: 2px solid var(--cv-obsidian-accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 560px) {
+  .cv-batch-mode-tab {
+    padding-inline: 6px;
+    font-size: 10.5px;
+  }
+
+  .cv-batch-obsidian-destination {
+    align-items: flex-start;
+  }
+
+  .cv-obsidian-result-actions {
+    flex-direction: column-reverse;
+  }
+
+  .cv-obsidian-result-actions button {
+    width: 100%;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :host {
+    --cv-obsidian-soft: #29233a;
+    --cv-obsidian-border: #4d416d;
+    --cv-obsidian-ink: #f0ebfa;
+  }
+
+  .cv-batch-folder-icon,
+  .cv-batch-obsidian-destination strong { color: #ded3ff; }
+  #cv-batch-obsidian-configure { color: #ded3ff; background: #332a49; border-color: #655589; }
+  .cv-obsidian-result-card { color: #f5f3f7; background: #201b2a; border-color: #4b3b6c; }
+  .cv-obsidian-result-close { color: #bcb2ca; }
+  .cv-obsidian-result-close:hover { color: #f5f3f7; background: #332c3e; }
+  .cv-obsidian-result-card h2 { color: #f5f3f7; }
+  .cv-obsidian-result-card > p { color: #bcb2ca; }
+  .cv-obsidian-result-open { color: #cfc5de; background: #292332; border-color: #3a3246; }
+  .cv-obsidian-result-open:hover:not([hidden]) { color: #f5f3f7; background: #332c3e; border-color: #4d435b; }
+  .cv-obsidian-result-open-label { color: #a99eb9; }
+  .cv-obsidian-result-open strong { color: #f5f3f7; }
+  .cv-obsidian-result-secondary { color: #ddd5e8; background: #332c3e; border-color: #443b51; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cv-obsidian-result-card { animation: none; }
+}

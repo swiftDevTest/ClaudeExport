@@ -1,3 +1,15 @@
+
+try {
+  importScripts("notion-background.js");
+} catch (e) {
+  console.warn("[Background] Failed to import notion-background.js:", e);
+}
+try {
+  importScripts("obsidian-background.js");
+} catch (e) {
+  console.warn("[Background] Failed to import obsidian-background.js:", e);
+}
+
 try {
   importScripts("product-config.js");
 } catch (error) {}

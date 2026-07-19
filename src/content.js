@@ -16,21 +16,13 @@
   const developerExport = globalThis.CHATVAULT_DEVELOPER_EXPORT;
   const shareCards = globalThis.CHATVAULT_SHARE_CARDS;
   const exporter = globalThis.CHATVAULT_EXPORT;
-  const productConfig = globalThis.CHATVAULT_PRODUCT_CONFIG || {};
-  const storageKey = typeof productConfig.storageKey === "function"
-    ? productConfig.storageKey
-    : (name) => `chatvault_exporter.${name}`;
-  const PRODUCT_ID = productConfig.productId || "claude_export";
-  const PRODUCT_SLUG = productConfig.productSlug || "claude-export";
-  const PRODUCT_NAME = productConfig.productName || "Claude Export";
-  const PRODUCT_PLATFORM_LABELS = productConfig.platformLabels || {};
-  const SUPABASE_SESSION_STORAGE_KEY = storageKey("supabase_session.v1");
-  const ENTITLEMENT_STATE_CACHE_KEY = storageKey("entitlement_state.v1");
-  const EXPORT_SETTINGS_STORAGE_KEY = storageKey("export_settings.v1");
+  const SUPABASE_SESSION_STORAGE_KEY = "chatvault_supabase_session";
+  const ENTITLEMENT_STATE_CACHE_KEY = "chatvault_exporter_entitlement_state_v1";
+  const EXPORT_SETTINGS_STORAGE_KEY = "chatvault_export_settings";
   const FREE_QUOTA_EXHAUSTED_MESSAGE = "You have used today's 3 free exports.";
 
   if (!exporter) {
-    console.error(`[${PRODUCT_NAME}] Shared export core is missing. Refresh the page.`);
+    console.error("[AI Chat Export] Shared export core is missing. Refresh the page.");
     return;
   }
 
@@ -54,9 +46,16 @@
   let exportPlatformFetchers = null;
   let lastReceipt = null;
   let pageToastTimer = null;
+  let lastNotionSuccessDialogJobId = "";
+  let activeNotionJobId = "";
+  let lastObsidianSuccessDialogId = "";
+  let lastBatchSyncResultDialogId = "";
+  let obsidianCoordinatorPromise = null;
+  let activeObsidianSingleSync = false;
   let subscribePanelRequestAt = 0;
   let runtimeMessageListenerAttached = false;
   let authStorageListenerAttached = false;
+  let obsidianResultEscapeListenerAttached = false;
   let contextExportReady = false;
   let pendingContextExportRequest = null;
 
@@ -65,28 +64,6 @@
 
   function invalidatePopupStateCache() {
     _popupStateCache = null;
-  }
-
-  function applyProductTheme(target) {
-    if (productConfig && typeof productConfig.applyThemeVars === "function") {
-      productConfig.applyThemeVars(target || document.documentElement);
-    }
-  }
-
-  function getSupportedPlatformLabel() {
-    const labels = {
-      chatgpt: "ChatGPT",
-      claude: "Claude",
-      gemini: "Gemini"
-    };
-    const platforms = Array.isArray(productConfig.supportedPlatforms) && productConfig.supportedPlatforms.length
-      ? productConfig.supportedPlatforms
-      : ["chatgpt", "claude", "gemini"];
-    const names = platforms.map((platform) => PRODUCT_PLATFORM_LABELS[platform] || labels[platform] || platform);
-    if (!names.length) return "supported AI chat";
-    if (names.length === 1) return names[0];
-    if (names.length === 2) return `${names[0]} or ${names[1]}`;
-    return `${names.slice(0, -1).join(", ")}, or ${names[names.length - 1]}`;
   }
 
   // HTML 转义工具，防止会话标题等外部文本注入 HTML
@@ -100,6 +77,9 @@
   }
 
   function getUiLanguage() {
+    if (globalThis.CHATVAULT_I18N && typeof globalThis.CHATVAULT_I18N.getLanguage === "function") {
+      return globalThis.CHATVAULT_I18N.getLanguage() || "en";
+    }
     try {
       if (typeof chrome !== "undefined" && chrome.i18n && typeof chrome.i18n.getUILanguage === "function") {
         return chrome.i18n.getUILanguage() || "en";
@@ -110,6 +90,11 @@
 
   function isChineseUi() {
     return /^zh(?:_|-|$)/i.test(getUiLanguage());
+  }
+
+  function isBackendSchemaCacheError(error) {
+    const message = String(error?.message || error || "");
+    return /schema cache|payment_products|Could not find the table/i.test(message);
   }
 
   function formatDefaultText(defaultText, args) {
@@ -274,6 +259,9 @@
   async function init() {
     listenMessages();
     listenAuthStorageChanges();
+    if (globalThis.CHATVAULT_I18N && typeof globalThis.CHATVAULT_I18N.ready === "function") {
+      await globalThis.CHATVAULT_I18N.ready();
+    }
     await loadPersistedExportSettings();
     injectShadowDOM();
     contextExportReady = true;
@@ -286,6 +274,14 @@
 
     await loadState({ localOnly: true, skipVerify: true });
     updateUIState();
+    globalThis.addEventListener("chatvault:language-changed", () => {
+      if (abortController || batchExportAbortController || batchModalOpen || globalThis.CHATVAULT_IS_BATCH_EXPORT) return;
+      shadowContainer?.remove();
+      shadowContainer = null;
+      shadowRoot = null;
+      injectShadowDOM();
+      updateUIState();
+    });
     await preloadPromise;
 
     // 绑定选择数变动事件
@@ -578,24 +574,19 @@
       });
     }
     try {
-      const result = await globalThis.CHATVAULT_SUPABASE_API.request("/functions/v1/product-sync-subscription-status", {
+      const result = await globalThis.CHATVAULT_SUPABASE_API.request("/functions/v1/sync-subscription-status", {
         accessToken: session.access_token,
-        method: "POST",
-        body: {
-          product_id: PRODUCT_ID,
-          product_slug: PRODUCT_SLUG,
-          product_name: PRODUCT_NAME
-        }
+        method: "POST"
       });
       const syncedProfile = normalizeProfileResponse(result);
       if (syncedProfile) return syncedProfile;
     } catch (err) {
       if (globalThis.CHATVAULT_DEBUG) {
-        console.debug("product-sync-subscription-status Edge Function failed, trying profiles fallback:", err);
+        console.debug("sync-subscription-status Edge Function failed, trying profiles fallback:", err);
       }
     }
     try {
-      const profile = await globalThis.CHATVAULT_SUPABASE_API.request("/rest/v1/product_profiles?user_id=eq." + session.user.id + "&product_slug=eq." + encodeURIComponent(PRODUCT_SLUG) + "&select=user_id,email,product_slug,plan,feature_flags,limits,updated_at", {
+      const profile = await globalThis.CHATVAULT_SUPABASE_API.request("/rest/v1/profiles?id=eq." + session.user.id + "&select=id,email,plan,feature_flags,limits,updated_at", {
         accessToken: session.access_token,
         method: "GET"
       });
@@ -603,9 +594,7 @@
         return entitlements.normalizeProfile(profile[0]);
       }
     } catch (err) {
-      if (globalThis.CHATVAULT_DEBUG) {
-        console.debug("product_profiles fallback unavailable; using cached/free profile:", err);
-      }
+      console.error("Fallback query to profiles table failed:", err);
     }
     try {
       const cached = typeof entitlements.getCachedState === "function" ? await entitlements.getCachedState() : null;
@@ -675,27 +664,9 @@
     return entitlements.canUseExport(profile, dailyUsage, count);
   }
 
-  function getLocalExportAccessResult(count) {
-    const requestedCount = Math.max(1, Number(count) || 1);
-    const profile = currentUserProfile || entitlements.normalizeProfile({ plan: "free" });
-    const pro = Boolean(isProUser || entitlements?.isPro?.(profile));
-    const remaining = entitlements.getRemainingFreeExports(profile, dailyUsage);
-
-    return {
-      ok: true,
-      allowed: pro || entitlements.canUseExport(profile, dailyUsage, requestedCount),
-      serverVerified: false,
-      serverConsumed: false,
-      profile,
-      usage: dailyUsage,
-      remaining
-    };
-  }
-
   async function verifySignedInExportAccess(count) {
-    const localAccess = getLocalExportAccessResult(count);
-    if (!localAccess.allowed || isProUser || !currentSession?.access_token) {
-      return localAccess;
+    if (isProUser || !currentSession?.access_token) {
+      return { ok: true, allowed: true, serverVerified: false };
     }
     return syncVerifiedExportEntitlement(count, { consume: false });
   }
@@ -703,38 +674,38 @@
   async function syncVerifiedExportEntitlement(conversationCount, options = {}) {
     const count = Math.max(1, Number(conversationCount) || 1);
     const consume = Boolean(options.consume);
-    const localAccess = getLocalExportAccessResult(count);
-
-    if (!localAccess.allowed || isProUser) {
-      return localAccess;
-    }
 
     if (!auth || typeof auth.getSession !== "function") {
-      return localAccess;
+      return { ok: true, allowed: true, serverVerified: false };
     }
 
     let session = null;
     try {
       session = await auth.getSession({ skipUserRefresh: false, allowStaleOnError: false });
     } catch (error) {
-      console.warn("Server entitlement verification unavailable; using local quota fallback:", error);
-      return localAccess;
+      if (!consume && isBackendSchemaCacheError(error)) {
+        console.warn("Server entitlement verification schema is stale; using local quota fallback:", error);
+        return { ok: true, allowed: true, serverVerified: false };
+      }
+      return {
+        ok: false,
+        allowed: false,
+        serverVerified: false,
+        error: tx("content_entitlement_verify_failed", "Could not verify your export entitlement. Check your connection and try again.", "无法验证您的导出权益，请检查网络后重试。")
+      };
     }
 
     if (!session?.access_token) {
-      return localAccess;
+      return { ok: true, allowed: true, serverVerified: false };
     }
 
     try {
-      const result = await globalThis.CHATVAULT_SUPABASE_API.request("/functions/v1/product-verify-export-entitlement", {
+      const result = await globalThis.CHATVAULT_SUPABASE_API.request("/functions/v1/verify-export-entitlement", {
         accessToken: session.access_token,
         method: "POST",
         body: {
           requested_count: count,
-          consume,
-          product_id: PRODUCT_ID,
-          product_slug: PRODUCT_SLUG,
-          product_name: PRODUCT_NAME
+          consume
         }
       });
 
@@ -763,8 +734,12 @@
         remaining: entitlements.getRemainingFreeExports(currentUserProfile, dailyUsage)
       };
     } catch (error) {
-      console.warn("Server entitlement verification failed; using local quota fallback:", error);
-      return localAccess;
+      return {
+        ok: false,
+        allowed: false,
+        serverVerified: false,
+        error: tx("content_entitlement_verify_failed", "Could not verify your export entitlement. Check your connection and try again.", "无法验证您的导出权益，请检查网络后重试。")
+      };
     }
   }
 
@@ -804,20 +779,22 @@
     }
   }
 
-  function getEntitlementIssue(settings, presetId, profile) {
+  function getEntitlementIssue(settings, presetId, profile, format) {
     const pro = isProUser; // 支持开发者测试状态覆盖
     const preset = templatePresets.getPreset(presetId);
 
     if (preset?.minPlan === "pro" && !pro) {
       return "This professional template requires Pro.";
     }
-    if (!entitlements.canUseExportStyle(profile, settings.export_style) && !pro) {
+    // Theme styling only applies to PDF and Image formats
+    const appliesTheme = !format || format === "pdf" || format === "image";
+    if (appliesTheme && !entitlements.canUseExportStyle(profile, settings?.export_style) && !pro) {
       return "Premium report themes require Pro.";
     }
-    if (settings.include_prompt_appendix && !pro) {
+    if (settings?.include_prompt_appendix && !pro) {
       return "Prompt Appendix requires Pro.";
     }
-    if (settings.show_chatvault_badge === false && !pro) {
+    if (settings?.show_chatvault_badge === false && !pro) {
       return "Hiding watermark requires Pro.";
     }
     return "";
@@ -833,11 +810,27 @@
 
   let batchModalOpen = false;
   let batchList = [];
+  let batchMode = "files";
   let batchSelectedFormat = "pdf";
   let batchSelectedTheme = "default";
+  const NOTION_UI_CACHE_KEY = "chatvault_notion_ui_cache_v1";
+  let batchNotionConfig = {
+    connections: [],
+    dataSources: [],
+    connectionId: "",
+    dataSourceId: "",
+    databaseId: ""
+  };
+  let batchNotionJobs = new Map();
+  let batchNotionResults = new Map();
+  let batchNotionBatchId = "";
+  let batchObsidianResults = new Map();
+  let batchObsidianBatchId = "";
+  let batchObsidianStatus = { connected: false, permission: "missing", activeJob: null };
   let displayedConversationsCount = 0;
   const batchPageSize = 20;
   const historyPageSize = 20;
+  const batchHistoryPrefetchPages = 3;
   let hasMoreConversations = true;
   let batchActiveItems = [];
   let batchChatGptSessionRequestPromise = null;
@@ -852,6 +845,13 @@
   const EXPORT_PROGRESS_MIN_STEP = 0.01;
   const EXPORT_PROGRESS_MAX_STEP = 0.035;
   let exportProgressState = null;
+
+  function loadObsidianCoordinator() {
+    if (!obsidianCoordinatorPromise) {
+      obsidianCoordinatorPromise = import(chrome.runtime.getURL("src/modules/obsidian/coordinator.js"));
+    }
+    return obsidianCoordinatorPromise;
+  }
 
   function getExportFormatLabel(format) {
     const labels = {
@@ -1011,24 +1011,8 @@
     exportProgressState = null;
   }
 
-  function promoteExporterRootLayer() {
-    if (!shadowContainer) return;
-    shadowContainer.style.setProperty("position", "fixed", "important");
-    shadowContainer.style.setProperty("inset", "0", "important");
-    shadowContainer.style.setProperty("width", "100vw", "important");
-    shadowContainer.style.setProperty("height", "100vh", "important");
-    shadowContainer.style.setProperty("z-index", "2147483647", "important");
-    shadowContainer.style.setProperty("pointer-events", "none", "important");
-    shadowContainer.style.setProperty("isolation", "isolate", "important");
-    const root = document.documentElement || document.body;
-    if (root && (shadowContainer.parentElement !== root || root.lastElementChild !== shadowContainer)) {
-      root.appendChild(shadowContainer);
-    }
-  }
-
   function renderExportProgressRaw(format, progress, onCancel) {
     if (!shadowRoot || !exporter?.renderProgressUI) return;
-    promoteExporterRootLayer();
     exporter.renderProgressUI(format, progress, shadowRoot, onCancel);
   }
 
@@ -1163,17 +1147,13 @@
   function injectShadowDOM() {
     shadowContainer = document.createElement("div");
     shadowContainer.id = "chatvault-exporter-root";
-    shadowContainer.style.setProperty("position", "fixed", "important");
-    shadowContainer.style.setProperty("inset", "0", "important");
-    shadowContainer.style.setProperty("width", "100vw", "important");
-    shadowContainer.style.setProperty("height", "100vh", "important");
-    shadowContainer.style.setProperty("z-index", "2147483647", "important");
-    shadowContainer.style.setProperty("pointer-events", "none", "important");
-    shadowContainer.style.setProperty("isolation", "isolate", "important");
-    (document.documentElement || document.body).appendChild(shadowContainer);
+    shadowContainer.style.position = "absolute";
+    shadowContainer.style.top = "0";
+    shadowContainer.style.left = "0";
+    shadowContainer.style.zIndex = "2147483647";
+    document.body.appendChild(shadowContainer);
 
     shadowRoot = shadowContainer.attachShadow({ mode: "open" });
-    applyProductTheme(shadowContainer);
 
     // 引入 CSS
     const criticalStyle = document.createElement("style");
@@ -1181,6 +1161,10 @@
       .export-progress-overlay:not(.active),
       .cv-selection-bar:not(.active),
       .cv-batch-modal-overlay:not(.active),
+      .cv-notion-auth-overlay:not(.active),
+      .cv-notion-success-overlay:not(.active),
+      .cv-obsidian-result-overlay:not(.active),
+      .cv-batch-result-overlay:not(.active),
       .cv-page-toast:not(.active) {
         visibility: hidden !important;
         opacity: 0 !important;
@@ -1189,6 +1173,10 @@
       .export-progress-overlay.active,
       .cv-selection-bar.active,
       .cv-batch-modal-overlay.active,
+      .cv-notion-auth-overlay.active,
+      .cv-notion-success-overlay.active,
+      .cv-batch-result-overlay.active,
+      .cv-obsidian-result-overlay.active,
       .cv-page-toast.active {
         visibility: visible !important;
       }
@@ -1199,6 +1187,10 @@
     link.rel = "stylesheet";
     link.href = chrome.runtime.getURL("src/content.css");
     shadowRoot.appendChild(link);
+    const obsidianLink = document.createElement("link");
+    obsidianLink.rel = "stylesheet";
+    obsidianLink.href = chrome.runtime.getURL("src/obsidian-content.css");
+    shadowRoot.appendChild(obsidianLink);
 
     // 渲染 UI 骨架 (进度遮罩、浮动选择栏、批量导出弹窗和 toast)
     const uiWrapper = document.createElement("div");
@@ -1238,7 +1230,7 @@
 
       <!-- 批量导出页内弹窗 -->
       <div class="cv-batch-modal-overlay" id="cv-batch-modal-overlay">
-        <div class="cv-batch-modal">
+        <div class="cv-batch-modal" role="dialog" aria-modal="true" aria-labelledby="cv-batch-title-text">
           <div class="cv-batch-header">
             <h2>
               <span style="font-size:16px;">👑</span>
@@ -1252,6 +1244,35 @@
             </button>
           </div>
 
+          <div class="cv-batch-mode-tabs" role="tablist" aria-label="${tx("content_batch_action_type", "Batch action type", "批量操作类型")}">
+            <button type="button" class="cv-batch-mode-tab active" id="cv-batch-mode-files" data-mode="files" role="tab" aria-selected="true">${tx("content_batch_export_files", "Export files", "导出文件")}</button>
+            <button type="button" class="cv-batch-mode-tab" id="cv-batch-mode-notion" data-mode="notion" role="tab" aria-selected="false">${tx("content_batch_sync_notion", "Sync to Notion", "同步到 Notion")}</button>
+            <button type="button" class="cv-batch-mode-tab cv-batch-mode-tab-obsidian" id="cv-batch-mode-obsidian" data-mode="obsidian" role="tab" aria-selected="false">${tx("obsidian_batch_sync", "Sync to Obsidian", "同步到 Obsidian")}</button>
+          </div>
+
+          <div class="cv-batch-obsidian-destination" id="cv-batch-obsidian-destination" hidden>
+            <div class="cv-batch-destination-info">
+              <span class="cv-batch-folder-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H10l2 2h6.5A2.5 2.5 0 0 1 21 9.5v7A2.5 2.5 0 0 1 18.5 19h-13A2.5 2.5 0 0 1 3 16.5z"></path>
+                </svg>
+              </span>
+              <div class="cv-batch-path-wrap">
+                <strong id="cv-batch-obsidian-vault">${tx("obsidian_not_connected", "Vault not connected", "Vault 尚未连接")}</strong>
+              </div>
+            </div>
+            <button type="button" id="cv-batch-obsidian-configure">${tx("obsidian_configure", "Config Obsidian", "配置 Obsidian")}</button>
+          </div>
+
+          <div class="cv-batch-notion-destination" id="cv-batch-notion-destination" hidden>
+            <label id="cv-batch-notion-label" for="cv-batch-notion-select">${tx("content_notion_database", "Notion Database", "Notion Database")}</label>
+            <select id="cv-batch-notion-select">
+              <option value="">${tx("content_notion_destination_unavailable", "Connect Notion from the extension popup", "请先在插件弹窗中连接 Notion")}</option>
+            </select>
+            <button type="button" class="cv-batch-notion-connect" id="cv-batch-notion-connect" hidden>${isChineseUi() ? "连接 Notion" : "Connect Notion"}</button>
+            <p id="cv-batch-notion-helper"></p>
+          </div>
+
           <!-- 搜索过滤输入框 -->
           <div class="cv-batch-search-container">
             <input type="text" class="cv-batch-search-box" id="cv-batch-search" placeholder="${tx("placeholder_batch_search", "Search by conversation title...", "搜索会话标题...")}">
@@ -1263,17 +1284,6 @@
             <span>${tx("content_syncing_sidebar", "Syncing sidebar history and loading more chats...", "正在同步侧边栏历史，加载更多聊天...")}</span>
           </div>
 
-          <div class="cv-batch-export-progress-panel" id="cv-batch-export-progress-panel" style="display: none;">
-            <div class="cv-batch-export-progress-head">
-              <span id="cv-batch-export-progress-title">${t("batch_export_preparing", isChineseUi() ? "准备批量导出..." : "Preparing for export...")}</span>
-              <span id="cv-batch-export-progress-percent">0%</span>
-            </div>
-            <div class="cv-batch-export-progress-bar">
-              <div class="cv-batch-export-progress-fill" id="cv-batch-export-progress-fill"></div>
-            </div>
-            <div class="cv-batch-export-progress-detail" id="cv-batch-export-progress-detail">${tx("content_waiting_batch_start", "Waiting for the background export task to start", "等待后台导出任务启动")}</div>
-          </div>
-
           <!-- 折叠设置段 -->
           <div class="cv-batch-settings-toggle">
             <div class="cv-batch-settings-header" id="cv-batch-settings-expand-btn">
@@ -1282,7 +1292,13 @@
             </div>
             <div class="cv-batch-settings-body" id="cv-batch-settings-panel">
               <div class="cv-batch-option-group">
-                <span class="cv-batch-group-title">${t("export_theme_label", isChineseUi() ? "导出主题与样式" : "Export Theme & Styling")}</span>
+                <div class="cv-batch-group-title-wrapper">
+                  <span class="cv-batch-group-title">${t("export_theme_label", isChineseUi() ? "导出主题与样式" : "Export Theme & Styling")}</span>
+                  <button type="button" class="cv-batch-help-tooltip" aria-label="${escapeHtml(tx("export_theme_tooltip", "Themes apply only to PDF and Image exports. Other formats are not affected.", "主题仅适用于 PDF 和图片 (Image) 导出，其他格式不受影响。"))}" aria-describedby="cv-batch-theme-tooltip-text">
+                    <span class="cv-batch-help-icon">?</span>
+                    <span class="cv-batch-tooltip-text" id="cv-batch-theme-tooltip-text">${tx("export_theme_tooltip", "Themes apply only to PDF and Image exports. Other formats are not affected.", "主题仅适用于 PDF 和图片 (Image) 导出，其他格式不受影响。")}</span>
+                  </button>
+                </div>
                 <div class="cv-batch-theme-grid">
                   <div class="cv-batch-theme-option active" data-theme="default">
                     <span class="cv-batch-theme-circle cv-batch-theme-circle--default"></span>
@@ -1403,10 +1419,151 @@
         </div>
       </div>
 
+      <div class="cv-notion-auth-overlay" id="cv-notion-auth-overlay" aria-hidden="true" hidden>
+        <div class="cv-notion-auth-card" role="dialog" aria-modal="true" aria-labelledby="cv-notion-auth-title">
+          <div class="cv-notion-auth-mark" aria-hidden="true">
+            <img src="${chrome.runtime.getURL("images/notion-app-icon.svg")}" alt="">
+          </div>
+          <h2 id="cv-notion-auth-title">${t("onboard_title_login", isChineseUi() ? "登录以继续" : "Sign in to continue")}</h2>
+          <p>${t("notion_signin_required", isChineseUi() ? "请先登录。登录成功后，请再次点击“连接 Notion”完成工作区授权。" : "Sign in first. After sign-in, click Connect Notion again to authorize your workspace.")}</p>
+          <div class="cv-notion-auth-actions">
+            <button type="button" class="cv-notion-auth-cancel" id="cv-notion-auth-cancel">${t("btn_cancel", isChineseUi() ? "取消" : "Cancel")}</button>
+            <button type="button" class="cv-notion-auth-confirm" id="cv-notion-auth-confirm">${t("popup_btn_login", isChineseUi() ? "登录" : "Sign In")}</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="cv-notion-success-overlay" id="cv-notion-success-overlay" aria-hidden="true">
+        <div class="cv-notion-success-card" role="dialog" aria-modal="true" aria-labelledby="cv-notion-success-title">
+          <button class="cv-notion-success-close" id="cv-notion-success-close" type="button" aria-label="${getBatchCloseLabel()}">×</button>
+          <div class="cv-notion-success-confetti" aria-hidden="true">
+            <span>✦</span><span>●</span><strong>🎉</strong><span>●</span><span>✦</span>
+          </div>
+          <h2 id="cv-notion-success-title">${tx("notion_sync_success_title", "Synced to Notion", "已成功同步到 Notion")}</h2>
+          <p id="cv-notion-success-desc">${tx("notion_sync_success_desc", "This conversation is ready in your Notion Database.", "当前对话已写入你选择的 Notion Database。")}</p>
+          <a class="cv-notion-success-open" id="cv-notion-success-open" target="_blank" rel="noopener noreferrer">
+            <span class="cv-notion-success-open-label">${tx("notion_open_page", "Open Notion page", "打开 Notion 页面")}</span>
+            <strong id="cv-notion-success-document-title">${tx("notion_untitled_conversation", "Untitled conversation", "未命名会话")}</strong>
+            <span class="cv-notion-success-open-arrow" aria-hidden="true">→</span>
+          </a>
+          <div class="cv-notion-success-actions">
+            <button class="cv-notion-success-done" id="cv-notion-success-done" type="button">${tx("content_btn_done", "Done", "完成")}</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="cv-obsidian-result-overlay" id="cv-obsidian-result-overlay" aria-hidden="true">
+        <div class="cv-obsidian-result-card" role="dialog" aria-modal="true" aria-labelledby="cv-obsidian-result-title">
+          <button class="cv-obsidian-result-close" id="cv-obsidian-result-close" type="button" aria-label="${getBatchCloseLabel()}">×</button>
+          <div class="cv-obsidian-result-mark" id="cv-obsidian-result-mark" aria-hidden="true">✓</div>
+          <h2 id="cv-obsidian-result-title">${tx("obsidian_sync_complete", "Synced to Obsidian", "已成功同步到 Obsidian")}</h2>
+          <p id="cv-obsidian-result-description">${tx("obsidian_sync_complete_desc", "This conversation is ready in your Obsidian Vault.", "当前对话已写入你选择的 Obsidian Vault。")}</p>
+          <button class="cv-obsidian-result-open" id="cv-obsidian-result-open" type="button">
+            <span class="cv-obsidian-result-open-label">${tx("obsidian_open_note", "Open in Obsidian", "在 Obsidian 中打开")}</span>
+            <strong id="cv-obsidian-result-document-title">${tx("notion_untitled_conversation", "Untitled conversation", "未命名会话")}</strong>
+            <span class="cv-obsidian-result-open-arrow" aria-hidden="true">→</span>
+          </button>
+          <div class="cv-obsidian-result-actions">
+            <button class="cv-obsidian-result-secondary" id="cv-obsidian-result-done" type="button">${tx("content_btn_done", "Done", "完成")}</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="cv-batch-result-overlay" id="cv-batch-result-overlay" aria-hidden="true">
+        <div class="cv-batch-result-card" role="dialog" aria-modal="true" aria-labelledby="cv-batch-result-title">
+          <button class="cv-batch-result-close" id="cv-batch-result-close" type="button" aria-label="${getBatchCloseLabel()}">×</button>
+          <div class="cv-batch-result-mark" id="cv-batch-result-mark" aria-hidden="true">✓</div>
+          <h2 id="cv-batch-result-title">${t("batch_export_success", isChineseUi() ? "批量同步完成" : "Batch sync complete")}</h2>
+          <p id="cv-batch-result-description"></p>
+          <div class="cv-batch-result-items" id="cv-batch-result-items"></div>
+          <div class="cv-batch-result-actions">
+            <button type="button" id="cv-batch-result-done">${tx("content_btn_done", "Done", "完成")}</button>
+          </div>
+        </div>
+      </div>
+
       <div class="cv-page-toast" id="cv-page-toast" role="status" aria-live="polite"></div>
     `;
 
     shadowRoot.appendChild(uiWrapper);
+
+    const notionSuccessOverlay = shadowRoot.getElementById("cv-notion-success-overlay");
+    const closeNotionSuccess = () => hideNotionSuccessDialog();
+    shadowRoot.getElementById("cv-notion-success-close").addEventListener("click", closeNotionSuccess);
+    shadowRoot.getElementById("cv-notion-success-done").addEventListener("click", closeNotionSuccess);
+    notionSuccessOverlay.addEventListener("click", (event) => {
+      if (event.target === notionSuccessOverlay) closeNotionSuccess();
+    });
+    shadowRoot.getElementById("cv-notion-success-open").addEventListener("click", (event) => {
+      event.preventDefault();
+      const url = normalizeNotionPageUrl(event.currentTarget.getAttribute("href"));
+      if (!url) {
+        showPageToast(tx("notion_open_page_failed", "Could not open the Notion page.", "无法打开 Notion 页面。"));
+        return;
+      }
+      hideNotionSuccessDialog();
+      chrome.runtime.sendMessage({ type: "CHATVAULT_NOTION_OPEN_PAGE", url }, (response) => {
+        if (chrome.runtime.lastError || !response?.ok) {
+          showPageToast(response?.error || tx("notion_open_page_failed", "Could not open the Notion page.", "无法打开 Notion 页面。"));
+        }
+      });
+    });
+
+    const obsidianResultOverlay = shadowRoot.getElementById("cv-obsidian-result-overlay");
+    const closeObsidianResult = () => hideObsidianResultDialog();
+    shadowRoot.getElementById("cv-obsidian-result-close").addEventListener("click", closeObsidianResult);
+    shadowRoot.getElementById("cv-obsidian-result-done").addEventListener("click", closeObsidianResult);
+    obsidianResultOverlay.addEventListener("click", (event) => {
+      if (event.target === obsidianResultOverlay) closeObsidianResult();
+    });
+    shadowRoot.getElementById("cv-obsidian-result-open").addEventListener("click", () => {
+      const button = shadowRoot.getElementById("cv-obsidian-result-open");
+      const vaultName = button?.dataset.vaultName || "";
+      const noteRelativePath = button?.dataset.notePath || "";
+      if (!vaultName || !noteRelativePath) return;
+      hideObsidianResultDialog();
+      chrome.runtime.sendMessage({ type: "CHATVAULT_OBSIDIAN_OPEN_NOTE", vaultName, noteRelativePath }, (response) => {
+        if (chrome.runtime.lastError || !response?.ok) {
+          showPageToast(response?.error || tx("obsidian_open_failed", "Could not open Obsidian.", "无法打开 Obsidian。"));
+        }
+      });
+      hideObsidianResultDialog();
+    });
+    if (!obsidianResultEscapeListenerAttached) {
+      // 安全修复 P1: 使用 shadowRoot 监听 keydown，避免污染宿主页面的全局事件
+      // Previously used document.addEventListener which leaked into the host page event loop.
+      shadowRoot.addEventListener("keydown", (event) => {
+        const currentOverlay = shadowRoot.getElementById("cv-obsidian-result-overlay");
+        if (event.key === "Escape" && currentOverlay?.classList.contains("active")) hideObsidianResultDialog();
+      });
+      obsidianResultEscapeListenerAttached = true;
+    }
+
+    const batchResultOverlay = shadowRoot.getElementById("cv-batch-result-overlay");
+    const closeBatchResult = () => hideBatchSyncResultDialog();
+    shadowRoot.getElementById("cv-batch-result-close").addEventListener("click", closeBatchResult);
+    shadowRoot.getElementById("cv-batch-result-done").addEventListener("click", closeBatchResult);
+    batchResultOverlay.addEventListener("click", (event) => {
+      if (event.target === batchResultOverlay) closeBatchResult();
+    });
+    shadowRoot.getElementById("cv-batch-result-items").addEventListener("click", (event) => {
+      const button = event.target.closest(".cv-batch-result-item");
+      if (!button) return;
+      if (button.dataset.service === "notion") {
+        const url = normalizeNotionPageUrl(button.dataset.url);
+        if (!url) return;
+        chrome.runtime.sendMessage({ type: "CHATVAULT_NOTION_OPEN_PAGE", url }, (response) => {
+          if (chrome.runtime.lastError || !response?.ok) showPageToast(response?.error || tx("notion_open_page_failed", "Could not open the Notion page.", "无法打开 Notion 页面。"));
+        });
+        return;
+      }
+      const vaultName = button.dataset.vaultName || "";
+      const noteRelativePath = button.dataset.notePath || "";
+      if (!vaultName || !noteRelativePath) return;
+      chrome.runtime.sendMessage({ type: "CHATVAULT_OBSIDIAN_OPEN_NOTE", vaultName, noteRelativePath }, (response) => {
+        if (chrome.runtime.lastError || !response?.ok) showPageToast(response?.error || tx("obsidian_open_failed", "Could not open Obsidian.", "无法打开 Obsidian。"));
+      });
+    });
 
     // 绑定事件
     shadowRoot.getElementById("cancel-export-btn").addEventListener("click", cancelExport);
@@ -1463,6 +1620,36 @@
       });
     });
 
+    shadowRoot.querySelectorAll(".cv-batch-mode-tab").forEach((button) => {
+      button.addEventListener("click", () => {
+        if (globalThis.CHATVAULT_IS_BATCH_EXPORT) return;
+        setBatchMode(button.getAttribute("data-mode") || "files");
+      });
+    });
+
+    const batchNotionSelect = shadowRoot.getElementById("cv-batch-notion-select");
+    batchNotionSelect?.addEventListener("change", () => {
+      const selected = batchNotionConfig.dataSources.find((item) => {
+        return `${item.connectionId}:${item.id}` === batchNotionSelect.value;
+      });
+      if (!selected) return;
+      batchNotionConfig.connectionId = selected.connectionId;
+      batchNotionConfig.dataSourceId = selected.id;
+      batchNotionConfig.databaseId = selected.databaseId || "";
+      persistBatchNotionSelection();
+      updateBatchSelectedCount();
+    });
+
+    shadowRoot.getElementById("cv-batch-notion-connect")?.addEventListener("click", connectBatchNotionWorkspace);
+
+    shadowRoot.getElementById("cv-batch-obsidian-configure")?.addEventListener("click", () => {
+      chrome.runtime.sendMessage({ type: "CHATVAULT_OBSIDIAN_OPEN_SETTINGS" }, (response) => {
+        if (chrome.runtime.lastError || !response?.ok) {
+          showPageToast(response?.error || tx("obsidian_settings_failed", "Could not open Obsidian settings.", "无法打开 Obsidian 设置。"));
+        }
+      });
+    });
+
     // 选择导出主题
     shadowRoot.querySelectorAll(".cv-batch-theme-option").forEach(btn => {
       btn.addEventListener("click", () => {
@@ -1479,7 +1666,11 @@
       });
     });
 
-
+    // 绑定搜索输入框事件
+    const searchInput = shadowRoot.getElementById("cv-batch-search");
+    if (searchInput) {
+      searchInput.addEventListener("input", filterBatchList);
+    }
 
     // 清除 / 取消 / 关闭 按钮
     const clearBtn = shadowRoot.getElementById("cv-batch-btn-clear");
@@ -1492,16 +1683,11 @@
         // 清除所有选择
         shadowRoot.querySelectorAll(".cv-batch-item-row.selected").forEach(row => {
           row.classList.remove("selected");
+          row.setAttribute("aria-checked", "false");
         });
         updateBatchSelectedCount();
       }
     });
-
-    // 绑定搜索输入框事件
-    const searchInput = shadowRoot.getElementById("cv-batch-search");
-    if (searchInput) {
-      searchInput.addEventListener("input", filterBatchList);
-    }
 
     // 点击 X 关闭按钮
     shadowRoot.getElementById("cv-batch-btn-close").addEventListener("click", () => {
@@ -1519,6 +1705,12 @@
     if (batchOverlay) {
       batchOverlay.addEventListener("wheel", trapBatchModalWheel, { passive: false });
     }
+
+    // Warm the local Notion destination cache while the picker is hidden so
+    // opening the batch modal paints the user's last Database immediately.
+    getBatchNotionStoredState().then((stored) => {
+      if (hydrateBatchNotionCache(stored)) renderBatchNotionDestination();
+    }).catch(() => {});
 
     // 绑定全局登录监听 Hook (防崩溃，因 popup 会更新状态)
     globalThis.CHATVAULT_SET_AUTH_LOADING = (isLoading, message) => {};
@@ -1620,6 +1812,15 @@
     return rootElement;
   }
 
+  function collapseRepeatedBatchTitle(value) {
+    const title = String(value || "").replace(/\s+/g, " ").trim();
+    if (!title || title.length % 2 !== 0) return title;
+    const midpoint = title.length / 2;
+    const first = title.slice(0, midpoint).trim();
+    const second = title.slice(midpoint).trim();
+    return first && first === second ? first : title;
+  }
+
   function scrapeSidebarList(platform, root) {
     const list = [];
     const ids = new Set();
@@ -1644,7 +1845,7 @@
             ids.add(id);
             let text = el.textContent || "";
             const lines = text.split("\n").map(s => s.trim()).filter(Boolean);
-            let title = lines[0] || "Untitled Chat";
+            let title = collapseRepeatedBatchTitle(lines[0] || "Untitled Chat");
             if (title.length > 100) title = title.substring(0, 100) + "...";
             list.push({ id, title, url: resolveSidebarHref(href, "/c/" + id), platform });
           }
@@ -1662,7 +1863,7 @@
               ids.add(id);
               let text = el.textContent || "";
               const lines = text.split("\n").map(s => s.trim()).filter(Boolean);
-              let title = lines[0] || "Untitled Chat";
+              let title = collapseRepeatedBatchTitle(lines[0] || "Untitled Chat");
               list.push({ id, title, url: resolveSidebarHref(href, "/chat/" + id), platform });
             }
           }
@@ -1679,7 +1880,7 @@
             ids.add(id);
             let text = el.textContent || "";
             const lines = text.split("\n").map(s => s.trim()).filter(Boolean);
-            let title = lines[0] || "Untitled Chat";
+            let title = collapseRepeatedBatchTitle(lines[0] || "Untitled Chat");
             list.push({ id, title, url: resolveSidebarHref(href, "/app/" + id), platform });
           }
         }
@@ -1793,7 +1994,7 @@
           throw new Error(getChatGptSessionUnavailableMessage(sessionResponse.status));
         }
         const session = await sessionResponse.json();
-        if (!session || !session.accessToken) {
+        if (!session || typeof session !== "object") {
           throw new Error(getChatGptSessionUnavailableMessage());
         }
         return session;
@@ -1807,21 +2008,49 @@
     }
   }
 
-  async function fetchChatGptConversationPage(session, offset, limit) {
-    const listResponse = await fetch(
-      window.location.origin + "/backend-api/conversations?offset=" + encodeURIComponent(offset) +
-        "&limit=" + encodeURIComponent(limit) + "&order=updated",
-      {
-        credentials: "include",
-        headers: {
-          Authorization: "Bearer " + session.accessToken
-        }
-      }
-    );
-    if (!listResponse.ok) {
-      throw new Error("ChatGPT history request failed: " + listResponse.status);
+  async function fetchChatGptConversationPage(session, offset, limit, retries = 3) {
+    const headers = {};
+    if (session && session.accessToken) {
+      headers.Authorization = "Bearer " + session.accessToken;
     }
-    return listResponse.json();
+    let lastError = null;
+    for (let attempt = 0; attempt < retries; attempt++) {
+      try {
+        const listResponse = await fetch(
+          window.location.origin + "/backend-api/conversations?offset=" + encodeURIComponent(offset) +
+            "&limit=" + encodeURIComponent(limit) + "&order=updated",
+          {
+            credentials: "include",
+            headers
+          }
+        );
+        if (!listResponse.ok) {
+          const status = listResponse.status;
+          // For auth or permanent errors, don't retry
+          if (status === 401 || status === 403) {
+            throw new Error("ChatGPT history request failed: " + status);
+          }
+          // For rate limiting, wait longer
+          const delay = status === 429 ? 5000 : 1200;
+          lastError = new Error("ChatGPT history request failed: " + status);
+          if (attempt < retries - 1) {
+            await new Promise((resolve) => setTimeout(resolve, delay));
+          }
+          continue;
+        }
+        return await listResponse.json();
+      } catch (err) {
+        // Only retry transient network errors (TypeError: Failed to fetch)
+        lastError = err;
+        const isNetworkError = err instanceof TypeError;
+        if (!isNetworkError || attempt >= retries - 1) {
+          if (!isNetworkError) throw err; // non-network errors propagate immediately
+          break;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 600 * Math.pow(2, attempt)));
+      }
+    }
+    throw lastError;
   }
 
   function normalizeChatGptHistoryItem(item) {
@@ -1888,9 +2117,9 @@
 
   async function ensureChatGptBatchHistoryLoaded(targetCount) {
     const target = Math.max(1, Number(targetCount) || batchPageSize);
+    const session = await getChatGptWebSession();
 
     while (batchList.length < target && !batchChatGptLoadedAll) {
-      const session = await getChatGptWebSession();
       const payload = await fetchChatGptConversationPage(session, batchChatGptNextOffset, historyPageSize);
       const rawItems = getConversationItems(payload);
 
@@ -1915,7 +2144,8 @@
 
     return {
       total: batchChatGptWebTotal,
-      loadedAll: batchChatGptLoadedAll
+      loadedAll: batchChatGptLoadedAll,
+      session
     };
   }
 
@@ -1961,7 +2191,7 @@
       const isSelected = selectedIds.has(item.id);
       const isVisible = !query || safeTitle.toLowerCase().indexOf(query) !== -1;
       return `
-        <div class="cv-batch-item-row${isSelected ? " selected" : ""}" data-index="${realIndex}" data-chat-id="${safeId}" id="cv-batch-row-${realIndex}" style="display: ${isVisible ? "flex" : "none"};">
+        <div class="cv-batch-item-row${isSelected ? " selected" : ""}" data-index="${realIndex}" data-chat-id="${safeId}" id="cv-batch-row-${realIndex}" role="checkbox" aria-checked="${isSelected}" tabindex="0" style="display: ${isVisible ? "flex" : "none"};">
           <div class="cv-batch-checkbox-wrap">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="20 6 9 17 4 12"></polyline>
@@ -1971,35 +2201,52 @@
             <span class="cv-batch-item-title" title="${safeTitle}">${safeTitle}</span>
             <span class="cv-batch-item-subtitle">${platform} · ${tx("content_conversation_history", "Conversation history", "会话历史")}</span>
             
-            <!-- 行内进度条，默认隐藏 -->
-            <div class="cv-batch-row-progress-container" id="cv-batch-progress-bg-${realIndex}">
-              <div class="cv-batch-row-progress-bg">
-                <div class="cv-batch-row-progress-fill" id="cv-batch-progress-fill-${realIndex}" style="width: 0%;"></div>
-              </div>
-              <span class="cv-batch-row-progress-text" id="cv-batch-progress-text-${realIndex}">-</span>
-            </div>
           </div>
           
           <!-- 状态徽章，默认隐藏 -->
           <div class="cv-batch-item-row-status">
+            <button type="button" class="cv-batch-row-open" id="cv-batch-open-${realIndex}" hidden>${tx("content_open", "Open", "打开")}</button>
             <span class="cv-batch-badge waiting" id="cv-batch-badge-${realIndex}">Waiting</span>
           </div>
         </div>
       `;
     }).join("");
 
+    const fragment = document.createDocumentFragment();
     const tempDiv = document.createElement("div");
     tempDiv.innerHTML = listHtml;
-    while (tempDiv.firstChild) {
-      const rowEl = tempDiv.firstChild;
-      itemsContainer.appendChild(rowEl);
+    while (tempDiv.firstElementChild) {
+      const rowEl = tempDiv.firstElementChild;
+      fragment.appendChild(rowEl);
 
-      rowEl.addEventListener("click", () => {
+      const toggleRowSelection = () => {
         if (globalThis.CHATVAULT_IS_BATCH_EXPORT || rowEl.classList.contains("disabled")) return;
         rowEl.classList.toggle("selected");
+        rowEl.setAttribute("aria-checked", String(rowEl.classList.contains("selected")));
         updateBatchSelectedCount();
+      };
+      rowEl.addEventListener("click", toggleRowSelection);
+      rowEl.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        toggleRowSelection();
+      });
+      rowEl.querySelector(".cv-batch-row-open")?.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const button = event.currentTarget;
+        if (button.dataset.service === "obsidian") {
+          const vaultName = button.dataset.vaultName || "";
+          const noteRelativePath = button.dataset.notePath || "";
+          if (!vaultName || !noteRelativePath) return;
+          chrome.runtime.sendMessage({ type: "CHATVAULT_OBSIDIAN_OPEN_NOTE", vaultName, noteRelativePath }, () => void chrome.runtime.lastError);
+          return;
+        }
+        const url = normalizeNotionPageUrl(button.dataset.url || "");
+        if (url) chrome.runtime.sendMessage({ type: "CHATVAULT_NOTION_OPEN_PAGE", url }, () => void chrome.runtime.lastError);
       });
     }
+    itemsContainer.appendChild(fragment);
 
     updateBatchSelectedCount();
   }
@@ -2017,13 +2264,14 @@
     const targetCount = displayedConversationsCount + batchPageSize;
 
     if (platform === "chatgpt") {
+      let historyState;
       try {
         if (loader) {
           loader.querySelector("span").textContent = displayedConversationsCount === 0
             ? tx("content_syncing_chatgpt_history", "Syncing conversations from ChatGPT history...", "正在从 ChatGPT 历史同步会话...")
             : tx("content_continuing_chatgpt_history", "Continuing to sync ChatGPT history...", "正在继续同步 ChatGPT 历史...");
         }
-        await ensureChatGptBatchHistoryLoaded(targetCount);
+        historyState = await ensureChatGptBatchHistoryLoaded(targetCount);
       } catch (error) {
         console.warn("ChatGPT history API failed:", error);
         if (loader) loader.style.display = "none";
@@ -2059,8 +2307,7 @@
       if (!batchChatGptLoadedAll) {
         (async () => {
           try {
-            const session = await getChatGptWebSession();
-            await loadRemainingChatGptHistory(session);
+            await loadRemainingChatGptHistory(historyState.session);
           } catch (err) {
             console.warn(err);
           }
@@ -2257,6 +2504,365 @@
     }
   }
 
+  function notionBatchMessage(payload) {
+    return new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage(payload, (response) => {
+        const lastError = chrome.runtime.lastError;
+        if (lastError) return reject(new Error(lastError.message));
+        if (!response || response.ok === false) return reject(new Error(response?.error || "Notion request failed."));
+        resolve(response);
+      });
+    });
+  }
+
+  function getBatchNotionStoredState() {
+    return new Promise((resolve) => {
+      chrome.storage.local.get([
+        NOTION_UI_CACHE_KEY,
+        "chatvault_supabase_session",
+        "notion_selected_connection_id",
+        "notion_selected_data_sources"
+      ], resolve);
+    });
+  }
+
+  function normalizeBatchNotionDataSource(item, connection) {
+    return {
+      id: String(item?.id || ""),
+      databaseId: String(item?.databaseId || ""),
+      title: String(item?.title || tx("content_untitled_database", "Untitled Database", "未命名 Database")),
+      connectionId: String(item?.connectionId || connection?.id || ""),
+      workspaceName: String(item?.workspaceName || connection?.workspace_name || "")
+    };
+  }
+
+  function hydrateBatchNotionCache(stored) {
+    const cache = stored?.[NOTION_UI_CACHE_KEY];
+    const sessionUserId = String(stored?.chatvault_supabase_session?.user?.id || "");
+    if (!cache || cache.version !== 1 || String(cache.userId || "") !== sessionUserId) return false;
+    const connections = (Array.isArray(cache.connections) ? cache.connections : [])
+      .filter((item) => item?.mode === "oauth" && item?.id);
+    const dataSources = (Array.isArray(cache.dataSources) ? cache.dataSources : [])
+      .map((item) => normalizeBatchNotionDataSource(item))
+      .filter((item) => item.id && item.connectionId);
+    batchNotionConfig = {
+      connections,
+      dataSources,
+      connectionId: String(cache.connectionId || stored.notion_selected_connection_id || ""),
+      dataSourceId: String(cache.dataSourceId || stored.notion_selected_data_sources?.[cache.connectionId] || ""),
+      databaseId: String(cache.databaseId || "")
+    };
+    return Boolean(connections.length);
+  }
+
+  function renderBatchNotionDestination() {
+    const select = shadowRoot?.getElementById("cv-batch-notion-select");
+    const label = shadowRoot?.getElementById("cv-batch-notion-label");
+    const connectButton = shadowRoot?.getElementById("cv-batch-notion-connect");
+    const helper = shadowRoot?.getElementById("cv-batch-notion-helper");
+    if (!select) return;
+    select.innerHTML = "";
+    const dataSources = batchNotionConfig.dataSources || [];
+    if (!dataSources.length) {
+      const option = document.createElement("option");
+      option.value = "";
+      option.textContent = batchNotionConfig.connections.length
+        ? tx("content_notion_no_database", "No authorized Database found", "未找到已授权的 Database")
+        : tx("content_notion_destination_unavailable", "Connect Notion from the extension popup", "请先在插件弹窗中连接 Notion");
+      select.appendChild(option);
+      select.disabled = true;
+      select.hidden = !batchNotionConfig.connections.length;
+      if (label) label.hidden = !batchNotionConfig.connections.length;
+      if (connectButton) connectButton.hidden = Boolean(batchNotionConfig.connections.length);
+      if (helper) {
+        helper.textContent = batchNotionConfig.connections.length
+          ? tx("content_notion_share_database", "Share a Database with the Notion connection, then reopen this panel.", "请先向 Notion 连接授权一个 Database，然后重新打开此面板。")
+          : currentSession?.access_token
+            ? tx("content_notion_connect_helper", "Connect your Notion workspace to choose a Database.", "连接 Notion 工作区后即可选择 Database。")
+            : t("notion_signin_required", isChineseUi() ? "请先登录。登录成功后，请再次点击“连接 Notion”完成工作区授权。" : "Sign in first. After sign-in, click Connect Notion again to authorize your workspace.")
+      }
+      updateBatchSelectedCount();
+      return;
+    }
+
+    select.hidden = false;
+    if (label) label.hidden = false;
+    if (connectButton) connectButton.hidden = true;
+    const byConnection = new Map();
+    dataSources.forEach((item) => {
+      if (!byConnection.has(item.connectionId)) byConnection.set(item.connectionId, []);
+      byConnection.get(item.connectionId).push(item);
+    });
+    byConnection.forEach((items, connectionId) => {
+      const connection = batchNotionConfig.connections.find((item) => item.id === connectionId);
+      const parent = byConnection.size > 1 ? document.createElement("optgroup") : select;
+      if (parent !== select) parent.label = connection?.workspace_name || items[0]?.workspaceName || "Notion";
+      items.forEach((item) => {
+        const option = document.createElement("option");
+        option.value = `${item.connectionId}:${item.id}`;
+        option.textContent = item.title;
+        option.selected = item.connectionId === batchNotionConfig.connectionId && item.id === batchNotionConfig.dataSourceId;
+        parent.appendChild(option);
+      });
+      if (parent !== select) select.appendChild(parent);
+    });
+    if (!select.value) select.value = `${dataSources[0].connectionId}:${dataSources[0].id}`;
+    const selected = dataSources.find((item) => `${item.connectionId}:${item.id}` === select.value) || dataSources[0];
+    batchNotionConfig.connectionId = selected.connectionId;
+    batchNotionConfig.dataSourceId = selected.id;
+    batchNotionConfig.databaseId = selected.databaseId;
+    select.disabled = false;
+    if (helper) helper.textContent = "";
+    updateBatchSelectedCount();
+  }
+
+  async function persistBatchNotionSelection() {
+    const stored = await getBatchNotionStoredState();
+    const selectedSources = { ...(stored.notion_selected_data_sources || {}) };
+    if (batchNotionConfig.connectionId && batchNotionConfig.dataSourceId) {
+      selectedSources[batchNotionConfig.connectionId] = batchNotionConfig.dataSourceId;
+    }
+    const cache = stored[NOTION_UI_CACHE_KEY] && typeof stored[NOTION_UI_CACHE_KEY] === "object"
+      ? { ...stored[NOTION_UI_CACHE_KEY] }
+      : null;
+    if (cache) {
+      cache.connectionId = batchNotionConfig.connectionId;
+      cache.dataSourceId = batchNotionConfig.dataSourceId;
+      cache.databaseId = batchNotionConfig.databaseId;
+      cache.updatedAt = Date.now();
+    }
+    await new Promise((resolve) => chrome.storage.local.set({
+      notion_selected_connection_id: batchNotionConfig.connectionId,
+      notion_selected_data_sources: selectedSources,
+      ...(cache ? { [NOTION_UI_CACHE_KEY]: cache } : {})
+    }, resolve));
+  }
+
+  async function refreshBatchNotionDestination() {
+    const stored = await getBatchNotionStoredState();
+    hydrateBatchNotionCache(stored);
+    renderBatchNotionDestination();
+    try {
+      const connectionResponse = await notionBatchMessage({ type: "CHATVAULT_NOTION_LIST_CONNECTIONS" });
+      const connections = (connectionResponse.connections || []).filter((item) => item?.mode === "oauth");
+      const results = await Promise.all(connections.map(async (connection) => {
+        try {
+          const response = await notionBatchMessage({
+            type: "CHATVAULT_NOTION_SEARCH_DATA_SOURCES",
+            connectionId: connection.id
+          });
+          return (response.dataSources || []).map((item) => normalizeBatchNotionDataSource(item, connection));
+        } catch (error) {
+          return (batchNotionConfig.dataSources || []).filter((item) => item.connectionId === connection.id);
+        }
+      }));
+      batchNotionConfig.connections = connections;
+      batchNotionConfig.dataSources = results.flat();
+      const selected = batchNotionConfig.dataSources.find((item) => (
+        item.connectionId === batchNotionConfig.connectionId && item.id === batchNotionConfig.dataSourceId
+      )) || batchNotionConfig.dataSources[0];
+      batchNotionConfig.connectionId = selected?.connectionId || "";
+      batchNotionConfig.dataSourceId = selected?.id || "";
+      batchNotionConfig.databaseId = selected?.databaseId || "";
+      renderBatchNotionDestination();
+      if (selected) await persistBatchNotionSelection();
+    } catch (error) {
+      console.warn("[Notion Batch] Could not refresh destination list:", error);
+    }
+  }
+
+  function showBatchNotionSignInDialog() {
+    return new Promise((resolve) => {
+      const overlay = shadowRoot?.getElementById("cv-notion-auth-overlay");
+      const cancel = shadowRoot?.getElementById("cv-notion-auth-cancel");
+      const confirm = shadowRoot?.getElementById("cv-notion-auth-confirm");
+      if (!overlay || !cancel || !confirm) {
+        resolve(false);
+        return;
+      }
+
+      let settled = false;
+      const finish = (confirmed) => {
+        if (settled) return;
+        settled = true;
+        overlay.classList.remove("active");
+        overlay.setAttribute("aria-hidden", "true");
+        overlay.hidden = true;
+        cancel.onclick = null;
+        confirm.onclick = null;
+        overlay.onclick = null;
+        overlay.onkeydown = null;
+        resolve(confirmed);
+      };
+      cancel.onclick = () => finish(false);
+      confirm.onclick = () => finish(true);
+      overlay.onclick = (event) => {
+        if (event.target === overlay) finish(false);
+      };
+      overlay.onkeydown = (event) => {
+        if (event.key === "Escape") finish(false);
+      };
+      overlay.setAttribute("aria-hidden", "false");
+      overlay.hidden = false;
+      overlay.offsetHeight;
+      overlay.classList.add("active");
+      confirm.focus();
+    });
+  }
+
+  async function connectBatchNotionWorkspace() {
+    const button = shadowRoot?.getElementById("cv-batch-notion-connect");
+    if (button) button.disabled = true;
+    try {
+      if (!currentSession?.access_token) {
+        const confirmed = await showBatchNotionSignInDialog();
+        if (!confirmed) return;
+        const signedIn = await performSignIn();
+        if (!signedIn || !currentSession?.access_token) {
+          showPageToast(t("popup_login_incomplete", isChineseUi() ? "登录未完成，请重试。" : "Sign-in was not completed. Please try again."));
+          return;
+        }
+        renderBatchNotionDestination();
+        showPageToast(t("notion_signin_again", isChineseUi() ? "登录成功，请再次点击“连接 Notion”继续。" : "Signed in. Click Connect Notion again to continue."));
+        return;
+      }
+
+      showPageToast(t("notion_oauth_opening", isChineseUi() ? "正在打开 Notion 授权..." : "Opening Notion authorization..."));
+      await notionBatchMessage({ type: "CHATVAULT_NOTION_START_OAUTH" });
+      await refreshBatchNotionDestination();
+      showPageToast(t("notion_oauth_success", isChineseUi() ? "Notion 已连接。" : "Notion connected."));
+    } catch (error) {
+      showPageToast(t("notion_oauth_failed", isChineseUi() ? "Notion 连接失败：$1" : "Notion connection failed: $1", error?.message || ""));
+    } finally {
+      if (button) button.disabled = false;
+    }
+  }
+
+  function obsidianBatchMessage(payload) {
+    return new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage(payload, (response) => {
+        const lastError = chrome.runtime.lastError;
+        if (lastError) return reject(new Error(lastError.message));
+        if (!response || response.ok === false) return reject(new Error(response?.error || "Obsidian request failed."));
+        resolve(response);
+      });
+    });
+  }
+
+  function formatTruncatedVaultPath(vaultName, notesDestination) {
+    const vName = vaultName || "Obsidian Vault";
+    const rawPath = `${vName} / ${notesDestination}`;
+    if (rawPath.length <= 32) return rawPath;
+    const parts = notesDestination.split("/").filter(Boolean);
+    if (parts.length > 2) {
+      return `${vName} / .../${parts.slice(-2).join("/")}`;
+    } else if (parts.length === 2) {
+      return `${vName} / .../${parts[1]}`;
+    }
+    return rawPath;
+  }
+
+  function renderBatchObsidianDestination() {
+    const destination = shadowRoot?.getElementById("cv-batch-obsidian-destination");
+    const vault = shadowRoot?.getElementById("cv-batch-obsidian-vault");
+    const helper = shadowRoot?.getElementById("cv-batch-obsidian-helper");
+    const configure = shadowRoot?.getElementById("cv-batch-obsidian-configure");
+    if (!vault || !configure) return;
+    if (helper) helper.textContent = "";
+    destination?.classList.toggle("is-unconfigured", !batchObsidianStatus.connected);
+
+    if (!batchObsidianStatus.connected) {
+      vault.textContent = tx("obsidian_not_connected", "Vault not connected", "Vault 尚未连接");
+      vault.title = tx("obsidian_not_connected", "Vault not connected", "Vault 尚未连接");
+      configure.textContent = tx("obsidian_configure", "Config Obsidian", "配置 Obsidian");
+    } else if (batchObsidianStatus.permission !== "granted") {
+      vault.textContent = batchObsidianStatus.vaultName || "Obsidian Vault";
+      vault.title = batchObsidianStatus.vaultName || "Obsidian Vault";
+      configure.textContent = tx("obsidian_reauthorize", "Reauthorize", "重新授权");
+    } else if (batchObsidianStatus.directoriesValid === false) {
+      vault.textContent = batchObsidianStatus.vaultName || "Obsidian Vault";
+      vault.title = batchObsidianStatus.vaultName || "Obsidian Vault";
+      configure.textContent = tx("obsidian_repair_folders", "Repair folders", "修复目录");
+    } else if (batchObsidianStatus.activeJob) {
+      vault.textContent = batchObsidianStatus.vaultName || "Obsidian Vault";
+      vault.title = batchObsidianStatus.vaultName || "Obsidian Vault";
+      configure.textContent = tx("obsidian_settings", "Settings", "设置");
+    } else {
+      const hasConfiguredFolder = Boolean(batchObsidianStatus.config?.notesRoot || batchObsidianStatus.vaultName);
+      if (!hasConfiguredFolder) {
+        vault.textContent = tx("obsidian_not_connected", "Vault not connected", "Vault 尚未连接");
+        vault.title = tx("obsidian_not_connected", "Vault not connected", "Vault 尚未连接");
+        configure.textContent = tx("obsidian_configure", "Config Obsidian", "配置 Obsidian");
+      } else {
+        const notesDestination = batchObsidianStatus.config?.notesRoot || tx("obsidian_vault_root", "Vault root", "Vault 根目录");
+        const vName = batchObsidianStatus.vaultName || "Obsidian Vault";
+        const fullPath = `${vName} / ${notesDestination}`;
+        vault.textContent = formatTruncatedVaultPath(vName, notesDestination);
+        vault.title = fullPath;
+        configure.textContent = tx("obsidian_change_folder", "Change folder", "更改目录");
+      }
+    }
+    updateBatchSelectedCount();
+  }
+
+  async function refreshBatchObsidianDestination() {
+    try {
+      batchObsidianStatus = await obsidianBatchMessage({ type: "CHATVAULT_OBSIDIAN_GET_STATUS" });
+    } catch (error) {
+      batchObsidianStatus = { connected: false, permission: "missing", activeJob: null, error: error?.message || "" };
+    }
+    renderBatchObsidianDestination();
+  }
+
+  function setBatchMode(mode) {
+    const nextMode = mode === "notion" || mode === "obsidian" ? mode : "files";
+    if (nextMode !== batchMode && !globalThis.CHATVAULT_IS_BATCH_EXPORT && (batchNotionResults.size || batchObsidianResults.size)) {
+      batchNotionJobs = new Map();
+      batchNotionResults = new Map();
+      batchNotionBatchId = "";
+      batchObsidianResults = new Map();
+      batchObsidianBatchId = "";
+      shadowRoot?.querySelectorAll(".cv-batch-badge").forEach((badge) => {
+        badge.className = "cv-batch-badge waiting";
+        badge.textContent = "Waiting";
+      });
+      shadowRoot?.querySelectorAll(".cv-batch-row-open").forEach((button) => {
+        button.hidden = true;
+        button.dataset.url = "";
+        button.dataset.service = "";
+        button.dataset.vaultName = "";
+        button.dataset.notePath = "";
+      });
+      const exportButton = shadowRoot?.getElementById("cv-batch-btn-export");
+      const clearButton = shadowRoot?.getElementById("cv-batch-btn-clear");
+      if (exportButton) exportButton.style.display = "flex";
+      if (clearButton) clearButton.textContent = getBatchClearLabel();
+    }
+    batchMode = nextMode;
+    shadowRoot?.querySelector(".cv-batch-modal")?.classList.toggle("notion-mode", batchMode === "notion");
+    shadowRoot?.querySelector(".cv-batch-modal")?.classList.toggle("obsidian-mode", batchMode === "obsidian");
+    if (!globalThis.CHATVAULT_IS_BATCH_EXPORT) {
+      const title = shadowRoot?.getElementById("cv-batch-title-text");
+      if (title && batchMode === "obsidian") title.textContent = tx("obsidian_batch_title", "Sync to Obsidian", "同步到 Obsidian");
+      else if (title && batchMode === "notion") title.textContent = tx("content_batch_sync_notion", "Sync to Notion", "同步到 Notion");
+      else if (title) title.textContent = t("batch_export", isChineseUi() ? "批量导出" : "Batch Export");
+    }
+    shadowRoot?.querySelectorAll(".cv-batch-mode-tab").forEach((button) => {
+      const active = button.getAttribute("data-mode") === batchMode;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-selected", String(active));
+    });
+    const destination = shadowRoot?.getElementById("cv-batch-notion-destination");
+    const obsidianDestination = shadowRoot?.getElementById("cv-batch-obsidian-destination");
+    const format = shadowRoot?.querySelector(".cv-batch-fixed-format-container");
+    if (destination) destination.hidden = batchMode !== "notion";
+    if (obsidianDestination) obsidianDestination.hidden = batchMode !== "obsidian";
+    if (format) format.hidden = batchMode !== "files";
+    updateBatchSelectedCount();
+    if (batchMode === "notion") refreshBatchNotionDestination();
+    if (batchMode === "obsidian") refreshBatchObsidianDestination();
+  }
+
   function rebuildBatchListUI() {
     const itemsContainer = shadowRoot.getElementById("cv-batch-list-items");
     if (!itemsContainer) return;
@@ -2290,78 +2896,122 @@
     displayedConversationsCount = batchList.length;
   }
 
+  async function commitChatGptHistoryPage(payload, offset) {
+    const rawItems = getConversationItems(payload);
+    if (typeof payload.total === "number") batchChatGptWebTotal = payload.total;
+
+    const knownIds = new Set(batchList.map(item => item.id));
+    rawItems.map(normalizeChatGptHistoryItem).filter(Boolean).forEach(item => {
+      if (knownIds.has(item.id)) return;
+      knownIds.add(item.id);
+      batchList.push(item);
+    });
+
+    batchChatGptNextOffset = Math.max(batchChatGptNextOffset, offset + rawItems.length);
+    if (
+      !rawItems.length ||
+      rawItems.length < historyPageSize ||
+      payload?.has_more === false ||
+      (typeof batchChatGptWebTotal === "number" && batchChatGptNextOffset >= batchChatGptWebTotal)
+    ) {
+      batchChatGptLoadedAll = true;
+    }
+
+    // Cached chats do not increase batchList.length when the API returns the
+    // same IDs. Reveal the range whose server cursor has now been verified;
+    // otherwise page two stays hidden until the entire history finishes.
+    const visiblePageEnd = Math.min(batchList.length, offset + rawItems.length);
+    if (visiblePageEnd > displayedConversationsCount) {
+      const selectedIds = new Set(
+        Array.from(shadowRoot.querySelectorAll(".cv-batch-item-row.selected"))
+          .map(row => row.getAttribute("data-chat-id"))
+      );
+      appendBatchListItems(
+        batchList.slice(displayedConversationsCount, visiblePageEnd),
+        displayedConversationsCount,
+        selectedIds
+      );
+      displayedConversationsCount = visiblePageEnd;
+    }
+
+    hasMoreConversations = batchList.length > displayedConversationsCount || !batchChatGptLoadedAll;
+    updateLoadMoreUi();
+
+    await writeBatchChatHistoryCache("chatgpt", batchList, {
+      total: batchChatGptWebTotal,
+      loadedAll: batchChatGptLoadedAll,
+      nextOffset: batchChatGptNextOffset
+    });
+  }
+
   async function loadRemainingChatGptHistory(session) {
     if (batchHistoryLoadingActive) return;
     batchHistoryLoadingActive = true;
 
-    const platform = "chatgpt";
     const loader = shadowRoot.getElementById("cv-batch-loading-indicator");
-
+    
     updateLoadMoreUi();
 
-    while (batchModalOpen && !batchChatGptLoadedAll && !globalThis.CHATVAULT_IS_BATCH_EXPORT) {
+    let consecutiveErrors = 0;
+    const MAX_CONSECUTIVE_ERRORS = 3;
+
+    historyLoop:
+    while (batchModalOpen && !batchChatGptLoadedAll && !globalThis.CHATVAULT_IS_BATCH_EXPORT && consecutiveErrors < MAX_CONSECUTIVE_ERRORS) {
       try {
-        const payload = await fetchChatGptConversationPage(session, batchChatGptNextOffset, historyPageSize);
+        // Fetch and render the immediately-next page on its own. It must not wait
+        // for speculative later pages, which may be throttled or stalled.
+        const firstOffset = batchChatGptNextOffset;
+        const firstPayload = await fetchChatGptConversationPage(session, firstOffset, historyPageSize);
         if (!batchModalOpen || globalThis.CHATVAULT_IS_BATCH_EXPORT) break;
+        await commitChatGptHistoryPage(firstPayload, firstOffset);
+        consecutiveErrors = 0;
+        if (batchChatGptLoadedAll) break;
 
-        const rawItems = getConversationItems(payload);
-        if (typeof payload.total === "number") {
-          batchChatGptWebTotal = payload.total;
-        }
+        await new Promise((resolve) => requestAnimationFrame(resolve));
 
-        const normalizedItems = rawItems.map(normalizeChatGptHistoryItem).filter(Boolean);
-        const beforeCount = batchList.length;
-        if (normalizedItems.length > 0) {
-          const knownIds = new Set(batchList.map(item => item.id));
-          let addedCount = 0;
-
-          normalizedItems.forEach(item => {
-            if (knownIds.has(item.id)) return;
-            knownIds.add(item.id);
-            batchList.push(item);
-            addedCount++;
-          });
-
-          if (addedCount > 0) {
-            const selectedIds = new Set(
-              Array.from(shadowRoot.querySelectorAll(".cv-batch-item-row.selected"))
-                .map(row => row.getAttribute("data-chat-id"))
-            );
-            appendBatchListItems(batchList.slice(beforeCount), beforeCount, selectedIds);
-            displayedConversationsCount = batchList.length;
+        const remainingCount = typeof batchChatGptWebTotal === "number"
+          ? Math.max(0, batchChatGptWebTotal - batchChatGptNextOffset)
+          : historyPageSize * Math.max(0, batchHistoryPrefetchPages - 1);
+        const prefetchPageCount = Math.max(0, Math.min(
+          Math.max(0, batchHistoryPrefetchPages - 1),
+          Math.ceil(remainingCount / historyPageSize) || 0
+        ));
+        const prefetchOffsets = Array.from(
+          { length: prefetchPageCount },
+          (_, index) => batchChatGptNextOffset + index * historyPageSize
+        );
+        const pageRequests = prefetchOffsets.map(async (offset, index) => {
+          if (index > 0) {
+            await new Promise((resolve) => setTimeout(resolve, index * 150));
           }
-        }
-
-        // Always advance over the raw page, including cached duplicates. This
-        // prevents a stale cache from making the automatic paginator loop.
-        batchChatGptNextOffset += rawItems.length;
-
-        if (
-          !rawItems.length ||
-          rawItems.length < historyPageSize ||
-          payload?.has_more === false ||
-          (typeof batchChatGptWebTotal === "number" && batchChatGptNextOffset >= batchChatGptWebTotal)
-        ) {
-          batchChatGptLoadedAll = true;
-        }
-
-        hasMoreConversations = batchList.length > displayedConversationsCount || !batchChatGptLoadedAll;
-        updateLoadMoreUi();
-
-        await writeBatchChatHistoryCache(platform, batchList, {
-          total: batchChatGptWebTotal,
-          loadedAll: batchChatGptLoadedAll,
-          nextOffset: batchChatGptNextOffset
+          try {
+            const payload = await fetchChatGptConversationPage(session, offset, historyPageSize);
+            return { ok: true, offset, payload };
+          } catch (error) {
+            return { ok: false, offset, error };
+          }
         });
 
-        if (batchChatGptLoadedAll) {
+        // Consume in cursor order, but commit each page as soon as that request
+        // resolves. A slower later request cannot hold an earlier page hostage.
+        for (const pageRequest of pageRequests) {
+          const result = await pageRequest;
+          if (!result.ok) throw result.error || new Error("ChatGPT history request failed.");
+          if (!batchModalOpen || globalThis.CHATVAULT_IS_BATCH_EXPORT) break historyLoop;
+          await commitChatGptHistoryPage(result.payload, result.offset);
+          consecutiveErrors = 0;
+          if (batchChatGptLoadedAll) break;
+          await new Promise((resolve) => requestAnimationFrame(resolve));
+        }
+      } catch (error) {
+        consecutiveErrors++;
+        // Use console.debug (not warn) so transient network errors don't appear
+        // in the extension error panel. They are expected when the network is flaky.
+        console.debug(`[ChatVault] History background load paused (${consecutiveErrors}/${MAX_CONSECUTIVE_ERRORS}):`, error && error.message);
+        if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
           break;
         }
-
-        await new Promise(resolve => setTimeout(resolve, 300));
-      } catch (error) {
-        console.warn("Background history loading failed page chunk:", error);
-        break;
+        await new Promise((resolve) => setTimeout(resolve, 2000 * consecutiveErrors));
       }
     }
 
@@ -2409,11 +3059,15 @@
     const exportBtn = shadowRoot.getElementById("cv-batch-btn-export");
     exportBtn.style.display = "flex";
     exportBtn.disabled = true;
-    const progressPanel = shadowRoot.getElementById("cv-batch-export-progress-panel");
-    if (progressPanel) progressPanel.style.display = "none";
+    batchNotionJobs = new Map();
+    batchNotionResults = new Map();
+    batchNotionBatchId = "";
+    batchObsidianResults = new Map();
+    batchObsidianBatchId = "";
 
     overlay.classList.add("active");
     batchModalOpen = true;
+    setBatchMode(batchMode);
 
     // Reset search
     const searchInput = shadowRoot.getElementById("cv-batch-search");
@@ -2492,32 +3146,54 @@
 
     const warning = shadowRoot.getElementById("cv-batch-limit-warning");
     const exportBtn = shadowRoot.getElementById("cv-batch-btn-export");
+    const hasNotionDestination = Boolean(batchNotionConfig.connectionId && batchNotionConfig.dataSourceId);
+    const hasObsidianDestination = Boolean(batchObsidianStatus.connected && batchObsidianStatus.permission === "granted" && batchObsidianStatus.directoriesValid !== false && !batchObsidianStatus.activeJob);
+
+    if (exportBtn) {
+      if (batchMode === "notion") {
+        exportBtn.textContent = count > 0
+          ? tx("content_sync_chat_count", "Sync $1 chats to Notion", "同步 $1 个会话到 Notion", count)
+          : tx("content_batch_sync_notion", "Sync to Notion", "同步到 Notion");
+      } else if (batchMode === "obsidian") {
+        exportBtn.textContent = count > 0
+          ? tx("obsidian_sync_chat_count", "Sync $1 chats to Obsidian", "同步 $1 个会话到 Obsidian", count)
+          : tx("obsidian_batch_sync", "Sync to Obsidian", "同步到 Obsidian");
+      } else {
+        exportBtn.textContent = t("btn_export", isChineseUi() ? "导出" : "Export");
+      }
+    }
 
     if (count > 10) {
       if (warning) warning.style.display = "block";
       if (exportBtn) exportBtn.disabled = true;
     } else {
       if (warning) warning.style.display = "none";
-      if (exportBtn) exportBtn.disabled = (count === 0);
+      if (exportBtn) exportBtn.disabled = count === 0 ||
+        (batchMode === "notion" && !hasNotionDestination) ||
+        (batchMode === "obsidian" && !hasObsidianDestination);
     }
 
     // 达到 10 个限制时禁用未选中的项
     rows.forEach(row => {
       if (count >= 10 && !row.classList.contains("selected")) {
         row.classList.add("disabled");
+        row.setAttribute("aria-disabled", "true");
       } else {
         row.classList.remove("disabled");
+        row.removeAttribute("aria-disabled");
       }
     });
   }
 
   function filterBatchList() {
-    const query = shadowRoot.getElementById("cv-batch-search").value.toLowerCase().trim();
+    const input = shadowRoot.getElementById("cv-batch-search");
+    const query = input ? input.value.toLowerCase().trim() : "";
     const rows = shadowRoot.querySelectorAll(".cv-batch-item-row");
     let hasMatch = false;
 
     rows.forEach(row => {
-      const title = row.querySelector(".cv-batch-item-title").textContent.toLowerCase();
+      const titleEl = row.querySelector(".cv-batch-item-title");
+      const title = titleEl ? titleEl.textContent.toLowerCase() : "";
       if (title.indexOf(query) !== -1) {
         row.style.display = "flex";
         hasMatch = true;
@@ -2544,25 +3220,212 @@
     const clearBtn = shadowRoot.getElementById("cv-batch-btn-clear");
     const exportBtn = shadowRoot.getElementById("cv-batch-btn-export");
     const closeBtn = shadowRoot.getElementById("cv-batch-btn-close");
-    const progressPanel = shadowRoot.getElementById("cv-batch-export-progress-panel");
 
     if (clearBtn) clearBtn.textContent = isExporting ? getBatchCancelLabel() : getBatchClearLabel();
     if (exportBtn) exportBtn.disabled = isExporting || shadowRoot.querySelectorAll(".cv-batch-item-row.selected").length === 0;
     if (closeBtn) closeBtn.setAttribute("aria-label", isExporting ? tx("content_cancel_export", "Cancel export", "取消导出") : getBatchCloseLabel());
-    if (progressPanel) progressPanel.style.display = "none";
-
     shadowRoot.querySelectorAll(".cv-batch-item-row").forEach(row => {
       row.classList.toggle("is-exporting", isExporting);
     });
-    shadowRoot.querySelectorAll(".cv-batch-format-btn, .cv-batch-theme-option, .cv-batch-toggle-item input").forEach(el => {
+    shadowRoot.querySelectorAll(".cv-batch-format-btn, .cv-batch-theme-option, .cv-batch-toggle-item input, .cv-batch-mode-tab, #cv-batch-notion-select, #cv-batch-notion-connect, #cv-batch-obsidian-configure").forEach(el => {
       el.disabled = isExporting;
     });
   }
 
-  function updateBatchExportProgress(message) {
-    const progressPanel = shadowRoot.getElementById("cv-batch-export-progress-panel");
-    if (progressPanel) progressPanel.style.display = "none";
+  function updateNotionBatchRow(index, status, options = {}) {
+    const row = shadowRoot?.getElementById(`cv-batch-row-${index}`);
+    const badge = shadowRoot?.getElementById(`cv-batch-badge-${index}`);
+    const openButton = shadowRoot?.getElementById(`cv-batch-open-${index}`);
+    if (!row || !badge) return;
+    const labels = {
+      preparing: tx("content_notion_preparing", "Preparing", "准备中"),
+      held: tx("content_notion_waiting", "Waiting", "等待中"),
+      pending: tx("content_notion_queued", "Queued", "已排队"),
+      running: tx("content_notion_syncing", "Syncing", "同步中"),
+      retry_wait: tx("content_notion_retrying", "Retrying", "重试中"),
+      succeeded: tx("content_notion_synced", "Synced", "已同步"),
+      partial: tx("content_notion_partial", "Synced with warnings", "已同步，有降级"),
+      failed: tx("content_notion_failed", "Failed", "失败"),
+      cancelled: tx("content_notion_cancelled", "Cancelled", "已取消")
+    };
+    badge.className = `cv-batch-badge ${status === "succeeded" || status === "partial" ? "completed" : status === "failed" || status === "cancelled" ? "failed" : status === "preparing" || status === "running" || status === "retry_wait" ? "generating" : "loading"}`;
+    badge.textContent = labels[status] || status;
+    badge.title = options.error || "";
+    row.dataset.notionStatus = status;
+    const url = normalizeNotionPageUrl(options.notionPageUrl);
+    if (openButton) {
+      openButton.hidden = !url;
+      openButton.dataset.url = url || "";
+    }
+  }
 
+  function updateNotionBatchSummary() {
+    const total = batchActiveItems.length;
+    const states = Array.from(batchNotionResults.values());
+    const successCount = states.filter((item) => item.status === "succeeded" || item.status === "partial").length;
+    const failureCount = states.filter((item) => item.status === "failed" || item.status === "cancelled").length;
+    const completedCount = successCount + failureCount;
+    const runningProgress = states.reduce((sum, item) => {
+      if (["succeeded", "partial", "failed", "cancelled"].includes(item.status)) return sum + 1;
+      return sum + Math.max(0, Math.min(0.95, Number(item.progress || 0)));
+    }, 0);
+    const percent = total ? Math.round(runningProgress / total * 100) : 0;
+    if (!globalThis.CHATVAULT_IS_BATCH_EXPORT) return;
+    renderExportProgress("notion", {
+      mode: "batch",
+      title: tx("content_notion_batch_in_progress", "Syncing to Notion", "正在同步到 Notion"),
+      label: tx("content_batch_sync_notion", "Sync to Notion", "同步到 Notion"),
+      message: tx("content_notion_batch_progress", "$1 of $2 complete", "已完成 $1 / $2", completedCount, total),
+      total,
+      current: Math.min(total, completedCount + 1),
+      completed: completedCount,
+      issues: failureCount,
+      progress: Math.min(0.99, percent / 100),
+      overallProgress: Math.min(0.99, percent / 100)
+    }, cancelInPageBatchExport);
+  }
+
+  function finishNotionBatchIfComplete() {
+    if (!batchActiveItems.length || batchNotionResults.size < batchActiveItems.length) return false;
+    const allTerminal = Array.from(batchNotionResults.values()).every((item) => (
+      ["succeeded", "partial", "failed", "cancelled"].includes(item.status)
+    ));
+    if (!allTerminal) return false;
+    globalThis.CHATVAULT_IS_BATCH_EXPORT = false;
+    setBatchExportingUi(false);
+    hideExportProgress();
+    const values = Array.from(batchNotionResults.values());
+    const successes = values.filter((item) => item.status === "succeeded" || item.status === "partial");
+    const failures = values.filter((item) => item.status === "failed" || item.status === "cancelled");
+    showBatchSyncResultDialog({
+      id: batchNotionBatchId,
+      service: "notion",
+      total: batchActiveItems.length,
+      successCount: successes.length,
+      failureCount: failures.length,
+      items: successes.map((result) => ({
+        title: result.item?.title || tx("notion_untitled_conversation", "Untitled conversation", "未命名会话"),
+        url: normalizeNotionPageUrl(result.notionPageUrl),
+        status: result.status
+      }))
+    });
+    return true;
+  }
+
+  function updateObsidianBatchRow(index, status, options = {}) {
+    const row = shadowRoot?.getElementById(`cv-batch-row-${index}`);
+    const badge = shadowRoot?.getElementById(`cv-batch-badge-${index}`);
+    const openButton = shadowRoot?.getElementById(`cv-batch-open-${index}`);
+    if (!row || !badge) return;
+    const labels = {
+      waiting: tx("obsidian_waiting", "Waiting", "等待中"),
+      preparing: tx("obsidian_preparing", "Checking Vault", "检查 Vault"),
+      fetching: tx("obsidian_fetching", "Getting conversation", "获取会话"),
+      media: tx("obsidian_processing_media", "Processing images", "处理图片"),
+      render: tx("obsidian_rendering", "Building Markdown", "生成 Markdown"),
+      write: tx("obsidian_writing", "Writing to Vault", "写入 Vault"),
+      succeeded: tx("obsidian_synced", "Synced", "已同步"),
+      partial: tx("obsidian_synced_partial", "Synced with warnings", "已同步，有警告"),
+      failed: tx("obsidian_failed", "Failed", "失败"),
+      cancelled: tx("obsidian_cancelled", "Cancelled", "已取消")
+    };
+    const terminalSuccess = status === "succeeded" || status === "partial";
+    const terminalFailure = status === "failed" || status === "cancelled";
+    badge.className = `cv-batch-badge ${terminalSuccess ? "completed" : terminalFailure ? "failed" : status === "waiting" ? "loading" : "generating"}`;
+    badge.textContent = labels[status] || status;
+    badge.title = String(options.error || options.detail || "");
+    row.dataset.obsidianStatus = status;
+    if (openButton) {
+      const canOpen = terminalSuccess && options.canOpenInObsidian !== false && options.vaultName && options.noteRelativePath;
+      openButton.hidden = !canOpen;
+      openButton.dataset.service = canOpen ? "obsidian" : "";
+      openButton.dataset.vaultName = canOpen ? String(options.vaultName) : "";
+      openButton.dataset.notePath = canOpen ? String(options.noteRelativePath) : "";
+      openButton.dataset.url = "";
+    }
+  }
+
+  function getObsidianBatchTotals() {
+    const states = Array.from(batchObsidianResults.values());
+    return {
+      successCount: states.filter((item) => item.status === "succeeded" || item.status === "partial").length,
+      failureCount: states.filter((item) => item.status === "failed" || item.status === "cancelled").length,
+      savedImages: states.reduce((sum, item) => sum + Math.max(0, Number(item.savedImages || 0)), 0),
+      warningCount: states.reduce((sum, item) => sum + Math.max(0, Number(item.warningCount || 0)), 0)
+    };
+  }
+
+  function updateObsidianBatchSummary() {
+    const total = batchActiveItems.length;
+    const states = Array.from(batchObsidianResults.values());
+    const totals = getObsidianBatchTotals();
+    const completedCount = totals.successCount + totals.failureCount;
+    const completedProgress = states.reduce((sum, item) => {
+      if (["succeeded", "partial", "failed", "cancelled"].includes(item.status)) return sum + 1;
+      return sum + Math.max(0, Math.min(0.98, Number(item.progress || 0)));
+    }, 0);
+    const percent = total ? Math.min(100, Math.round(completedProgress / total * 100)) : 0;
+    if (!globalThis.CHATVAULT_IS_BATCH_EXPORT) return;
+    renderExportProgress("obsidian", {
+      mode: "batch",
+      title: tx("obsidian_batch_in_progress", "Syncing to Obsidian", "正在同步到 Obsidian"),
+      label: tx("content_batch_sync_obsidian", "Sync to Obsidian", "同步到 Obsidian"),
+      message: tx("obsidian_batch_progress", "$1 of $2 complete", "已完成 $1 / $2", completedCount, total),
+      total,
+      current: Math.min(total, completedCount + 1),
+      completed: completedCount,
+      issues: totals.failureCount + totals.warningCount,
+      progress: Math.min(0.99, percent / 100),
+      overallProgress: Math.min(0.99, percent / 100)
+    }, cancelInPageBatchExport);
+  }
+
+  function finishObsidianBatch(options = {}) {
+    if (!batchActiveItems.length || batchObsidianResults.size < batchActiveItems.length) return false;
+    const values = Array.from(batchObsidianResults.values());
+    if (!values.every((item) => ["succeeded", "partial", "failed", "cancelled"].includes(item.status))) return false;
+    globalThis.CHATVAULT_IS_BATCH_EXPORT = false;
+    setBatchExportingUi(false);
+    hideExportProgress();
+    if (options.cancelled) {
+      showPageToast(tx("obsidian_batch_cancelled", "Obsidian batch sync cancelled.", "Obsidian 批量同步已取消。"));
+      return true;
+    }
+    const totals = getObsidianBatchTotals();
+    showBatchSyncResultDialog({
+      id: batchObsidianBatchId,
+      service: "obsidian",
+      total: batchActiveItems.length,
+      ...totals,
+      items: values.filter((item) => item.status === "succeeded" || item.status === "partial").map((result) => ({
+        title: result.title || result.item?.title || tx("notion_untitled_conversation", "Untitled conversation", "未命名会话"),
+        vaultName: result.vaultName || batchObsidianStatus.vaultName || "",
+        noteRelativePath: result.noteRelativePath || "",
+        canOpen: result.canOpenInObsidian !== false,
+        status: result.status
+      }))
+    });
+    return true;
+  }
+
+  function handleNotionBatchJobStatus(job) {
+    const tracked = batchNotionJobs.get(String(job?.id || ""));
+    if (!tracked || !batchNotionBatchId || String(job.batchId || "") !== batchNotionBatchId) return false;
+    const result = {
+      ...tracked,
+      status: job.status,
+      progress: Number(job.progress || 0) > 1 ? Number(job.progress || 0) / 100 : Number(job.progress || 0),
+      notionPageUrl: job.notionPageUrl || "",
+      error: job.errorMessage || job.errorCode || ""
+    };
+    batchNotionResults.set(tracked.index, result);
+    updateNotionBatchRow(tracked.index, job.status, result);
+    updateNotionBatchSummary();
+    finishNotionBatchIfComplete();
+    return true;
+  }
+
+  function updateBatchExportProgress(message) {
     const total = Math.max(1, Number(message.total || batchActiveItems.length || 1));
     const currentIndex = Math.max(0, Math.min(total - 1, Number(message.currentIndex ?? message.index ?? 0) || 0));
     const itemPercent = Math.max(0, Math.min(100, Number(message.percent) || 0));
@@ -2625,7 +3488,7 @@
     const codeIndex = developerExport.extractCodeBlocks(processedMessages);
     const metadata = {
       platform,
-      title: item.title || PRODUCT_NAME,
+      title: item.title || "AI Chat Export",
       sourceUrl,
       messageCount: processedMessages.length,
       redaction: redactionSummary,
@@ -2729,7 +3592,6 @@
             failureCount: failures.length,
             title: item.title || ""
           });
-          await new Promise(function (resolve) { setTimeout(resolve, 80); });
         } catch (error) {
           if (error?.message === "Export cancelled." || error?.name === "AbortError") {
             throw error;
@@ -2746,7 +3608,6 @@
             title: item.title || "",
             error: error.message || "Export failed."
           });
-          await new Promise(function (resolve) { setTimeout(resolve, 80); });
         }
       }
 
@@ -2808,6 +3669,302 @@
     }
   }
 
+  async function runInPageBatchNotionSync(selectedItems) {
+    const controller = new AbortController();
+    batchExportAbortController = controller;
+    abortController = controller;
+    const signal = controller.signal;
+    batchNotionJobs = new Map();
+    batchNotionResults = new Map();
+    batchNotionBatchId = `notion_batch_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    batchActiveItems = selectedItems.slice();
+    globalThis.CHATVAULT_IS_BATCH_EXPORT = true;
+    setBatchExportingUi(true);
+    closeBatchModal();
+
+    selectedItems.forEach((item) => {
+      batchNotionResults.set(item._batchIndex, {
+        index: item._batchIndex,
+        item,
+        status: "held",
+        progress: 0
+      });
+      updateNotionBatchRow(item._batchIndex, "held", { progress: 0 });
+    });
+    updateNotionBatchSummary();
+
+    try {
+      await loadState({ localOnly: true, skipVerify: true });
+      if (!canUseBatchExportLocally()) {
+        showBatchExportUpgradePrompt();
+        throw new Error("Batch export requires Pro.");
+      }
+      if (!batchNotionConfig.connectionId || !batchNotionConfig.dataSourceId) {
+        throw new Error(tx("content_notion_destination_required", "Choose a Notion Database first.", "请先选择 Notion Database。"));
+      }
+      await exporter.preload();
+
+      for (let index = 0; index < selectedItems.length; index += 1) {
+        const item = selectedItems[index];
+        const rowIndex = item._batchIndex;
+        let itemJobId = "";
+        let itemJobReleased = false;
+        if (signal.aborted) throw new DOMException("Sync cancelled.", "AbortError");
+        updateNotionBatchRow(rowIndex, "preparing", { progress: 0.05 });
+        batchNotionResults.set(rowIndex, { index: rowIndex, item, status: "preparing", progress: 0.05 });
+        updateNotionBatchSummary();
+
+        try {
+          const pageMessages = isCurrentConversation(item)
+            ? parseCurrentChatMessages({ includeHtmlStyles: true })
+            : undefined;
+          const messages = await fetchConversationMessagesForExport(item, {
+            pageMessages,
+            preserveHtmlPresentation: true,
+            preserveMarkdownSemantics: true
+          });
+          if (!messages.length) {
+            throw new Error(tx("content_no_messages_for_batch_item", "No exportable messages found.", "未找到可导出的消息。"));
+          }
+          if (signal.aborted) throw new DOMException("Sync cancelled.", "AbortError");
+
+          const platform = getChatPlatform(item) || getCurrentPlatformId();
+          const sourceUrl = sanitizeSourceUrl(item.url || getBatchPlatformChatUrl(platform, getChatConversationId(item)));
+          const snapshot = await globalThis.CHATVAULT_EXPORT.prepareNotionJob({
+            title: item.title || "AI Chat Export",
+            sourceUrl,
+            messages,
+            platform,
+            model: "",
+            userId: currentSession?.user?.id || "guest",
+            connectionId: batchNotionConfig.connectionId,
+            databaseId: batchNotionConfig.databaseId,
+            dataSourceId: batchNotionConfig.dataSourceId,
+            alwaysCreate: true,
+            settings: { ...exportSettings },
+            signal,
+            onMediaProgress: (info) => {
+              const total = Math.max(1, Number(info?.total || 0));
+              const progress = 0.08 + Math.min(0.17, Number(info?.completed || 0) / total * 0.17);
+              batchNotionResults.set(rowIndex, { index: rowIndex, item, status: "preparing", progress });
+              updateNotionBatchRow(rowIndex, "preparing", { progress });
+              updateNotionBatchSummary();
+            }
+          });
+          snapshot.batchId = batchNotionBatchId;
+          snapshot.batchIndex = index;
+          snapshot.batchTotal = selectedItems.length;
+
+          const response = await notionBatchMessage({
+            type: "CHATVAULT_NOTION_ENQUEUE",
+            snapshot,
+            deferStart: true
+          });
+          const jobId = String(response.job?.id || "");
+          if (!jobId) throw new Error("Notion job could not be created.");
+          itemJobId = jobId;
+          const tracked = { index: rowIndex, item, jobId, status: "held", progress: 0.25 };
+          batchNotionJobs.set(jobId, tracked);
+          batchNotionResults.set(rowIndex, tracked);
+          updateNotionBatchRow(rowIndex, "held", { progress: 0.25 });
+          updateNotionBatchSummary();
+          await notionBatchMessage({ type: "CHATVAULT_NOTION_RELEASE_JOB", jobId });
+          itemJobReleased = true;
+          const pending = { ...tracked, status: "pending", progress: 0.25 };
+          batchNotionResults.set(rowIndex, pending);
+          updateNotionBatchRow(rowIndex, "pending", pending);
+          updateNotionBatchSummary();
+        } catch (error) {
+          if (signal.aborted || error?.name === "AbortError") throw error;
+          if (itemJobId && !itemJobReleased) {
+            batchNotionJobs.delete(itemJobId);
+            await notionBatchMessage({ type: "CHATVAULT_NOTION_CANCEL_JOB", jobId: itemJobId }).catch(() => {});
+          }
+          const failed = { index: rowIndex, item, status: "failed", progress: 1, error: error?.message || "Notion sync failed." };
+          batchNotionResults.set(rowIndex, failed);
+          updateNotionBatchRow(rowIndex, "failed", failed);
+          updateNotionBatchSummary();
+        }
+      }
+
+      updateNotionBatchSummary();
+      finishNotionBatchIfComplete();
+    } catch (error) {
+      if (signal.aborted || error?.name === "AbortError") {
+        for (const [jobId, tracked] of batchNotionJobs) {
+          notionBatchMessage({ type: "CHATVAULT_NOTION_CANCEL_JOB", jobId }).catch(() => {});
+          const cancelled = { ...tracked, status: "cancelled", progress: 1 };
+          batchNotionResults.set(tracked.index, cancelled);
+          updateNotionBatchRow(tracked.index, "cancelled", cancelled);
+        }
+        selectedItems.forEach((item) => {
+          const current = batchNotionResults.get(item._batchIndex);
+          if (!current || !["succeeded", "partial", "failed", "cancelled"].includes(current.status)) {
+            const cancelled = { index: item._batchIndex, item, status: "cancelled", progress: 1 };
+            batchNotionResults.set(item._batchIndex, cancelled);
+            updateNotionBatchRow(item._batchIndex, "cancelled", cancelled);
+          }
+        });
+      } else {
+        if (error?.message !== "Batch export requires Pro.") {
+          showPageToast(tx("notion_sync_failed", "Notion sync failed: $1", "Notion 同步失败：$1", error?.message || "Notion sync failed."));
+        }
+        selectedItems.forEach((item) => {
+          const current = batchNotionResults.get(item._batchIndex);
+          if (!current || !["succeeded", "partial", "failed", "cancelled"].includes(current.status)) {
+            const failed = { index: item._batchIndex, item, status: "failed", progress: 1, error: error?.message || "Notion sync failed." };
+            batchNotionResults.set(item._batchIndex, failed);
+            updateNotionBatchRow(item._batchIndex, "failed", failed);
+          }
+        });
+      }
+      updateNotionBatchSummary();
+      finishNotionBatchIfComplete();
+    } finally {
+      if (batchExportAbortController === controller) batchExportAbortController = null;
+      if (abortController === controller) abortController = null;
+    }
+  }
+
+  async function runInPageBatchObsidianSync(selectedItems) {
+    const controller = new AbortController();
+    batchExportAbortController = controller;
+    abortController = controller;
+    const signal = controller.signal;
+    batchObsidianResults = new Map();
+    batchObsidianBatchId = `obsidian_batch_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    batchActiveItems = selectedItems.slice();
+    globalThis.CHATVAULT_IS_BATCH_EXPORT = true;
+    setBatchExportingUi(true);
+    closeBatchModal();
+
+    selectedItems.forEach((item) => {
+      const initial = { index: item._batchIndex, item, status: "waiting", progress: 0 };
+      batchObsidianResults.set(item._batchIndex, initial);
+      updateObsidianBatchRow(item._batchIndex, "waiting", initial);
+    });
+    updateObsidianBatchSummary();
+
+    try {
+      await loadState({ localOnly: true, skipVerify: true });
+      if (!canUseBatchExportLocally()) {
+        showBatchExportUpgradePrompt();
+        throw new Error("Batch export requires Pro.");
+      }
+      const coordinator = await loadObsidianCoordinator();
+      const status = await coordinator.getObsidianStatus();
+      batchObsidianStatus = status;
+      renderBatchObsidianDestination();
+      if (!status.connected) throw new Error(tx("obsidian_connect_first", "Connect an Obsidian Vault first.", "请先连接 Obsidian Vault。"));
+      if (status.permission !== "granted") throw new Error(tx("obsidian_reauthorize_first", "Reauthorize the Obsidian Vault first.", "请先重新授权 Obsidian Vault。"));
+      if (status.directoriesValid === false) throw new Error(tx("obsidian_repair_folders", "Repair the configured Obsidian folders first.", "请先修复 Obsidian 配置目录。"));
+      if (status.activeJob) throw new Error(tx("obsidian_job_running", "Another Obsidian sync is already running.", "已有 Obsidian 同步任务正在运行。"));
+      await exporter.preload();
+
+      const settings = {
+        ...exportSettings,
+        include_source_url: Boolean(shadowRoot?.getElementById("cv-toggle-source-url")?.checked),
+        show_role_labels: shadowRoot?.getElementById("cv-toggle-role-labels")?.checked !== false
+      };
+
+      for (let index = 0; index < selectedItems.length; index += 1) {
+        const item = selectedItems[index];
+        const rowIndex = item._batchIndex;
+        if (signal.aborted) throw new DOMException("Sync cancelled.", "AbortError");
+        const fetching = { index: rowIndex, item, status: "fetching", progress: 0.04 };
+        batchObsidianResults.set(rowIndex, fetching);
+        updateObsidianBatchRow(rowIndex, "fetching", fetching);
+        updateObsidianBatchSummary();
+
+        try {
+          const pageMessages = isCurrentConversation(item) ? parseCurrentChatMessages() : undefined;
+          const captureWarnings = [];
+          let messages;
+          try {
+            messages = await fetchConversationMessagesForExport(item, {
+              pageMessages,
+              preserveMarkdownSemantics: true
+            });
+          } catch (error) {
+            if (!pageMessages?.length) throw error;
+            messages = pageMessages;
+            captureWarnings.push({
+              code: "conversation_fetch_partial",
+              detail: tx("obsidian_visible_content_fallback", "The complete conversation was unavailable; visible page content was used.", "完整会话获取失败，已使用页面可见内容。")
+            });
+          }
+          if (!messages?.length) throw new Error(tx("content_no_messages_for_batch_item", "No exportable messages found.", "未找到可同步的消息。"));
+          if (signal.aborted) throw new DOMException("Sync cancelled.", "AbortError");
+
+          const platform = getChatPlatform(item) || getCurrentPlatformId();
+          const sourceUrl = sanitizeSourceUrl(item.url || getBatchPlatformChatUrl(platform, getChatConversationId(item)));
+          const result = await coordinator.syncConversationToObsidian({
+            title: item.title || "AI Chat Export",
+            sourceUrl,
+            messages,
+            platform,
+            platformLabel: getPlatformLabel(platform),
+            userLabel: t("export_role_user", "You Asked"),
+            scope: "conversation",
+            settings,
+            warnings: captureWarnings,
+            batchId: batchObsidianBatchId,
+            signal,
+            onProgress: (info) => {
+              const phase = ["preflight", "media", "render", "write"].includes(info?.phase) ? info.phase : "preparing";
+              const updated = {
+                index: rowIndex,
+                item,
+                status: phase === "preflight" ? "preparing" : phase,
+                progress: Number(info?.progress || 0),
+                detail: info?.detail || ""
+              };
+              batchObsidianResults.set(rowIndex, updated);
+              updateObsidianBatchRow(rowIndex, updated.status, updated);
+              updateObsidianBatchSummary();
+            }
+          });
+          const completed = { index: rowIndex, item, ...result, status: result.status === "partial" ? "partial" : "succeeded", progress: 1 };
+          batchObsidianResults.set(rowIndex, completed);
+          updateObsidianBatchRow(rowIndex, completed.status, completed);
+          updateObsidianBatchSummary();
+        } catch (error) {
+          if (signal.aborted || error?.name === "AbortError") throw error;
+          const failed = { index: rowIndex, item, status: "failed", progress: 1, error: error?.message || "Obsidian sync failed." };
+          batchObsidianResults.set(rowIndex, failed);
+          updateObsidianBatchRow(rowIndex, "failed", failed);
+          updateObsidianBatchSummary();
+        }
+      }
+
+      finishObsidianBatch();
+      const totals = getObsidianBatchTotals();
+      globalThis.CHATVAULT_ANALYTICS?.track("export_success", {
+        platform: getCurrentPlatformId() || "chatgpt",
+        properties: { format: "obsidian", source: "batch_sync", count: totals.successCount, failures: totals.failureCount }
+      });
+    } catch (error) {
+      const cancelled = signal.aborted || error?.name === "AbortError";
+      selectedItems.forEach((item) => {
+        const current = batchObsidianResults.get(item._batchIndex);
+        if (!current || !["succeeded", "partial", "failed", "cancelled"].includes(current.status)) {
+          const result = { index: item._batchIndex, item, status: cancelled ? "cancelled" : "failed", progress: 1, error: cancelled ? "" : error?.message || "Obsidian sync failed." };
+          batchObsidianResults.set(item._batchIndex, result);
+          updateObsidianBatchRow(item._batchIndex, result.status, result);
+        }
+      });
+      if (!cancelled && error?.message !== "Batch export requires Pro.") {
+        showPageToast(tx("obsidian_sync_failed", "Obsidian sync failed: $1", "Obsidian 同步失败：$1", error?.message || "Obsidian sync failed."));
+      }
+      updateObsidianBatchSummary();
+      finishObsidianBatch({ cancelled });
+    } finally {
+      if (batchExportAbortController === controller) batchExportAbortController = null;
+      if (abortController === controller) abortController = null;
+      refreshBatchObsidianDestination().catch(() => {});
+    }
+  }
+
   async function startInPageBatchExport() {
     const selectedRows = shadowRoot.querySelectorAll(".cv-batch-item-row.selected");
     const selectedItems = [];
@@ -2815,11 +3972,20 @@
     selectedRows.forEach(row => {
       const index = parseInt(row.getAttribute("data-index"), 10);
       if (batchList[index]) {
-        selectedItems.push(batchList[index]);
+        selectedItems.push({ ...batchList[index], _batchIndex: index });
       }
     });
 
     if (selectedItems.length === 0) return;
+
+    if (batchMode === "notion") {
+      runInPageBatchNotionSync(selectedItems);
+      return;
+    }
+    if (batchMode === "obsidian") {
+      runInPageBatchObsidianSync(selectedItems);
+      return;
+    }
 
     batchActiveItems = selectedItems.slice();
     const preflightController = new AbortController();
@@ -2926,6 +4092,13 @@
     if (batchExportAbortController) {
       batchExportAbortController.abort();
     }
+    if (batchMode === "notion") {
+      batchNotionJobs.forEach((_tracked, jobId) => {
+        notionBatchMessage({ type: "CHATVAULT_NOTION_CANCEL_JOB", jobId }).catch(() => {});
+      });
+      return;
+    }
+    if (batchMode === "obsidian") return;
     globalThis.CHATVAULT_IS_BATCH_EXPORT = false;
     setBatchExportingUi(false);
     hideExportProgress();
@@ -2976,13 +4149,6 @@
           badge.textContent = (displayStatus === "scraping") ? "Scraping content" : "Rendering document";
         }
         
-        const progressBg = row.querySelector(".cv-batch-row-progress-container");
-        const progressFill = row.querySelector(".cv-batch-row-progress-fill");
-        const progressText = row.querySelector(".cv-batch-row-progress-text");
-        
-        if (progressBg) progressBg.style.display = "flex";
-        if (progressFill) progressFill.style.width = message.percent + "%";
-        if (progressText) progressText.textContent = message.percent + "%";
       }
     }
     
@@ -3000,12 +4166,6 @@
           badge.className = "cv-batch-badge completed";
           badge.textContent = "Completed";
         }
-        const progressBg = row.querySelector(".cv-batch-row-progress-container");
-        const progressFill = row.querySelector(".cv-batch-row-progress-fill");
-        const progressText = row.querySelector(".cv-batch-row-progress-text");
-        if (progressBg) progressBg.style.display = "flex";
-        if (progressFill) progressFill.style.width = "100%";
-        if (progressText) progressText.textContent = "100%";
       }
     }
     
@@ -3024,10 +4184,6 @@
           badge.textContent = "Failed";
           badge.setAttribute("title", message.error || "Export failed");
         }
-        const progressBg = row.querySelector(".cv-batch-row-progress-container");
-        const progressText = row.querySelector(".cv-batch-row-progress-text");
-        if (progressBg) progressBg.style.display = "flex";
-        if (progressText) progressText.textContent = "Error";
       }
     }
     
@@ -3073,24 +4229,39 @@
   }
 
   // 复制纯文本
-  async function copyRawText() {
-    const rawMessages = parseCurrentChatMessages();
-    const plainText = exporter.getPlainText(rawMessages);
-    if (!plainText) {
-      return { ok: false, error: tx("content_no_copy_text", "This conversation has no text content to copy.", "当前对话没有可复制的文本内容。") };
+  async function writeTextToClipboard(value) {
+    const text = String(value || "");
+    if (typeof chrome !== "undefined" && chrome.runtime && typeof chrome.runtime.sendMessage === "function") {
+      try {
+        const response = await chrome.runtime.sendMessage({
+          type: "CHATVAULT_COPY_TEXT",
+          text
+        });
+        if (response?.ok) {
+          return;
+        }
+        throw new Error(response?.error || "Extension clipboard write failed.");
+      } catch (err) {
+        console.warn("Extension clipboard copy failed:", err);
+        throw new Error(tx(
+          "content_copy_failed_refresh",
+          "Copy failed. Refresh the page and try again.",
+          "复制失败，请刷新页面后重试。"
+        ));
+      }
     }
 
     try {
       if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
-        await navigator.clipboard.writeText(plainText);
-        return { ok: true };
+        await navigator.clipboard.writeText(text);
+        return;
       }
     } catch (err) {
       console.warn("Clipboard API copy failed, trying fallback:", err);
     }
 
     const textarea = document.createElement("textarea");
-    textarea.value = plainText;
+    textarea.value = text;
     textarea.setAttribute("readonly", "");
     textarea.style.position = "fixed";
     textarea.style.top = "-9999px";
@@ -3104,20 +4275,33 @@
       if (!copied) {
         throw new Error("Browser refused clipboard write.");
       }
-      return { ok: true };
     } catch (err) {
       console.warn("Copy fallback failed:", err);
-      return { ok: false, error: tx("content_copy_failed_refresh", "Copy failed. Refresh the page and try again.", "复制失败，请刷新页面后重试。") };
+      throw new Error(tx("content_copy_failed_refresh", "Copy failed. Refresh the page and try again.", "复制失败，请刷新页面后重试。"));
     } finally {
       textarea.remove();
     }
   }
 
+  async function copyRawText() {
+    const rawMessages = parseCurrentChatMessages();
+    const plainText = exporter.getPlainText(rawMessages);
+    if (!plainText) {
+      return { ok: false, error: tx("content_no_copy_text", "This conversation has no text content to copy.", "当前对话没有可复制的文本内容。") };
+    }
+    try {
+      await writeTextToClipboard(plainText);
+      return { ok: true };
+    } catch (error) {
+      return { ok: false, error: error?.message || tx("content_copy_failed_refresh", "Copy failed. Refresh the page and try again.", "复制失败，请刷新页面后重试。") };
+    }
+  }
+
   // 手动从网页中提取消息，并做基础清洗
-  function parseCurrentChatMessages() {
+  function parseCurrentChatMessages(options = {}) {
     let raw = [];
     try {
-      raw = exporter.parseMessages() || [];
+      raw = exporter.parseMessages({ includeHtmlStyles: false, ...options }) || [];
     } catch (e) {
       console.warn("DOM parsing error in export engine:", e);
     }
@@ -3193,7 +4377,7 @@
       id: conversationId,
       conversationId,
       platform,
-      title: exporter.getConversationTitle ? exporter.getConversationTitle() : PRODUCT_NAME,
+      title: exporter.getConversationTitle ? exporter.getConversationTitle() : "AI Chat Export",
       url: window.location.href
     };
   }
@@ -3274,6 +4458,9 @@
       }
 
       if (Array.isArray(messages) && messages.length > 0) {
+        if (platform === "chatgpt" && pageMessages.length > 0 && typeof fetchers.mergeChatGptExportMessages === "function") {
+          messages = fetchers.mergeChatGptExportMessages(messages, pageMessages);
+        }
         if ((options.preserveHtmlPresentation || options.preserveMarkdownSemantics) && pageMessages.length > 0 && typeof fetchers.mergePageHtmlPresentation === "function") {
           return fetchers.mergePageHtmlPresentation(messages, pageMessages, {
             includeHtmlStyles: options.preserveHtmlPresentation === true
@@ -3324,7 +4511,7 @@
       pad(date.getMinutes()),
       pad(date.getSeconds())
     ].join("-");
-    return sanitizeBatchPathSegment(PRODUCT_NAME + " " + stamp, PRODUCT_NAME);
+    return sanitizeBatchPathSegment("AI Chat Export " + stamp, "AI Chat Export");
   }
 
   function splitBatchFilename(filename) {
@@ -3337,7 +4524,7 @@
 
   function getAvailableBatchDownloadPath(usedPaths, rootName, preferredName) {
     const parts = splitBatchFilename(preferredName);
-    const root = sanitizeBatchPathSegment(rootName, PRODUCT_NAME);
+    const root = sanitizeBatchPathSegment(rootName, "AI Chat Export");
     for (let index = 0; index < 1000; index += 1) {
       const candidateName = index
         ? parts.base + "-" + (index + 1) + parts.ext
@@ -3440,7 +4627,7 @@
 
   // 购买跳转流程
   async function triggerCheckout() {
-    showPageToast(tx("content_open_subscribe_panel", `Opening ${PRODUCT_NAME} Pro plans...`, `正在打开 ${PRODUCT_NAME} Pro 订阅方案...`));
+    showPageToast(tx("content_open_subscribe_panel", "Opening AI Chat Export Pro plans...", "正在打开 AI Chat Export Pro 订阅方案..."));
     openSubscribePanelFromPage();
   }
 
@@ -3461,9 +4648,9 @@
       return tx("content_upgrade_appendix", "Prompt Appendix requires Pro.", "附带 Prompt 提问附录功能需要 Pro 权限。");
     }
     if (message === "Hiding watermark requires Pro.") {
-      return tx("content_upgrade_watermark", `Hiding the ${PRODUCT_NAME} watermark requires Pro.`, `隐藏 ${PRODUCT_NAME} 水印签名需要 Pro 权限。`);
+      return tx("content_upgrade_watermark", "Hiding the AI Chat Export watermark requires Pro.", "隐藏 AI Chat Export 水印签名需要 Pro 权限。");
     }
-    return String(message || tx("content_upgrade_desc", `Upgrade to ${PRODUCT_NAME} Pro to remove quota limits.`, "升级到 Pro 可解除额度限制。"));
+    return String(message || tx("content_upgrade_desc", "Upgrade to AI Chat Export Pro to remove quota limits.", "升级到 Pro 可解除额度限制。"));
   }
 
   function openSubscribePanelFromPage() {
@@ -3478,7 +4665,7 @@
     subscribePanelRequestAt = now;
     chrome.runtime.sendMessage({ type: "CHATVAULT_OPEN_SUBSCRIBE", source: "extension_vip_modal_limit", planId: "yearly" }, (response) => {
       if (chrome.runtime.lastError || !response || response.ok === false) {
-        showPageToast(tx("content_open_subscribe_panel_failed", `Open the ${PRODUCT_NAME} toolbar popup to subscribe.`, `请打开浏览器工具栏中的 ${PRODUCT_NAME} 弹窗完成订阅。`));
+        showPageToast(tx("content_open_subscribe_panel_failed", "Open the AI Chat Export toolbar popup to subscribe.", "请打开浏览器工具栏中的 AI Chat Export 弹窗完成订阅。"));
       }
     });
   }
@@ -3488,25 +4675,9 @@
     openSubscribePanelFromPage();
   }
 
-  function getPageToastElement() {
-    if (!shadowRoot) return;
-    promoteExporterRootLayer();
-    let toast = shadowRoot.getElementById("cv-page-toast");
-    if (!toast) {
-      toast = document.createElement("div");
-      toast.id = "cv-page-toast";
-      toast.className = "cv-page-toast";
-      toast.setAttribute("role", "status");
-      toast.setAttribute("aria-live", "polite");
-    }
-    if (toast.parentNode !== shadowRoot) {
-      shadowRoot.appendChild(toast);
-    }
-    return toast;
-  }
-
   function showPageToast(message) {
-    const toast = getPageToastElement();
+    if (!shadowRoot) return;
+    const toast = shadowRoot.getElementById("cv-page-toast");
     if (!toast) return;
     toast.textContent = message;
     toast.classList.add("active");
@@ -3514,6 +4685,198 @@
     pageToastTimer = setTimeout(() => {
       toast.classList.remove("active");
     }, 2400);
+  }
+
+  function normalizeNotionPageUrl(value) {
+    try {
+      const url = new URL(String(value || ""));
+      const hostname = url.hostname.toLowerCase();
+      const trustedHost = hostname === "notion.so" || hostname.endsWith(".notion.so") ||
+        hostname === "notion.site" || hostname.endsWith(".notion.site");
+      return url.protocol === "https:" && trustedHost ? url.href : "";
+    } catch (error) {
+      return "";
+    }
+  }
+
+  function hideNotionSuccessDialog() {
+    if (!shadowRoot) return;
+    const overlay = shadowRoot.getElementById("cv-notion-success-overlay");
+    if (!overlay) return;
+    overlay.classList.remove("active");
+    overlay.setAttribute("aria-hidden", "true");
+  }
+
+  function showNotionSuccessDialog(job) {
+    if (!shadowRoot || !job) return;
+    const jobId = String(job.id || job.jobId || job.notionPageUrl || "");
+    if (jobId && lastNotionSuccessDialogJobId === jobId) return;
+    const overlay = shadowRoot.getElementById("cv-notion-success-overlay");
+    const openLink = shadowRoot.getElementById("cv-notion-success-open");
+    if (!overlay || !openLink) return;
+    const title = shadowRoot.getElementById("cv-notion-success-title");
+    const description = shadowRoot.getElementById("cv-notion-success-desc");
+    const documentTitle = shadowRoot.getElementById("cv-notion-success-document-title");
+    const partial = job.status === "partial";
+    if (title) {
+      title.textContent = partial
+        ? tx("notion_sync_partial_title", "Synced to Notion with warnings", "已同步到 Notion，但有部分内容降级")
+        : tx("notion_sync_success_title", "Synced to Notion", "已成功同步到 Notion");
+    }
+    if (description) {
+      description.textContent = partial
+        ? tx("notion_sync_partial_desc", "The page was created successfully. Open it to review any content that could not be preserved exactly.", "Notion 页面已成功创建，请打开页面检查未能完全保留的内容。")
+        : tx("notion_sync_success_desc", "This conversation is ready in your Notion Database.", "当前对话已写入你选择的 Notion Database。");
+    }
+    const url = normalizeNotionPageUrl(job.notionPageUrl);
+    if (documentTitle) {
+      documentTitle.textContent = String(job.title || tx("notion_untitled_conversation", "Untitled conversation", "未命名会话")).trim();
+    }
+    openLink.hidden = !url;
+    if (url) {
+      openLink.setAttribute("href", url);
+      openLink.removeAttribute("aria-disabled");
+    } else {
+      openLink.removeAttribute("href");
+      openLink.setAttribute("aria-disabled", "true");
+    }
+    overlay.classList.add("active");
+    overlay.setAttribute("aria-hidden", "false");
+    lastNotionSuccessDialogJobId = jobId;
+    const closeButton = shadowRoot.getElementById("cv-notion-success-close");
+    if (closeButton) closeButton.focus();
+  }
+
+  function hideObsidianResultDialog() {
+    if (!shadowRoot) return;
+    const overlay = shadowRoot.getElementById("cv-obsidian-result-overlay");
+    if (!overlay) return;
+    overlay.classList.remove("active");
+    overlay.setAttribute("aria-hidden", "true");
+  }
+
+  function hideBatchSyncResultDialog() {
+    const overlay = shadowRoot?.getElementById("cv-batch-result-overlay");
+    if (!overlay) return;
+    overlay.classList.remove("active");
+    overlay.setAttribute("aria-hidden", "true");
+  }
+
+  function showBatchSyncResultDialog(result) {
+    if (!shadowRoot || !result) return;
+    const resultId = String(result.id || `${result.service}:${result.total}:${result.successCount}:${result.failureCount}`);
+    if (resultId && resultId === lastBatchSyncResultDialogId) return;
+    const overlay = shadowRoot.getElementById("cv-batch-result-overlay");
+    const title = shadowRoot.getElementById("cv-batch-result-title");
+    const description = shadowRoot.getElementById("cv-batch-result-description");
+    const itemsContainer = shadowRoot.getElementById("cv-batch-result-items");
+    const mark = shadowRoot.getElementById("cv-batch-result-mark");
+    if (!overlay || !itemsContainer) return;
+
+    const service = result.service === "obsidian" ? "obsidian" : "notion";
+    const total = Math.max(0, Number(result.total || 0));
+    const successCount = Math.max(0, Number(result.successCount || 0));
+    const failureCount = Math.max(0, Number(result.failureCount || 0));
+    const partial = failureCount > 0 || Number(result.warningCount || 0) > 0;
+    const failed = successCount === 0;
+    title.textContent = failed
+      ? tx("content_notion_failed", "Batch sync failed", "批量同步失败")
+      : partial
+        ? service === "obsidian"
+          ? tx("obsidian_sync_partial_title", "Obsidian sync completed with warnings", "Obsidian 同步完成，但有部分警告")
+          : tx("notion_sync_partial_title", "Synced to Notion with warnings", "已同步到 Notion，但有部分警告")
+        : service === "obsidian"
+          ? tx("obsidian_batch_complete", "Obsidian batch sync complete", "Obsidian 批量同步完成")
+          : tx("notion_sync_success_title", "Synced to Notion", "已成功同步到 Notion");
+    description.textContent = failed
+      ? tx("obsidian_batch_all_failed", "No conversations could be synced.", "没有会话同步成功。")
+      : `${tx("content_batch_success_failure", "Success: $1, failed: $2", "成功：$1，失败：$2", successCount, failureCount)}. ${service === "obsidian"
+        ? tx("obsidian_batch_complete_desc", "Open any saved note below.", "可点击下方任意笔记打开。")
+        : tx("notion_sync_success_desc", "Open any saved page below.", "可点击下方任意页面打开。")}`;
+    mark.textContent = failed ? "×" : partial ? "!" : "✓";
+    mark.dataset.status = failed ? "failed" : partial ? "partial" : "succeeded";
+    itemsContainer.replaceChildren();
+
+    (result.items || []).forEach((item) => {
+      const canOpen = service === "notion" ? Boolean(normalizeNotionPageUrl(item.url)) : Boolean(item.canOpen && item.vaultName && item.noteRelativePath);
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "cv-batch-result-item";
+      button.disabled = !canOpen;
+      button.dataset.service = service;
+      if (service === "notion") button.dataset.url = normalizeNotionPageUrl(item.url);
+      else {
+        button.dataset.vaultName = String(item.vaultName || "");
+        button.dataset.notePath = String(item.noteRelativePath || "");
+      }
+      const serviceLabel = document.createElement("span");
+      serviceLabel.textContent = service === "obsidian"
+        ? tx("obsidian_open_note", "Open in Obsidian", "在 Obsidian 中打开")
+        : tx("notion_open_page", "Open Notion page", "打开 Notion 页面");
+      const itemTitle = document.createElement("strong");
+      itemTitle.textContent = String(item.title || tx("notion_untitled_conversation", "Untitled conversation", "未命名会话"));
+      const arrow = document.createElement("b");
+      arrow.setAttribute("aria-hidden", "true");
+      arrow.textContent = canOpen ? "→" : "";
+      button.append(serviceLabel, itemTitle, arrow);
+      itemsContainer.appendChild(button);
+    });
+
+    overlay.classList.add("active");
+    overlay.setAttribute("aria-hidden", "false");
+    lastBatchSyncResultDialogId = resultId;
+    shadowRoot.getElementById("cv-batch-result-close")?.focus();
+  }
+
+  function showObsidianResultDialog(result) {
+    if (!shadowRoot || !result) return;
+    const resultId = String(result.id || result.jobId || result.batchId || `${result.status}:${result.noteRelativePath || ""}`);
+    if (resultId && resultId === lastObsidianSuccessDialogId) return;
+    const overlay = shadowRoot.getElementById("cv-obsidian-result-overlay");
+    const title = shadowRoot.getElementById("cv-obsidian-result-title");
+    const description = shadowRoot.getElementById("cv-obsidian-result-description");
+    const open = shadowRoot.getElementById("cv-obsidian-result-open");
+    const documentTitle = shadowRoot.getElementById("cv-obsidian-result-document-title");
+    const mark = shadowRoot.getElementById("cv-obsidian-result-mark");
+    if (!overlay || !open) return;
+
+    const failed = result.status === "failed";
+    const partial = result.status === "partial" || Number(result.failureCount || 0) > 0 || Number(result.warningCount || 0) > 0;
+    const isBatch = Boolean(result.batchId || Number(result.total || 0) > 1);
+
+    if (mark) {
+      mark.textContent = failed ? "×" : partial ? "!" : "✓";
+      mark.dataset.status = failed ? "failed" : partial ? "partial" : "succeeded";
+    }
+
+    if (title) {
+      title.textContent = failed
+        ? tx("obsidian_sync_failed_title", "Obsidian sync failed", "同步到 Obsidian 失败")
+        : partial
+          ? tx("obsidian_sync_partial_title", "Obsidian sync completed with warnings", "Obsidian 同步完成，但有部分警告")
+          : isBatch
+            ? tx("obsidian_batch_complete", "Obsidian batch sync complete", "Obsidian 批量同步完成")
+            : tx("obsidian_sync_complete", "Synced to Obsidian", "已成功同步到 Obsidian");
+    }
+    if (description) {
+      description.hidden = false;
+      description.textContent = failed
+        ? String(result.error || tx("obsidian_sync_failed_desc", "No note was created. Check Vault access and try again.", "未创建笔记，请检查 Vault 权限后重试。"))
+        : partial
+          ? tx("obsidian_sync_partial_desc", "The note was created successfully. Open it to review any content that could not be preserved exactly.", "Obsidian 笔记已成功创建，请打开检查未能完全保留的内容。")
+          : tx("obsidian_sync_complete_desc", "This conversation is ready in your Obsidian Vault.", "当前对话已写入你选择的 Obsidian Vault。");
+    }
+
+    const notePath = String(result.noteRelativePath || "");
+    const vaultName = String(result.vaultName || "");
+    if (documentTitle) documentTitle.textContent = String(result.title || notePath.replace(/^.*\//, "").replace(/\.md$/i, "") || tx("notion_untitled_conversation", "Untitled conversation", "未命名会话"));
+    open.hidden = !notePath || !vaultName || failed || result.canOpenInObsidian === false;
+    open.dataset.notePath = notePath;
+    open.dataset.vaultName = vaultName;
+    overlay.classList.add("active");
+    overlay.setAttribute("aria-hidden", "false");
+    lastObsidianSuccessDialogId = resultId;
+    shadowRoot.getElementById("cv-obsidian-result-close")?.focus();
   }
 
   function findScrollContainer() {
@@ -3579,18 +4942,29 @@
   }
 
   // 核心：执行文档导出
-  async function performExport() {
+  async function performExport(options = {}) {
     const formatForExport = activeFormat || "pdf";
+    const copyToClipboard = options.copyToClipboard === true && formatForExport === "json" && !globalThis.CHATVAULT_IS_BATCH_EXPORT;
+    const requestSettings = options.settings && typeof options.settings === "object"
+      ? options.settings
+      : null;
     const platformForExport = exporter.detectPlatform();
     const isSelectedExport = exportSettings.mode === "selected";
 
     if (!platformForExport) {
-      showPageToast(t("toast_no_open_chat", isChineseUi() ? "请在支持的 AI 对话页打开并加载聊天内容后再导出。" : `Open a ${getSupportedPlatformLabel()} conversation to export.`));
+      showPageToast(t("toast_no_open_chat", isChineseUi() ? "请在支持的 AI 对话页打开并加载聊天内容后再导出。" : "Open a ChatGPT, Claude, or Gemini conversation to export."));
       return;
     }
 
+    // A direct export request carries the freshest popup state. Do not let an
+    // older asynchronous storage snapshot overwrite it before rendering.
+    if (!requestSettings) {
+      await loadPersistedExportSettings();
+    }
     const presetForExport = currentPreset;
-    const settingsForExport = { ...exportSettings };
+    const settingsForExport = requestSettings
+      ? { ...exportSettings, ...requestSettings }
+      : { ...exportSettings };
     const controller = new AbortController();
     abortController = controller;
     const signal = controller.signal;
@@ -3612,11 +4986,28 @@
       return true;
     }
 
+    if (isSingleExport) {
+      renderExportProgress(formatForExport, {
+        mode: "single",
+        title: getSingleExportProgressTitle(formatForExport),
+        message: tx("content_progress_checking_export_access", "Preparing export...", "正在准备导出..."),
+        progress: EXPORT_PROGRESS_INITIAL,
+        overallProgress: EXPORT_PROGRESS_INITIAL
+      }, cancelExport);
+    }
+
     await loadState({ localOnly: true, skipVerify: true });
     if (isCurrentExportCancelled()) return;
-
-    const localEntitlementPreflight = getLocalExportAccessResult(1);
-    if (!localEntitlementPreflight.allowed) {
+    const entitlementPreflight = await verifySignedInExportAccess(1);
+    if (isCurrentExportCancelled()) return;
+    if (!entitlementPreflight.ok) {
+      hideExportProgress();
+      clearCurrentExportController();
+      showPageToast(entitlementPreflight.error || tx("content_entitlement_verify_failed", "Could not verify your export entitlement. Check your connection and try again.", "无法验证您的导出权益，请检查网络后重试。"));
+      return;
+    }
+    if (!entitlementPreflight.allowed) {
+      hideExportProgress();
       clearCurrentExportController();
       showUpgradePrompt(FREE_QUOTA_EXHAUSTED_MESSAGE);
       return;
@@ -3636,8 +5027,9 @@
       return;
     }
 
-    const entitlementIssue = getEntitlementIssue(settingsForExport, presetForExport, currentUserProfile);
+    const entitlementIssue = getEntitlementIssue(settingsForExport, presetForExport, currentUserProfile, formatForExport);
     if (entitlementIssue) {
+      hideExportProgress();
       clearCurrentExportController();
       showUpgradePrompt(entitlementIssue);
       return;
@@ -3651,21 +5043,6 @@
         progress: EXPORT_PROGRESS_INITIAL,
         overallProgress: EXPORT_PROGRESS_INITIAL
       }, cancelExport);
-    }
-
-    const entitlementPreflight = await verifySignedInExportAccess(1);
-    if (isCurrentExportCancelled()) return;
-    if (!entitlementPreflight.ok) {
-      hideExportProgress();
-      clearCurrentExportController();
-      showPageToast(entitlementPreflight.error || tx("content_entitlement_verify_failed", "Could not verify your export entitlement. Check your connection and try again.", "无法验证您的导出权益，请检查网络后重试。"));
-      return;
-    }
-    if (!entitlementPreflight.allowed) {
-      hideExportProgress();
-      clearCurrentExportController();
-      showUpgradePrompt(FREE_QUOTA_EXHAUSTED_MESSAGE);
-      return;
     }
 
     try {
@@ -3686,9 +5063,10 @@
       }
     }
 
+    const pageParseOptions = { includeHtmlStyles: formatForExport === "html" };
     const pageMessagesForExport = isSelectedExport && typeof exporter.getSelectedMessages === "function"
-      ? exporter.getSelectedMessages()
-      : parseCurrentChatMessages();
+      ? exporter.getSelectedMessages(pageParseOptions)
+      : parseCurrentChatMessages(pageParseOptions);
     let rawMessagesForExport = pageMessagesForExport;
     if (!isSelectedExport && platformForExport && pageMessagesForExport.length > 0) {
       if (!globalThis.CHATVAULT_IS_BATCH_EXPORT) {
@@ -3716,14 +5094,16 @@
       clearCurrentExportController();
       showPageToast(isSelectedExport
         ? tx("content_select_one_before_export", "Select at least one message before exporting.", "请先选择至少一条对话后再导出。")
-        : t("toast_no_open_chat", isChineseUi() ? "请在支持的 AI 对话页打开并加载聊天内容后再导出。" : `Open a ${getSupportedPlatformLabel()} conversation to export.`));
+        : t("toast_no_open_chat", isChineseUi() ? "请在支持的 AI 对话页打开并加载聊天内容后再导出。" : "Open a ChatGPT, Claude, or Gemini conversation to export."));
       return;
     }
 
-    // 使用 Claude Export 3.1.5 同款顶部进度条，避免全屏遮罩挡住页面/批量列表。
+    // 使用 ChatVault AI 3.1.5 同款顶部进度条，避免全屏遮罩挡住页面/批量列表。
     const overlay = shadowRoot.getElementById("progress-overlay");
     if (overlay) overlay.classList.remove("active");
     let exportStatsForProgress = getExportProgressStats(rawMessagesForExport);
+    let exportProgressNotice = "";
+    let exportProgressNoticeSeverity = "";
     let suppressSingleProgressAfterSaveDialog = false;
 
     function reportBatchItemProgress(percent, message) {
@@ -3741,7 +5121,9 @@
         message: message || "Preparing conversation export",
         progress: safePercent / 100,
         overallProgress: safePercent / 100,
-        exportStats: exportStatsForProgress
+        exportStats: exportStatsForProgress,
+        notice: exportProgressNotice,
+        noticeSeverity: exportProgressNoticeSeverity
       });
       reportBatchItemProgress(safePercent, message);
     }
@@ -3768,14 +5150,24 @@
           format: formatForExport,
           mode,
           platform: platformForExport,
-          imageLimits: exporter.IMAGE_LIMITS
+          imageLimits: exporter.IMAGE_LIMITS,
+          parseStats: typeof exporter.getParseStats === "function" ? exporter.getParseStats() : null
         });
-        const blockingIssues = (health.issues || []).filter(
-          (issue) => issue.severity === "high_risk" && issue.id !== "empty_conversation"
+        const progressIssues = (health.issues || []).filter(
+          (issue) => issue && issue.id !== "empty_conversation" && issue.message
         );
+        const blockingIssues = progressIssues.filter((issue) => issue.severity === "high_risk");
+        if (progressIssues.length > 0) {
+          exportProgressNotice = progressIssues.map((issue) => issue.message).join("\n");
+          exportProgressNoticeSeverity = blockingIssues.length > 0 ? "high_risk" : "attention";
+          setExportProgress(
+            blockingIssues.length > 0
+              ? t("popup_health_high_risk", "High Risk Issues")
+              : tx("content_progress_formatting", "Applying export formatting...", "正在应用导出格式..."),
+            16
+          );
+        }
         if (blockingIssues.length > 0) {
-          hideExportProgress();
-          showPageToast(blockingIssues.map((issue) => issue.message).join(" / "));
           return;
         }
       }
@@ -3819,7 +5211,11 @@
       const builderProgressHandler = getExportProgressHandler(
         getExportFormatLabel(formatForExport),
         formatForExport,
-        { exportStats: exportStatsForProgress }
+        {
+          exportStats: exportStatsForProgress,
+          notice: exportProgressNotice,
+          noticeSeverity: exportProgressNoticeSeverity
+        }
       );
 
       const blobResult = await exporter.createExportBlob({
@@ -3882,14 +5278,26 @@
         throw new Error("Export cancelled.");
       }
 
-      if (!globalThis.CHATVAULT_IS_BATCH_EXPORT) {
+      if (!globalThis.CHATVAULT_IS_BATCH_EXPORT && !copyToClipboard) {
         suppressSingleProgressAfterSaveDialog = true;
         hideExportProgress();
       }
 
-      const saveResult = await exporter.saveBlob(blobResult.blob, blobResult.filename, {
-        saveAs: settingsForExport.saveAs !== false
-      });
+      let saveResult;
+      if (copyToClipboard) {
+        setExportProgress(tx("content_progress_copying_json", "Copying JSON...", "正在复制 JSON..."), 96);
+        const jsonText = typeof blobResult.blob.text === "function"
+          ? await blobResult.blob.text()
+          : new TextDecoder().decode(await blobResult.blob.arrayBuffer());
+        await writeTextToClipboard(jsonText);
+        saveResult = { ok: true, copied: true, filename: blobResult.filename };
+        suppressSingleProgressAfterSaveDialog = true;
+        hideExportProgress();
+      } else {
+        saveResult = await exporter.saveBlob(blobResult.blob, blobResult.filename, {
+          saveAs: settingsForExport.saveAs !== false
+        });
+      }
 
       if (signal.aborted) {
         throw new Error("Export cancelled.");
@@ -3941,6 +5349,9 @@
         platform: metadata.platform,
         properties: { format: formatForExport, source: "current_chat" }
       });
+      if (copyToClipboard) {
+        showPageToast(tx("content_json_copied", "JSON copied to clipboard.", "JSON 已复制到剪贴板。"));
+      }
       if (!suppressSingleProgressAfterSaveDialog || globalThis.CHATVAULT_IS_BATCH_EXPORT) {
         setExportProgress(tx("content_progress_complete", "Export complete.", "导出完成。"), 100);
       }
@@ -3975,6 +5386,11 @@
     if (abortController) {
       abortController.abort();
     }
+    if (activeNotionJobId) {
+      const jobId = activeNotionJobId;
+      activeNotionJobId = "";
+      chrome.runtime.sendMessage({ type: "CHATVAULT_NOTION_CANCEL_JOB", jobId }, () => void chrome.runtime.lastError);
+    }
     hideExportProgress();
     const overlay = shadowRoot.getElementById("progress-overlay");
     if (overlay) {
@@ -3983,6 +5399,146 @@
     const cancelBtn = shadowRoot.getElementById("cancel-export-btn");
     if (cancelBtn) {
       cancelBtn.textContent = "Cancel";
+    }
+  }
+
+  async function prepareSingleObsidianSync() {
+    if (activeObsidianSingleSync || globalThis.CHATVAULT_IS_BATCH_EXPORT) {
+      throw new Error(tx("obsidian_sync_running", "An Obsidian sync is already running in this tab.", "当前标签页已有 Obsidian 同步任务运行。"));
+    }
+    await loadState({ localOnly: true, skipVerify: true });
+    const coordinator = await loadObsidianCoordinator();
+    const status = await coordinator.getObsidianStatus();
+    if (!status.connected) throw new Error(tx("obsidian_connect_first", "Connect an Obsidian Vault first.", "请先连接 Obsidian Vault。"));
+    if (status.permission !== "granted") throw new Error(tx("obsidian_reauthorize_first", "Reauthorize the Obsidian Vault first.", "请先重新授权 Obsidian Vault。"));
+    if (status.directoriesValid === false) throw new Error(tx("obsidian_repair_folders", "Repair the configured Obsidian folders first.", "请先修复 Obsidian 配置目录。"));
+    if (status.activeJob) throw new Error(tx("obsidian_job_running", "Another Obsidian sync is already running.", "已有 Obsidian 同步任务正在运行。"));
+    const selectionMode = Boolean(document.querySelector(".cv-export-checkbox-wrapper") || shadowRoot?.getElementById("selection-bar")?.classList.contains("active"));
+    const selectedCount = typeof exporter.getSelectedCount === "function" ? exporter.getSelectedCount() : 0;
+    if (selectionMode && selectedCount < 1) {
+      throw new Error(tx("obsidian_select_message_first", "Select at least one message before syncing.", "请先选择至少一条消息后再同步。"));
+    }
+    if (!getLocalFreeQuotaAllowed(1) || hasKnownExhaustedFreeQuota()) {
+      throw new Error(FREE_QUOTA_EXHAUSTED_MESSAGE);
+    }
+    const entitlement = await verifySignedInExportAccess(1);
+    if (!entitlement.ok) throw new Error(entitlement.error || tx("content_entitlement_verify_failed", "Could not verify your export entitlement.", "无法验证导出权益。"));
+    if (!entitlement.allowed) throw new Error(FREE_QUOTA_EXHAUSTED_MESSAGE);
+    return { coordinator, status, selectionMode, selectedCount };
+  }
+
+  async function runSingleObsidianSync(config, preflight) {
+    activeObsidianSingleSync = true;
+    const controller = new AbortController();
+    abortController = controller;
+    const signal = controller.signal;
+    const settings = config?.settings && typeof config.settings === "object" ? config.settings : {};
+    let serverConsumedUsage = false;
+
+    try {
+      const selectedCount = Math.max(0, Number(preflight.selectedCount || 0));
+      const scope = preflight.selectionMode ? "selected" : "conversation";
+      renderExportProgress("obsidian", {
+        mode: "single",
+        title: tx("obsidian_sync_progress_title", "Syncing to Obsidian", "正在同步到 Obsidian"),
+        message: scope === "selected"
+          ? tx("obsidian_getting_selected", "Getting selected messages...", "正在获取已选消息...")
+          : tx("obsidian_getting_conversation", "Getting complete conversation...", "正在获取完整会话..."),
+        progress: 0.06,
+        overallProgress: 0.06
+      }, cancelExport);
+
+      const pageMessages = scope === "selected"
+        ? exporter.getSelectedMessages()
+        : parseCurrentChatMessages();
+      if (!pageMessages?.length) {
+        throw new Error(scope === "selected"
+          ? tx("content_select_one_before_export", "Select at least one message before syncing.", "请先选择至少一条消息后再同步。")
+          : tx("obsidian_sync_no_messages", "No conversation messages were found on this page.", "当前页面没有找到可同步的会话消息。"));
+      }
+
+      let messages = pageMessages;
+      const captureWarnings = [];
+      if (scope === "conversation") {
+        try {
+          messages = await getCurrentConversationMessagesForExport(pageMessages, { preserveMarkdownSemantics: true });
+        } catch (error) {
+          console.warn("Full conversation fetch failed before Obsidian sync, using parsed page messages:", error);
+          messages = pageMessages;
+          captureWarnings.push({
+            code: "conversation_fetch_partial",
+            detail: tx("obsidian_visible_content_fallback", "The complete conversation was unavailable; visible page content was used.", "完整会话获取失败，已使用页面可见内容。")
+          });
+        }
+      }
+      if (signal.aborted) throw new DOMException("Sync cancelled.", "AbortError");
+
+      const result = await preflight.coordinator.syncConversationToObsidian({
+        status: preflight.status,
+        title: exporter.getConversationTitle(),
+        sourceUrl: sanitizeSourceUrl(window.location.href),
+        messages,
+        platform: exporter.detectPlatform(),
+        platformLabel: getPlatformLabel(exporter.detectPlatform()),
+        userLabel: t("export_role_user", "You Asked"),
+        scope,
+        selectedCount: scope === "selected" ? selectedCount : undefined,
+        settings,
+        warnings: captureWarnings,
+        signal,
+        beforeFinalize: !isProUser && currentSession?.access_token ? async () => {
+          const entitlement = await syncVerifiedExportEntitlement(1, { consume: true });
+          serverConsumedUsage = Boolean(entitlement.ok && entitlement.allowed && entitlement.serverConsumed);
+          if (!entitlement.ok || !entitlement.allowed) {
+            throw new Error(FREE_QUOTA_EXHAUSTED_MESSAGE);
+          }
+        } : null,
+        onProgress: (info) => {
+          const messagesByPhase = {
+            preflight: tx("obsidian_checking_vault", "Checking Vault access...", "正在检查 Vault..."),
+            media: info?.detail || tx("obsidian_processing_media", "Processing images...", "正在处理图片..."),
+            render: tx("obsidian_rendering", "Building Obsidian Markdown...", "正在生成 Obsidian Markdown..."),
+            write: tx("obsidian_writing", "Writing note to Vault...", "正在写入 Vault..."),
+            complete: tx("obsidian_finishing", "Finishing sync...", "正在完成同步...")
+          };
+          renderExportProgress("obsidian", {
+            mode: "single",
+            title: tx("obsidian_sync_progress_title", "Syncing to Obsidian", "正在同步到 Obsidian"),
+            message: messagesByPhase[info?.phase] || info?.detail || "",
+            progress: Number(info?.progress || 0),
+            overallProgress: Number(info?.progress || 0)
+          }, info?.phase === "complete" ? null : cancelExport);
+        }
+      });
+
+      if (!isProUser) {
+        await recordSuccessfulExportUsage(1, { serverConsumed: serverConsumedUsage });
+        updateUIState();
+      }
+      if (scope === "selected") {
+        exporter.exitSelectionMode();
+        shadowRoot?.getElementById("selection-bar")?.classList.remove("active");
+      }
+      hideExportProgress();
+      showObsidianResultDialog(result);
+      globalThis.CHATVAULT_ANALYTICS?.track("export_success", {
+        platform: exporter.detectPlatform(),
+        properties: { format: "obsidian", source: "current_chat", scope }
+      });
+    } catch (error) {
+      hideExportProgress();
+      if (signal.aborted || error?.name === "AbortError") {
+        showPageToast(tx("obsidian_sync_cancelled", "Obsidian sync cancelled.", "Obsidian 同步已取消。"));
+      } else {
+        showPageToast(tx("obsidian_sync_failed", "Obsidian sync failed: $1", "Obsidian 同步失败：$1", error?.message || "Obsidian sync failed."));
+        globalThis.CHATVAULT_ANALYTICS?.track("export_failed", {
+          platform: exporter.detectPlatform(),
+          properties: { format: "obsidian", source: "current_chat", error_category: error?.code || "sync" }
+        });
+      }
+    } finally {
+      activeObsidianSingleSync = false;
+      if (abortController === controller) abortController = null;
     }
   }
 
@@ -4022,10 +5578,26 @@
           try {
             await entitlements?.clearCachedState?.();
           } catch (error) {}
+          try {
+            await new Promise((resolve) => chrome.storage.local.remove([
+              NOTION_UI_CACHE_KEY,
+              "notion_selected_connection_id",
+              "notion_selected_data_sources"
+            ], resolve));
+          } catch (error) {}
+          batchNotionConfig = {
+            mode: "unlinked",
+            connections: [],
+            dataSources: [],
+            connectionId: "",
+            dataSourceId: "",
+            databaseId: ""
+          };
           currentSession = null;
           currentUserProfile = null;
           isProUser = false;
           updateUIState();
+          renderBatchNotionDestination();
           sendResponse({ ok: true });
         })();
         return true;
@@ -4061,7 +5633,8 @@
               format: activeFormat || "pdf",
               mode,
               platform,
-              imageLimits: exporter.IMAGE_LIMITS
+              imageLimits: exporter.IMAGE_LIMITS,
+              parseStats: typeof exporter.getParseStats === "function" ? exporter.getParseStats() : null
             });
             
             const proof = privacyProof.generateProof({
@@ -4109,9 +5682,270 @@
         return true;
       }
 
+      if (message.type === "CHATVAULT_OBSIDIAN_SELECTION_STATUS") {
+        const selectionMode = Boolean(document.querySelector(".cv-export-checkbox-wrapper") || shadowRoot?.getElementById("selection-bar")?.classList.contains("active"));
+        sendResponse({
+          ok: true,
+          selectionMode,
+          selectedCount: typeof exporter.getSelectedCount === "function" ? exporter.getSelectedCount() : 0,
+          syncRunning: activeObsidianSingleSync || (globalThis.CHATVAULT_IS_BATCH_EXPORT && batchMode === "obsidian")
+        });
+        return false;
+      }
+
+      if (message.type === "CHATVAULT_POPUP_OBSIDIAN_SYNC") {
+        (async () => {
+          let started = false;
+          try {
+            await waitForContextExportReady();
+            const preflight = await prepareSingleObsidianSync();
+            if (message.config?.settings && typeof message.config.settings === "object") {
+              exportSettings = { ...exportSettings, ...message.config.settings };
+              persistExportSettings();
+            }
+            started = true;
+            sendResponse({ ok: true, syncStarted: true });
+            await runSingleObsidianSync({ ...message.config, settings: { ...exportSettings, ...(message.config?.settings || {}) } }, preflight);
+          } catch (error) {
+            if (!started) {
+              if (error?.message === FREE_QUOTA_EXHAUSTED_MESSAGE) showUpgradePrompt(FREE_QUOTA_EXHAUSTED_MESSAGE);
+              sendResponse({ ok: false, error: error?.message || tx("obsidian_sync_failed", "Obsidian sync could not start.", "无法开始 Obsidian 同步。") });
+            }
+          }
+        })();
+        return true;
+      }
+
+      if (message.type === "CHATVAULT_NOTION_JOB_STATUS" && message.job) {
+        const job = message.job;
+        if (handleNotionBatchJobStatus(job)) {
+          sendResponse({ ok: true });
+          return false;
+        }
+        if (job.batchId) {
+          sendResponse({ ok: true });
+          return false;
+        }
+        const isActiveSingleJob = activeNotionJobId && String(job.id || "") === activeNotionJobId;
+        if (isActiveSingleJob && ["held", "pending", "running", "retry_wait"].includes(job.status)) {
+          const rawJobProgress = Number(job.progress || 0) > 1 ? Number(job.progress || 0) / 100 : Number(job.progress || 0);
+          const progress = Math.max(0.35, Math.min(0.94, 0.35 + rawJobProgress * 0.59));
+          renderExportProgress("notion", {
+            mode: "single",
+            title: tx("notion_sync_progress_title", "Syncing to Notion", "正在同步到 Notion"),
+            message: job.status === "retry_wait"
+              ? tx("notion_sync_retrying", "Notion is busy. Retrying safely...", "Notion 当前繁忙，正在安全重试...")
+              : tx("notion_sync_writing", "Writing conversation to Notion...", "正在将会话写入 Notion..."),
+            progress,
+            overallProgress: progress
+          }, cancelExport);
+        }
+        if (job.status === "succeeded" || job.status === "partial") {
+          if (isActiveSingleJob) {
+            activeNotionJobId = "";
+            hideExportProgress();
+          }
+          showNotionSuccessDialog(job);
+        } else if (job.status === "failed") {
+          if (isActiveSingleJob) {
+            activeNotionJobId = "";
+            hideExportProgress();
+          }
+          showPageToast(tx("notion_sync_failed", "Notion sync failed: $1", "Notion 同步失败：$1", job.errorMessage || job.errorCode));
+        } else if (job.status === "cancelled" && isActiveSingleJob) {
+          activeNotionJobId = "";
+          hideExportProgress();
+          showPageToast(tx("notion_sync_cancelled", "Sync cancelled.", "同步已取消。"));
+        }
+        sendResponse({ ok: true });
+        return false;
+      }
+
+      // 2.5 处理 Popup 发起的 Notion 同步
+      if (message.type === "CHATVAULT_POPUP_NOTION_SYNC") {
+        (async () => {
+          let syncStarted = false;
+          let enqueueResult = null;
+          let notionJobReleased = false;
+          let notionSyncController = null;
+          try {
+            await waitForContextExportReady();
+            notionSyncController = new AbortController();
+            abortController = notionSyncController;
+            const signal = notionSyncController.signal;
+            syncStarted = true;
+            sendResponse({ ok: true, syncStarted: true });
+
+            renderExportProgress("notion", {
+              mode: "single",
+              title: tx("notion_sync_progress_title", "Syncing to Notion", "正在同步到 Notion"),
+              message: tx("notion_sync_preparing", "Preparing conversation...", "正在准备会话..."),
+              progress: 0.1,
+              overallProgress: 0.1
+            }, cancelExport);
+
+            const platformForSync = exporter.detectPlatform();
+            // Notion needs the live DOM presentation for syntax-token colors and
+            // rendered math source. This is scoped to Notion and does not alter
+            // the parsing path used by PDF, Markdown, HTML, TXT, or JSON exports.
+            const pageParseOptions = { includeHtmlStyles: true };
+            const pageMessagesForSync = parseCurrentChatMessages(pageParseOptions);
+            if (!pageMessagesForSync.length) {
+              throw new Error(tx("notion_sync_no_messages", "No conversation messages were found on this page.", "当前页面没有找到可同步的会话消息。"));
+            }
+            let rawMessagesForSync = pageMessagesForSync;
+            const notionCaptureWarnings = [];
+
+            if (platformForSync && pageMessagesForSync.length > 0) {
+              try {
+                rawMessagesForSync = await getCurrentConversationMessagesForExport(pageMessagesForSync, {
+                  preserveHtmlPresentation: true,
+                  preserveMarkdownSemantics: true
+                });
+              } catch (e) {
+                console.warn("Full conversation fetch failed before sync, using parsed page messages:", e);
+                rawMessagesForSync = pageMessagesForSync;
+                notionCaptureWarnings.push({
+                  code: "conversation_fetch_partial",
+                  detail: "The complete conversation API was unavailable; visible page content was used."
+                });
+              }
+            }
+            if (signal.aborted) throw new Error("Sync cancelled.");
+
+            const title = exporter.getConversationTitle();
+            const sourceUrl = sanitizeSourceUrl(window.location.href);
+
+            const snapshot = await globalThis.CHATVAULT_EXPORT.prepareNotionJob({
+              title,
+              sourceUrl,
+              messages: rawMessagesForSync,
+              platform: platformForSync,
+              model: message.config.model || "",
+              userId: currentSession?.user?.id || "guest",
+              connectionId: message.config.connectionId,
+              databaseId: message.config.databaseId,
+              dataSourceId: message.config.dataSourceId,
+              alwaysCreate: true,
+              settings: message.config.settings || {},
+              warnings: notionCaptureWarnings,
+              signal,
+              onMediaProgress: (info) => {
+                if (signal.aborted) throw new Error("Sync cancelled.");
+                const total = Math.max(1, Number(info.total || 0));
+                const progress = 0.15 + Math.min(0.2, Number(info.completed || 0) / total * 0.2);
+                renderExportProgress("notion", {
+                  mode: "single",
+                  title: tx("notion_sync_progress_title", "Syncing to Notion", "正在同步到 Notion"),
+                  message: tx("notion_sync_capturing_media", "Capturing conversation media...", "正在采集会话图片..."),
+                  progress,
+                  overallProgress: progress
+                }, cancelExport);
+              }
+            });
+
+            enqueueResult = await new Promise((resolve, reject) => {
+              chrome.runtime.sendMessage({
+                type: "CHATVAULT_NOTION_ENQUEUE",
+                snapshot,
+                deferStart: true
+              }, (response) => {
+                const lastError = chrome.runtime.lastError;
+                if (lastError) return reject(new Error(lastError.message));
+                if (!response || !response.ok) return reject(new Error(response?.error || "Could not enqueue Notion sync."));
+                resolve(response);
+              });
+            });
+            activeNotionJobId = String(enqueueResult.job?.id || "");
+
+            const shouldConsumeUsage = !enqueueResult.job?.deduplicated;
+            let serverConsumedNotionUsage = false;
+            if (shouldConsumeUsage && !isProUser && currentSession?.access_token) {
+              const entitlementVerification = await syncVerifiedExportEntitlement(1, { consume: true });
+              if (!entitlementVerification.ok) {
+                throw new Error(entitlementVerification.error || tx("content_entitlement_verify_failed", "Could not verify your export entitlement. Check your connection and try again.", "无法验证您的导出权益，请检查网络后重试。"));
+              }
+              if (!entitlementVerification.allowed) {
+                showUpgradePrompt(FREE_QUOTA_EXHAUSTED_MESSAGE);
+                throw new Error(tx("popup_free_quota_exhausted", "You have used today's 3 free exports.", "今日免费导出次数已用完。"));
+              }
+              serverConsumedNotionUsage = Boolean(entitlementVerification.serverConsumed);
+            }
+
+            await new Promise((resolve, reject) => {
+              chrome.runtime.sendMessage({
+                type: "CHATVAULT_NOTION_RELEASE_JOB",
+                jobId: enqueueResult.job.id
+              }, (response) => {
+                const lastError = chrome.runtime.lastError;
+                if (lastError) return reject(new Error(lastError.message));
+                if (!response || !response.ok) return reject(new Error(response?.error || "Could not start Notion sync."));
+                resolve(response);
+              });
+            });
+            notionJobReleased = true;
+
+            if (shouldConsumeUsage && !isProUser) {
+              await recordSuccessfulExportUsage(1, { serverConsumed: serverConsumedNotionUsage });
+              updateUIState();
+            }
+
+            renderExportProgress("notion", {
+              mode: "single",
+              title: tx("notion_sync_progress_title", "Syncing to Notion", "正在同步到 Notion"),
+              message: tx("notion_sync_writing", "Writing conversation to Notion...", "正在将会话写入 Notion..."),
+              progress: 0.35,
+              overallProgress: 0.35
+            }, cancelExport);
+
+            chrome.runtime.sendMessage({
+              type: "CHATVAULT_NOTION_SYNC_STATUS",
+              status: "queued",
+              job: enqueueResult.job
+            });
+
+          } catch (error) {
+            if (!syncStarted) {
+              sendResponse({
+                ok: false,
+                error: error?.message || tx("notion_sync_failed", "Notion sync could not start.", "无法开始 Notion 同步。")
+              });
+              return;
+            }
+            if (enqueueResult?.job?.id && !notionJobReleased && !enqueueResult.job.deduplicated) {
+              try {
+                await chrome.runtime.sendMessage({
+                  type: "CHATVAULT_NOTION_CANCEL_JOB",
+                  jobId: enqueueResult.job.id
+                });
+              } catch (_cancelError) {}
+            }
+            hideExportProgress();
+            activeNotionJobId = "";
+            if (error.message !== "Sync cancelled.") {
+              console.error("Notion sync failed:", error);
+              showPageToast(tx("notion_sync_failed", "Notion sync failed: $1", "同步至 Notion 失败：$1", error.message));
+              chrome.runtime.sendMessage({
+                type: "CHATVAULT_NOTION_SYNC_STATUS",
+                status: "error",
+                error: error.message
+              });
+            } else {
+              showPageToast(tx("notion_sync_cancelled", "Sync cancelled.", "同步已取消。"));
+            }
+          } finally {
+            if (notionSyncController && abortController === notionSyncController) {
+              abortController = null;
+            }
+          }
+        })();
+        return true;
+      }
+
       // 3. 处理 Popup 发起的导出
       if (message.type === "CHATVAULT_POPUP_EXPORT") {
         (async () => {
+          let exportStarted = false;
           try {
             await waitForContextExportReady();
             activeFormat = normalizeContextExportFormat(message.format);
@@ -4124,21 +5958,26 @@
               persistExportSettings();
               invalidatePopupStateCache();
             }
-            await performExport();
+            // Confirm that the in-page exporter has taken over before closing
+            // the browser popup. The export continues independently while the
+            // page-level progress UI remains available.
+            exportStarted = true;
+            sendResponse({ ok: true, exportStarted: true });
+            await performExport({
+              copyToClipboard: message.copyToClipboard === true,
+              settings: message.settings
+            });
             await loadState({ localOnly: true, skipVerify: true });
-            const remaining = entitlements.getRemainingFreeExports(currentUserProfile, dailyUsage);
-            sendResponse({
-              ok: true,
-              isProUser,
-              remainingQuota: remaining,
-              dailyUsage,
-              profile: currentUserProfile
-            });
           } catch (error) {
-            sendResponse({
-              ok: false,
-              error: error?.message || tx("content_export_failed_message", "Export failed.", "导出失败。")
-            });
+            if (!exportStarted) {
+              sendResponse({
+                ok: false,
+                error: error?.message || tx("content_export_failed_message", "Export failed.", "导出失败。")
+              });
+              return;
+            }
+            console.error("Popup export failed after it started:", error);
+            showPageToast(error?.message || tx("content_export_failed_message", "Export failed.", "导出失败。"));
           }
         })();
         return true;
@@ -4222,6 +6061,8 @@
           try {
             await waitForContextExportReady();
             showBatchExportModal();
+            if (message.preferredMode === "obsidian") setBatchMode("obsidian");
+            else if (message.preferredMode === "notion") setBatchMode("notion");
             sendResponse({ ok: true });
           } catch (error) {
             sendResponse({ ok: false, error: error?.message || tx("content_export_failed_message", "Export failed.", "导出失败。") });

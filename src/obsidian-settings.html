@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Connect Obsidian Vault - AI Chat Export</title>
+  <link rel="stylesheet" href="obsidian-settings.css">
+</head>
+<body>
+  <main class="obsidian-settings-shell">
+    <header class="obsidian-settings-header">
+      <div class="obsidian-settings-brand">
+        <img src="../images/store-icon-48.png" alt="" width="40" height="40">
+        <div>
+          <span>AI Chat Export</span>
+          <strong data-i18n="obsidian_settings_title">Connect Obsidian Vault</strong>
+        </div>
+      </div>
+      <div class="obsidian-settings-header-actions">
+        <select id="obsidian-language-select" class="obsidian-settings-language" aria-label="Interface language">
+          <option value="system">System Default</option>
+          <option value="en">English</option>
+          <option value="zh_CN">简体中文</option>
+          <option value="zh_TW">繁體中文</option>
+          <option value="ja">日本語</option>
+          <option value="ko">한국어</option>
+          <option value="de">Deutsch</option>
+          <option value="fr">Français</option>
+          <option value="es">Español</option>
+          <option value="pt_BR">Português (Brasil)</option>
+        </select>
+        <button type="button" class="obsidian-settings-link" id="obsidian-return-button" data-i18n="obsidian_settings_return">Return to conversation</button>
+      </div>
+    </header>
+
+    <section class="obsidian-settings-intro">
+      <div>
+        <h1 data-i18n="obsidian_settings_heading">Save conversations directly to your knowledge base</h1>
+        <p data-i18n="obsidian_settings_intro">Choose your folders once, then sync one or many conversations. Text and images stay local.</p>
+      </div>
+      <div class="obsidian-settings-privacy" data-i18n="obsidian_settings_local">Local write</div>
+    </section>
+
+    <section class="obsidian-settings-steps" aria-label="Vault setup steps" data-i18n-aria-label="obsidian_settings_steps_label">
+      <article class="obsidian-settings-step is-active" data-step="1">
+        <div class="obsidian-settings-step-index">1</div>
+        <div>
+          <h2 data-i18n="obsidian_settings_choose_vault_step">Choose Vault</h2>
+          <p data-i18n="obsidian_settings_choose_vault_step_desc">Allow access to a local folder.</p>
+        </div>
+      </article>
+      <article class="obsidian-settings-step" data-step="2" hidden>
+        <div class="obsidian-settings-step-index">2</div>
+        <div>
+          <h2 data-i18n="obsidian_settings_folders_step">Choose folders</h2>
+          <p data-i18n="obsidian_settings_folders_step_desc">Choose a notes folder and an optional assets folder.</p>
+        </div>
+      </article>
+      <article class="obsidian-settings-step" data-step="3" hidden>
+        <div class="obsidian-settings-step-index">3</div>
+        <div>
+          <h2 data-i18n="obsidian_settings_verify_step">Verify access</h2>
+          <p data-i18n="obsidian_settings_verify_step_desc">Create and remove a temporary file.</p>
+        </div>
+      </article>
+    </section>
+
+    <section class="obsidian-settings-card">
+      <div class="obsidian-settings-stage" id="obsidian-vault-stage">
+        <div class="obsidian-settings-vault-row">
+          <div>
+            <span class="obsidian-settings-label" data-i18n="obsidian_settings_current_vault">Current Vault</span>
+            <strong id="obsidian-vault-name" data-i18n="obsidian_settings_not_selected">Not selected</strong>
+            <p id="obsidian-vault-status" data-i18n="obsidian_settings_choose_root">Choose the folder you use as your Obsidian Vault.</p>
+          </div>
+          <button type="button" class="obsidian-settings-primary" id="obsidian-choose-vault" data-i18n="obsidian_settings_choose_vault">Choose Vault</button>
+        </div>
+        <div class="obsidian-settings-warning" id="obsidian-vault-warning" hidden></div>
+      </div>
+
+      <div class="obsidian-settings-stage" id="obsidian-folders-stage" hidden>
+        <div class="obsidian-settings-fields">
+          <div class="obsidian-settings-field">
+            <label for="obsidian-notes-root" data-i18n="obsidian_settings_notes_folder">Notes folder</label>
+            <div class="obsidian-settings-folder-control">
+              <input type="text" id="obsidian-notes-root" value="" placeholder="Choose a notes folder inside the Vault" readonly>
+              <button type="button" class="obsidian-settings-secondary" id="obsidian-choose-notes" data-i18n="obsidian_settings_choose">Choose</button>
+            </div>
+            <small data-i18n="obsidian_settings_notes_help">Required. Notes are saved directly here without extra root or platform folders.</small>
+          </div>
+          <div class="obsidian-settings-field">
+            <label for="obsidian-assets-root" data-i18n="obsidian_settings_assets_folder">Assets folder (optional)</label>
+            <div class="obsidian-settings-folder-control">
+              <input type="text" id="obsidian-assets-root" value="" placeholder="Uses the notes folder when not set" readonly>
+              <button type="button" class="obsidian-settings-secondary" id="obsidian-choose-assets" data-i18n="obsidian_settings_choose">Choose</button>
+              <button type="button" class="obsidian-settings-link obsidian-settings-clear-folder" id="obsidian-clear-assets" hidden data-i18n="obsidian_settings_clear">Clear</button>
+            </div>
+            <small data-i18n="obsidian_settings_assets_help">If unset, assets use the notes folder. Each sync uses an isolated asset transaction folder.</small>
+          </div>
+        </div>
+
+        <div class="obsidian-settings-preview">
+          <span data-i18n="obsidian_settings_path_preview">Path preview</span>
+          <code id="obsidian-path-preview" data-i18n="obsidian_settings_preview_empty">Choose a notes folder to preview the path</code>
+          <code id="obsidian-assets-preview"></code>
+        </div>
+
+        <div class="obsidian-settings-actions">
+          <button type="button" class="obsidian-settings-secondary" id="obsidian-disconnect" hidden data-i18n="obsidian_disconnect">Disconnect</button>
+          <button type="button" class="obsidian-settings-primary" id="obsidian-save" disabled data-i18n="obsidian_settings_verify_save">Verify and save</button>
+        </div>
+      </div>
+      <div class="obsidian-settings-result" id="obsidian-save-result" role="status" aria-live="polite"></div>
+    </section>
+
+    <section class="obsidian-settings-history" id="obsidian-history-section" hidden>
+      <div class="obsidian-settings-section-heading">
+        <div>
+          <h2 data-i18n="obsidian_settings_history">Recent syncs</h2>
+          <p data-i18n="obsidian_settings_history_desc">Only paths and status are stored. Chat content is not saved here.</p>
+        </div>
+        <button type="button" class="obsidian-settings-link" id="obsidian-refresh-history" data-i18n="obsidian_settings_refresh">Refresh</button>
+      </div>
+      <div id="obsidian-history-list" class="obsidian-settings-history-list">
+        <div class="obsidian-settings-empty" data-i18n="obsidian_settings_no_history">No Obsidian sync history yet.</div>
+      </div>
+    </section>
+  </main>
+  <script src="modules/i18n.js"></script>
+  <script src="obsidian-settings.js"></script>
+</body>
+</html>

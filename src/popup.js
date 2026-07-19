@@ -1,10 +1,11 @@
 (function initPopup() {
   "use strict";
 
-  var activeTabId = null;
+    var activeTabId = null;
   var activePlatform = "";
   var isSupportedPage = false;
   var localSettings = {};
+  var localSettingsRevision = 0;
   var isProUser = false;
   var showSubscriptionPanel = null;
   var toastTimer = null;
@@ -17,9 +18,9 @@
   var storageKey = typeof productConfig.storageKey === "function"
     ? productConfig.storageKey
     : function (name) { return "chatvault_exporter." + name; };
-  var productId = productConfig.productId || "claude_export";
-  var productSlug = productConfig.productSlug || "claude-export";
-  var productName = productConfig.productName || "Claude Export";
+  var productId = productConfig.productId || "chatvault_exporter";
+  var productSlug = productConfig.productSlug || "chatvault-exporter";
+  var productName = productConfig.productName || "AI Chat Export";
   var productPlatformLabels = productConfig.platformLabels || {};
   var supportedPlatforms = Array.isArray(productConfig.supportedPlatforms) && productConfig.supportedPlatforms.length
     ? productConfig.supportedPlatforms
@@ -31,6 +32,8 @@
   };
   var supabaseSessionStorageKey = storageKey("supabase_session.v1");
   var entitlementStateCacheKey = storageKey("entitlement_state.v1");
+  var exportSettingsStorageKey = storageKey("export_settings.v1");
+  var obsidianVisibilityStorageKey = storageKey("show_obsidian_sync.v1");
   var pendingSubscribeRequestKey = storageKey("open_subscribe_panel_request.v1");
   var pendingCheckoutIntentKey = storageKey("pending_checkout_intent.v1");
   var recentCheckoutSessionKey = storageKey("recent_checkout_session.v1");
@@ -38,26 +41,14 @@
   var checkoutFlowPromise = null;
   var authStorageListenerAttached = false;
   var locallySignedOut = false;
+  var obsidianSyncVisible = true;
+  var obsidianUiReady = false;
+  var obsidianStatus = null;
 
   function applyProductTheme(target) {
     if (productConfig && typeof productConfig.applyThemeVars === "function") {
       productConfig.applyThemeVars(target || document.documentElement);
     }
-  }
-
-  function getSupportedPlatformLabel() {
-    var labels = {
-      chatgpt: "ChatGPT",
-      claude: "Claude",
-      gemini: "Gemini"
-    };
-    var names = supportedPlatforms.map(function (platform) {
-      return productPlatformLabels[platform] || labels[platform] || platform;
-    });
-    if (!names.length) return "supported AI chat";
-    if (names.length === 1) return names[0];
-    if (names.length === 2) return names[0] + " or " + names[1];
-    return names.slice(0, -1).join(", ") + ", or " + names[names.length - 1];
   }
 
   function formatDefault(defaultText, args) {
@@ -111,6 +102,9 @@
   }
 
   function getUILanguage() {
+    if (globalThis.CHATVAULT_I18N && typeof globalThis.CHATVAULT_I18N.getLanguage === "function") {
+      return globalThis.CHATVAULT_I18N.getLanguage() || "en";
+    }
     try {
       if (typeof chrome !== "undefined" && chrome.i18n && typeof chrome.i18n.getUILanguage === "function") {
         return chrome.i18n.getUILanguage() || "en";
@@ -119,9 +113,17 @@
     return "en";
   }
 
+  function obsidianText(english, chinese) {
+    return /^zh(?:_|-|$)/i.test(getUILanguage()) ? chinese : english;
+  }
+
+  function ot(key, english, chinese, ...args) {
+    return t(key, obsidianText(english, chinese), ...args);
+  }
+
   function applyPopupI18n() {
     document.documentElement.lang = getUILanguage().replace("_", "-");
-    document.title = t("extensionShortName", productName);
+    document.title = t("extensionShortName", "AI Chat Export");
     if (globalThis.CHATVAULT_I18N && typeof globalThis.CHATVAULT_I18N.translateDOM === "function") {
       globalThis.CHATVAULT_I18N.translateDOM();
     }
@@ -135,7 +137,6 @@
 
     setText(".platform-row-title span", "popup_current_session", "Current session");
     setText(".platform-row-title strong", "popup_auto_detect_platform", "Auto-detect platform");
-    applyProductChrome();
 
     setTitle("#banner-batch-export", "popup_batch_export_title_attr", "Batch export conversations from the current platform");
     setText("#banner-batch-export .banner-text h3", "popup_batch_export_compact", "Batch Export");
@@ -146,8 +147,9 @@
 
     var oneClickTitle = document.querySelector(".one-click-section .section-header h3");
     if (oneClickTitle && oneClickTitle.firstChild) {
-      oneClickTitle.firstChild.nodeValue = t("popup_one_click_export", "One-click Export");
+      oneClickTitle.firstChild.nodeValue = t("popup_one_click_export", "One-Click Export");
     }
+    setText("#btn-copy-json", "popup_copy_json", "Copy JSON");
     setText('[data-format="pdf"] small', "popup_format_pdf_hint", "Formatted save");
     setText('[data-format="word"] small', "popup_format_word_hint", "Editable");
     setText('[data-format="markdown"] small', "popup_format_markdown_hint", "Knowledge base");
@@ -163,7 +165,11 @@
     setText(".privacy-text span", "popup_privacy_desc", "All parsing and exports happen locally in your browser. Your chat data is not uploaded.");
     setText("#quota-status-info", "popup_quota_loading", "Loading usage quota...");
 
-    setText("#panel-settings .section-card:nth-of-type(1) h3", "export_theme_label", "Export Theme & Styling");
+    var connectionsTitle = document.querySelector("#connection-settings-card h3");
+    if (connectionsTitle) connectionsTitle.textContent = obsidianText("Connections", "连接管理");
+    setText("#theme-settings-title", "export_theme_label", "Export Theme & Styling");
+    setText("#theme-tooltip-text", "export_theme_tooltip", "Themes apply only to PDF and Image exports. Other formats are not affected.");
+    setAriaLabel("#theme-help-tooltip", "export_theme_tooltip", "Themes apply only to PDF and Image exports. Other formats are not affected.");
     setText('[data-theme="default"] .theme-name', "export_theme_default", "Minimalist");
     setText('[data-theme="natural"] .theme-name', "export_theme_natural", "Natural");
     setText('[data-theme="midnight"] .theme-name', "export_theme_midnight", "Midnight Dark");
@@ -174,29 +180,45 @@
     setText('[data-theme="mckinsey"] .theme-name', "export_theme_mckinsey", "McKinsey");
     setText('[data-theme="oxford"] .theme-name', "export_theme_oxford", "Oxford");
 
-    setText("#panel-settings .section-card:nth-of-type(2) h3", "popup_settings_section_title", "Content Export Settings");
+    setText("#content-export-settings-card h3", "popup_settings_section_title", "Content Export Settings");
     setSettingTexts("toggle-title", "export_opt_title", "Conversation Title", "popup_title_desc", "Show the conversation title at the top of the document");
     setSettingTexts("toggle-time", "export_opt_time", "Export Time", "popup_time_desc", "Insert an export timestamp in the document header");
     setSettingTexts("toggle-ai-only", "export_opt_ai_only", "AI Replies Only", "popup_ai_only_desc", "Filter user prompts and keep only AI replies");
-    setSettingTexts("toggle-watermark", "popup_watermark_title", `Hide ${productName} Watermark`, "popup_watermark_desc", `Remove the ${productName} signature from the document end (Pro)`);
+    setSettingTexts("toggle-watermark", "popup_watermark_title", "Hide AI Chat Export Watermark", "popup_watermark_desc", "Remove the AI Chat Export signature from the document end (Pro)");
     setSettingTexts("toggle-source-url", "export_opt_url", "Source URL", "popup_source_url_desc", "Append the original conversation URL to the exported document");
     setSettingTexts("toggle-platform-name", "export_opt_platform", "Platform Name", "popup_platform_name_desc", "Show the source platform in the document header");
     setSettingTexts("toggle-role-labels", "export_opt_role", "Role Labels", "popup_role_labels_desc", "Show User / Assistant labels before chat content");
     setSettingTexts("toggle-align-right", "export_opt_align_right", "Align My Questions Right", "popup_align_right_desc", "Right-align your questions in PDF and image exports");
+    setSettingTexts("toggle-obsidian-sync", "popup_show_obsidian_sync", obsidianText("Show Obsidian Sync", "显示 Obsidian 同步"), "popup_show_obsidian_sync_desc", obsidianText("Show single and batch Obsidian sync in the export panel", "在导出面板显示单个与批量 Obsidian 同步"));
+    var languageTitle = document.querySelector(".language-settings-copy .toggle-title");
+    if (languageTitle) languageTitle.textContent = "Language";
+    setText('#ui-language-select option[value="system"]', "popup_language_system", "System Default");
+    var notionHeading = document.querySelector(".notion-sync-heading h3");
+    if (notionHeading) notionHeading.textContent = obsidianText("Save to Notion", "保存到 Notion");
+    setText("#btn-oauth-notion", "notion_connect", obsidianText("Connect Notion", "连接 Notion"));
+    setText("#btn-connect-notion-settings", "notion_connect", obsidianText("Connect Notion", "连接 Notion"));
+    var notionSave = document.getElementById("btn-sync-notion-oauth");
+    if (notionSave) notionSave.textContent = obsidianText("Save", "保存");
+    setText("#btn-disconnect-oauth", "notion_disconnect", obsidianText("Disconnect", "断开连接"));
+    var obsidianHeading = document.querySelector(".obsidian-sync-heading h3");
+    if (obsidianHeading) obsidianHeading.textContent = obsidianText("Save to Obsidian", "保存到 Obsidian");
+    setText("#obsidian-connection-status", "obsidian_sync_subtitle", obsidianText("Local Markdown and assets", "本地 Markdown 与资源"));
+    setText("#obsidian-settings-configure", "obsidian_configure", obsidianText("Config Obsidian", "配置 Obsidian"));
+    setText("#obsidian-sync-disconnect", "obsidian_disconnect", obsidianText("Disconnect", "断开连接"));
 
     setTitle('.footer-tab[data-tab-id="dashboard"]', "popup_export_panel_title", "Export panel");
     setText('.footer-tab[data-tab-id="dashboard"] span', "btn_export", "Export");
     setTitle('.footer-tab[data-tab-id="settings"]', "popup_export_settings_title", "Export settings");
     setText('.footer-tab[data-tab-id="settings"] span', "tab_settings", "Settings");
 
-    setText(".subscribe-header h2", "billing_title", `Upgrade To ${productName} Pro`);
+    setText(".subscribe-header h2", "billing_title", "Upgrade To AI Chat Export Pro");
     setAriaLabel("#btn-close-subscribe", "btn_cancel", "Cancel");
     setText(".subscribe-subtitle", "billing_desc", "Unlock higher local export limits, polished themes, batch workflows, and PDF, Docs, MD and More output.");
     updateSubscribeLoginWarningText();
-    setPlanCardTexts("monthly", "billing_badge_monthly", "Monthly Pro", "billing_discount_monthly", "Save 56%", "billing_plan_title_monthly", "Pro Monthly", "billing_cadence_month", "/ month");
-    setPlanCardTexts("yearly", "billing_badge_yearly", "Yearly Pro", "billing_discount_yearly", "Save 58%", "billing_plan_title_yearly", "Pro Yearly", "billing_cadence_month", "/ month");
+    setPlanCardTexts("monthly", "billing_badge_monthly", "Monthly Pro", "billing_discount_monthly", "Save 44%", "billing_plan_title_monthly", "Pro Monthly", "billing_cadence_month", "/ month");
+    setPlanCardTexts("yearly", "billing_badge_yearly", "Yearly Pro", "billing_discount_yearly", "Save 50%", "billing_plan_title_yearly", "Pro Yearly", "billing_cadence_year", "/ year");
     setText(".recommended-tag", "popup_recommended", "Recommended");
-    setPlanCardTexts("lifetime", "billing_badge_lifetime", "Lifetime Pro", "billing_discount_lifetime", "Save 69%", "billing_plan_title_lifetime", "Lifetime Early Bird", "billing_cadence_lifetime", "one-time");
+    setPlanCardTexts("lifetime", "billing_badge_lifetime", "Lifetime Pro", "billing_discount_lifetime", "Save 62%", "billing_plan_title_lifetime", "Lifetime Early Bird", "billing_cadence_lifetime", "one-time");
     ["monthly", "yearly", "lifetime"].forEach(updatePlanPriceDisplay);
     setFeatureTexts();
     var subscribeSubmit = document.getElementById("btn-subscribe-submit");
@@ -204,23 +226,12 @@
       subscribeSubmit.textContent = getCheckoutButtonLabel("yearly");
     }
     setText("#btn-subscribe-restore", "billing_btn_restore", "Restore purchase");
-    setText(".subscribe-footnote", "billing_footnote", `Exports are generated locally from the page you choose. Checkout opens on the ${productName} pricing page and is processed by a secure payment processor. ${productName} stores settings, sign-in email, and membership status only. Chat content is never saved.`);
+    setText(".subscribe-footnote", "billing_footnote", "Exports are generated locally from the page you choose. Checkout opens on the AI Chat Export pricing page and is processed by a secure payment processor. AI Chat Export stores settings, sign-in email, and membership status only. Chat content is never saved.");
 
     setText(".confirm-modal-header h3", "popup_confirm_logout_title", "Log out");
     setText(".confirm-modal-message", "popup_confirm_logout_message", "Log out of the current account?");
     setText("#confirm-btn-cancel", "btn_cancel", "Cancel");
     setText("#confirm-btn-ok", "btn_confirm", "Confirm");
-  }
-
-  function applyProductChrome() {
-    applyProductTheme(document.documentElement);
-    document.querySelectorAll(".title-container h2").forEach(function (element) {
-      element.textContent = productName;
-    });
-    document.querySelectorAll(".platform-icon-box[data-platform-id]").forEach(function (element) {
-      var platform = element.getAttribute("data-platform-id");
-      element.hidden = supportedPlatforms.indexOf(platform) === -1;
-    });
   }
 
   function setSettingTexts(inputId, titleKey, titleDefault, descKey, descDefault) {
@@ -248,13 +259,12 @@
 
   function setFeatureTexts() {
     var features = [
+      ["popup_benefit_notion_obsidian", "Notion & Obsidian sync"],
       ["popup_benefit_unlimited_exports", "Unlimited local exports"],
       ["popup_benefit_report_themes", "Publication-grade themes"],
-      ["popup_benefit_local_receipts", "Local export receipts"],
       ["popup_benefit_hide_watermark", "Hide all export watermarks"],
-      productConfig.isolatedMembership === true
-        ? ["popup_benefit_dedicated_pro", productName + " Pro access only"]
-        : ["popup_benefit_shared_pro", "Dedicated Pro access"]
+      ["popup_benefit_local_receipts", "Local export receipts"],
+      ["popup_benefit_shared_pro", "Shared Pro access"]
     ];
     document.querySelectorAll(".feature-tick-item span:last-child").forEach(function (el, index) {
       var item = features[index];
@@ -335,6 +345,10 @@
   }
 
   function openSubscribePanel(planId) {
+    if (isProUser) {
+      showToast(t("popup_pro_already_active", "Pro is already active on this account."));
+      return;
+    }
     selectSubscribePlan(planId);
     if (typeof showSubscriptionPanel === "function") {
       showSubscriptionPanel();
@@ -555,7 +569,7 @@
     return session;
   }
 
-  async function applyVerifiedPopupStateResponse(response) {
+  async function applyVerifiedPopupStateResponse(response, options) {
     if (!response || response.ok === false) {
       return false;
     }
@@ -571,7 +585,7 @@
       }
     }
 
-    return applyPopupStateResponse(response);
+    return applyPopupStateResponse(response, options);
   }
 
   async function hydrateCachedEntitlementState() {
@@ -660,7 +674,54 @@
     });
   }
 
-  function applyPopupStateResponse(response) {
+  function applyExportSettingsToControls(settings) {
+    if (!settings || typeof settings !== "object") {
+      return false;
+    }
+
+    localSettings = { ...localSettings, ...settings };
+    setToggleChecked("toggle-title", !!localSettings.show_conversation_title);
+    setToggleChecked("toggle-time", !!localSettings.show_export_time);
+    setToggleChecked("toggle-ai-only", !!localSettings.export_ai_replies_only);
+    setToggleChecked("toggle-watermark", !localSettings.show_chatvault_badge);
+    setToggleChecked("toggle-source-url", !!localSettings.include_source_url);
+    setToggleChecked("toggle-platform-name", !!localSettings.show_platform_name);
+    setToggleChecked("toggle-role-labels", !!localSettings.show_role_labels);
+    setToggleChecked("toggle-align-right", !!localSettings.align_user_messages_right);
+
+    var style = localSettings.export_style || "default";
+    var matchedTheme = false;
+    document.querySelectorAll(".theme-option").forEach(function (opt) {
+      var active = opt.getAttribute("data-theme") === style;
+      opt.classList.toggle("active", active);
+      if (active) matchedTheme = true;
+    });
+    if (!matchedTheme) {
+      var defaultTheme = document.querySelector('.theme-option[data-theme="default"]');
+      if (defaultTheme) defaultTheme.classList.add("active");
+      localSettings.export_style = "default";
+    }
+    return true;
+  }
+
+  async function loadPersistedExportSettingsIntoPopup() {
+    if (!chrome?.storage?.local) {
+      return false;
+    }
+    try {
+      var stored = await new Promise(function (resolve) {
+        chrome.storage.local.get(exportSettingsStorageKey, function (result) {
+          resolve(result || {});
+        });
+      });
+      return applyExportSettingsToControls(stored[exportSettingsStorageKey]);
+    } catch (error) {
+      console.warn("Failed to restore export settings in popup:", error);
+      return false;
+    }
+  }
+
+  function applyPopupStateResponse(response, options) {
     if (!response || response.ok === false) {
       return false;
     }
@@ -706,30 +767,10 @@
       }
     }
 
-    // 同步设置项到控制面板
-    localSettings = response.exportSettings || localSettings || {};
-
-    setToggleChecked("toggle-title", !!localSettings.show_conversation_title);
-    setToggleChecked("toggle-time", !!localSettings.show_export_time);
-    setToggleChecked("toggle-ai-only", !!localSettings.export_ai_replies_only);
-    setToggleChecked("toggle-watermark", !localSettings.show_chatvault_badge);
-    setToggleChecked("toggle-source-url", !!localSettings.include_source_url);
-    setToggleChecked("toggle-platform-name", !!localSettings.show_platform_name);
-    setToggleChecked("toggle-role-labels", !!localSettings.show_role_labels);
-    setToggleChecked("toggle-align-right", !!localSettings.align_user_messages_right);
-    sortSettingsRowsByChecked();
-
-    // 主题高亮
-    document.querySelectorAll(".theme-option").forEach(function (opt) {
-      opt.classList.remove("active");
-      if (opt.getAttribute("data-theme") === (localSettings.export_style || "default")) {
-        opt.classList.add("active");
-      }
-    });
-
-    // 同步健康度检查
-    if (response.health) {
-      renderHealthCheckUI(response.health);
+    // Once the user changes a setting in this popup, delayed state responses
+    // must not restore an older theme or toggle snapshot.
+    if (!(options && options.preserveLocalSettings)) {
+      applyExportSettingsToControls(response.exportSettings);
     }
 
     return true;
@@ -748,7 +789,9 @@
         return;
       }
 
-      applyVerifiedPopupStateResponse(message.state || message).catch(function (error) {
+      applyVerifiedPopupStateResponse(message.state || message, {
+        preserveLocalSettings: localSettingsRevision > 0
+      }).catch(function (error) {
         console.warn("Failed to apply entitlement state update:", error);
       });
     });
@@ -904,6 +947,24 @@
     latestCachedEntitlementState = null;
     isProUser = false;
 
+    notionConfig = {
+      mode: "unlinked",
+      connections: [],
+      dataSources: [],
+      connectionId: "",
+      dataSourceId: "",
+      databaseId: "",
+      workspaceName: ""
+    };
+    try {
+      await new Promise((resolve) => chrome.storage.local.remove([
+        NOTION_UI_CACHE_KEY,
+        "notion_selected_connection_id",
+        "notion_selected_data_sources"
+      ], resolve));
+    } catch (err) {}
+    updateNotionUI();
+
     var entitlements = globalThis.CHATVAULT_ENTITLEMENTS;
     var usage = await getLocalUsageSnapshot();
     var profile = entitlements ? entitlements.normalizeProfile({ plan: "free" }) : null;
@@ -984,23 +1045,28 @@
     if (el) el.checked = !!checked;
   }
 
-  function sortSettingsRowsByChecked() {
-    var card = document.getElementById("content-export-settings-card");
-    if (!card) return;
-    var rows = Array.prototype.slice.call(card.querySelectorAll(".settings-toggle-row[data-sortable-setting]"));
-    rows.forEach(function (row, index) {
-      if (!row.dataset.settingOrder) row.dataset.settingOrder = String(index);
-    });
-    rows
-      .sort(function (a, b) {
-        var aChecked = !!(a.querySelector("input[type='checkbox']")?.checked);
-        var bChecked = !!(b.querySelector("input[type='checkbox']")?.checked);
-        if (aChecked !== bChecked) return bChecked ? 1 : -1;
-        return Number(a.dataset.settingOrder || 0) - Number(b.dataset.settingOrder || 0);
-      })
-      .forEach(function (row) {
-        card.appendChild(row);
+  function applyObsidianSyncVisibility(visible) {
+    obsidianSyncVisible = visible !== false;
+    var section = document.getElementById("obsidian-sync-section");
+    var toggle = document.getElementById("toggle-obsidian-sync");
+    if (section) section.style.display = obsidianSyncVisible && obsidianUiReady ? "block" : "none";
+    if (toggle) toggle.checked = obsidianSyncVisible;
+  }
+
+  function loadObsidianSyncVisibility() {
+    return new Promise(function (resolve) {
+      chrome.storage.local.get(obsidianVisibilityStorageKey, function (stored) {
+        var visible = !stored || stored[obsidianVisibilityStorageKey] !== false;
+        applyObsidianSyncVisibility(visible);
+        resolve(visible);
       });
+    });
+  }
+
+  function saveObsidianSyncVisibility(visible) {
+    return new Promise(function (resolve) {
+      chrome.storage.local.set({ [obsidianVisibilityStorageKey]: visible !== false }, resolve);
+    });
   }
 
   function setRefreshRequired(quotaInfo) {
@@ -1015,16 +1081,104 @@
     quotaInfo.append(title, desc);
   }
 
+  function getCurrentExportSettingsFromPopup() {
+    var themeOption = document.querySelector(".theme-option.active");
+    return {
+      redaction_enabled: false,
+      show_conversation_title: document.getElementById("toggle-title") ? document.getElementById("toggle-title").checked : true,
+      show_export_time: document.getElementById("toggle-time") ? document.getElementById("toggle-time").checked : true,
+      export_ai_replies_only: document.getElementById("toggle-ai-only") ? document.getElementById("toggle-ai-only").checked : false,
+      include_prompt_appendix: false,
+      show_chatvault_badge: document.getElementById("toggle-watermark") ? !document.getElementById("toggle-watermark").checked : true,
+      include_source_url: document.getElementById("toggle-source-url") ? document.getElementById("toggle-source-url").checked : false,
+      show_platform_name: document.getElementById("toggle-platform-name") ? document.getElementById("toggle-platform-name").checked : true,
+      show_role_labels: document.getElementById("toggle-role-labels") ? document.getElementById("toggle-role-labels").checked : true,
+      align_user_messages_right: document.getElementById("toggle-align-right") ? document.getElementById("toggle-align-right").checked : true,
+      export_style: themeOption ? themeOption.getAttribute("data-theme") : "default"
+    };
+  }
+
+  function bindThemeSelection() {
+    var themeGrid = document.querySelector(".settings-theme-grid");
+    if (!themeGrid || themeGrid.dataset.bound === "true") {
+      return;
+    }
+    themeGrid.dataset.bound = "true";
+    document.querySelectorAll(".theme-option").forEach(function (opt) {
+      opt.addEventListener("click", function () {
+        var theme = opt.getAttribute("data-theme");
+        if (!isProUser && theme !== "default" && theme !== "natural") {
+          if (typeof showSubscriptionPanel === "function") {
+            showSubscriptionPanel();
+          }
+          return;
+        }
+        document.querySelectorAll(".theme-option").forEach(function (item) {
+          item.classList.remove("active");
+        });
+        opt.classList.add("active");
+        updateSettingsOnPage();
+      });
+    });
+    themeGrid.classList.remove("is-initializing");
+    themeGrid.setAttribute("aria-busy", "false");
+  }
+
+  function ensureSubscriptionPanelOpener() {
+    if (typeof showSubscriptionPanel === "function") {
+      return;
+    }
+    var subscribePanel = document.getElementById("panel-subscribe");
+    showSubscriptionPanel = function () {
+      if (subscribePanel) {
+        subscribePanel.style.display = "flex";
+        updateSubscriptionUIState();
+      }
+    };
+  }
+
   document.addEventListener("DOMContentLoaded", async function () {
+    if (globalThis.CHATVAULT_I18N && typeof globalThis.CHATVAULT_I18N.ready === "function") {
+      await globalThis.CHATVAULT_I18N.ready();
+    }
     applyPopupI18n();
+    await loadPersistedExportSettingsIntoPopup();
+    var languageSelect = document.getElementById("ui-language-select");
+    if (languageSelect && globalThis.CHATVAULT_I18N) {
+      languageSelect.value = globalThis.CHATVAULT_I18N.getSelectedLanguage?.() || "system";
+      languageSelect.addEventListener("change", async function () {
+        languageSelect.disabled = true;
+        try {
+          await globalThis.CHATVAULT_I18N.setLanguage(languageSelect.value);
+          location.reload();
+        } catch (error) {
+          languageSelect.disabled = false;
+          showToast(error?.message || t("popup_language_change_failed", "Could not change language."));
+        }
+      });
+    }
+    await loadObsidianSyncVisibility();
     listenAuthStorageChanges();
     listenContentEntitlementUpdates();
-    await hydrateCachedEntitlementState();
+    const restoredStoredAuth = await showStoredAuthStateImmediately();
+    const notionInitialization = initializeNotionSyncUI();
+    // Settings always needs the persisted Vault status, even when the dashboard
+    // Obsidian section has been hidden with the visibility toggle.
+    const obsidianInitialization = initializeObsidianSyncUI();
+    if (!restoredStoredAuth) {
+      await hydrateCachedEntitlementState();
+    }
+    ensureSubscriptionPanelOpener();
+    bindThemeSelection();
+
+    // Notion renders from its safe local UI cache while the connection and
+    // Database list are refreshed silently in the background.
+    await notionInitialization;
+    await obsidianInitialization;
 
     // 1. 初始化平台及链接监听
     document.getElementById("btn-open-chatgpt").addEventListener("click", function () {
-      var platform = supportedPlatforms[0] || "chatgpt";
-      chrome.tabs.create({ url: platformUrls[platform] || platformUrls.chatgpt });
+      chrome.tabs.create({ url: "https://chatgpt.com/" });
       window.close();
     });
 
@@ -1057,6 +1211,9 @@
       isSupportedPage = true;
       activePlatform = platform;
       hideUnsupportedPage();
+      refreshObsidianStatus().catch(function (error) {
+        console.warn("[Obsidian Sync] Could not refresh selection status:", error);
+      });
 
       // 确定平台标签
       var box = document.querySelector('[data-platform-id="' + activePlatform + '"]');
@@ -1088,31 +1245,32 @@
         if (!requireSupportedPage()) return;
         if (await blockExportIfFreeQuotaExhausted()) return;
 
-        // 读取 popup 当前最新设置，随导出消息一并发送给 content.js
-        var themeOption = document.querySelector(".theme-option.active");
-        var currentSettings = {
-          redaction_enabled: false,
-          show_conversation_title: document.getElementById("toggle-title") ? document.getElementById("toggle-title").checked : true,
-          show_export_time: document.getElementById("toggle-time") ? document.getElementById("toggle-time").checked : true,
-          export_ai_replies_only: document.getElementById("toggle-ai-only") ? document.getElementById("toggle-ai-only").checked : false,
-          include_prompt_appendix: false,
-          show_chatvault_badge: document.getElementById("toggle-watermark") ? !document.getElementById("toggle-watermark").checked : true,
-          include_source_url: document.getElementById("toggle-source-url") ? document.getElementById("toggle-source-url").checked : false,
-          show_platform_name: document.getElementById("toggle-platform-name") ? document.getElementById("toggle-platform-name").checked : true,
-          show_role_labels: document.getElementById("toggle-role-labels") ? document.getElementById("toggle-role-labels").checked : true,
-          align_user_messages_right: document.getElementById("toggle-align-right") ? document.getElementById("toggle-align-right").checked : true,
-          export_style: themeOption ? themeOption.getAttribute("data-theme") : "default"
-        };
+        var currentSettings = getCurrentExportSettingsFromPopup();
 
         sendMessageToActivePage({
           type: "CHATVAULT_POPUP_EXPORT",
           format: format,
           settings: currentSettings
-        }, {
-          closeImmediately: true
         });
       });
     });
+
+    var copyJsonButton = document.getElementById("btn-copy-json");
+    if (copyJsonButton) {
+      copyJsonButton.addEventListener("click", async function () {
+        if (!requireSupportedPage()) return;
+        if (await blockExportIfFreeQuotaExhausted()) return;
+        copyJsonButton.disabled = true;
+        sendMessageToActivePage({
+          type: "CHATVAULT_POPUP_EXPORT",
+          format: "json",
+          copyToClipboard: true,
+          settings: getCurrentExportSettingsFromPopup()
+        }, {
+          onError: function () { copyJsonButton.disabled = false; }
+        });
+      });
+    }
 
     // 5. 绑定自定义选择导出
     document.getElementById("banner-custom-export").addEventListener("click", async function () {
@@ -1134,46 +1292,38 @@
               if (typeof showSubscriptionPanel === "function") {
                 showSubscriptionPanel();
               }
-              sortSettingsRowsByChecked();
               return;
             }
           }
-          sortSettingsRowsByChecked();
           updateSettingsOnPage();
         });
       }
     });
 
-    // 9. 绑定主题风格选择
-    document.querySelectorAll(".theme-option").forEach(function (opt) {
-      opt.addEventListener("click", function () {
-        var theme = opt.getAttribute("data-theme");
-        if (!isProUser && theme !== "default" && theme !== "natural") {
-          if (typeof showSubscriptionPanel === "function") {
-            showSubscriptionPanel();
-          }
-          return;
-        }
-        document.querySelectorAll(".theme-option").forEach(function (o) { o.classList.remove("active"); });
-        opt.classList.add("active");
-        updateSettingsOnPage();
+    var obsidianVisibilityToggle = document.getElementById("toggle-obsidian-sync");
+    if (obsidianVisibilityToggle) {
+      obsidianVisibilityToggle.addEventListener("change", async function () {
+        var visible = obsidianVisibilityToggle.checked;
+        applyObsidianSyncVisibility(visible);
+        await saveObsidianSyncVisibility(visible);
+        if (visible) initializeObsidianSyncUI().catch(function (error) {
+          console.warn("[Obsidian Sync] UI initialization failed:", error);
+        });
       });
-    });
+    }
 
     // === VIP 订阅面板内嵌绑定逻辑 ===
     var subscribePanel = document.getElementById("panel-subscribe");
-
-    showSubscriptionPanel = function () {
-      if (subscribePanel) {
-        subscribePanel.style.display = "flex";
-        updateSubscriptionUIState();
-      }
-    };
+    ensureSubscriptionPanelOpener();
 
     var proCrown = document.getElementById("pro-crown-indicator");
     if (proCrown) {
       proCrown.onclick = function (e) {
         if (e) e.preventDefault();
+        if (isProUser) {
+          showToast(t("popup_pro_already_active", "Pro is already active on this account."));
+          return;
+        }
         showSubscriptionPanel();
       };
     }
@@ -1203,6 +1353,13 @@
       var submitBtn = document.getElementById("btn-subscribe-submit");
       if (!checkedRadio || !submitBtn) return;
 
+      if (isProUser) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = t("popup_pro_already_active", "Pro is already active on this account.");
+        return;
+      }
+
+      submitBtn.disabled = false;
       var planVal = checkedRadio.value;
       submitBtn.textContent = getCheckoutButtonLabel(planVal);
 
@@ -1232,10 +1389,11 @@
           updateSubscriptionUIState();
           showToast(t("popup_checkout_signed_in_retry", "Signed in. Select your plan and click Continue again to open checkout."));
         } catch (err) {
+          // Closing or declining Google OAuth is normal cancellation, not an
+          // extension error. Real sign-in failures remain visible to the user.
+          if (isAuthCancelledError(err)) return;
           console.error("Checkout sign-in error:", err);
-          if (!isAuthCancelledError(err)) {
-            showToast(getCheckoutErrorMessage(err));
-          }
+          showToast(getCheckoutErrorMessage(err));
         }
       };
     }
@@ -1245,6 +1403,10 @@
     if (subscribeSubmitBtn) {
       subscribeSubmitBtn.onclick = async function (e) {
         if (e) e.preventDefault();
+        if (isProUser) {
+          showToast(t("popup_pro_already_active", "Pro is already active on this account."));
+          return;
+        }
 
         var planId = getSelectedSubscribePlanId();
 
@@ -1303,14 +1465,9 @@
         try {
           var api = globalThis.CHATVAULT_SUPABASE_API;
           if (api && session.access_token) {
-            await api.request("/functions/v1/product-sync-subscription-status", {
+            await api.request("/functions/v1/sync-subscription-status", {
               accessToken: session.access_token,
-              method: "POST",
-              body: {
-                product_id: productId,
-                product_slug: productSlug,
-                product_name: productName
-              }
+              method: "POST"
             });
             showToast(t("popup_restore_submitted", "Restore request submitted. Close and reopen the popup to see the latest status."));
             if (isSupportedPage && activeTabId) {
@@ -1356,8 +1513,6 @@
     document.querySelectorAll(".platform-icon-box").forEach(function (box) {
       box.classList.remove("active");
     });
-    var panel = document.getElementById("health-warning-container");
-    if (panel) panel.innerHTML = "";
   }
 
   function hideUnsupportedPage() {
@@ -1383,15 +1538,12 @@
   }
 
   function showUnsupportedToast() {
-    showToast(t("toast_no_open_chat", "Open a " + getSupportedPlatformLabel() + " conversation to export."));
+    showToast(t("toast_no_open_chat", "Open a ChatGPT, Claude, or Gemini conversation to export."));
   }
 
   function showToast(message) {
     var toast = document.getElementById("popup-toast");
     if (!toast) return;
-    if (toast.parentElement !== document.body) {
-      document.body.appendChild(toast);
-    }
     toast.textContent = message;
     toast.classList.add("active");
     if (toastTimer) clearTimeout(toastTimer);
@@ -1403,18 +1555,14 @@
   function sendMessageToActivePage(payload, options) {
     if (!requireSupportedPage()) return;
     options = options || {};
-    var closeDelay = Number.isFinite(Number(options.closeDelay)) ? Number(options.closeDelay) : 150;
-    if (options.closeImmediately) {
-      setTimeout(function () {
-        window.close();
-      }, Number.isFinite(Number(options.closeDelay)) ? Number(options.closeDelay) : 0);
-    }
     chrome.tabs.sendMessage(activeTabId, payload, function (response) {
       if (chrome.runtime.lastError) {
+        if (typeof options.onError === "function") options.onError(chrome.runtime.lastError);
         showToast(t("popup_refresh_page_retry", "Please refresh the current AI conversation page and try again."));
         return;
       }
       if (response && response.ok === false) {
+        if (typeof options.onError === "function") options.onError(response);
         showToast(response.error || t("popup_operation_failed", "Operation failed. Please try again later."));
         return;
       }
@@ -1428,12 +1576,9 @@
         refreshPopupState(true);
         return;
       }
-      if (options.closeImmediately) {
-        return;
-      }
       setTimeout(function () {
         window.close();
-      }, closeDelay);
+      }, Number.isFinite(Number(options.closeDelay)) ? Number(options.closeDelay) : 150);
     });
   }
 
@@ -1480,7 +1625,7 @@
 
   function getCheckoutErrorMessage(error) {
     if (isBackendSchemaCacheError(error)) {
-      return t("popup_checkout_service_syncing", `Checkout service is updating. Please reopen ${productName} and try again in a moment.`);
+      return t("popup_checkout_service_syncing", "Checkout service is updating. Please reopen AI Chat Export and try again in a moment.");
     }
     if (isCheckoutRateLimitedError(error)) {
       return t("popup_checkout_rate_limited", "Checkout is already being prepared. Please wait a moment and try again.");
@@ -1681,8 +1826,8 @@
         if (!confirmed) {
           return;
         }
-        await sendLogoutToActivePage();
         await auth.signOut();
+        await sendLogoutToActivePage();
         await showSignedOutStateImmediately();
         showToast(t("popup_signed_out", "Signed out."));
         return;
@@ -1720,49 +1865,12 @@
         return;
       }
 
-      applyVerifiedPopupStateResponse(response).catch(function (error) {
+      applyVerifiedPopupStateResponse(response, {
+        preserveLocalSettings: localSettingsRevision > 0
+      }).catch(function (error) {
         console.warn("Failed to apply popup state response:", error);
       });
     });
-  }
-
-  // 渲染健康度 UI (复用逻辑)
-  function renderHealthCheckUI(health) {
-    var panel = document.getElementById("health-warning-container");
-    panel.innerHTML = "";
-    if (health.status === "ready") return;
-
-    var visibleIssues = (health.issues || []).filter(function (issue) {
-      return issue && issue.id !== "empty_conversation";
-    });
-    if (visibleIssues.length === 0) return;
-
-    var cssClass = "success";
-    var titleText = "Ready to Export";
-
-    var hasHighRisk = visibleIssues.some(function (issue) { return issue.severity === "high_risk"; });
-    var hasAttention = visibleIssues.some(function (issue) { return issue.severity === "attention"; });
-
-    if (hasHighRisk) {
-      cssClass = "danger";
-      titleText = t("popup_health_high_risk", "High Risk Issues");
-    } else if (hasAttention || health.status === "attention") {
-      cssClass = "warning";
-      titleText = t("popup_health_attention", "Attention Required");
-    }
-
-    var issuesHtml = "";
-    if (visibleIssues.length > 0) {
-      issuesHtml = '<ul class="info-panel-list">' +
-        visibleIssues.map(function (iss) { return "<li>" + escapeHtml(iss.message || "") + "</li>"; }).join("") +
-        "</ul>";
-    }
-
-    panel.innerHTML = 
-      '<div class="info-panel ' + cssClass + '">' +
-        '<div class="info-panel-title">' + escapeHtml(titleText) + '</div>' +
-        issuesHtml +
-      '</div>';
   }
 
   // 向页面推送修改后的设置项
@@ -1784,6 +1892,15 @@
       export_style: style
     };
 
+    localSettingsRevision += 1;
+    localSettings = nextSettings;
+
+    if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
+      try {
+        chrome.storage.local.set({ [exportSettingsStorageKey]: nextSettings });
+      } catch (e) {}
+    }
+
     if (!activeTabId || !isSupportedPage) {
       localSettings = nextSettings;
       return;
@@ -1800,8 +1917,7 @@
       }
       // settings 已同步到 content.js，content.js 端会自动使缓存失效。
       // 不需要在这里再次全量拉取状态（会触发不必要的健康检查和隐私断言计算）。
-      // 本地 localSettings 记录最新值即可。
-      localSettings = nextSettings;
+      // localSettings 在发送消息前已经同步，避免旧异步响应覆盖当前选择。
     });
   }
 
@@ -1814,15 +1930,12 @@
     }
 
     try {
-      var result = await api.request("/functions/v1/product-verify-export-entitlement", {
+      var result = await api.request("/functions/v1/verify-export-entitlement", {
         accessToken: session.access_token,
         method: "POST",
         body: {
           requested_count: 1,
-          consume: false,
-          product_id: productId,
-          product_slug: productSlug,
-          product_name: productName
+          consume: false
         }
       });
       if (!result || result.ok === false) {
@@ -2013,11 +2126,13 @@
         return;
       }
 
-      modal.classList.remove("confirm-modal-checkout", "confirm-modal-danger");
+      modal.classList.remove("confirm-modal-checkout", "confirm-modal-danger", "confirm-modal-notion");
       if (options.variant === "checkout") {
         modal.classList.add("confirm-modal-checkout");
       } else if (options.variant === "danger") {
         modal.classList.add("confirm-modal-danger");
+      } else if (options.variant === "notion") {
+        modal.classList.add("confirm-modal-notion");
       }
 
       // 更新文本
@@ -2026,7 +2141,17 @@
       var msgEl = modal.querySelector(".confirm-modal-message");
       if (msgEl) msgEl.textContent = message;
       var iconEl = modal.querySelector(".confirm-modal-icon");
-      if (iconEl) iconEl.textContent = options.icon || "?";
+      if (iconEl) {
+        iconEl.replaceChildren();
+        if (options.iconUrl) {
+          var iconImage = document.createElement("img");
+          iconImage.src = options.iconUrl;
+          iconImage.alt = "";
+          iconEl.appendChild(iconImage);
+        } else {
+          iconEl.textContent = options.icon || "?";
+        }
+      }
 
       // 显示弹窗并启动渐入动画
       modal.style.display = "flex";
@@ -2042,7 +2167,7 @@
         modal.classList.remove("active");
         setTimeout(function () {
           modal.style.display = "none";
-          modal.classList.remove("confirm-modal-checkout", "confirm-modal-danger");
+          modal.classList.remove("confirm-modal-checkout", "confirm-modal-danger", "confirm-modal-notion");
         }, 180);
         btnCancel.onclick = null;
         btnOk.onclick = null;
@@ -2099,4 +2224,782 @@
     }
 
   }
+
+  // ====== Notion Sync UI & Logic Integration ======
+  let notionConfig = {
+    mode: "unlinked",
+    connections: [],
+    dataSources: [],
+    connectionId: "",
+    dataSourceId: "",
+    databaseId: "",
+    workspaceName: ""
+  };
+  const NOTION_UI_CACHE_KEY = "chatvault_notion_ui_cache_v1";
+  let notionUiInitialized = false;
+
+  function notionCacheUserId(stored) {
+    return String(stored?.chatvault_supabase_session?.user?.id || "");
+  }
+
+  function safeCachedConnections(connections) {
+    return (Array.isArray(connections) ? connections : []).filter((item) => item?.mode === "oauth").slice(0, 20).map((item) => ({
+      id: String(item?.id || "").slice(0, 200),
+      mode: "oauth",
+      workspace_name: String(item?.workspace_name || "").slice(0, 200),
+      data_source_id: String(item?.data_source_id || "").slice(0, 200)
+    })).filter((item) => item.id);
+  }
+
+  function safeCachedDataSources(dataSources) {
+    return (Array.isArray(dataSources) ? dataSources : []).slice(0, 500).map((item) => ({
+      id: String(item?.id || "").slice(0, 200),
+      databaseId: String(item?.databaseId || "").slice(0, 200),
+      title: String(item?.title || "Untitled Database").slice(0, 300),
+      connectionId: String(item?.connectionId || "").slice(0, 200),
+      workspaceName: String(item?.workspaceName || "").slice(0, 200)
+    })).filter((item) => item.id && item.connectionId);
+  }
+
+  function hydrateNotionUiCache(stored) {
+    const cache = stored?.[NOTION_UI_CACHE_KEY];
+    if (!cache || cache.version !== 1 || cache.userId !== notionCacheUserId(stored)) return false;
+    if (cache.mode !== "oauth" && cache.mode !== "unlinked") return false;
+    const connections = safeCachedConnections(cache.connections);
+    const dataSources = safeCachedDataSources(cache.dataSources);
+    if (cache.mode === "oauth" && !connections.some((item) => item.id === cache.connectionId)) return false;
+    notionConfig = {
+      mode: cache.mode,
+      connections,
+      dataSources,
+      connectionId: String(cache.connectionId || ""),
+      dataSourceId: String(cache.dataSourceId || ""),
+      databaseId: String(cache.databaseId || ""),
+      workspaceName: String(cache.workspaceName || "")
+    };
+    return true;
+  }
+
+  function buildNotionUiCache(stored) {
+    return {
+      version: 1,
+      userId: notionCacheUserId(stored),
+      mode: notionConfig.mode === "oauth" ? "oauth" : "unlinked",
+      connections: safeCachedConnections(notionConfig.connections).filter((item) => item.mode === "oauth"),
+      dataSources: safeCachedDataSources(notionConfig.dataSources),
+      connectionId: notionConfig.connectionId,
+      dataSourceId: notionConfig.dataSourceId,
+      databaseId: notionConfig.databaseId,
+      workspaceName: notionConfig.workspaceName,
+      updatedAt: Date.now()
+    };
+  }
+
+  function notionBackgroundMessage(payload) {
+    return new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage(payload, (response) => {
+        const lastError = chrome.runtime.lastError;
+        if (lastError) return reject(new Error(lastError.message));
+        if (!response || !response.ok) return reject(new Error(response?.error || "Notion background request failed."));
+        resolve(response);
+      });
+    });
+  }
+
+  function getStoredNotionSelection() {
+    return new Promise((resolve) => {
+      chrome.storage.local.get([
+        "notion_selected_connection_id",
+        "notion_selected_data_sources",
+        "chatvault_supabase_session",
+        NOTION_UI_CACHE_KEY,
+        "notion_token",
+        "notion_db_id"
+      ], resolve);
+    });
+  }
+
+  async function cleanupLegacyManualNotionConfig(stored) {
+    if (!stored.notion_token && !stored.notion_db_id) return;
+    await new Promise((resolve) => chrome.storage.local.remove(["notion_token", "notion_db_id"], resolve));
+  }
+
+  async function loadNotionConfig(storedInput) {
+    const stored = storedInput || await getStoredNotionSelection();
+    try {
+      await cleanupLegacyManualNotionConfig(stored);
+    } catch (error) {
+      console.warn("[Notion Sync] Legacy manual configuration cleanup failed:", error);
+    }
+
+    let connections;
+    try {
+      const response = await notionBackgroundMessage({ type: "CHATVAULT_NOTION_LIST_CONNECTIONS" });
+      connections = (response.connections || []).filter((item) => item?.mode === "oauth");
+    } catch (error) {
+      console.warn("[Notion Sync] Failed to load connections:", error);
+      return false;
+    }
+
+    const selectedConnection = connections.find((item) => item.id === stored.notion_selected_connection_id) ||
+      connections[0] || null;
+    const selectedSources = stored.notion_selected_data_sources || {};
+    const availableConnectionIds = new Set(connections.map((item) => item.id));
+    const cachedDataSources = (notionConfig.dataSources || []).filter((item) => availableConnectionIds.has(item.connectionId));
+    notionConfig.connections = connections;
+    notionConfig.dataSources = cachedDataSources;
+    notionConfig.connectionId = selectedConnection?.id || "";
+    notionConfig.mode = selectedConnection ? "oauth" : "unlinked";
+    notionConfig.workspaceName = selectedConnection?.workspace_name || "";
+    notionConfig.dataSourceId = selectedSources[notionConfig.connectionId] ||
+      cachedDataSources.find((item) => item.connectionId === notionConfig.connectionId && item.id === notionConfig.dataSourceId)?.id ||
+      selectedConnection?.data_source_id || "";
+    notionConfig.databaseId = cachedDataSources.find((item) => (
+      item.connectionId === notionConfig.connectionId && item.id === notionConfig.dataSourceId
+    ))?.databaseId || "";
+    return true;
+  }
+
+  async function saveNotionSelection(storedInput) {
+    const stored = storedInput || await getStoredNotionSelection();
+    const sources = { ...(stored.notion_selected_data_sources || {}) };
+    if (notionConfig.connectionId && notionConfig.dataSourceId) {
+      sources[notionConfig.connectionId] = notionConfig.dataSourceId;
+    }
+    await new Promise((resolve) => chrome.storage.local.set({
+      notion_selected_connection_id: notionConfig.connectionId,
+      notion_selected_data_sources: sources,
+      [NOTION_UI_CACHE_KEY]: buildNotionUiCache(stored)
+    }, resolve));
+  }
+
+  function updateNotionUI() {
+    const unlinkedView = document.getElementById("notion-unlinked-view");
+    const oauthView = document.getElementById("notion-oauth-view");
+    const connectionStatus = document.getElementById("notion-connection-status");
+    const settingsStatus = document.getElementById("notion-settings-status");
+    const disconnectButton = document.getElementById("btn-disconnect-oauth");
+    const settingsConnectButton = document.getElementById("btn-connect-notion-settings");
+    if (unlinkedView) unlinkedView.style.display = "none";
+    if (oauthView) oauthView.style.display = "none";
+
+    if (notionConfig.mode === "oauth") {
+      if (oauthView) oauthView.style.display = "block";
+      const connectedLabel = notionConfig.workspaceName || t("notion_connected", "Connected");
+      if (connectionStatus) connectionStatus.textContent = connectedLabel;
+      if (settingsStatus) settingsStatus.textContent = connectedLabel;
+      if (disconnectButton) disconnectButton.hidden = false;
+      if (settingsConnectButton) settingsConnectButton.hidden = true;
+      renderNotionDataSourceOptions();
+    } else {
+      if (unlinkedView) unlinkedView.style.display = "block";
+      const unlinkedLabel = t("notion_not_connected", obsidianText("Not connected", "尚未连接"));
+      if (connectionStatus) connectionStatus.textContent = unlinkedLabel;
+      if (settingsStatus) settingsStatus.textContent = unlinkedLabel;
+      if (disconnectButton) disconnectButton.hidden = true;
+      if (settingsConnectButton) settingsConnectButton.hidden = false;
+    }
+  }
+
+  async function loadSharedDataSourcesDropdown(options = {}) {
+    const dbSelect = document.getElementById("notion-db-select");
+    const oauthConnections = (notionConfig.connections || []).filter((item) => item.mode === "oauth");
+    if (!dbSelect || !oauthConnections.length) return;
+    const previousDataSources = notionConfig.dataSources || [];
+    try {
+      const responses = await Promise.all(oauthConnections.map(async (connection) => {
+        try {
+          const response = await notionBackgroundMessage({
+            type: "CHATVAULT_NOTION_SEARCH_DATA_SOURCES",
+            connectionId: connection.id
+          });
+          return {
+            connectionId: connection.id,
+            ok: true,
+            dataSources: (response.dataSources || []).map((dataSource) => ({
+              ...dataSource,
+              connectionId: connection.id,
+              workspaceName: connection.workspace_name || ""
+            }))
+          };
+        } catch (error) {
+          console.warn("[Notion Sync] Could not load Databases for a connection:", error);
+          return { connectionId: connection.id, ok: false, dataSources: [] };
+        }
+      }));
+      const successfulConnections = new Set(responses.filter((item) => item.ok).map((item) => item.connectionId));
+      if (!successfulConnections.size && options.preserveExisting === true && previousDataSources.length) {
+        renderNotionDataSourceOptions();
+        return false;
+      }
+      const dataSources = [
+        ...responses.flatMap((item) => item.dataSources),
+        ...previousDataSources.filter((item) => !successfulConnections.has(item.connectionId))
+      ];
+      notionConfig.dataSources = dataSources;
+      let selected = dataSources.find((item) => (
+        item.connectionId === notionConfig.connectionId && item.id === notionConfig.dataSourceId
+      ));
+      if (!selected) {
+        selected = dataSources[0] || null;
+        notionConfig.connectionId = selected?.connectionId || "";
+        notionConfig.dataSourceId = selected?.id || "";
+      }
+      notionConfig.databaseId = selected?.databaseId || "";
+      dbSelect.disabled = false;
+      renderNotionDataSourceOptions();
+      await saveNotionSelection();
+      return true;
+    } catch (error) {
+      if (options.preserveExisting === true && previousDataSources.length) {
+        notionConfig.dataSources = previousDataSources;
+        renderNotionDataSourceOptions();
+      } else {
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = `拉取失败 (${error && error.message ? error.message : "unknown error"})`;
+        dbSelect.replaceChildren(option);
+      }
+      return false;
+    }
+  }
+
+  function renderNotionDataSourceOptions() {
+    const dbSelect = document.getElementById("notion-db-select");
+    if (!dbSelect) return;
+    const dataSources = notionConfig.dataSources || [];
+    dbSelect.innerHTML = "";
+    if (!dataSources.length) {
+      const option = document.createElement("option");
+      option.value = "";
+      option.textContent = t("notion_no_data_source", "No authorized Database found");
+      dbSelect.appendChild(option);
+      dbSelect.disabled = true;
+      return;
+    }
+    const workspaceCount = new Set(dataSources.map((item) => item.connectionId)).size;
+    dataSources.forEach((dataSource) => {
+      const option = document.createElement("option");
+      option.value = `${dataSource.connectionId}:${dataSource.id}`;
+      option.dataset.connectionId = dataSource.connectionId || "";
+      option.dataset.dataSourceId = dataSource.id || "";
+      option.dataset.databaseId = dataSource.databaseId || "";
+      option.textContent = workspaceCount > 1 && dataSource.workspaceName
+        ? `${dataSource.title} / ${dataSource.workspaceName}`
+        : dataSource.title;
+      option.selected = dataSource.connectionId === notionConfig.connectionId && dataSource.id === notionConfig.dataSourceId;
+      dbSelect.appendChild(option);
+    });
+    dbSelect.disabled = false;
+    dbSelect.onchange = async function () {
+      if (!dbSelect.value) return;
+      const selectedOption = dbSelect.selectedOptions[0];
+      notionConfig.connectionId = selectedOption?.dataset.connectionId || "";
+      notionConfig.dataSourceId = selectedOption?.dataset.dataSourceId || "";
+      notionConfig.databaseId = selectedOption?.dataset.databaseId || "";
+      await saveNotionSelection();
+    };
+  }
+
+  async function refreshNotionUi(options = {}) {
+    const loaded = await loadNotionConfig(options.stored);
+    if (!loaded) return false;
+
+    if (notionConfig.mode === "oauth") {
+      const hasCachedOauthView = options.cachedMode === "oauth";
+      if (hasCachedOauthView) updateNotionUI();
+      await loadSharedDataSourcesDropdown({
+        preserveExisting: hasCachedOauthView
+      });
+      updateNotionUI();
+      return true;
+    }
+
+    updateNotionUI();
+    await saveNotionSelection(options.stored);
+    return true;
+  }
+
+  function notionStatusLabel(status) {
+    return {
+      held: "准备同步",
+      pending: "等待同步",
+      running: "正在同步",
+      retry_wait: "等待重试",
+      succeeded: "同步成功",
+      partial: "完成但有降级",
+      failed: "同步失败",
+      cancelled: "已取消"
+    }[status] || status;
+  }
+
+  function renderNotionJob(job) {
+    const container = document.getElementById("notion-job-status");
+    if (!container) return;
+    if (!job) {
+      container.style.display = "none";
+      return;
+    }
+    container.style.display = "block";
+    container.innerHTML = "";
+    const summary = document.createElement("div");
+    summary.textContent = `${notionStatusLabel(job.status)} · ${job.progress || 0}%${job.warningCount ? ` · ${job.warningCount} warnings` : ""}`;
+    container.appendChild(summary);
+    if (job.errorMessage) {
+      const error = document.createElement("div");
+      error.style.color = "#ef4444";
+      error.textContent = job.errorMessage;
+      container.appendChild(error);
+    }
+    if (Array.isArray(job.warnings) && job.warnings.length) {
+      const warnings = document.createElement("ul");
+      warnings.style.margin = "5px 0 0 14px";
+      warnings.style.padding = "0";
+      job.warnings.slice(0, 3).forEach((warning) => {
+        const item = document.createElement("li");
+        item.textContent = warning.detail || warning.code;
+        warnings.appendChild(item);
+      });
+      container.appendChild(warnings);
+    }
+    const actions = document.createElement("div");
+    actions.style.marginTop = "5px";
+    if (["held", "pending", "running", "retry_wait"].includes(job.status)) {
+      const cancel = document.createElement("button");
+      cancel.className = "notion-save-btn";
+      cancel.textContent = "取消任务";
+      cancel.onclick = async () => {
+        const response = await notionBackgroundMessage({ type: "CHATVAULT_NOTION_CANCEL_JOB", jobId: job.id });
+        renderNotionJob(response.job);
+      };
+      actions.appendChild(cancel);
+    }
+    if (job.status === "failed") {
+      const retry = document.createElement("button");
+      retry.className = "notion-save-btn";
+      retry.textContent = "重试";
+      retry.onclick = async () => {
+        const response = await notionBackgroundMessage({ type: "CHATVAULT_NOTION_RETRY_JOB", jobId: job.id });
+        renderNotionJob(response.job);
+      };
+      actions.appendChild(retry);
+    }
+    if (["failed", "cancelled", "succeeded", "partial"].includes(job.status)) {
+      const clear = document.createElement("button");
+      clear.className = "notion-save-btn";
+      clear.textContent = t("notion_clear_task", "Clear local task");
+      clear.style.marginLeft = "5px";
+      clear.onclick = async () => {
+        await notionBackgroundMessage({ type: "CHATVAULT_NOTION_CLEAR_JOB", jobId: job.id });
+        renderNotionJob(null);
+      };
+      actions.appendChild(clear);
+    }
+    if (job.notionPageUrl) {
+      const open = document.createElement("button");
+      open.className = "notion-save-btn";
+      open.textContent = "打开 Notion";
+      open.style.marginLeft = "5px";
+      open.onclick = () => chrome.tabs.create({ url: job.notionPageUrl });
+      actions.appendChild(open);
+    }
+    if (actions.childNodes.length) container.appendChild(actions);
+  }
+
+  async function loadRecentNotionJobs() {
+    try {
+      const response = await notionBackgroundMessage({ type: "CHATVAULT_NOTION_LIST_JOBS" });
+      renderNotionJob((response.jobs || [])[0] || null);
+    } catch (error) {
+      console.warn("[Notion Sync] Could not load job status:", error);
+    }
+  }
+
+  async function triggerNotionSync() {
+    if (!requireSupportedPage()) return;
+    if (await blockExportIfFreeQuotaExhausted()) return;
+
+    if (!notionConfig.connectionId || !notionConfig.dataSourceId) {
+      showToast("请先选择一个 Notion Database。");
+      return;
+    }
+
+    const themeOption = document.querySelector(".theme-option.active");
+    const currentSettings = {
+      redaction_enabled: false,
+      show_conversation_title: document.getElementById("toggle-title") ? document.getElementById("toggle-title").checked : true,
+      show_export_time: document.getElementById("toggle-time") ? document.getElementById("toggle-time").checked : true,
+      export_ai_replies_only: document.getElementById("toggle-ai-only") ? document.getElementById("toggle-ai-only").checked : false,
+      include_prompt_appendix: false,
+      show_chatvault_badge: document.getElementById("toggle-watermark") ? !document.getElementById("toggle-watermark").checked : true,
+      include_source_url: document.getElementById("toggle-source-url") ? document.getElementById("toggle-source-url").checked : false,
+      show_platform_name: document.getElementById("toggle-platform-name") ? document.getElementById("toggle-platform-name").checked : true,
+      show_role_labels: document.getElementById("toggle-role-labels") ? document.getElementById("toggle-role-labels").checked : true,
+      align_user_messages_right: document.getElementById("toggle-align-right") ? document.getElementById("toggle-align-right").checked : true,
+      export_style: themeOption ? themeOption.getAttribute("data-theme") : "default"
+    };
+
+    sendMessageToActivePage({
+      type: "CHATVAULT_POPUP_NOTION_SYNC",
+      config: {
+        connectionId: notionConfig.connectionId,
+        dataSourceId: notionConfig.dataSourceId,
+        databaseId: notionConfig.databaseId,
+        alwaysCreate: true,
+        settings: currentSettings
+      }
+    }, function(response) {
+      if (response && response.ok) {
+        window.close();
+      } else {
+        showToast("同步请求发送失败，请确认页面已刷新并且就绪。");
+      }
+    });
+  }
+
+  async function connectNotionWorkspace() {
+    const buttons = [
+      document.getElementById("btn-oauth-notion"),
+      document.getElementById("btn-connect-notion-settings")
+    ].filter(Boolean);
+    const auth = globalThis.CHATVAULT_SUPABASE_AUTH;
+    buttons.forEach((button) => { button.disabled = true; });
+    try {
+      let session = auth ? await auth.getSession({ skipUserRefresh: true }).catch(() => null) : null;
+      if (!hasActiveAuthSession(session)) {
+        const confirmed = await showCustomConfirm(
+          t("onboard_title_login", "Sign in to continue"),
+          t("notion_signin_required", "Sign in first. After sign-in, click Connect Notion again to authorize your workspace."),
+          {
+            okText: t("popup_btn_login", "Sign In"),
+            cancelText: t("btn_cancel", "Cancel"),
+            variant: "notion",
+            iconUrl: chrome.runtime.getURL("images/notion-app-icon.svg")
+          }
+        );
+        if (!confirmed) return;
+        if (!auth || typeof auth.signInWithGoogle !== "function") {
+          showToast(t("popup_login_service_unavailable", "Sign-in is temporarily unavailable. Please refresh and try again."));
+          return;
+        }
+        session = await auth.signInWithGoogle();
+        if (!hasActiveAuthSession(session)) {
+          session = await auth.getSession?.({ skipUserRefresh: false, allowStaleOnError: false }).catch(() => null);
+        }
+        if (!hasActiveAuthSession(session)) {
+          showToast(t("popup_login_incomplete", "Sign-in was not completed. Please try again."));
+          return;
+        }
+        await showStoredAuthStateImmediately();
+        refreshPopupState(true);
+        showToast(t("notion_signin_again", "Signed in. Click Connect Notion again to continue."));
+        return;
+      }
+      showToast(t("notion_oauth_opening", "Opening Notion authorization..."));
+      await notionBackgroundMessage({ type: "CHATVAULT_NOTION_START_OAUTH" });
+      await refreshNotionUi();
+      showToast(t("notion_oauth_success", "Notion connected."));
+    } catch (error) {
+      showToast(t("notion_oauth_failed", "Notion connection failed: $1", error.message));
+    } finally {
+      buttons.forEach((button) => { button.disabled = false; });
+    }
+  }
+
+  async function disconnectNotionWorkspace() {
+    const button = document.getElementById("btn-disconnect-oauth");
+    if (!notionConfig.connectionId) return;
+    if (button) button.disabled = true;
+    try {
+      await notionBackgroundMessage({
+        type: "CHATVAULT_NOTION_DISCONNECT",
+        connectionId: notionConfig.connectionId
+      });
+      notionConfig = {
+        mode: "unlinked",
+        connections: [],
+        dataSources: [],
+        connectionId: "",
+        dataSourceId: "",
+        databaseId: "",
+        workspaceName: ""
+      };
+      await refreshNotionUi();
+      showToast(obsidianText("Notion disconnected.", "已断开 Notion。"));
+    } catch (error) {
+      showToast(obsidianText(`Could not disconnect Notion: ${error.message}`, `无法断开 Notion：${error.message}`));
+    } finally {
+      if (button) button.disabled = false;
+    }
+  }
+
+  async function initializeNotionSyncUI() {
+    if (notionUiInitialized) return;
+    notionUiInitialized = true;
+    const notionSection = document.getElementById("notion-sync-section");
+    if (notionSection) notionSection.style.display = "block";
+
+    // Bind actions before the silent connection refresh so the cached/unlinked
+    // first paint is immediately interactive when the popup is reopened.
+    const oauthBtn = document.getElementById("btn-oauth-notion");
+    if (oauthBtn) {
+      oauthBtn.addEventListener("click", connectNotionWorkspace);
+    }
+    const settingsConnectBtn = document.getElementById("btn-connect-notion-settings");
+    if (settingsConnectBtn) {
+      settingsConnectBtn.addEventListener("click", connectNotionWorkspace);
+    }
+    const syncNotionOauthBtn = document.getElementById("btn-sync-notion-oauth");
+    if (syncNotionOauthBtn) {
+      syncNotionOauthBtn.addEventListener("click", triggerNotionSync);
+    }
+    const disconnectOauthBtn = document.getElementById("btn-disconnect-oauth");
+    if (disconnectOauthBtn) {
+      disconnectOauthBtn.addEventListener("click", disconnectNotionWorkspace);
+    }
+
+    const stored = await getStoredNotionSelection();
+    const hasCachedUi = hydrateNotionUiCache(stored);
+    const cachedMode = hasCachedUi ? notionConfig.mode : "";
+    if (!hasCachedUi) {
+      notionConfig.mode = "unlinked";
+    }
+    updateNotionUI();
+    const refreshPromise = refreshNotionUi({ stored, cachedMode }).catch((error) => {
+      console.warn("[Notion Sync] Silent UI refresh failed:", error);
+      return false;
+    });
+    if (!hasCachedUi) {
+      const refreshed = await refreshPromise;
+      if (!refreshed) {
+        notionConfig.mode = "unlinked";
+        updateNotionUI();
+      }
+    }
+  }
+
+  function obsidianBackgroundMessage(payload) {
+    return new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage(payload, (response) => {
+        const lastError = chrome.runtime.lastError;
+        if (lastError) return reject(new Error(lastError.message || "Obsidian background request failed."));
+        if (!response || !response.ok) {
+          const error = new Error(response?.error || "Obsidian background request failed.");
+          error.code = response?.code || "obsidian_error";
+          return reject(error);
+        }
+        resolve(response);
+      });
+    });
+  }
+
+  function obsidianPageMessage(payload) {
+    return new Promise((resolve, reject) => {
+      if (!activeTabId || !isSupportedPage) return reject(new Error("Open a supported AI conversation first."));
+      chrome.tabs.sendMessage(activeTabId, payload, (response) => {
+        const lastError = chrome.runtime.lastError;
+        if (lastError) return reject(new Error(lastError.message || "Could not reach the conversation page."));
+        if (!response || response.ok === false) return reject(new Error(response?.error || "Obsidian page request failed."));
+        resolve(response);
+      });
+    });
+  }
+
+  function openObsidianSettings() {
+    const suffix = activeTabId ? `?returnTabId=${encodeURIComponent(activeTabId)}` : "";
+    chrome.tabs.create({ url: chrome.runtime.getURL(`src/obsidian-settings.html${suffix}`) });
+    window.close();
+  }
+
+  function getObsidianCurrentSettings() {
+    return {
+      show_conversation_title: document.getElementById("toggle-title")?.checked !== false,
+      show_export_time: document.getElementById("toggle-time")?.checked !== false,
+      export_ai_replies_only: document.getElementById("toggle-ai-only")?.checked === true,
+      include_source_url: document.getElementById("toggle-source-url")?.checked === true,
+      show_platform_name: document.getElementById("toggle-platform-name")?.checked !== false,
+      show_role_labels: document.getElementById("toggle-role-labels")?.checked !== false
+    };
+  }
+
+  function getObsidianSelectionStatus() {
+    if (!activeTabId || !isSupportedPage) return Promise.resolve({ selectedCount: 0, selectionMode: false });
+    return obsidianPageMessage({ type: "CHATVAULT_OBSIDIAN_SELECTION_STATUS" })
+      .catch(() => ({ selectedCount: 0, selectionMode: false }));
+  }
+
+  function renderObsidianStatus(status, selection) {
+    const main = document.querySelector(".obsidian-sync-main");
+    const state = document.getElementById("obsidian-sync-state");
+    const current = document.getElementById("obsidian-sync-current");
+    const disconnect = document.getElementById("obsidian-sync-disconnect");
+    const configure = document.getElementById("obsidian-settings-configure");
+    const connectionStatus = document.getElementById("obsidian-connection-status");
+    const settingsStatus = document.getElementById("obsidian-settings-status");
+    if (!state || !current) return;
+    const isConnected = Boolean(status?.connected);
+    const selectedCount = Math.max(0, Number(selection?.selectedCount || 0));
+    const selectionMode = Boolean(selection?.selectionMode);
+    main?.classList.toggle("is-unconfigured", !isConnected);
+    if (configure) configure.hidden = isConnected;
+    if (connectionStatus) {
+      connectionStatus.textContent = isConnected
+        ? status.vaultName || ot("obsidian_vault", "Obsidian Vault", "Obsidian Vault")
+        : ot("obsidian_not_connected", "Not connected", "尚未配置");
+    }
+    state.className = "obsidian-sync-state";
+    state.innerHTML = "";
+    const title = document.createElement("strong");
+    const detail = document.createElement("span");
+    if (!status?.connected) {
+      title.textContent = ot("obsidian_not_connected", "Vault not connected", "Vault 尚未连接");
+      detail.textContent = ot("obsidian_connect_helper", "Choose a local Vault to save this conversation.", "选择本地 Vault 后即可保存当前对话。");
+      current.textContent = ot("obsidian_configure", "Config Obsidian", "配置 Obsidian");
+      current.disabled = false;
+      if (disconnect) disconnect.hidden = true;
+      if (settingsStatus) settingsStatus.textContent = ot("obsidian_not_connected", "Vault not connected", "Vault 尚未连接");
+      state.classList.add("is-warning");
+    } else if (status.permission !== "granted") {
+      title.textContent = status.vaultName || ot("obsidian_vault", "Obsidian Vault", "Obsidian Vault");
+      detail.textContent = ot("obsidian_permission_required", "Vault permission must be granted again.", "Vault 权限已失效，需要重新授权。");
+      current.textContent = ot("obsidian_reauthorize", "Reauthorize Vault", "重新授权 Vault");
+      current.disabled = false;
+      if (disconnect) disconnect.hidden = false;
+      if (settingsStatus) settingsStatus.textContent = `${status.vaultName || ot("obsidian_vault", "Obsidian Vault", "Obsidian Vault")} | ${ot("obsidian_permission_required", "Permission required", "需要重新授权")}`;
+      state.classList.add("is-warning");
+    } else if (status.directoriesValid === false) {
+      title.textContent = status.vaultName || ot("obsidian_vault", "Obsidian Vault", "Obsidian Vault");
+      detail.textContent = ot("obsidian_directories_missing", "A configured folder is missing. Repair it before syncing.", "配置目录已丢失，请修复后再同步。");
+      current.textContent = ot("obsidian_repair_folders", "Repair Vault folders", "修复 Vault 目录");
+      current.disabled = false;
+      if (disconnect) disconnect.hidden = false;
+      if (settingsStatus) settingsStatus.textContent = `${status.vaultName || ot("obsidian_vault", "Obsidian Vault", "Obsidian Vault")} | ${ot("obsidian_directories_missing", "Folders need repair", "目录需要修复")}`;
+      state.classList.add("is-warning");
+    } else if (status.activeJob || selection?.syncRunning) {
+      title.textContent = status.vaultName || ot("obsidian_vault", "Obsidian Vault", "Obsidian Vault");
+      detail.textContent = ot("obsidian_sync_busy", "A sync task is writing to this Vault.", "已有同步任务正在写入此 Vault。");
+      current.textContent = ot("obsidian_syncing", "Syncing", "同步中");
+      current.disabled = true;
+      if (disconnect) disconnect.hidden = false;
+      if (settingsStatus) settingsStatus.textContent = `${status.vaultName || ot("obsidian_vault", "Obsidian Vault", "Obsidian Vault")} | ${ot("obsidian_syncing", "Syncing", "同步中")}`;
+    } else {
+      title.textContent = status.vaultName || ot("obsidian_vault", "Obsidian Vault", "Obsidian Vault");
+      const notesDestination = status.config?.notesRoot || ot("obsidian_vault_root", "Vault root", "Vault 根目录");
+      detail.textContent = `${notesDestination} | ${ot("obsidian_ready", "Ready", "可同步")}`;
+      current.textContent = selectedCount > 0
+        ? ot("obsidian_sync_selected_short", "Sync $1", "同步 $1 条", selectedCount)
+        : selectionMode
+          ? ot("obsidian_select_message_first_short", "Select messages", "请选择消息")
+          : ot("obsidian_sync_current_short", "Sync", "同步");
+      current.disabled = !isSupportedPage || (selectionMode && selectedCount < 1);
+      if (disconnect) disconnect.hidden = false;
+      if (settingsStatus) settingsStatus.textContent = `${status.vaultName || ot("obsidian_vault", "Obsidian Vault", "Obsidian Vault")} | ${notesDestination}`;
+    }
+    state.append(title, detail);
+    state.setAttribute("aria-label", status?.connected
+      ? ot("obsidian_change_folder", "Change Obsidian folders", "更换 Obsidian 文件夹")
+      : ot("obsidian_configure", "Config Obsidian", "配置 Obsidian"));
+  }
+
+  async function refreshObsidianStatus() {
+    let timeout = null;
+    const timeoutPromise = new Promise((resolve) => {
+      timeout = setTimeout(() => resolve({ status: { connected: false }, selection: { selectedCount: 0, selectionMode: false } }), 3000);
+    });
+    const checkPromise = (async () => {
+      const [status, selection] = await Promise.all([
+        obsidianBackgroundMessage({ type: "CHATVAULT_OBSIDIAN_GET_STATUS" }).catch(() => ({ connected: false })),
+        getObsidianSelectionStatus().catch(() => ({ selectedCount: 0, selectionMode: false }))
+      ]);
+      return { status: status || { connected: false }, selection: selection || { selectedCount: 0, selectionMode: false } };
+    })();
+    try {
+      const { status, selection } = await Promise.race([checkPromise, timeoutPromise]);
+      obsidianStatus = status || { connected: false };
+      renderObsidianStatus(obsidianStatus, selection);
+      return obsidianStatus;
+    } catch (error) {
+      console.warn("[Obsidian Sync] refreshObsidianStatus fallback to unconfigured:", error);
+      obsidianStatus = { connected: false };
+      renderObsidianStatus(obsidianStatus, { selectedCount: 0, selectionMode: false });
+      return obsidianStatus;
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  async function triggerObsidianSync() {
+    if (!obsidianStatus?.connected || obsidianStatus.permission !== "granted" || obsidianStatus.directoriesValid === false) {
+      openObsidianSettings();
+      return;
+    }
+    if (!requireSupportedPage()) return;
+    if (await blockExportIfFreeQuotaExhausted()) return;
+    const button = document.getElementById("obsidian-sync-current");
+    if (button) button.disabled = true;
+    try {
+      await obsidianPageMessage({
+        type: "CHATVAULT_POPUP_OBSIDIAN_SYNC",
+        config: { settings: getObsidianCurrentSettings() }
+      });
+      window.close();
+    } catch (error) {
+      if (button) button.disabled = false;
+      showToast(error?.message || ot("obsidian_start_failed", "Could not start Obsidian sync. Refresh the page and try again.", "无法开始 Obsidian 同步，请刷新页面后重试。"));
+    }
+  }
+
+  async function disconnectObsidianVault() {
+    const button = document.getElementById("obsidian-sync-disconnect");
+    if (button) button.disabled = true;
+    try {
+      const status = await obsidianBackgroundMessage({ type: "CHATVAULT_OBSIDIAN_DISCONNECT" });
+      obsidianStatus = status;
+      renderObsidianStatus(status, { selectedCount: 0, selectionMode: false });
+      showToast(ot("obsidian_disconnected", "Obsidian disconnected. Existing files were kept.", "已断开 Obsidian，现有文件不会被删除。"));
+    } catch (error) {
+      showToast(error?.message || ot("obsidian_disconnect_failed", "Could not disconnect Obsidian.", "无法断开 Obsidian。"));
+    } finally {
+      if (button) button.disabled = false;
+    }
+  }
+
+  async function initializeObsidianSyncUI() {
+    obsidianUiReady = true;
+    applyObsidianSyncVisibility(obsidianSyncVisible);
+    const state = document.getElementById("obsidian-sync-state");
+    const current = document.getElementById("obsidian-sync-current");
+    const disconnect = document.getElementById("obsidian-sync-disconnect");
+    const settingsConfigure = document.getElementById("obsidian-settings-configure");
+    if (state && !state.dataset.bound) {
+      state.dataset.bound = "true";
+      state.addEventListener("click", openObsidianSettings);
+    }
+    if (current && !current.dataset.bound) {
+      current.dataset.bound = "true";
+      current.addEventListener("click", triggerObsidianSync);
+    }
+    if (disconnect && !disconnect.dataset.bound) {
+      disconnect.dataset.bound = "true";
+      disconnect.addEventListener("click", disconnectObsidianVault);
+    }
+    if (settingsConfigure && !settingsConfigure.dataset.bound) {
+      settingsConfigure.dataset.bound = "true";
+      settingsConfigure.addEventListener("click", openObsidianSettings);
+    }
+    try {
+      await refreshObsidianStatus();
+    } catch (error) {
+      console.warn("[Obsidian Sync] initializeObsidianSyncUI status error, rendering unconfigured:", error);
+      renderObsidianStatus({ connected: false }, { selectedCount: 0, selectionMode: false });
+    }
+  }
+
+  // 监听持久化 Background 任务状态。
+  chrome.runtime.onMessage.addListener(function (message) {
+    if (message && message.type === "CHATVAULT_NOTION_JOB_STATUS" && message.job) {
+      renderNotionJob(message.job);
+    }
+  });
+
 })();
