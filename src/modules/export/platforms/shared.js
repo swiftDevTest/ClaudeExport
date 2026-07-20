@@ -22,3 +22,15 @@ export function pushDistinctDocumentElement(list, element) {
   }
   list.push(element);
 }
+
+export function collapseNestedDocumentElements(elements, maxElements = 1000) {
+  var unique = Array.from(new Set((elements || []).filter(Boolean))).slice(0, Math.max(1, maxElements));
+  unique.sort(compareElementsInDocument);
+  var collapsed = [];
+  unique.forEach(function (element) {
+    var previous = collapsed[collapsed.length - 1];
+    if (previous && previous !== element && previous.contains && previous.contains(element)) return;
+    collapsed.push(element);
+  });
+  return collapsed;
+}

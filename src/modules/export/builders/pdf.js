@@ -7,6 +7,7 @@ import {
   yieldToBrowser,
   sanitizeExportText,
   sanitizeImageAlt,
+  normalizeExportLinkHref,
   mapLimit,
   formatLatexUnicode,
   createCanvas,
@@ -24,10 +25,10 @@ import {
 import { preloadCanvasImages } from '../media.js';
 import { getPdfTheme } from '../themes/pdf.js';
 
-const PRODUCT_NAME = globalThis.CHATVAULT_PRODUCT_CONFIG?.productName || "Claude Export";
-
 var SEPARATOR_MARGIN_TOP = 25;
 var SEPARATOR_MARGIN_BOTTOM = 25;
+var PDF_MAX_PAGES = 300;
+var PDF_MAX_ENCODED_PAGE_BYTES = 150 * 1024 * 1024;
 
 function getCenteredTextBaseline(ctx, top, height) {
   var metrics = ctx.measureText("Hg");
@@ -40,16 +41,16 @@ function getCenteredTextBaseline(ctx, top, height) {
 export async function buildPdfBlob(messages, metadata, settingsInput, options) {
   options = options || {};
   var imageCache = await preloadCanvasImages(messages, options);
-  notifyProgress(options, t("export_progress_paginating", "Paginating long image export"), 0.04);
+  notifyProgress(options, t("export_progress_paginating_doc", "Paginating export"), 0.04);
   var pages = await renderPdfPages(messages, metadata, settingsInput, {
     signal: options.signal,
     onProgress: function (progress) {
-      notifyProgress(options, progress.message || t("export_progress_paginating", "Paginating long image export"), 0.04 + 0.62 * (progress.progress || 0));
+      notifyProgress(options, progress.message || t("export_progress_paginating_doc", "Paginating export"), 0.04 + 0.62 * (progress.progress || 0));
     }
   }, imageCache);
   notifyProgress(options, t("export_progress_generating_pdf", "Generating PDF"), 0.68);
   var pdf = createPdfFromJpegs(pages, 3.0);
-  notifyProgress(options, t("export_progress_ready", "Image ready"), 1);
+  notifyProgress(options, t("export_progress_ready_doc", "Export ready"), 1);
   return pdf;
 }
 
@@ -59,6 +60,7 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
   var settings = themeConfig.settings;
   var theme = themeConfig.theme;
   var DESIGN = themeConfig.design;
+  var flatLayout = themeConfig.styleId === "natural";
 
   var pageWidth = 794;
   var pageHeight = 1123;
@@ -67,9 +69,13 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
   var topMargin = 54;
   var bottomMargin = 74;
   var contentWidth = pageWidth - margin * 2;
-  var pageCanvases = [];
+  var pageJobs = [];
+  var encodedPages = [];
+  var totalPageCount = 0;
+  var encodedPageBytes = 0;
   var current = null;
   var currentCanvas = null;
+  var currentPageLinks = [];
   var ctx = null;
   var y = 0;
   var pageNumber = 0;
@@ -81,6 +87,7 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
       finalizeCurrentPage();
       current = createCanvas(pageWidth, pageHeight, scale);
       ctx = current.ctx;
+      currentPageLinks = [];
 
       if (theme.bg && theme.bg.type === "mesh") {
         ctx.fillStyle = theme.bg.colors[0];
@@ -144,21 +151,60 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
     ctx.font = "10px " + DESIGN.font.body;
     ctx.fillStyle = DESIGN.color.muted;
     var footer = [];
-    if (settings.show_chatvault_badge) footer.push(PRODUCT_NAME);
-    if (settings.show_platform_name && metadata.platform) {
-      var platformLabel = getPlatformLabel(metadata.platform);
-      if (!PRODUCT_NAME.toLowerCase().includes(platformLabel.toLowerCase())) {
-        footer.push(platformLabel);
-      }
-    }
+    if (settings.show_chatvault_badge) footer.push(t("export_pdf_footer_branding", "AI Chat Export"));
+    if (settings.show_platform_name && metadata.platform) footer.push(getPlatformLabel(metadata.platform));
     if (settings.show_export_time) footer.push(formatDateDisplay(metadata.exportedAt));
     ctx.fillText(footer.join(" · "), margin, pageHeight - 36);
   }
 
   function finalizeCurrentPage() {
     if (!currentCanvas) return;
-    pageCanvases.push(currentCanvas);
+    totalPageCount += 1;
+    if (totalPageCount > PDF_MAX_PAGES) {
+      throw new Error(t("export_pdf_too_many_pages", "This conversation is too large to export as one PDF safely. Export a shorter range."));
+    }
+    var canvas = currentCanvas;
+    var canvasWidth = canvas.width;
+    var canvasHeight = canvas.height;
+    var links = currentPageLinks.slice();
     currentCanvas = null;
+    currentPageLinks = [];
+    pageJobs.push((async function () {
+      try {
+        // Use async canvas encoding so repeated PDF exports do not monopolize the page thread.
+        var blob = await canvasToBlob(canvas, "image/jpeg", 0.85);
+        var bytes = new Uint8Array(await blob.arrayBuffer());
+        encodedPageBytes += bytes.byteLength;
+        return {
+          width: canvasWidth,
+          height: canvasHeight,
+          bytes: bytes,
+          logicalWidth: pageWidth,
+          logicalHeight: pageHeight,
+          links: links
+        };
+      } catch (e) {
+        return null;
+      } finally {
+        try {
+          canvas.width = 1;
+          canvas.height = 1;
+        } catch (e) {}
+      }
+    })());
+  }
+
+  async function drainPageJobs() {
+    if (!pageJobs.length) return;
+    var jobs = pageJobs;
+    pageJobs = [];
+    var results = await Promise.all(jobs);
+    for (var i = 0; i < results.length; i++) {
+      if (results[i]) encodedPages.push(results[i]);
+    }
+    if (encodedPageBytes > PDF_MAX_ENCODED_PAGE_BYTES) {
+      throw new Error(t("export_pdf_too_large", "This conversation is too large to export as one PDF safely. Export a shorter range."));
+    }
   }
 
   function drawLines(lines, font, color, lineHeight, x) {
@@ -212,30 +258,13 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
       notifyProgress(options, t("export_progress_paginating_doc", "Paginating export"), 0.08 + 0.64 * ((mi + 1) / Math.max(1, messages.length)));
       await new Promise(function (resolve) { setTimeout(resolve, 0); });
     }
+    if (pageJobs.length >= 5) {
+      await drainPageJobs();
+    }
   }
   notifyProgress(options, t("export_progress_paginating_doc", "Paginating export"), 0.74);
   finalizeCurrentPage();
-  var encodedPages = await mapLimit(pageCanvases, 2, async function (canvas, index) {
-    try {
-      notifyProgress(options, t("export_progress_rendering_pdf", "Encoding PDF page $1 of $2", index + 1, pageCanvases.length), 0.74 + 0.22 * ((index + 1) / pageCanvases.length));
-      var blob = await canvasToBlob(canvas, "image/jpeg", 0.85);
-      var bytes = new Uint8Array(await blob.arrayBuffer());
-      await yieldToBrowser();
-      return {
-        width: canvas.width,
-        height: canvas.height,
-        bytes: bytes
-      };
-    } catch (e) {
-      return null;
-    } finally {
-      try {
-        canvas.width = 1;
-        canvas.height = 1;
-      } catch (e) {}
-    }
-  });
-  encodedPages = encodedPages.filter(Boolean);
+  await drainPageJobs();
   if (!encodedPages.length) {
     throw new Error(t("export_pdf_encode_failed", "PDF page rendering failed. Please try again."));
   }
@@ -246,7 +275,8 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
     var alignRight = isUser && settings.align_user_messages_right;
     
     var maxCardWidth = alignRight ? contentWidth * 0.75 : contentWidth;
-    var maxInnerWidth = maxCardWidth - 44;
+    var horizontalPadding = flatLayout ? 8 : 44;
+    var maxInnerWidth = maxCardWidth - horizontalPadding;
     var allBlocks = (message.contentBlocks || []).map(function (block) {
       return measurePdfBlock(getVisualMessageBlock(block, message.role), maxInnerWidth);
     }).filter(Boolean);
@@ -286,12 +316,12 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
         }
       });
       var limit = contentWidth * 0.75;
-      cardWidth = Math.min(limit, Math.max(120, maxContentW + 44));
+      cardWidth = Math.min(limit, Math.max(120, maxContentW + horizontalPadding));
     }
     
     var currentRoleHeight = 0;
     if (settings.show_role_labels && metadata.scope !== "ai_only") {
-      currentRoleHeight = 31;
+      currentRoleHeight = flatLayout ? 22 : 31;
     }
     
     var flowSections = buildPdfFlowSections(allBlocks, cardWidth);
@@ -342,7 +372,7 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
       sections.push({
         type: "bubble",
         blocks: pendingText,
-        height: 13 + Math.max(contentHeight, bodyLineHeight) + 13
+        height: (flatLayout ? 6 : 13) + Math.max(contentHeight, bodyLineHeight) + (flatLayout ? 6 : 13)
       });
       pendingText = [];
     }
@@ -808,6 +838,8 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
     var fill = isUser ? DESIGN.color.cardBgUser : DESIGN.color.cardBgAssistant;
     var stroke = isUser ? DESIGN.color.cardBorderUser : DESIGN.color.cardBorderAssistant;
     var shadow = theme.color.shadow || "transparent";
+    var bubblePaddingY = flatLayout ? 6 : 13;
+    var bubblePaddingX = flatLayout ? 4 : 22;
     
     if (!layout.labelInBubble && layout.roleHeight) {
       var firstPartHeight = layout.roleHeight + 6;
@@ -817,7 +849,7 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
         firstPartHeight += firstRow.height + 10;
       } else if (firstSection && firstSection.type === "bubble" && firstSection.blocks.length > 0) {
         var firstBubbleBlockHeight = firstSection.blocks[0].height || 30;
-        firstPartHeight += 13 + Math.min(60, firstBubbleBlockHeight) + 13;
+        firstPartHeight += bubblePaddingY + Math.min(60, firstBubbleBlockHeight) + bubblePaddingY;
       } else {
         firstPartHeight += 20;
       }
@@ -913,7 +945,7 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
         var cardStartY = y;
         var startedAtFreshTop = cardStartY <= topMargin + 1;
         if (isTop) {
-          y += 13;
+          y += bubblePaddingY;
         } else {
           cardStartY = topMargin;
           y = topMargin;
@@ -939,8 +971,8 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
 
             var availableHeight = pageHeight - bottomMargin - tempY;
             var planned = planPdfCodeChunk(seg.block, lineIndex, availableHeight);
-            if (planned && isLastSegment && lineIndex + planned.take >= codeLines.length && tempY + planned.block.height + 13 > pageHeight - bottomMargin) {
-              planned = planPdfCodeChunk(seg.block, lineIndex, availableHeight - 13);
+            if (planned && isLastSegment && lineIndex + planned.take >= codeLines.length && tempY + planned.block.height + bubblePaddingY > pageHeight - bottomMargin) {
+              planned = planPdfCodeChunk(seg.block, lineIndex, availableHeight - bubblePaddingY);
               if (planned && lineIndex + planned.take < codeLines.length) {
                 planned.block = createPdfCodeChunk(seg.block, lineIndex, planned.take, availableHeight);
               }
@@ -976,11 +1008,11 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
           }
 
           var segmentHeight = getSegmentHeight(seg);
-          var needed = segmentHeight + (isLastSegment ? 13 : 0);
+          var needed = segmentHeight + (isLastSegment ? bubblePaddingY : 0);
           if (seg.type === "roleLabel" && !isLastSegment) {
             var nextMin = getSegmentMinimumHeight(segments[nextIdx + 1]);
             var isNextLast = nextIdx + 1 === segments.length - 1;
-            needed += nextMin + (isNextLast ? 13 : 0);
+            needed += nextMin + (isNextLast ? bubblePaddingY : 0);
           }
 
           if (tempY + needed > pageHeight - bottomMargin) {
@@ -1010,14 +1042,16 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
         
         var isBottom = nextIdx >= segments.length;
         if (isBottom) {
-          tempY += 13;
+          tempY += bubblePaddingY;
         }
         
         var cardHeight = isBottom ? (tempY - cardStartY) : ((pageHeight - bottomMargin) - cardStartY);
         
-        drawSegmentCard(ctx, cardX, cardStartY, cardWidth, cardHeight, 17, fill, stroke, shadow, isTop, isBottom);
+        if (!flatLayout) {
+          drawSegmentCard(ctx, cardX, cardStartY, cardWidth, cardHeight, 17, fill, stroke, shadow, isTop, isBottom);
+        }
         
-        if (theme.id !== "editorial" && !layout.alignRight) {
+        if (!flatLayout && theme.id !== "editorial" && !layout.alignRight) {
           ctx.fillStyle = isUser ? DESIGN.color.accent : DESIGN.color.muted;
           var barY = cardStartY + (isTop ? 13 : 0);
           var barH = cardHeight - (isTop ? 13 : 0) - (isBottom ? 13 : 0);
@@ -1029,7 +1063,7 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
         for (var i = 0; i < pageEntries.length; i++) {
           var seg = pageEntries[i];
           if (seg.type === "roleLabel") {
-            renderPdfRoleLabel(seg.message, cardX + 22, y, true, seg.alignRight, cardWidth - 44);
+            renderPdfRoleLabel(seg.message, cardX + bubblePaddingX, y, true, seg.alignRight, cardWidth - bubblePaddingX * 2);
             y += seg.height;
           } else if (seg.type === "line") {
             ctx.font = seg.font;
@@ -1037,13 +1071,13 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
             var oldBaseline = ctx.textBaseline;
             ctx.textBaseline = "top";
             var yOffset = (seg.lineHeight - seg.fontSize) / 2;
-            ctx.fillText(seg.text, cardX + 22, y + yOffset);
+            ctx.fillText(seg.text, cardX + bubblePaddingX, y + yOffset);
             ctx.textBaseline = oldBaseline;
             y += seg.lineHeight;
           } else if (seg.type === "spacing") {
             y += seg.height;
           } else if (seg.type === "block") {
-            y = renderPdfBlockLayout(seg.block, cardX + 22, y, cardWidth - 44, false);
+            y = renderPdfBlockLayout(seg.block, cardX + bubblePaddingX, y, cardWidth - bubblePaddingX * 2, false);
             if (seg.sourceCodeSegment) {
               seg.sourceCodeSegment.lineIndex = seg.nextLineIndex;
             }
@@ -1051,7 +1085,7 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
         }
         
         if (isBottom) {
-          y += 13;
+          y += bubblePaddingY;
         } else {
           y = pageHeight - bottomMargin;
           newPage();
@@ -1071,7 +1105,7 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
       }
     });
 
-    y += 32;
+    y += flatLayout ? 20 : 32;
   }
 
   function renderPdfRoleLabel(message, x, top, inCard, alignRight, width) {
@@ -1079,6 +1113,16 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
     var isUser = message.role === "user";
     var label = isUser ? t("export_role_user", "You Asked") : getPlatformLabel(metadata.platform).toUpperCase();
     ctx.font = "800 10px " + DESIGN.font.body;
+    if (flatLayout) {
+      var labelWidth = ctx.measureText(label).width;
+      var labelX = alignRight ? x + width - labelWidth : x;
+      ctx.fillStyle = isUser ? (DESIGN.color.tagTextUser || DESIGN.color.accentDark) : (DESIGN.color.tagTextAssistant || DESIGN.color.muted);
+      ctx.fillText(label, labelX, getCenteredTextBaseline(ctx, top, 18));
+      ctx.fillStyle = DESIGN.color.line;
+      if (alignRight) ctx.fillRect(x, top + 9, Math.max(20, labelX - x - 12), 1);
+      else ctx.fillRect(x + labelWidth + 12, top + 9, Math.max(20, width - labelWidth - 12), 1);
+      return;
+    }
     var tagWidth = ctx.measureText(label).width + 24;
     var tagFill = isUser ? DESIGN.color.tagBgUser : DESIGN.color.tagBgAssistant;
     var tagStroke = isUser ? DESIGN.color.tagBorderUser : DESIGN.color.tagBorderAssistant;
@@ -1093,7 +1137,13 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
       ? (DESIGN.color.tagTextUser || DESIGN.color.accentDark)
       : (DESIGN.color.tagTextAssistant || DESIGN.color.muted);
     ctx.fillStyle = tagText;
-    ctx.fillText(label, tagX + 12, getCenteredTextBaseline(ctx, top, 22));
+    var prevAlign = ctx.textAlign;
+    var prevBaseline = ctx.textBaseline;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(label, tagX + tagWidth / 2, top + 11);
+    ctx.textAlign = prevAlign;
+    ctx.textBaseline = prevBaseline;
     if (!inCard) {
       ctx.fillStyle = DESIGN.color.line;
       if (alignRight) {
@@ -1179,10 +1229,26 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
         
         ctx.fillStyle = DESIGN.color.accentDark;
       } else {
-        ctx.fillStyle = defaultColor || DESIGN.color.ink;
+        ctx.fillStyle = chunk.href ? DESIGN.color.accentDark : (defaultColor || DESIGN.color.ink);
       }
       
       ctx.fillText(chunk.text, currentX, textY);
+      var href = normalizeExportLinkHref(chunk.href);
+      if (href && !chunk.code && chunkW > 0) {
+        var textTop = getTextTopForBaseline(textY, fontSize, metrics);
+        var textHeight = metrics && Number.isFinite(metrics.actualBoundingBoxAscent) && Number.isFinite(metrics.actualBoundingBoxDescent)
+          ? metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent
+          : fontSize;
+        currentPageLinks.push({ x: currentX, y: textTop, width: chunkW, height: Math.max(fontSize, textHeight), href: href });
+        ctx.save();
+        ctx.strokeStyle = DESIGN.color.accentDark;
+        ctx.lineWidth = 0.8;
+        ctx.beginPath();
+        ctx.moveTo(currentX, textTop + textHeight + 1);
+        ctx.lineTo(currentX + chunkW, textTop + textHeight + 1);
+        ctx.stroke();
+        ctx.restore();
+      }
       return chunkW;
     }
 
@@ -1501,17 +1567,61 @@ export function dataUrlToBytes(dataUrl) {
 }
 
 export function createPdfFromJpegs(jpegPages, canvasScale) {
+  if (!Array.isArray(jpegPages) || !jpegPages.length || jpegPages.length > PDF_MAX_PAGES) {
+    throw new Error("PDF page count exceeds the safe export limit.");
+  }
+  var aggregateJpegBytes = jpegPages.reduce(function (total, page) {
+    return total + Number(page && page.bytes && page.bytes.byteLength || 0);
+  }, 0);
+  if (aggregateJpegBytes > PDF_MAX_ENCODED_PAGE_BYTES) {
+    throw new Error("PDF image data exceeds the safe export limit.");
+  }
   var scale = canvasScale || 1;
-  var objs = [];
+  // 增量 Blob 构建：用 parts 数组替代单一巨型 Uint8Array，避免连续内存分配失败
+  var parts = [];
   var offsets = [];
+  var currentOffset = 0;
+  var encoder = new TextEncoder();
 
-  objs.push("1 0 obj\n<< /Type /Catalog /Pages 2 0 R /Outlines [] >>\nendobj\n");
+  function escapePdfString(value) {
+    return String(value || "").replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)").replace(/[\r\n]/g, "");
+  }
+
+  // pushObject：记录对象偏移量（用于 xref 表），并追加到 parts
+  function pushObject(content) {
+    offsets.push(currentOffset);
+    if (content instanceof Uint8Array) {
+      parts.push(content);
+      currentOffset += content.length;
+    } else {
+      var encoded = encoder.encode(content);
+      parts.push(encoded);
+      currentOffset += encoded.length;
+    }
+  }
+
+  // pushRaw：只追加内容，不记录偏移量（用于对象内部的分片，如 image header/bytes/footer）
+  function pushRaw(content) {
+    if (content instanceof Uint8Array) {
+      parts.push(content);
+      currentOffset += content.length;
+    } else {
+      var encoded = encoder.encode(content);
+      parts.push(encoded);
+      currentOffset += encoded.length;
+    }
+  }
+
+  // Header
+  pushRaw(encoder.encode("%PDF-1.4\n"));
+
+  // Catalog (obj 1)
+  pushObject("1 0 obj\n<< /Type /Catalog /Pages 2 0 R /Outlines [] >>\nendobj\n");
 
   var pageEntries = jpegPages.map(function (page, index) {
     var pageW = Math.round(page.width / scale * 72 / 96);
     var pageH = Math.round(page.height / scale * 72 / 96);
     var streamContent = "q\n" + pageW + " 0 0 " + pageH + " 0 0 cm\n/Im" + index + " Do\nQ";
-    var encoder = new TextEncoder();
     var streamBytes = encoder.encode(streamContent);
     return {
       pageW: pageW,
@@ -1519,6 +1629,9 @@ export function createPdfFromJpegs(jpegPages, canvasScale) {
       width: page.width,
       height: page.height,
       bytes: page.bytes,
+      logicalWidth: Number(page.logicalWidth) || page.width / scale,
+      logicalHeight: Number(page.logicalHeight) || page.height / scale,
+      links: Array.isArray(page.links) ? page.links : [],
       streamContent: streamContent,
       streamLength: streamBytes.length
     };
@@ -1534,66 +1647,74 @@ export function createPdfFromJpegs(jpegPages, canvasScale) {
     imageObjIds.push(imageStartId + i * 3 + 2);
   }
 
-  objs.push("2 0 obj\n<< /Type /Pages /Kids [" + pageObjIds.map(function (id) { return id + " 0 R"; }).join(" ") + "] /Count " + jpegPages.length + " >>\nendobj\n");
+  var nextAnnotationId = imageStartId + jpegPages.length * 3;
+  var annotationEntriesByPage = pageEntries.map(function (entry) {
+    var xScale = entry.pageW / Math.max(1, entry.logicalWidth);
+    var yScale = entry.pageH / Math.max(1, entry.logicalHeight);
+    return entry.links.map(function (link) {
+      var href = normalizeExportLinkHref(link && link.href);
+      var x = Math.max(0, Number(link && link.x) || 0);
+      var top = Math.max(0, Number(link && link.y) || 0);
+      var width = Math.max(1, Number(link && link.width) || 0);
+      var height = Math.max(1, Number(link && link.height) || 0);
+      if (!href) return null;
+      return {
+        id: nextAnnotationId++,
+        href: href,
+        rect: [
+          Math.max(0, x * xScale),
+          Math.max(0, entry.pageH - (top + height) * yScale),
+          Math.min(entry.pageW, (x + width) * xScale),
+          Math.min(entry.pageH, entry.pageH - top * yScale)
+        ]
+      };
+    }).filter(Boolean);
+  });
 
-  var imgEncoder = new TextEncoder();
+  // Pages object (obj 2)
+  pushObject("2 0 obj\n<< /Type /Pages /Kids [" + pageObjIds.map(function (id) { return id + " 0 R"; }).join(" ") + "] /Count " + jpegPages.length + " >>\nendobj\n");
+
+  // 每页 3 个对象：Page / Content / Image
+  // Image 对象拆分为 header + 原始 bytes + footer 三个 part，避免拼接拷贝
   pageEntries.forEach(function (entry, index) {
-    objs.push(pageObjIds[index] + " 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 " + entry.pageW + " " + entry.pageH + "] /Contents " + contentObjIds[index] + " 0 R /Resources << /XObject << /Im" + index + " " + imageObjIds[index] + " 0 R >> >> >>\nendobj\n");
-    objs.push(contentObjIds[index] + " 0 obj\n<< /Length " + entry.streamLength + " >>\nstream\n" + entry.streamContent + "\nendstream\nendobj\n");
-    var imgHeader = imgEncoder.encode(imageObjIds[index] + " 0 obj\n<< /Type /XObject /Subtype /Image /Width " + entry.width + " /Height " + entry.height + " /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length " + entry.bytes.length + " >>\nstream\n");
-    var imgFooter = imgEncoder.encode("\nendstream\nendobj\n");
-    var imgObj = new Uint8Array(imgHeader.length + entry.bytes.length + imgFooter.length);
-    imgObj.set(imgHeader, 0);
-    imgObj.set(entry.bytes, imgHeader.length);
-    imgObj.set(imgFooter, imgHeader.length + entry.bytes.length);
-    objs.push(imgObj);
+    var annotations = annotationEntriesByPage[index] || [];
+    var annots = annotations.length ? " /Annots [" + annotations.map(function (annotation) { return annotation.id + " 0 R"; }).join(" ") + "]" : "";
+    pushObject(pageObjIds[index] + " 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 " + entry.pageW + " " + entry.pageH + "] /Contents " + contentObjIds[index] + " 0 R /Resources << /XObject << /Im" + index + " " + imageObjIds[index] + " 0 R >> >>" + annots + " >>\nendobj\n");
+    pushObject(contentObjIds[index] + " 0 obj\n<< /Length " + entry.streamLength + " >>\nstream\n" + entry.streamContent + "\nendstream\nendobj\n");
+    var imgHeader = encoder.encode(imageObjIds[index] + " 0 obj\n<< /Type /XObject /Subtype /Image /Width " + entry.width + " /Height " + entry.height + " /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length " + entry.bytes.length + " >>\nstream\n");
+    var imgFooter = encoder.encode("\nendstream\nendobj\n");
+    // image 对象只记一次偏移量（header 的起始），bytes 和 footer 作为 raw 追加
+    pushObject(imgHeader);
+    pushRaw(entry.bytes);
+    pushRaw(imgFooter);
   });
 
-  var header = "%PDF-1.4\n";
-  var encoder = new TextEncoder();
-  var headerBytes = encoder.encode(header);
-  var currentOffset = headerBytes.length;
-  var objByteCache = [];
-
-  objs.forEach(function (obj) {
-    offsets.push(currentOffset);
-    if (obj instanceof Uint8Array) {
-      objByteCache.push(obj);
-      currentOffset += obj.length;
-    } else {
-      var encoded = encoder.encode(obj);
-      objByteCache.push(encoded);
-      currentOffset += encoded.length;
-    }
+  // Annotation 对象
+  annotationEntriesByPage.forEach(function (annotations) {
+    annotations.forEach(function (annotation) {
+      pushObject(annotation.id + " 0 obj\n<< /Type /Annot /Subtype /Link /Rect [" + annotation.rect.map(function (value) {
+        return Number(value.toFixed(2));
+      }).join(" ") + "] /Border [0 0 0] /A << /S /URI /URI (" + escapePdfString(annotation.href) + ") >> >>\nendobj\n");
+    });
   });
 
+  // xref 表与 trailer
   var xrefOffset = currentOffset;
-  var xref = "xref\n0 " + (objs.length + 1) + "\n";
+  var xref = "xref\n0 " + (offsets.length + 1) + "\n";
   xref += "0000000000 65535 f \n";
   offsets.forEach(function (offset) {
     xref += String(offset).padStart(10, "0") + " 00000 n \n";
   });
 
-  var trailer = "trailer\n<< /Size " + (objs.length + 1) + " /Root 1 0 R >>\nstartxref\n" + xrefOffset + "\n%%EOF\n";
+  var trailer = "trailer\n<< /Size " + (offsets.length + 1) + " /Root 1 0 R >>\nstartxref\n" + xrefOffset + "\n%%EOF\n";
 
-  var xrefBytes = encoder.encode(xref);
-  var trailerBytes = encoder.encode(trailer);
-  var totalLength = currentOffset + xrefBytes.length + trailerBytes.length;
-  var result = new Uint8Array(totalLength);
-  var pos = 0;
+  pushRaw(encoder.encode(xref));
+  pushRaw(encoder.encode(trailer));
 
-  result.set(headerBytes, pos);
-  pos += headerBytes.length;
-
-  objByteCache.forEach(function (bytes) {
-    result.set(bytes, pos);
-    pos += bytes.length;
-  });
-
-  result.set(xrefBytes, pos);
-  pos += xrefBytes.length;
-
-  result.set(trailerBytes, pos);
-
-  return new Blob([result], { type: "application/pdf" });
+  // 直接用 Blob 构造器组装所有 parts，无需分配单一连续 Uint8Array
+  var blob = new Blob(parts, { type: "application/pdf" });
+  if (blob.size > PDF_MAX_ENCODED_PAGE_BYTES + 8 * 1024 * 1024) {
+    throw new Error("PDF output exceeds the safe export limit.");
+  }
+  return blob;
 }

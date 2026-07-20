@@ -91,9 +91,6 @@ function assertStableImageModel(images, fixtureId) {
 const fixtureManifest = readJson("manifest.json");
 
 for (const fixture of fixtureManifest.fixtures) {
-  if (fixture.platform && fixture.platform !== "claude") {
-    continue;
-  }
   test(`export fixture ${fixture.id}`, () => {
     const input = readJson(fixture.input);
     const expected = readJson(fixture.expected);

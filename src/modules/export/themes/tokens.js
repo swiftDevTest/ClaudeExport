@@ -1,48 +1,19 @@
-var FALLBACK_BRAND_THEME = {
-  primary: "#c96442",
-  primaryDark: "#7c2d12",
-  wash: "#fff1e8",
-  soft: "#fff7f0",
-  border: "#e8c5b0"
-};
-var PRODUCT_THEME = (globalThis.CHATVAULT_PRODUCT_CONFIG && globalThis.CHATVAULT_PRODUCT_CONFIG.theme) || {};
-
-function pickBrandHex(name) {
-  var value = PRODUCT_THEME[name] || FALLBACK_BRAND_THEME[name];
-  return /^#[0-9a-f]{6}$/i.test(String(value || "")) ? String(value) : FALLBACK_BRAND_THEME[name];
-}
-
-function withoutHash(hex) {
-  return String(hex || "").replace("#", "").toUpperCase();
-}
-
-var BRAND_ACCENT = pickBrandHex("primary");
-var BRAND_ACCENT_DARK = pickBrandHex("primaryDark");
-var BRAND_WASH = pickBrandHex("wash");
-var BRAND_SOFT = pickBrandHex("soft");
-var BRAND_BORDER = pickBrandHex("border");
-var BRAND_ACCENT_WORD = withoutHash(BRAND_ACCENT);
-var BRAND_ACCENT_DARK_WORD = withoutHash(BRAND_ACCENT_DARK);
-var BRAND_WASH_WORD = withoutHash(BRAND_WASH);
-var BRAND_SOFT_WORD = withoutHash(BRAND_SOFT);
-var BRAND_BORDER_WORD = withoutHash(BRAND_BORDER);
-
 export var DESIGN = {
   color: {
     ink: "#17202a",
     muted: "#64748b",
     faint: "#f6f8fb",
     line: "#d9e2ec",
-    accent: BRAND_ACCENT,
-    accentDark: BRAND_ACCENT_DARK,
-    userBg: BRAND_SOFT,
-    userBorder: BRAND_BORDER,
+    accent: "#16869a",
+    accentDark: "#0f6574",
+    userBg: "#eef8fb",
+    userBorder: "#bfe6ee",
     assistantBg: "#f8fafc",
     assistantBorder: "#dbe7ef",
     codeBg: "#162334",
     codeText: "#e5eef8",
-    quoteBg: BRAND_WASH,
-    quoteBorder: BRAND_ACCENT
+    quoteBg: "#f3fbf9",
+    quoteBorder: "#30aaa6"
   },
   font: {
     body: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif',
@@ -60,18 +31,18 @@ export var IMAGE_THEME = {
   color: {
     ink: "#0f2c59",
     muted: "#475569",
-    accent: BRAND_ACCENT,
-    accentDark: BRAND_ACCENT_DARK,
-    cardBgUser: BRAND_SOFT,
-    cardBorderUser: BRAND_BORDER,
+    accent: "#0f6574",
+    accentDark: "#0b4e5a",
+    cardBgUser: "#f0f7f9",
+    cardBorderUser: "#aad0d6",
     cardBgAssistant: "#ffffff",
     cardBorderAssistant: "#e2e8f0",
     codeBg: "#0f172a",
     codeText: "#f1f5f9",
-    quoteBg: BRAND_WASH,
-    quoteBorder: BRAND_ACCENT,
-    tagBgUser: BRAND_SOFT,
-    tagBorderUser: BRAND_BORDER,
+    quoteBg: "#f8fafc",
+    quoteBorder: "#0f6574",
+    tagBgUser: "#dff5fa",
+    tagBorderUser: "#aadce7",
     tagBgAssistant: "#f1f5f9",
     tagBorderAssistant: "#dbe7ef"
   }
@@ -90,18 +61,18 @@ export var EXPORT_THEMES = {
     color: {
       ink: "#17202a",
       muted: "#64748b",
-      accent: BRAND_ACCENT,
-      accentDark: BRAND_ACCENT_DARK,
-      cardBgUser: BRAND_SOFT,
-      cardBorderUser: BRAND_BORDER,
+      accent: "#16869a",
+      accentDark: "#0f6574",
+      cardBgUser: "#eef8fb",
+      cardBorderUser: "#bfe6ee",
       cardBgAssistant: "#f8fafc",
       cardBorderAssistant: "#dbe7ef",
       codeBg: "#162334",
       codeText: "#e5eef8",
-      quoteBg: BRAND_WASH,
-      quoteBorder: BRAND_ACCENT,
-      tagBgUser: BRAND_SOFT,
-      tagBorderUser: BRAND_BORDER,
+      quoteBg: "#f3fbf9",
+      quoteBorder: "#30aaa6",
+      tagBgUser: "#eef8fb",
+      tagBorderUser: "#bfe6ee",
       tagBgAssistant: "#f8fafc",
       tagBorderAssistant: "#dbe7ef",
       line: "#d9e2ec"
@@ -109,27 +80,27 @@ export var EXPORT_THEMES = {
     word: {
       fontAscii: "Arial",
       fontEastAsia: "DengXian",
-      colorTitle: BRAND_ACCENT_DARK_WORD,
+      colorTitle: "0F6574",
       colorText: "1A202C",
       colorMuted: "64748B",
       pageBg: "FBFDFE",
-      metaBg: BRAND_WASH_WORD,
-      metaBorder: BRAND_BORDER_WORD,
-      metaText: BRAND_ACCENT_DARK_WORD,
-      userBg: BRAND_SOFT_WORD,
-      userBorder: BRAND_ACCENT_DARK_WORD,
+      metaBg: "EAF7FA",
+      metaBorder: "BFE6EE",
+      metaText: "0F6574",
+      userBg: "EEF8FB",
+      userBorder: "0F6574",
       assistantBg: "F8FAFC",
       assistantBorder: "94A3B8",
-      inlineCodeBg: BRAND_WASH_WORD,
-      inlineCodeText: BRAND_ACCENT_DARK_WORD,
+      inlineCodeBg: "EAF7FA",
+      inlineCodeText: "0F6574",
       codeBg: "162334",
       codeText: "E5EEF8",
       codeBorder: "162334",
       codeLabel: "9FB3C8",
-      quoteBg: BRAND_WASH_WORD,
-      quoteBorder: BRAND_ACCENT_WORD,
-      tableHeaderBg: BRAND_WASH_WORD,
-      tableHeaderText: BRAND_ACCENT_DARK_WORD,
+      quoteBg: "F3FBF9",
+      quoteBorder: "30AAA6",
+      tableHeaderBg: "EAF7FA",
+      tableHeaderText: "0F6574",
       tableBorder: "D9E2EC",
       separatorColor: "D9E2EC"
     }
@@ -497,18 +468,18 @@ export var EXPORT_THEMES = {
       accent: "#7c2d12",
       accentDark: "#431407",
       cardBgUser: "rgba(250, 248, 245, 1)",
-      cardBorderUser: "transparent",
+      cardBorderUser: "#e7e5e4",
       cardBgAssistant: "rgba(250, 248, 245, 1)",
-      cardBorderAssistant: "transparent",
+      cardBorderAssistant: "#e7e5e4",
       codeBg: "#f5f5f4",
       codeText: "#1c1917",
       quoteBg: "#f5f5f4",
       quoteBorder: "#7c2d12",
       tagBgUser: "rgba(250, 248, 245, 1)",
-      tagBorderUser: "transparent",
+      tagBorderUser: "#e7e5e4",
       tagTextUser: "#7c2d12",
       tagBgAssistant: "rgba(250, 248, 245, 1)",
-      tagBorderAssistant: "transparent",
+      tagBorderAssistant: "#e7e5e4",
       tagTextAssistant: "#5f5148",
       shadow: "transparent",
       line: "#e7e5e4"
@@ -560,18 +531,18 @@ export var EXPORT_THEMES = {
       accent: "#64d2ff",
       accentDark: "#54b3d6",
       cardBgUser: "#2a2b2d",
-      cardBorderUser: "transparent",
-      cardBgAssistant: "#181818",
-      cardBorderAssistant: "transparent",
+      cardBorderUser: "#3a3a3c",
+      cardBgAssistant: "#1f1f1f",
+      cardBorderAssistant: "#2d2d30",
       codeBg: "#242426",
       codeText: "#e3e3e3",
       quoteBg: "#242426",
       quoteBorder: "#64d2ff",
       tagBgUser: "#2a2b2d",
-      tagBorderUser: "transparent",
+      tagBorderUser: "#3a3a3c",
       tagTextUser: "#ffffff",
       tagBgAssistant: "#242426",
-      tagBorderAssistant: "transparent",
+      tagBorderAssistant: "#2d2d30",
       tagTextAssistant: "#ffffff",
       shadow: "transparent",
       line: "#2d2d30"

@@ -1,26 +1,12 @@
 "use strict";
 
-const PRODUCT_NAME = globalThis.CHATVAULT_PRODUCT_CONFIG?.productName || "Claude Export";
-const PRODUCT_CONFIG = globalThis.CHATVAULT_PRODUCT_CONFIG || {};
-const INCOMPLETE_EXPORT_NOTICE_PREFIX = PRODUCT_NAME + " notice:";
+const INCOMPLETE_EXPORT_NOTICE_PREFIX = "AI Chat Export notice:";
 
 function defaultPlatformLabel(platform) {
     if (platform === "claude") return "Claude";
     if (platform === "gemini") return "Gemini";
     if (platform === "chatgpt") return "ChatGPT";
     return "AI";
-  }
-
-function getSupportedPlatformLabel() {
-    const platformLabels = PRODUCT_CONFIG.platformLabels || {};
-    const supportedPlatforms = Array.isArray(PRODUCT_CONFIG.supportedPlatforms) && PRODUCT_CONFIG.supportedPlatforms.length
-      ? PRODUCT_CONFIG.supportedPlatforms
-      : ["chatgpt", "claude", "gemini"];
-    const names = supportedPlatforms.map((platform) => platformLabels[platform] || defaultPlatformLabel(platform));
-    if (!names.length) return "supported AI chat";
-    if (names.length === 1) return names[0];
-    if (names.length === 2) return names[0] + " or " + names[1];
-    return names.slice(0, -1).join(", ") + ", or " + names[names.length - 1];
   }
 
   export function createExportMessageAdapter(options) {
@@ -46,7 +32,7 @@ function getSupportedPlatformLabel() {
           ? "https://gemini.google.com"
           : "https://chatgpt.com";
       var currentLabel = deps.getPlatformLabel ? deps.getPlatformLabel(deps.getCurrentPlatformId ? deps.getCurrentPlatformId() : "") : "";
-      return "Open " + label + " (" + host + ") and use " + PRODUCT_NAME + " there to export this conversation body. " + (currentLabel || "This page") + " cannot read " + label + " message content.";
+      return "Open " + label + " (" + host + ") and use AI Chat Export there to export this conversation body. " + (currentLabel || "This page") + " cannot read " + label + " message content.";
     }
 
     function getPlatformExportRequirement(platform) {
@@ -75,7 +61,7 @@ function getSupportedPlatformLabel() {
       }
 
       if (!activePlatform) {
-        return "Open " + getSupportedPlatformLabel() + " before exporting conversation bodies";
+        return "Open ChatGPT, Claude, or Gemini before exporting conversation bodies";
       }
 
       if (platform !== activePlatform) {
@@ -116,7 +102,7 @@ function getSupportedPlatformLabel() {
         return [];
       }
 
-      var messages = exportService.parseMessages();
+      var messages = exportService.parseMessages({ includeHtmlStyles: false });
       return deps.cloneExportMessages ? deps.cloneExportMessages(messages) : JSON.parse(JSON.stringify(messages || []));
     }
 
@@ -133,6 +119,9 @@ function getSupportedPlatformLabel() {
 
     function shouldUsePageMessagesForIncompleteApi(messages, pageMessages) {
       if (!Array.isArray(messages) || !messages.length || !Array.isArray(pageMessages) || !pageMessages.length) {
+        return false;
+      }
+      if (pageMessages.length <= messages.length) {
         return false;
       }
 
@@ -299,7 +288,7 @@ function getSupportedPlatformLabel() {
       var label = deps.getPlatformLabel ? deps.getPlatformLabel(platform) : defaultPlatformLabel(platform);
       var title = getChatTitle(chat);
       var titleLabel = title ? "\"" + title + "\"" : "this conversation";
-      return INCOMPLETE_EXPORT_NOTICE_PREFIX + " This export may be incomplete. " + label + " returned AI replies for " + titleLabel + " without the original user questions, so " + PRODUCT_NAME + " exported the available replies and marked this file. To recover the missing questions, open this conversation in " + label + " and export again, or use Select messages export after the conversation is open.";
+      return INCOMPLETE_EXPORT_NOTICE_PREFIX + " This export may be incomplete. " + label + " returned AI replies for " + titleLabel + " without the original user questions, so AI Chat Export exported the available replies and marked this file. To recover the missing questions, open this conversation in " + label + " and export again, or use Select messages export after the conversation is open.";
     }
 
     function hasIncompleteExportNotice(messages) {
@@ -403,6 +392,9 @@ function getSupportedPlatformLabel() {
         try {
           chatGptPageMessages = getCurrentPageMessages(chat);
           var chatGptMessages = await deps.fetchChatGptConversationMessages(chat, { pageMessages: chatGptPageMessages });
+          if (typeof deps.mergeChatGptExportMessages === "function" && chatGptPageMessages.length) {
+            chatGptMessages = deps.mergeChatGptExportMessages(chatGptMessages, chatGptPageMessages);
+          }
           return returnApiMessagesOrPageFallback(chat, chatGptMessages, chatGptPageMessages, options);
         } catch (chatGptError) {
           if (chatGptPageMessages.length) {

@@ -1,3 +1,5 @@
+import { sanitizeStructuredLinkText as sanitizeSharedStructuredLinkText } from "./utils.js";
+
 "use strict";
 
 function createMissingDependencyError(name) {
@@ -15,6 +17,7 @@ function createMissingDependencyError(name) {
   const GEMINI_AT_TOKEN_MAX_LENGTH = 4096;
   const GEMINI_BATCH_RESPONSE_MAX_CHARS = 10 * 1024 * 1024;
   const PLATFORM_EXPORT_REQUEST_TIMEOUT_MS = 25000;
+  const PLATFORM_EXPORT_RESPONSE_MAX_BYTES = 24 * 1024 * 1024;
   const CLAUDE_ATTACHMENT_FETCH_TIMEOUT_MS = 4000;
   const CLAUDE_ATTACHMENT_MAX_BYTES = 12 * 1024 * 1024;
   const CLAUDE_ATTACHMENT_CONCURRENCY = 4;
@@ -318,10 +321,104 @@ function createMissingDependencyError(name) {
       : stripInlineMarkdownForPresentationMatch(text));
   }
 
-  function getPresentationMessageMatchText(message) {
-    return (message && message.contentBlocks || []).map(function (block) {
-      return (block && block.type || "") + ":" + getPresentationBlockMatchText(block);
-    }).join("\n");
+  function getConversationMessageMatchKey(message) {
+    var role = String(message && message.role || "").toLowerCase();
+    var text = normalizePresentationMatchText(stripInlineMarkdownForPresentationMatch(
+      getPresentationMessageText(message)
+    ));
+    return role && text ? role + "\n" + text : "";
+  }
+
+  function getConversationMessageCharacterBagKey(message) {
+    var role = String(message && message.role || "").toLowerCase();
+    var text = stripInlineMarkdownForPresentationMatch(getPresentationMessageText(message))
+      .replace(/\s+/g, "");
+    if (!role || !text || text.length > 20000) return "";
+    return role + "\n" + Array.from(text).sort().join("");
+  }
+
+  function getConversationMessageSimilarity(left, right) {
+    if (String(left && left.role || "").toLowerCase() !== String(right && right.role || "").toLowerCase()) {
+      return 0;
+    }
+    const leftText = normalizePresentationMatchText(stripInlineMarkdownForPresentationMatch(getPresentationMessageText(left))).replace(/\s+/g, "");
+    const rightText = normalizePresentationMatchText(stripInlineMarkdownForPresentationMatch(getPresentationMessageText(right))).replace(/\s+/g, "");
+    if (!leftText || !rightText) return 0;
+    if (leftText === rightText) return 1;
+    const shorter = leftText.length <= rightText.length ? leftText : rightText;
+    const longer = leftText.length > rightText.length ? leftText : rightText;
+    if (shorter.length >= 12 && longer.includes(shorter)) {
+      return shorter.length / longer.length;
+    }
+
+    const gramSize = Math.min(3, shorter.length);
+    if (gramSize < 2) return 0;
+    function grams(value) {
+      const result = new Set();
+      for (let index = 0; index <= value.length - gramSize; index += 1) {
+        result.add(value.slice(index, index + gramSize));
+      }
+      return result;
+    }
+    const leftGrams = grams(leftText);
+    const rightGrams = grams(rightText);
+    let intersection = 0;
+    leftGrams.forEach((value) => {
+      if (rightGrams.has(value)) intersection += 1;
+    });
+    const union = leftGrams.size + rightGrams.size - intersection;
+    return union ? intersection / union : 0;
+  }
+
+  function hasConversationRole(messages, role) {
+    return (messages || []).some(function (message) {
+      return String(message && message.role || "").toLowerCase() === role;
+    });
+  }
+
+  function getMonotonicConversationMatches(apiMessages, pageMessages) {
+    var apiIndexesByKey = new Map();
+    apiMessages.forEach(function (message, index) {
+      var key = getConversationMessageMatchKey(message);
+      if (!key) return;
+      if (!apiIndexesByKey.has(key)) apiIndexesByKey.set(key, []);
+      apiIndexesByKey.get(key).push(index);
+    });
+
+    var lastApiIndex = -1;
+    var matches = [];
+    pageMessages.forEach(function (message, pageIndex) {
+      var key = getConversationMessageMatchKey(message);
+      var candidates = key ? apiIndexesByKey.get(key) || [] : [];
+      var apiIndex = candidates.find(function (candidate) {
+        return candidate > lastApiIndex;
+      });
+      if (!Number.isFinite(apiIndex)) return;
+      matches.push({ apiIndex: apiIndex, pageIndex: pageIndex });
+      lastApiIndex = apiIndex;
+    });
+    return matches;
+  }
+
+  function reconcileConversationMessages(apiMessages, pageMessages) {
+    var api = cloneExportMessages(apiMessages || []);
+    var page = cloneExportMessages(pageMessages || []);
+    if (!api.length) return page;
+    if (!page.length) return api;
+
+    var pageHasBothRoles = hasConversationRole(page, "user") && hasConversationRole(page, "assistant");
+    var apiMissingPageRole = pageHasBothRoles && (
+      !hasConversationRole(api, "user") || !hasConversationRole(api, "assistant")
+    );
+    if (apiMissingPageRole && page.length > api.length) return page;
+
+    // The API branch is authoritative once it contains both conversation roles.
+    // A live DOM can contain inactive response variants, virtualized duplicates,
+    // status cards, or a partially rendered tail. Inserting a page-only turn into
+    // an otherwise complete API path can therefore mix two edited branches. The
+    // page is still used to select the active API branch and overlay presentation,
+    // but never to invent additional turns here.
+    return api;
   }
 
   function copyPagePresentation(target, source, includeHtmlStyles) {
@@ -353,29 +450,268 @@ function createMissingDependencyError(name) {
     }
   }
 
+  function collectPageLinkSegments(message) {
+    var links = [];
+    function collectFromSegments(segments) {
+      (Array.isArray(segments) ? segments : []).forEach(function (segment) {
+        var text = String(segment && segment.text || "");
+        var href = String(segment && (segment.href || segment.url) || "");
+        if (text && href) links.push({ text: text, href: href });
+        var generatedMatch = href.match(/^sandbox:\/mnt\/data\/(.+)$/i);
+        if (generatedMatch) {
+          var rawName = generatedMatch[1].split(/[?#]/)[0];
+          var decodedName = rawName;
+          try { decodedName = decodeURIComponent(rawName); } catch (error) {}
+          [rawName, decodedName, `📄 ${rawName}`, `📄 ${decodedName}`].filter(Boolean).forEach(function (alias) {
+            links.push({ text: alias, href: href });
+          });
+        }
+      });
+    }
+    function collectFromItems(items) {
+      (Array.isArray(items) ? items : []).forEach(function (item) {
+        collectFromSegments(item && item.segments);
+        collectFromItems(item && item.subItems);
+      });
+    }
+    (message && message.contentBlocks || []).forEach(function (block) {
+      collectFromSegments(block && block.segments);
+      if (block && block.type === "list") collectFromItems(block.items);
+    });
+    return links.filter(function (link, index, all) {
+      return all.findIndex(function (candidate) {
+        return candidate.text === link.text && candidate.href === link.href;
+      }) === index;
+    }).sort(function (a, b) {
+      return b.text.length - a.text.length;
+    });
+  }
+
+  const STRUCTURED_LINK_URL_KEYS = [
+    "url", "href", "canonical_url", "canonicalUrl", "source_url", "sourceUrl",
+    "link_url", "linkUrl", "web_url", "webUrl", "display_url", "displayUrl"
+  ];
+  const STRUCTURED_LINK_URL_LIST_KEYS = ["urls", "safe_urls", "safeUrls", "source_urls", "sourceUrls"];
+  const STRUCTURED_LINK_LABEL_KEYS = [
+    "matched_text", "matchedText", "display_text", "displayText", "link_text", "linkText",
+    "text", "title", "name", "label", "product_name", "productName", "entity_name", "entityName"
+  ];
+
+  function normalizeStructuredLinkUrl(value) {
+    const raw = String(value || "").trim();
+    if (!raw || !/^(?:https?:\/\/|mailto:|tel:|\/)/i.test(raw)) return "";
+    try {
+      const url = new URL(raw, typeof window !== "undefined" ? window.location.origin : "https://chatgpt.com");
+      return /^(https?:|mailto:|tel:)$/.test(url.protocol) ? url.href : "";
+    } catch (error) {
+      return "";
+    }
+  }
+
+  function getStructuredLinkVisibleText(blocks) {
+    return (blocks || []).map(function (block) {
+      if (block && block.type === "list") {
+        return (block.items || []).map(function (item) {
+          return [item && item.text || ""].concat((item && item.subItems || []).map(function (sub) {
+            return sub && sub.text || "";
+          })).join("\n");
+        }).join("\n");
+      }
+      return String(block && block.text || "");
+    }).join("\n");
+  }
+
+  function collectStructuredLinkSegments(value, visibleText, depth = 0, seen = new Set(), output = []) {
+    if (!value || depth > 8 || (typeof value !== "object" && !Array.isArray(value))) return output;
+    if (seen.has(value)) return output;
+    seen.add(value);
+
+    if (Array.isArray(value)) {
+      const tupleHref = value.map(normalizeStructuredLinkUrl).find(Boolean) || "";
+      if (tupleHref && !/\.(?:png|jpe?g|gif|webp|svg)(?:[?#]|$)/i.test(tupleHref)) {
+        const tupleLabel = value.filter((item) => typeof item === "string").map(sanitizeStructuredLinkText)
+          .find((item) => item && item !== tupleHref && item.length <= 500 && visibleText.includes(item));
+        if (tupleLabel) output.push({ text: tupleLabel, href: tupleHref });
+      }
+      value.forEach(function (item) {
+        collectStructuredLinkSegments(item, visibleText, depth + 1, seen, output);
+      });
+      return output;
+    }
+
+    let href = "";
+    for (const key of STRUCTURED_LINK_URL_KEYS) {
+      href = normalizeStructuredLinkUrl(value[key]);
+      if (href) break;
+    }
+    if (!href) {
+      for (const key of STRUCTURED_LINK_URL_LIST_KEYS) {
+        if (!Array.isArray(value[key])) continue;
+        href = value[key].map(normalizeStructuredLinkUrl).find(Boolean) || "";
+        if (href) break;
+      }
+    }
+    if (!href) {
+      href = normalizeStructuredLinkUrl(value.link) || normalizeStructuredLinkUrl(value.source);
+    }
+    if (!href) {
+      const nestedLinkContainers = [value.link, value.source, value.attribution, value.destination, value.reference, value.metadata];
+      for (const container of nestedLinkContainers) {
+        if (!container || typeof container !== "object") continue;
+        for (const key of STRUCTURED_LINK_URL_KEYS) {
+          href = normalizeStructuredLinkUrl(container[key]);
+          if (href) break;
+        }
+        if (href) break;
+      }
+    }
+
+    if (href) {
+      let label = "";
+      for (const key of STRUCTURED_LINK_LABEL_KEYS) {
+        if (typeof value[key] !== "string") continue;
+        const candidate = sanitizeStructuredLinkText(value[key]);
+        if (candidate && candidate !== href && visibleText.includes(candidate)) {
+          label = candidate;
+          break;
+        }
+      }
+      if (!label) {
+        const start = Number(value.start_idx ?? value.startIndex ?? value.start ?? value.begin);
+        const end = Number(value.end_idx ?? value.endIndex ?? value.end ?? value.stop);
+        if (Number.isInteger(start) && Number.isInteger(end) && start >= 0 && end > start && end <= visibleText.length) {
+          const candidate = sanitizeStructuredLinkText(visibleText.slice(start, end));
+          if (candidate && visibleText.includes(candidate)) label = candidate;
+        }
+      }
+      if (label) output.push({ text: label, href });
+    }
+
+    Object.keys(value).forEach(function (key) {
+      if (key === "link" && href) return;
+      const child = value[key];
+      if (child && typeof child === "object") {
+        collectStructuredLinkSegments(child, visibleText, depth + 1, seen, output);
+      }
+    });
+    return output;
+  }
+
+  function overlayStructuredLinksOnBlocks(blocks, source) {
+    const visibleText = getStructuredLinkVisibleText(blocks);
+    if (!visibleText) return;
+    const links = collectStructuredLinkSegments(source, visibleText).filter(function (link, index, all) {
+      return all.findIndex(function (candidate) {
+        return candidate.text === link.text && candidate.href === link.href;
+      }) === index;
+    }).sort(function (left, right) {
+      return right.text.length - left.text.length;
+    });
+    if (!links.length) return;
+    (blocks || []).forEach(function (block) {
+      overlayPageLinksOnBlock(block, links);
+      if (block && block.type === "list") {
+        function overlayItems(items) {
+          (items || []).forEach(function (item) {
+            const itemBlock = { type: "paragraph", text: item && item.text || "", segments: item && item.segments };
+            overlayPageLinksOnBlock(itemBlock, links);
+            if (itemBlock.segments) item.segments = itemBlock.segments;
+            overlayItems(item && item.subItems);
+          });
+        }
+        overlayItems(block.items);
+      }
+    });
+  }
+
+  function overlayPageLinksOnBlock(block, links) {
+    if (!block || !Array.isArray(links) || !links.length || !/^(paragraph|heading|blockquote)$/.test(block.type || "")) return;
+    var baseSegments = Array.isArray(block.segments) && block.segments.length
+      ? block.segments.map(function (segment) { return { ...segment }; })
+      : [{ text: String(block.text || "") }];
+    var sourceText = baseSegments.map(function (segment) { return String(segment && segment.text || ""); }).join("");
+    if (!sourceText) return;
+
+    var occupied = [];
+    links.forEach(function (link) {
+      var needle = String(link && link.text || "");
+      if (!needle) return;
+      var cursor = 0;
+      while (cursor < sourceText.length) {
+        var start = sourceText.indexOf(needle, cursor);
+        if (start < 0) break;
+        var end = start + needle.length;
+        var overlaps = occupied.some(function (range) { return start < range.end && end > range.start; });
+        if (!overlaps) occupied.push({ start: start, end: end, href: link.href });
+        cursor = end;
+      }
+    });
+    if (!occupied.length) return;
+    occupied.sort(function (a, b) { return a.start - b.start; });
+
+    var output = [];
+    var globalOffset = 0;
+    baseSegments.forEach(function (segment) {
+      var text = String(segment && segment.text || "");
+      var segmentStart = globalOffset;
+      var segmentEnd = segmentStart + text.length;
+      var boundaries = [segmentStart, segmentEnd];
+      occupied.forEach(function (range) {
+        if (range.start > segmentStart && range.start < segmentEnd) boundaries.push(range.start);
+        if (range.end > segmentStart && range.end < segmentEnd) boundaries.push(range.end);
+      });
+      boundaries = Array.from(new Set(boundaries)).sort(function (a, b) { return a - b; });
+      for (var index = 0; index < boundaries.length - 1; index += 1) {
+        var start = boundaries[index];
+        var end = boundaries[index + 1];
+        if (end <= start) continue;
+        var part = { ...segment, text: text.slice(start - segmentStart, end - segmentStart) };
+        var matchingRange = occupied.find(function (range) { return start >= range.start && end <= range.end; });
+        if (matchingRange) part.href = matchingRange.href;
+        if (part.text) output.push(part);
+      }
+      globalOffset = segmentEnd;
+    });
+    if (output.length) block.segments = output;
+  }
+
+  function overlayPageLinksOnMessage(targetMessage, pageMessage) {
+    var links = collectPageLinkSegments(pageMessage);
+    if (!links.length) return;
+    (targetMessage && targetMessage.contentBlocks || []).forEach(function (block) {
+      overlayPageLinksOnBlock(block, links);
+    });
+  }
+
   export function mergePageHtmlPresentation(messages, pageMessages, options) {
     var output = cloneExportMessages(messages || []);
     var page = cloneExportMessages(pageMessages || []);
     var includeHtmlStyles = !options || options.includeHtmlStyles !== false;
     var usedMessageIndexes = new Set();
     var messageIndexesByKey = new Map();
+    var messageIndexesByCharacterBag = new Map();
     output.forEach(function (message, index) {
-      var key = message.role + "\n" + getPresentationMessageMatchText(message);
+      var key = getConversationMessageMatchKey(message);
+      if (!key) return;
       if (!messageIndexesByKey.has(key)) messageIndexesByKey.set(key, []);
       messageIndexesByKey.get(key).push(index);
+      var bagKey = getConversationMessageCharacterBagKey(message);
+      if (bagKey) {
+        if (!messageIndexesByCharacterBag.has(bagKey)) messageIndexesByCharacterBag.set(bagKey, []);
+        messageIndexesByCharacterBag.get(bagKey).push(index);
+      }
     });
 
-    page.forEach(function (pageMessage, pageIndex) {
-      var pageText = getPresentationMessageMatchText(pageMessage);
-      var key = pageMessage.role + "\n" + pageText;
+    page.forEach(function (pageMessage) {
+      var key = getConversationMessageMatchKey(pageMessage);
       var candidates = messageIndexesByKey.get(key) || [];
+      if (!candidates.length) {
+        candidates = messageIndexesByCharacterBag.get(getConversationMessageCharacterBagKey(pageMessage)) || [];
+      }
       var matchIndex = candidates.find(function (candidateIndex) {
         return !usedMessageIndexes.has(candidateIndex);
       });
       if (!Number.isFinite(matchIndex)) matchIndex = -1;
-      if (matchIndex < 0 && output[pageIndex] && output[pageIndex].role === pageMessage.role) {
-        matchIndex = pageIndex;
-      }
       if (matchIndex < 0 || usedMessageIndexes.has(matchIndex)) return;
       usedMessageIndexes.add(matchIndex);
 
@@ -395,6 +731,11 @@ function createMissingDependencyError(name) {
         usedBlockIndexes.add(targetIndex);
         copyPagePresentation(targetMessage.contentBlocks[targetIndex], pageBlock, includeHtmlStyles);
       });
+      // ChatGPT, Claude, and Gemini may place linked inline text in sibling DOM
+      // nodes while their conversation APIs return a single logical block.
+      // Reconcile links by their visible text after the normal block overlay so
+      // href values survive even when those DOM block boundaries differ.
+      overlayPageLinksOnMessage(targetMessage, pageMessage);
     });
 
     return output;
@@ -520,8 +861,8 @@ function createMissingDependencyError(name) {
     messages.splice(0, messages.length, ...collapsed);
   }
 
-  function mergeChatGptExportMessages(apiMessages) {
-    return cloneExportMessages(apiMessages);
+  function mergeChatGptExportMessages(apiMessages, pageMessages) {
+    return reconcileConversationMessages(apiMessages, pageMessages);
   }
 
   function mergeGeminiExportMessages(primaryMessages) {
@@ -550,6 +891,7 @@ function createMissingDependencyError(name) {
     if (!target) return false;
     if (prefix === target && target.length >= 3) return true;
     if (prefix === "cite" || prefix === "citation" || prefix === "source" || prefix === "reference" || prefix === "ref") return true;
+    if (/(?:cite|citation|source|reference|ref)$/.test(prefix)) return true;
     if (!prefix && /^(?:search|source|result|open|view|news)$/.test(target)) return true;
     return false;
   }
@@ -612,30 +954,7 @@ function createMissingDependencyError(name) {
   }
 
   function sanitizeStructuredLinkText(value) {
-    let text = stripInvisibleTextControls(value);
-    let previous = "";
-    let guard = 0;
-
-    while (text !== previous && guard++ < 2000) {
-      previous = text;
-      text = text.replace(/url\s*\ue202([^\ue202\ue201]*)\ue202([^\ue202\ue201]*)\ue201/gi, (match, label, href) => {
-        return chooseStructuredLinkText(label, href) || "";
-      });
-      text = text.replace(/\ue202([^\ue202\ue201]*)\ue202([^\ue202\ue201]*)\ue201/g, (match, label, href) => {
-        return chooseStructuredLinkText(label, href) || "";
-      });
-      text = text.replace(/url\s*\ue202([^\ue202\ue201]*)\ue201/gi, (match, label) => {
-        return normalizeStructuredLinkPart(label);
-      });
-      text = text.replace(/\ue202([^\ue202\ue201]*)\ue201/g, (match, label) => {
-        return normalizeStructuredLinkPart(label);
-      });
-    }
-
-    return text
-      .replace(/[\ue000-\uf8ff]/g, "")
-      .replace(/([\u3001-\u303f\uff01-\uff1f\uff5b-\uff60])[\t \u00a0\u1680\u180e\u2000-\u200a\u202f\u205f\u3000]+(?=\S)/g, "$1")
-      .replace(/([\u3400-\u9fff]):[\t \u00a0\u1680\u180e\u2000-\u200a\u202f\u205f\u3000]+(?=\S)/g, "$1:");
+    return sanitizeSharedStructuredLinkText(value);
   }
 
   function normalizeStructuredUiKey(key) {
@@ -746,11 +1065,11 @@ function createMissingDependencyError(name) {
   function stripSerializedUiPayloads(value) {
     let source = String(value || "");
     if (!source) return "";
-    if (!/(?:^|\b)genui\s*\{|\{\s*"|(?:^|\n)[ \t]*genui[A-Za-z0-9_-]{3,64}[ \t]*(?:\n|$)/i.test(source)) {
+    if (!/(?:^|\b)genui[\s\uE000-\uF8FF]*\{|\{\s*"|(?:^|\n)[ \t]*genui[A-Za-z0-9_-]{3,64}[ \t]*(?:\n|$)/i.test(source)) {
       return source;
     }
 
-    const markerPattern = /\bgenui\s*(?=\{)/gi;
+    const markerPattern = /\bgenui[\s\uE000-\uF8FF]*(?=\{)/gi;
     let output = "";
     let cursor = 0;
     let match;
@@ -914,8 +1233,10 @@ function createMissingDependencyError(name) {
     if (/HTTPSConnectionPool\(host=.*Failed\s+to\s+resolve/i.test(trimmed)) return true;
     if (/^Command\s+['"]bash\s+-lc\s+.*failed\s+with\s+status/i.test(trimmed)) return true;
 
-    // Filter DALL-E tool output: file paths, dimensions, aspect ratios, inspection prompts
-    if (/\/mnt\/data\//.test(trimmed)) return true;
+    // Filter standalone DALL-E tool paths, but never discard a normal assistant
+    // reply merely because it contains a downloadable sandbox:/mnt/data link.
+    // ChatGPT uses those links for user-facing generated files.
+    if (/^\/mnt\/data\/[^\s)\]}]+$/i.test(trimmed)) return true;
     if (/\(\s*wxh\s*=/.test(trimmed)) return true;
     if (/exact aspect ratio/.test(trimmed)) return true;
     if (/visually inspect the generated image/.test(trimmed)) return true;
@@ -1127,6 +1448,188 @@ function createMissingDependencyError(name) {
     return output.join("\n");
   }
 
+  function getChatGptGeneratedFileDescriptor(linkUrl, label) {
+    const match = String(linkUrl || "").trim().match(/^sandbox:\/mnt\/data\/(.+)$/i);
+    if (!match) return null;
+    const rawName = match[1].split(/[?#]/)[0];
+    let name = rawName;
+    try { name = decodeURIComponent(name); } catch (error) {}
+    const cleanLabel = String(label || "").trim();
+    let decodedLabel = cleanLabel;
+    try { decodedLabel = decodeURIComponent(cleanLabel); } catch (error) {}
+    const labelLooksLikeRawFileName = cleanLabel === rawName || decodedLabel === name;
+    const text = /^(?:download(?: file)?|下载文件|文件)$/i.test(cleanLabel)
+      ? `${cleanLabel}: ${name}`
+      : labelLooksLikeRawFileName ? name : decodedLabel || name;
+    return {
+      name,
+      rawName,
+      source: String(linkUrl || "").trim(),
+      text
+    };
+  }
+
+  function annotateChatGptGeneratedFileLinks(value) {
+    const source = String(value || "");
+    const pattern = /\[([^\]]*)\]\((sandbox:\/mnt\/data\/[^)\r\n]+)\)/gi;
+    const segments = [];
+    const files = [];
+    let cursor = 0;
+    let match;
+    while ((match = pattern.exec(source))) {
+      const file = getChatGptGeneratedFileDescriptor(match[2], match[1]);
+      if (!file) continue;
+      if (match.index > cursor) segments.push({ text: source.slice(cursor, match.index) });
+      segments.push({ text: file.text, href: file.source });
+      files.push({ name: file.name, rawName: file.rawName, source: file.source });
+      cursor = match.index + match[0].length;
+    }
+    if (!files.length) return null;
+    if (cursor < source.length) segments.push({ text: source.slice(cursor) });
+    return {
+      text: segments.map((segment) => segment.text).join(""),
+      segments,
+      generatedFile: files[0],
+      ...(files.length > 1 ? { generatedFiles: files } : {})
+    };
+  }
+
+  function extractChatGptSandboxFileSource(value) {
+    const match = String(value || "").match(/sandbox:\/mnt\/data\/[^\s)\]}>"']+/i);
+    return match ? match[0] : "";
+  }
+
+  function getChatGptGeneratedFileName(value) {
+    const source = extractChatGptSandboxFileSource(value);
+    let name = source ? source.replace(/^sandbox:\/mnt\/data\//i, "").split(/[?#]/)[0] : String(value || "").trim();
+    try { name = decodeURIComponent(name); } catch (error) {}
+    return name;
+  }
+
+  function findNestedChatGptFileId(value, depth = 0, seen = new WeakSet()) {
+    if (!value || depth > 4 || typeof value !== "object" || seen.has(value)) return "";
+    seen.add(value);
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        const nested = findNestedChatGptFileId(item, depth + 1, seen);
+        if (nested) return nested;
+      }
+      return "";
+    }
+    for (const key of ["file_id", "fileId", "asset_pointer", "assetPointer", "id"]) {
+      const fileId = extractChatGptFileId(value[key]);
+      if (fileId) return fileId;
+    }
+    for (const child of Object.values(value)) {
+      const nested = findNestedChatGptFileId(child, depth + 1, seen);
+      if (nested) return nested;
+    }
+    return "";
+  }
+
+  function collectChatGptGeneratedFileReferences(message) {
+    const output = [];
+    const seen = new WeakSet();
+
+    function visit(value, depth = 0) {
+      if (!value || depth > 10 || typeof value !== "object") return;
+      if (seen.has(value)) return;
+      seen.add(value);
+      if (Array.isArray(value)) {
+        value.forEach((item) => visit(item, depth + 1));
+        return;
+      }
+
+      const directStrings = Object.values(value).filter((item) => typeof item === "string");
+      const source = directStrings.map(extractChatGptSandboxFileSource).find(Boolean) || "";
+      const typeLabel = [value.type, value.kind, value.content_type, value.contentType].map((item) => String(item || "")).join(" ").toLowerCase();
+      const rawName = [
+        value.name, value.file_name, value.fileName, value.filename, value.display_name, value.displayName,
+        value.title, value.label, value.matched_text, value.matchedText
+      ].map((item) => String(item || "").trim()).find((item) => item && item.length <= 500 && (/\.[a-z0-9]{1,12}(?:[?#]|$)/i.test(item) || extractChatGptSandboxFileSource(item))) || "";
+      const name = getChatGptGeneratedFileName(source || rawName);
+      const rawFileId = value.file_id || value.fileId || value.asset_pointer || value.assetPointer || value.id || "";
+      const directFileId = extractChatGptFileId(rawFileId);
+      const directDownloadValue = value.download_url || value.downloadUrl || value.content_url || value.contentUrl || value.href || value.url || "";
+      const downloadUrl = extractChatGptSandboxFileSource(directDownloadValue) ? "" : normalizeChatGptDownloadUrl(directDownloadValue);
+      const explicitFileType = /\b(?:sandbox|file|attachment)\b/.test(typeLabel);
+      const fileId = directFileId || ((source || explicitFileType) ? findNestedChatGptFileId(value) : "");
+      const fileLike = Boolean(source || (fileId && name) || (explicitFileType && (fileId || downloadUrl)));
+
+      if (fileLike && (source || name || fileId)) {
+        output.push({ source, name, fileId, downloadUrl });
+      }
+      Object.values(value).forEach((child) => {
+        if (child && typeof child === "object") visit(child, depth + 1);
+      });
+    }
+
+    visit({ metadata: message?.metadata, content: message?.content });
+    return output.reduce((merged, reference) => {
+      const normalizedName = reference.name.toLowerCase();
+      const existing = merged.find((item) => {
+        return (reference.source && item.source === reference.source) ||
+          (normalizedName && item.name.toLowerCase() === normalizedName) ||
+          (reference.fileId && item.fileId === reference.fileId);
+      });
+      if (existing) {
+        if (!existing.source && reference.source) existing.source = reference.source;
+        if (!existing.name && reference.name) existing.name = reference.name;
+        if (!existing.fileId && reference.fileId) existing.fileId = reference.fileId;
+        if (!existing.downloadUrl && reference.downloadUrl) existing.downloadUrl = reference.downloadUrl;
+      } else {
+        merged.push({ ...reference });
+      }
+      return merged;
+    }, []);
+  }
+
+  function collectGeneratedFileSourcesFromBlocks(blocks) {
+    const output = [];
+    function collectFromItem(item) {
+      [item?.generatedFile].concat(item?.generatedFiles || []).forEach((file) => {
+        const source = extractChatGptSandboxFileSource(file?.source || file?.href || file?.url);
+        if (source) output.push({ source, name: getChatGptGeneratedFileName(source) });
+      });
+      (item?.segments || []).forEach((segment) => {
+        const source = extractChatGptSandboxFileSource(segment?.href || segment?.url);
+        if (source) output.push({ source, name: getChatGptGeneratedFileName(source) });
+      });
+      (item?.subItems || []).forEach(collectFromItem);
+    }
+    (blocks || []).forEach(collectFromItem);
+    return output.filter((file, index, all) => all.findIndex((candidate) => candidate.source === file.source) === index);
+  }
+
+  function applyResolvedGeneratedFileHref(blocks, source, href) {
+    function applyToItem(item) {
+      [item?.generatedFile].concat(item?.generatedFiles || []).forEach((file) => {
+        if (extractChatGptSandboxFileSource(file?.source || file?.href || file?.url) === source) file.href = href;
+      });
+      (item?.segments || []).forEach((segment) => {
+        if (extractChatGptSandboxFileSource(segment?.href || segment?.url) === source) segment.href = href;
+      });
+      (item?.subItems || []).forEach(applyToItem);
+    }
+    (blocks || []).forEach(applyToItem);
+  }
+
+  function createChatGptTextBlock(type, value, extra = {}) {
+    const generated = annotateChatGptGeneratedFileLinks(value);
+    return {
+      type,
+      ...(generated || { text: value }),
+      ...extra
+    };
+  }
+
+  function createChatGptListItem(value) {
+    return {
+      ...(annotateChatGptGeneratedFileLinks(value) || { text: value }),
+      subItems: []
+    };
+  }
+
   function plainTextToExportBlocks(input, options = {}) {
     const text = normalizeExportText(unwrapMarkdownDirectiveContainers(input));
     if (!text) {
@@ -1141,7 +1644,7 @@ function createMissingDependencyError(name) {
     function flushParagraph() {
       const value = paragraph.join("\n").trim();
       if (value) {
-        blocks.push({ type: "paragraph", text: value });
+        blocks.push(createChatGptTextBlock("paragraph", value));
       }
       paragraph = [];
     }
@@ -1172,6 +1675,13 @@ function createMissingDependencyError(name) {
       const mdLinkMatch = trimmed.match(/^\[(.*?)\]\((.*?)\)$/);
       if (mdLinkMatch) {
         const linkUrl = mdLinkMatch[2].trim();
+        const generatedFileMatch = linkUrl.match(/^sandbox:\/mnt\/data\/(.+)$/i);
+        if (generatedFileMatch) {
+          flushParagraph();
+          blocks.push(createChatGptTextBlock("paragraph", trimmed));
+          index += 1;
+          continue;
+        }
         const isImage = /googleusercontent\.com\/image_generation_content/i.test(linkUrl) ||
                         /\.(?:png|jpg|jpeg|gif|webp|svg)(?:\?.*)?$/i.test(linkUrl);
         if (isImage) {
@@ -1221,9 +1731,8 @@ function createMissingDependencyError(name) {
       if (headingMatch) {
         flushParagraph();
         blocks.push({
-          type: "heading",
+          ...createChatGptTextBlock("heading", headingMatch[2].trim()),
           level: Math.min(4, headingMatch[1].length),
-          text: headingMatch[2].trim()
         });
         index += 1;
         continue;
@@ -1250,7 +1759,7 @@ function createMissingDependencyError(name) {
             ? itemLine.match(/^\d+[.)]\s+(.+)$/)
             : itemLine.match(/^[-*+]\s+(.+)$/);
           if (!itemMatch) break;
-          items.push({ text: itemMatch[1].trim(), subItems: [] });
+          items.push(createChatGptListItem(itemMatch[1].trim()));
           index += 1;
         }
 
@@ -1265,7 +1774,7 @@ function createMissingDependencyError(name) {
           quoteLines.push(lines[index].trim().replace(/^>\s?/, ""));
           index += 1;
         }
-        blocks.push({ type: "blockquote", text: quoteLines.join("\n").trim() });
+        blocks.push(createChatGptTextBlock("blockquote", quoteLines.join("\n").trim()));
         continue;
       }
 
@@ -1284,57 +1793,171 @@ function createMissingDependencyError(name) {
     return blocks;
   }
 
-  function getChatGptConversationNodes(payload) {
-    const mapping = payload?.mapping && typeof payload.mapping === "object" ? payload.mapping : {};
-    let currentNodeId = payload?.current_node;
+  function isChatGptMessageHiddenFromConversation(message) {
+    if (!message || typeof message !== "object") return false;
+    const metadata = message.metadata && typeof message.metadata === "object" ? message.metadata : {};
+    const authorRole = String(message.author?.role || message.role || "").trim().toLowerCase();
+    const authorName = String(message.author?.name || "").trim().toLowerCase();
+    if (authorRole === "tool" && /^(?:file_search|container(?:\.|$))/.test(authorName)) {
+      return true;
+    }
+    const hiddenFlags = [
+      metadata.is_visually_hidden_from_conversation,
+      metadata.is_visually_hidden,
+      metadata.hidden,
+      metadata.is_thinking_preamble_message,
+      message.is_visually_hidden_from_conversation,
+      message.hidden
+    ];
+    if (hiddenFlags.some((value) => value === true || String(value).toLowerCase() === "true")) {
+      return true;
+    }
+    const recipient = String(message.recipient || metadata.recipient || "").trim().toLowerCase();
+    if (recipient && recipient !== "all") {
+      return true;
+    }
+    return /^(?:hidden|invisible)$/i.test(String(metadata.visibility || message.visibility || "").trim());
+  }
 
-    if (!currentNodeId) {
-      try {
-        const parentIds = new Set(
-          Object.values(mapping)
-            .map((node) => node?.parent)
-            .filter(Boolean)
-        );
-        let latestLeaf = null;
-        let latestTime = 0;
+  function getChatGptNodeTimestamp(node) {
+    return Number(
+      node?.message?.update_time ||
+      node?.message?.create_time ||
+      node?.update_time ||
+      node?.create_time ||
+      0
+    ) || 0;
+  }
 
-        Object.values(mapping).forEach((node) => {
-          if (!node || !node.id) return;
-          if (!parentIds.has(node.id)) {
-            const time = node.message?.update_time || node.message?.create_time || node.update_time || node.create_time || 0;
-            if (time > latestTime) {
-              latestTime = time;
-              latestLeaf = node;
-            }
-          }
-        });
+  function getChatGptPathExportMessages(path, cache) {
+    return (path || []).map((node) => {
+      if (!node || !node.message || isChatGptMessageHiddenFromConversation(node.message)) return null;
+      if (cache && cache.has(node)) return cache.get(node);
+      const contentBlocks = chatGptMessageToExportBlocks(node.message);
+      const role = normalizeChatGptExportRole(node.message, contentBlocks);
+      const message = role && contentBlocks.length ? { role, contentBlocks } : null;
+      if (cache) cache.set(node, message);
+      return message;
+    }).filter(Boolean);
+  }
 
-        if (latestLeaf) {
-          currentNodeId = latestLeaf.id;
-        }
-      } catch (err) {
+  function getChatGptPathPageScore(path, pageMessages, cache) {
+    const pathMessages = getChatGptPathExportMessages(path, cache);
+    const page = cloneExportMessages(pageMessages || []);
+    if (!pathMessages.length || !page.length) {
+      return { score: 0, matches: 0, strongMatches: 0 };
+    }
+
+    const matches = getMonotonicConversationMatches(pathMessages, page);
+    let score = matches.length * 100;
+    let strongMatches = 0;
+    matches.forEach((match) => {
+      const text = normalizePresentationMatchText(getPresentationMessageText(page[match.pageIndex]));
+      if (text.replace(/\s+/g, "").length >= 8) {
+        strongMatches += 1;
+        score += Math.min(240, text.length);
       }
-    }
+      const pageDistanceFromTail = page.length - 1 - match.pageIndex;
+      const pathDistanceFromTail = pathMessages.length - 1 - match.apiIndex;
+      if (pageDistanceFromTail === pathDistanceFromTail) score += 80;
+      if (pageDistanceFromTail === 0 && pathDistanceFromTail === 0) score += 320;
+    });
 
-    const path = [];
-    const seen = new Set();
-    let node = currentNodeId ? mapping[currentNodeId] : null;
+    let fuzzyMatches = 0;
+    let lastPathIndex = -1;
+    page.forEach((pageMessage, pageIndex) => {
+      let bestIndex = -1;
+      let bestSimilarity = 0;
+      for (let pathIndex = lastPathIndex + 1; pathIndex < pathMessages.length; pathIndex += 1) {
+        const similarity = getConversationMessageSimilarity(pathMessages[pathIndex], pageMessage);
+        if (similarity > bestSimilarity) {
+          bestSimilarity = similarity;
+          bestIndex = pathIndex;
+        }
+      }
+      if (bestIndex < 0) return;
+      const pageTextLength = normalizePresentationMatchText(getPresentationMessageText(pageMessage)).replace(/\s+/g, "").length;
+      const pathTextLength = normalizePresentationMatchText(getPresentationMessageText(pathMessages[bestIndex])).replace(/\s+/g, "").length;
+      const similarityThreshold = Math.min(pageTextLength, pathTextLength) >= 60 ? 0.55 : 0.72;
+      if (bestSimilarity < similarityThreshold) return;
+      lastPathIndex = bestIndex;
+      fuzzyMatches += 1;
+      if (pageTextLength >= 8) strongMatches += 1;
+      score += 60 + Math.round(bestSimilarity * 120);
+      const pageDistanceFromTail = page.length - 1 - pageIndex;
+      const pathDistanceFromTail = pathMessages.length - 1 - bestIndex;
+      if (pageDistanceFromTail === pathDistanceFromTail) score += 60;
+      if (pageDistanceFromTail === 0 && pathDistanceFromTail === 0) score += 240;
+    });
+    return { score, matches: Math.max(matches.length, fuzzyMatches), strongMatches };
+  }
 
-    while (node && !seen.has(node.id)) {
-      seen.add(node.id);
-      path.unshift(node);
-      node = node.parent ? mapping[node.parent] : null;
-    }
+  function getChatGptConversationNodes(payload, pageMessages = []) {
+    const mapping = payload?.mapping && typeof payload.mapping === "object" ? payload.mapping : {};
+    const entries = Object.entries(mapping).filter((entry) => entry[1] && typeof entry[1] === "object");
+    if (!entries.length) return [];
 
-    if (path.length) {
+    const nodeByReference = new Map();
+    entries.forEach(([key, node]) => {
+      nodeByReference.set(String(key), node);
+      if (node.id != null) nodeByReference.set(String(node.id), node);
+    });
+    const resolveNode = (reference) => reference == null ? null : nodeByReference.get(String(reference)) || null;
+
+    function buildPath(leaf) {
+      const path = [];
+      const seen = new Set();
+      let node = leaf;
+      while (node && !seen.has(node)) {
+        seen.add(node);
+        path.unshift(node);
+        node = resolveNode(node.parent);
+      }
       return path;
     }
 
-    return Object.values(mapping).sort((a, b) => {
-      const left = a?.message?.create_time || a?.message?.update_time || 0;
-      const right = b?.message?.create_time || b?.message?.update_time || 0;
-      return left - right;
+    const parentNodes = new Set();
+    entries.forEach(([, node]) => {
+      const parent = resolveNode(node.parent);
+      if (parent) parentNodes.add(parent);
     });
+    let leaves = entries.map((entry) => entry[1]).filter((node) => !parentNodes.has(node));
+    if (!leaves.length) leaves = entries.map((entry) => entry[1]);
+    leaves = Array.from(new Set(leaves));
+
+    const currentNode = resolveNode(payload?.current_node);
+    const currentPath = currentNode ? buildPath(currentNode) : [];
+    const exportCache = new WeakMap();
+    let bestPagePath = [];
+    let bestPageScore = { score: 0, matches: 0, strongMatches: 0 };
+
+    if (Array.isArray(pageMessages) && pageMessages.length) {
+      leaves.forEach((leaf) => {
+        const candidatePath = buildPath(leaf);
+        const candidateScore = getChatGptPathPageScore(candidatePath, pageMessages, exportCache);
+        if (candidateScore.score > bestPageScore.score ||
+            (candidateScore.score === bestPageScore.score && getChatGptNodeTimestamp(leaf) > getChatGptNodeTimestamp(bestPagePath[bestPagePath.length - 1]))) {
+          bestPagePath = candidatePath;
+          bestPageScore = candidateScore;
+        }
+      });
+
+      const currentScore = currentPath.length
+        ? getChatGptPathPageScore(currentPath, pageMessages, exportCache)
+        : { score: 0, matches: 0, strongMatches: 0 };
+      const hasReliablePageMatch = bestPageScore.strongMatches > 0 || bestPageScore.matches >= 2;
+      if (hasReliablePageMatch && bestPageScore.score > currentScore.score) {
+        return bestPagePath;
+      }
+    }
+
+    if (currentPath.length) return currentPath;
+    if (bestPagePath.length && (bestPageScore.strongMatches > 0 || bestPageScore.matches >= 2)) {
+      return bestPagePath;
+    }
+
+    const latestLeaf = leaves.slice().sort((left, right) => getChatGptNodeTimestamp(right) - getChatGptNodeTimestamp(left))[0];
+    return latestLeaf ? buildPath(latestLeaf) : [];
   }
 
   function appendTextExportBlocks(blocks, text, options = {}) {
@@ -1470,7 +2093,38 @@ function createMissingDependencyError(name) {
   function isChatGptVisibleTextPartType(typeLabel) {
     const label = String(typeLabel || "").toLowerCase();
     if (!label) return false;
-    return /(?:^|\s)(?:text|markdown|paragraph|message|multimodal_text|input_text|output_text|audio_transcript|transcript)(?:\s|$)/.test(label);
+    return /(?:^|\s)(?:text|markdown|paragraph|message|multimodal_text|input_text|output_text|audio_transcript|transcript)(?:\s|$)/.test(label) ||
+      /(?:^|[\s_-])(?:input_|output_)?audio_transcript(?:ion)?(?:[\s_-]|$)/.test(label);
+  }
+
+  function isChatGptAudioTranscriptionPart(part) {
+    if (!part || typeof part !== "object" || Array.isArray(part)) return false;
+    const label = getChatGptContentPartTypeLabel(part);
+    return /(?:^|[\s_-])(?:input_|output_)?audio_transcript(?:ion)?(?:[\s_-]|$)/.test(label);
+  }
+
+  function isChatGptAudioPointerPart(part) {
+    if (!part || typeof part !== "object" || Array.isArray(part)) return false;
+    const type = String(part.content_type || part.type || "").trim().toLowerCase();
+    return type === "audio_asset_pointer" || type === "real_time_user_audio_video_asset_pointer";
+  }
+
+  function getChatGptAudioPointerTranscript(part) {
+    if (!isChatGptAudioPointerPart(part)) return "";
+    const candidates = [
+      part.transcription,
+      part.transcript,
+      part.metadata?.transcription,
+      part.metadata?.transcript,
+      part.metadata?.word_transcription,
+      part.audio_asset_pointer?.transcription,
+      part.audio_asset_pointer?.transcript,
+      part.audio_asset_pointer?.metadata?.transcription,
+      part.audio_asset_pointer?.metadata?.transcript,
+      part.audio_asset_pointer?.metadata?.word_transcription
+    ];
+    const value = candidates.find((candidate) => typeof candidate === "string" && candidate.trim());
+    return value ? String(value).trim() : "";
   }
 
   function hasChatGptControlPartFields(part) {
@@ -1547,8 +2201,35 @@ function createMissingDependencyError(name) {
     const content = message?.content;
     const parts = Array.isArray(content?.parts) ? content.parts : null;
     const seenFileIds = new Set();
+    const seenVoiceTranscripts = new Set();
     const preserveQuoteMarkers = String(message?.author?.role || "").toLowerCase() === "user";
     const textOptions = { preserveQuoteMarkers };
+    const hasExplicitVoiceTranscript = (parts || []).some((part) => {
+      return isChatGptAudioTranscriptionPart(part) && Boolean(extractTextFromChatGptContentPart(part).trim());
+    });
+    const hasPointerFallbackTranscript = (parts || []).some((part) => Boolean(getChatGptAudioPointerTranscript(part)));
+    const hasNonPointerVisibleText = (parts || []).some((part) => {
+      return !isChatGptAudioPointerPart(part) && Boolean(extractTextFromChatGptContentPart(part).trim());
+    });
+
+    function appendVoiceTranscript(text) {
+      const normalized = normalizeExportText(text).replace(/\s+/g, " ").trim();
+      if (!normalized || seenVoiceTranscripts.has(normalized)) return false;
+      seenVoiceTranscripts.add(normalized);
+      appendTextExportBlocks(blocks, text, textOptions);
+      return true;
+    }
+
+    function appendAudioPointerFallback(part) {
+      if (hasExplicitVoiceTranscript) return;
+      const fallbackTranscript = getChatGptAudioPointerTranscript(part);
+      if (fallbackTranscript) {
+        appendVoiceTranscript(fallbackTranscript);
+        return;
+      }
+      if (hasPointerFallbackTranscript || hasNonPointerVisibleText) return;
+      appendVoiceTranscript("[Voice message: transcript unavailable]");
+    }
 
     if (parts) {
       parts.forEach((part) => {
@@ -1560,10 +2241,25 @@ function createMissingDependencyError(name) {
           blocks.push(imageBlock);
           return;
         }
-        appendTextExportBlocks(blocks, extractTextFromChatGptContentPart(part), textOptions);
+        if (isChatGptAudioPointerPart(part)) {
+          appendAudioPointerFallback(part);
+          return;
+        }
+        const text = extractTextFromChatGptContentPart(part);
+        if (isChatGptAudioTranscriptionPart(part)) {
+          appendVoiceTranscript(text);
+        } else {
+          appendTextExportBlocks(blocks, text, textOptions);
+        }
       });
     } else {
-      appendTextExportBlocks(blocks, extractTextFromChatGptContentPart(content), textOptions);
+      if (isChatGptAudioPointerPart(content)) {
+        appendAudioPointerFallback(content);
+      } else if (isChatGptAudioTranscriptionPart(content)) {
+        appendVoiceTranscript(extractTextFromChatGptContentPart(content));
+      } else {
+        appendTextExportBlocks(blocks, extractTextFromChatGptContentPart(content), textOptions);
+      }
     }
 
     collectChatGptImageBlocksFromValue(content)
@@ -1619,6 +2315,17 @@ function createMissingDependencyError(name) {
       }
     });
 
+    overlayStructuredLinksOnBlocks(finalBlocks, {
+      metadata: message?.metadata,
+      annotations: message?.content?.annotations,
+      parts: Array.isArray(message?.content?.parts) ? message.content.parts.map((part) => ({
+        annotations: part && typeof part === "object" ? part.annotations : null,
+        metadata: part && typeof part === "object" ? part.metadata : null,
+        citations: part && typeof part === "object" ? part.citations : null,
+        references: part && typeof part === "object" ? part.references : null,
+        links: part && typeof part === "object" ? part.links : null
+      })) : []
+    });
     return finalBlocks;
   }
 
@@ -1660,22 +2367,71 @@ function createMissingDependencyError(name) {
     });
   }
 
-  function readPlatformResponseBody(response, bodyType, platformLabel, timeoutMs = PLATFORM_EXPORT_REQUEST_TIMEOUT_MS) {
+  async function readPlatformResponseBody(response, bodyType, platformLabel, timeoutMs = PLATFORM_EXPORT_REQUEST_TIMEOUT_MS, maxBytes = PLATFORM_EXPORT_RESPONSE_MAX_BYTES) {
     const label = platformLabel || "Platform";
-    const reader = bodyType === "blob"
-      ? response.blob()
-      : bodyType === "text"
-        ? response.text()
-        : response.json();
-    return withPlatformTimeout(reader, timeoutMs, `${label} response timed out. Refresh ${label} and try again.`);
+    const normalizedMaxBytes = Number.isFinite(Number(maxBytes)) && Number(maxBytes) > 0
+      ? Math.floor(Number(maxBytes))
+      : PLATFORM_EXPORT_RESPONSE_MAX_BYTES;
+    const contentLength = Number(response && response.headers && response.headers.get("content-length") || 0);
+    if (Number.isFinite(contentLength) && contentLength > normalizedMaxBytes) {
+      throw new Error(`${label} returned too much data to export safely. Try exporting a shorter conversation.`);
+    }
+
+    let bytes;
+    if (response.body && typeof response.body.getReader === "function") {
+      const streamReader = response.body.getReader();
+      const chunks = [];
+      let total = 0;
+      try {
+        while (true) {
+          const next = await streamReader.read();
+          if (next.done) break;
+          const chunk = next.value instanceof Uint8Array ? next.value : new Uint8Array(next.value || 0);
+          total += chunk.byteLength;
+          if (total > normalizedMaxBytes) {
+            try { await streamReader.cancel(); } catch (error) {}
+            throw new Error(`${label} returned too much data to export safely. Try exporting a shorter conversation.`);
+          }
+          chunks.push(chunk);
+        }
+      } finally {
+        try { streamReader.releaseLock(); } catch (error) {}
+      }
+      bytes = new Uint8Array(total);
+      let offset = 0;
+      chunks.forEach((chunk) => {
+        bytes.set(chunk, offset);
+        offset += chunk.byteLength;
+      });
+    } else {
+      const fallback = await withPlatformTimeout(
+        response.arrayBuffer(),
+        timeoutMs,
+        `${label} response timed out. Refresh ${label} and try again.`
+      );
+      if (fallback.byteLength > normalizedMaxBytes) {
+        throw new Error(`${label} returned too much data to export safely. Try exporting a shorter conversation.`);
+      }
+      bytes = new Uint8Array(fallback);
+    }
+
+    if (bodyType === "blob") {
+      return new Blob([bytes], { type: response.headers.get("content-type") || "application/octet-stream" });
+    }
+    const text = new TextDecoder().decode(bytes);
+    return bodyType === "text" ? text : JSON.parse(text);
   }
 
   async function fetchPlatformConversationPayload(url, options = {}, platformLabel = "Platform", responseType = "json") {
     const timeoutMs = Number.isFinite(Number(options.timeoutMs))
       ? Number(options.timeoutMs)
       : PLATFORM_EXPORT_REQUEST_TIMEOUT_MS;
+    const maxResponseBytes = Number.isFinite(Number(options.maxResponseBytes))
+      ? Number(options.maxResponseBytes)
+      : PLATFORM_EXPORT_RESPONSE_MAX_BYTES;
     const fetchOptions = { ...options };
     delete fetchOptions.timeoutMs;
+    delete fetchOptions.maxResponseBytes;
 
     let timedOut = false;
     let timeoutId = null;
@@ -1706,7 +2462,7 @@ function createMissingDependencyError(name) {
         return { response, body: null };
       }
 
-      const body = await readPlatformResponseBody(response, responseType, platformLabel, timeoutMs);
+      const body = await readPlatformResponseBody(response, responseType, platformLabel, timeoutMs, maxResponseBytes);
       return { response, body };
     } catch (error) {
       if (timedOut || error?.name === "AbortError") {
@@ -1913,7 +2669,7 @@ function createMissingDependencyError(name) {
       return null;
     }
 
-    const blob = await readPlatformResponseBody(response, "blob", label, CLAUDE_ATTACHMENT_FETCH_TIMEOUT_MS);
+    const blob = await readPlatformResponseBody(response, "blob", label, CLAUDE_ATTACHMENT_FETCH_TIMEOUT_MS, CLAUDE_ATTACHMENT_MAX_BYTES);
     const blobSize = Number(blob && blob.size || 0);
     if (blobSize <= 100 || blobSize > CLAUDE_ATTACHMENT_MAX_BYTES) {
       return null;
@@ -1975,7 +2731,21 @@ function createMissingDependencyError(name) {
       appendClaudeImageBlocks(blocks, detachedImages, seenImages);
     }
 
-    return orderUserImageBlocksFirst(role, blocks);
+    const orderedBlocks = orderUserImageBlocksFirst(role, blocks);
+    overlayStructuredLinksOnBlocks(orderedBlocks, {
+      annotations: message?.annotations,
+      citations: message?.citations,
+      references: message?.references,
+      links: message?.links,
+      content: Array.isArray(message?.content) ? message.content.map((item) => ({
+        annotations: item?.annotations,
+        citations: item?.citations,
+        references: item?.references,
+        links: item?.links,
+        source: item?.source
+      })) : null
+    });
+    return orderedBlocks;
   }
 
   async function tryFetchClaudeAttachment(organizationId, conversationId, attachmentId) {
@@ -2053,11 +2823,16 @@ function createMissingDependencyError(name) {
     return null;
   }
 
+  // 历史问题：逐字符拼接 binary 字符串（O(n²)），对 8MB 图片会产生
+  // 数千万次字符串拼接，耗时数秒且占用大量内存。修复：分块 apply，
+  // 与 utils.js / background.js 的实现保持一致（8192 字节/块，安全且高效）。
   function arrayBufferToBase64(buffer) {
     const bytes = new Uint8Array(buffer);
+    const CHUNK_SIZE = 8192;
     let binary = "";
-    for (let i = 0; i < bytes.length; i++) {
-      binary += String.fromCharCode(bytes[i]);
+    for (let index = 0; index < bytes.length; index += CHUNK_SIZE) {
+      const end = Math.min(index + CHUNK_SIZE, bytes.length);
+      binary += String.fromCharCode.apply(null, bytes.subarray(index, end));
     }
     return btoa(binary);
   }
@@ -2284,6 +3059,46 @@ function createMissingDependencyError(name) {
     });
   }
 
+  function normalizeGeminiPayloadMarkdown(text) {
+    const lines = String(text || "").split("\n");
+    let fenceLength = 0;
+
+    function restoreProseDelimiters(value) {
+      return String(value || "")
+        .replace(/\\\*\\\*([^`\n]*?\S[^`\n]*?)\\\*\\\*/g, "**$1**")
+        .replace(/\\_\\_([^`\n]*?\S[^`\n]*?)\\_\\_/g, "__$1__")
+        .replace(/\\~\\~([^`\n]*?\S[^`\n]*?)\\~\\~/g, "~~$1~~");
+    }
+
+    return lines.map((line) => {
+      const trimmed = line.trim();
+      const fenceMatch = trimmed.match(/^(`{3,})/);
+      if (fenceMatch) {
+        const nextFenceLength = fenceMatch[1].length;
+        if (fenceLength === 0) fenceLength = nextFenceLength;
+        else if (nextFenceLength >= fenceLength) fenceLength = 0;
+        return line;
+      }
+      if (fenceLength > 0) return line;
+
+      // Gemini RPC payloads sometimes escape paired emphasis delimiters even
+      // though the live page renders them as rich text. Leaving those escapes
+      // in place makes every exporter show visible ** markers instead of the
+      // formatting the user sees. Keep code spans/fences literal and only
+      // restore complete, non-empty delimiter pairs in prose.
+      let output = "";
+      let cursor = 0;
+      const inlineCodePattern = /(`+)(.*?)\1/g;
+      let inlineMatch;
+      while ((inlineMatch = inlineCodePattern.exec(line))) {
+        output += restoreProseDelimiters(line.slice(cursor, inlineMatch.index));
+        output += inlineMatch[0];
+        cursor = inlineMatch.index + inlineMatch[0].length;
+      }
+      return output + restoreProseDelimiters(line.slice(cursor));
+    }).join("\n");
+  }
+
   const GEMINI_MIME_TYPE_PATTERN = /^image\/(png|jpe?g|gif|webp|svg\+xml|bmp|tiff|avif|heic|heif)$/i;
   const GEMINI_BASE64_BLOB_PATTERN = /^\$[A-Za-z0-9+/=]{20,}$/;
   const GEMINI_IMAGE_FILENAME_PATTERN = /^image_[a-zA-Z0-9_-]+\.(png|jpe?g|gif|webp|bmp|tiff|avif|heic|heif)$/i;
@@ -2497,7 +3312,9 @@ function createMissingDependencyError(name) {
   }
 
   function appendGeminiPayloadTextBlocks(out, text) {
-    const normalized = normalizeExportText(stripGeminiAttachmentMetadataText(stripGeminiPayloadImageUrls(text)));
+    const normalized = normalizeExportText(normalizeGeminiPayloadMarkdown(
+      stripGeminiAttachmentMetadataText(stripGeminiPayloadImageUrls(text))
+    ));
     if (!normalized || isGeminiPayloadNoiseString(normalized)) {
       return;
     }
@@ -2593,6 +3410,7 @@ function createMissingDependencyError(name) {
     }
 
     const orderedContentBlocks = orderUserImageBlocksFirst(normalizedRole, contentBlocks);
+    overlayStructuredLinksOnBlocks(orderedContentBlocks, value);
 
     return normalizedRole && orderedContentBlocks.length
       ? {
@@ -2750,6 +3568,14 @@ function createMissingDependencyError(name) {
   export function createExportPlatformFetchers(options) {
     var deps = options || {};
 
+    function getChatGptRequestHeaders(session) {
+      var headers = {};
+      if (session && session.accessToken) {
+        headers.Authorization = "Bearer " + session.accessToken;
+      }
+      return headers;
+    }
+
     async function fetchChatGptConversationMessages(chat, options) {
       options = options || {};
       requireFn(deps, "ensureCanReadChatBody")(chat);
@@ -2763,9 +3589,7 @@ function createMissingDependencyError(name) {
       var conversationId = encodeURIComponent(rawConversationId);
       var conversationResult = await fetchPlatformConversationPayload(window.location.origin + "/backend-api/conversation/" + conversationId, {
         credentials: "include",
-        headers: {
-          Authorization: "Bearer " + chatGptSession.accessToken
-        }
+        headers: getChatGptRequestHeaders(chatGptSession)
       }, "ChatGPT", "json");
       var response = conversationResult.response;
 
@@ -2777,7 +3601,7 @@ function createMissingDependencyError(name) {
       }
 
       var payload = conversationResult.body;
-      var nodes = getChatGptConversationNodes(payload);
+      var nodes = getChatGptConversationNodes(payload, options.pageMessages || []);
       var messages = [];
       var fileUrlPromises = new Map();
       var pageImageSourcesByFileId = new Map();
@@ -2842,12 +3666,11 @@ function createMissingDependencyError(name) {
         if (!fileUrlPromises.has(fileId)) {
           fileUrlPromises.set(fileId, (async function () {
             try {
-              var fileResult = await fetchPlatformConversationPayload(window.location.origin + "/backend-api/files/" + encodeURIComponent(fileId) + "/download", {
+              var fileEndpoint = window.location.origin + "/backend-api/files/" + encodeURIComponent(fileId) + "/download";
+              var fileResult = await fetchPlatformConversationPayload(fileEndpoint, {
                 credentials: "include",
                 timeoutMs: 4000,
-                headers: {
-                  Authorization: "Bearer " + chatGptSession.accessToken
-                }
+                headers: getChatGptRequestHeaders(chatGptSession)
               }, "ChatGPT file", "none");
               var fileResp = fileResult.response;
               if (!fileResp.ok) {
@@ -2858,12 +3681,11 @@ function createMissingDependencyError(name) {
                 var fileData = await readPlatformResponseBody(fileResp, "json", "ChatGPT file", 4000);
                 return normalizeChatGptDownloadUrl(getChatGptDownloadUrlFromPayload(fileData));
               }
-              if (contentType.indexOf("image/") !== -1 || contentType.indexOf("application/octet-stream") !== -1) {
-                var blob = await readPlatformResponseBody(fileResp, "blob", "ChatGPT file", 4000);
-                return URL.createObjectURL(blob);
-              }
               if (fileResp.redirected && fileResp.url) {
                 return fileResp.url;
+              }
+              if (contentType.indexOf("image/") !== -1 || contentType.indexOf("application/octet-stream") !== -1 || contentType.indexOf("text/markdown") !== -1) {
+                return fileResp.url || fileEndpoint;
               }
               if (contentType.indexOf("text/") !== -1) {
                 var text = await readPlatformResponseBody(fileResp, "text", "ChatGPT file", 4000);
@@ -2886,7 +3708,7 @@ function createMissingDependencyError(name) {
 
       nodes.forEach(function (node) {
         var message = node && node.message;
-        if (!message) return;
+        if (!message || isChatGptMessageHiddenFromConversation(message)) return;
 
         var hasUnresolvedGenUi = valueHasStandaloneGenUiPlaceholderToken(message.content);
         var contentBlocks = chatGptMessageToExportBlocks(message);
@@ -2896,7 +3718,8 @@ function createMissingDependencyError(name) {
         var msgObj = {
           role: role,
           contentBlocks: contentBlocks,
-          _chatVaultRawRole: message && (message.author && message.author.role || message.role) || ""
+          _chatVaultRawRole: message && (message.author && message.author.role || message.role) || "",
+          _chatVaultGeneratedFileReferences: collectChatGptGeneratedFileReferences(message)
         };
         if (hasUnresolvedGenUi) {
           msgObj._chatVaultHasUnresolvedGenUi = true;
@@ -2907,6 +3730,20 @@ function createMissingDependencyError(name) {
       });
 
       messages = filterInheritedUserImages(messages);
+
+      await mapLimit(messages, 4, async function (msg) {
+        const references = msg._chatVaultGeneratedFileReferences || [];
+        const files = collectGeneratedFileSourcesFromBlocks(msg.contentBlocks || []);
+        for (const file of files) {
+          const reference = references.find((item) => {
+            return item.source === file.source || (item.name && item.name.toLowerCase() === file.name.toLowerCase());
+          });
+          if (!reference) continue;
+          const href = normalizeChatGptDownloadUrl(reference.downloadUrl) || (reference.fileId ? await getFileDownloadUrl(reference.fileId) : "");
+          if (href) applyResolvedGeneratedFileHref(msg.contentBlocks, file.source, href);
+        }
+        delete msg._chatVaultGeneratedFileReferences;
+      });
 
       var imageBlocksByFileId = new Map();
       messages.forEach(function (msg) {
@@ -2953,6 +3790,7 @@ function createMissingDependencyError(name) {
           delete block._chatGptFileId;
         });
         delete msg._chatVaultRawRole;
+        delete msg._chatVaultGeneratedFileReferences;
       });
 
       return messages.filter(function (msg) {
@@ -3049,7 +3887,8 @@ function createMissingDependencyError(name) {
           "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
           "X-Same-Domain": "1"
         },
-        method: "POST"
+        method: "POST",
+        maxResponseBytes: GEMINI_BATCH_RESPONSE_MAX_CHARS
       }, "Gemini", "text");
 
       if (!fetchResult.response.ok) {
@@ -3078,6 +3917,9 @@ function createMissingDependencyError(name) {
       cloneExportMessages: cloneExportMessages,
       mergeChatGptExportMessages: mergeChatGptExportMessages,
       mergeGeminiExportMessages: mergeGeminiExportMessages,
-      mergePageHtmlPresentation: mergePageHtmlPresentation
+      mergePageHtmlPresentation: mergePageHtmlPresentation,
+      parseClaudeConversationPayload: parseClaudeConversationPayload,
+      parseGeminiBatchExecutePayloads: parseGeminiBatchExecutePayloads,
+      parseGeminiConversationPayloads: parseGeminiConversationPayloads
     };
   }

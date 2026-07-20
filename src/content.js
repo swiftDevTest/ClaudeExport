@@ -3168,9 +3168,7 @@
       if (exportBtn) exportBtn.disabled = true;
     } else {
       if (warning) warning.style.display = "none";
-      if (exportBtn) exportBtn.disabled = count === 0 ||
-        (batchMode === "notion" && !hasNotionDestination) ||
-        (batchMode === "obsidian" && !hasObsidianDestination);
+      if (exportBtn) exportBtn.disabled = count === 0;
     }
 
     // 达到 10 个限制时禁用未选中的项

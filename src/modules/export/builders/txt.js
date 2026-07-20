@@ -5,10 +5,20 @@ import {
   sanitizeExportText,
   formatLatexUnicode,
   getInlinePlainText,
+  getPortableExportLinkHref,
   getExportFooterText,
   notifyProgress,
   yieldToBrowser
 } from '../utils.js';
+
+function getPlainTextWithGeneratedFileLink(block, metadata) {
+  var text = getInlinePlainText(block);
+  if (!block || (!block.generatedFile && !Array.isArray(block.generatedFiles))) return text;
+  var segmentHref = (block.segments || []).map(function (segment) { return segment && segment.href || ""; }).find(Boolean) || "";
+  var sourceHref = block.generatedFile && block.generatedFile.source || "";
+  var href = getPortableExportLinkHref(segmentHref || sourceHref, metadata && metadata.sourceUrl);
+  return href && text.indexOf(href) === -1 ? text + "\n" + href : text;
+}
 
 export async function buildTxtBlob(messages, metadata, settings, options) {
   var opts = options || {};
@@ -80,12 +90,12 @@ export async function buildTxtBlob(messages, metadata, settings, options) {
           var level = Math.min(6, block.level || 1);
           var hashes = "";
           for (var k = 0; k < level; k++) hashes += "#";
-          lines.push(hashes + " " + getInlinePlainText(block));
+          lines.push(hashes + " " + getPlainTextWithGeneratedFileLink(block, metadata));
           lines.push("");
           break;
 
         case "paragraph":
-          lines.push(getInlinePlainText(block));
+          lines.push(getPlainTextWithGeneratedFileLink(block, metadata));
           lines.push("");
           break;
 
@@ -97,7 +107,7 @@ export async function buildTxtBlob(messages, metadata, settings, options) {
           break;
 
         case "list":
-          j = renderListRun(blocks, j, lines);
+          j = renderListRun(blocks, j, lines, metadata);
           lines.push("");
           break;
 
@@ -109,7 +119,7 @@ export async function buildTxtBlob(messages, metadata, settings, options) {
         case "blockquote":
         case "quote":
           if (block.text) {
-            lines.push(getInlinePlainText(block).split("\n").map(function (line) {
+            lines.push(getPlainTextWithGeneratedFileLink(block, metadata).split("\n").map(function (line) {
               return "> " + line;
             }).join("\n"));
             lines.push("");
@@ -172,20 +182,20 @@ function trimTrailingBlankLines(lines) {
   }
 }
 
-function renderListItem(item, lines, prefix, indent) {
+function renderListItem(item, lines, prefix, indent, metadata) {
   var baseIndent = indent || "";
-  lines.push(baseIndent + prefix + " " + getInlinePlainText(item));
+  lines.push(baseIndent + prefix + " " + getPlainTextWithGeneratedFileLink(item, metadata));
 
   var childIndent = baseIndent + "  ";
   var subItems = (item && item.subItems) || [];
   subItems.forEach(function (sub) {
     if (!sub) return;
-    renderListItem(sub, lines, "-", childIndent);
+    renderListItem(sub, lines, "-", childIndent, metadata);
   });
   return childIndent;
 }
 
-function renderListRun(blocks, startIndex, lines) {
+function renderListRun(blocks, startIndex, lines, metadata) {
   var index = startIndex;
   var orderedNumber = 1;
   var previousOrderedItemCount = 0;
@@ -203,7 +213,7 @@ function renderListRun(blocks, startIndex, lines) {
 
     if (block.ordered) {
       items.forEach(function (item) {
-        previousOrderedChildIndent = renderListItem(item, lines, orderedNumber + ".", "");
+        previousOrderedChildIndent = renderListItem(item, lines, orderedNumber + ".", "", metadata);
         orderedNumber += 1;
       });
       previousOrderedItemCount = items.length;
@@ -213,7 +223,7 @@ function renderListRun(blocks, startIndex, lines) {
 
     if (index > startIndex && previousOrderedItemCount === 1 && previousOrderedChildIndent) {
       items.forEach(function (item) {
-        renderListItem(item, lines, "-", previousOrderedChildIndent);
+        renderListItem(item, lines, "-", previousOrderedChildIndent, metadata);
       });
       previousOrderedItemCount = 0;
       index += 1;
@@ -223,7 +233,7 @@ function renderListRun(blocks, startIndex, lines) {
     if (index !== startIndex) break;
 
     items.forEach(function (item) {
-      renderListItem(item, lines, "-", "");
+      renderListItem(item, lines, "-", "", metadata);
     });
     previousOrderedItemCount = 0;
     index += 1;

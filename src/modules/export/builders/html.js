@@ -16,7 +16,7 @@ import {
 } from '../utils.js';
 import { fetchImageBytes } from '../media.js';
 import { getExportTheme } from '../themes/tokens.js';
-import { serializeExportHtmlStyle } from '../html-style.js';
+import { isTransparentCssColor, serializeExportHtmlStyle } from '../html-style.js';
 
 function escapeHtml(value) {
   return String(value == null ? "" : value)
@@ -43,9 +43,21 @@ function styleAttribute(style) {
   return serialized ? ' style="' + escapeHtml(serialized) + '"' : "";
 }
 
+function messageStyleAttribute(style, flat) {
+  if (!flat) return styleAttribute(style);
+  var copy = style && typeof style === "object" ? { ...style } : null;
+  if (!copy) return "";
+  [
+    "background", "background-color", "background-image", "border", "border-top",
+    "border-right", "border-bottom", "border-left", "border-color", "border-radius",
+    "box-shadow", "margin", "padding", "width", "max-width"
+  ].forEach(function (property) { delete copy[property]; });
+  return styleAttribute(copy);
+}
+
 function codeBlockStyleAttribute(style) {
   var copy = style && typeof style === "object" ? { ...style } : style;
-  if (copy && /^(?:transparent|rgba\(\s*0\s*,\s*0\s*,\s*0\s*,\s*0\s*\)|hsla\(\s*0\s*,\s*0%\s*,\s*0%\s*,\s*0\s*\))$/i.test(String(copy["background-color"] || "").trim())) {
+  if (copy && isTransparentCssColor(copy["background-color"])) {
     delete copy["background-color"];
   }
   return styleAttribute(copy);
@@ -56,7 +68,7 @@ function blockquoteStyleAttribute(style) {
   if (copy) {
     var borderLeft = String(copy["border-left"] || "").trim();
     var zeroBorder = borderLeft.match(/^0(?:\.0+)?(?:px|pt|em|rem)?\s+(?:solid|dashed|dotted|double)\s+(.+)$/i);
-    if (zeroBorder && !/^(?:transparent|rgba\(\s*0\s*,\s*0\s*,\s*0\s*,\s*0\s*\))$/i.test(zeroBorder[1].trim())) {
+    if (zeroBorder && !isTransparentCssColor(zeroBorder[1])) {
       copy["border-left"] = "4px solid " + zeroBorder[1].trim();
     } else if (/^0(?:\.0+)?(?:px|pt|em|rem)?(?:\s|$)/i.test(borderLeft)) {
       delete copy["border-left"];
@@ -67,6 +79,10 @@ function blockquoteStyleAttribute(style) {
 
 function renderEscapedInlineText(value) {
   return escapeHtml(formatLatexUnicode(String(value == null ? "" : value))).replace(/\n/g, "<br>");
+}
+
+function renderLiteralInlineText(value) {
+  return escapeHtml(String(value == null ? "" : value)).replace(/\n/g, "<br>");
 }
 
 function renderInlineMarkdownSource(value, depth) {
@@ -109,7 +125,7 @@ function renderInlineMarkdownSource(value, depth) {
       var codeEnd = findClosingMarker(codeMarker, markerEnd);
       if (codeEnd >= markerEnd) {
         appendPlain(index);
-        output += "<code>" + renderEscapedInlineText(input.slice(markerEnd, codeEnd)) + "</code>";
+        output += "<code>" + renderLiteralInlineText(input.slice(markerEnd, codeEnd)) + "</code>";
         index = codeEnd + codeMarker.length;
         plainStart = index;
         continue;
@@ -181,8 +197,11 @@ function renderInlineMarkdownSource(value, depth) {
   return output;
 }
 
-function renderInlineMarkdownFallback(value) {
-  return renderInlineMarkdownSource(sanitizeExportText(value), 0);
+function renderInlineMarkdownFallback(value, textSource) {
+  var sanitized = sanitizeExportText(value);
+  return textSource === "dom"
+    ? renderLiteralInlineText(sanitized)
+    : renderInlineMarkdownSource(sanitized, 0);
 }
 
 function renderCodeSegments(block) {
@@ -201,10 +220,10 @@ function renderCodeSegments(block) {
 function renderInlineSegments(block) {
   var segments = block && block.segments;
   if (!Array.isArray(segments) || !segments.length) {
-    return renderInlineMarkdownFallback(block && block.text || "");
+    return renderInlineMarkdownFallback(block && block.text || "", block && block.textSource);
   }
   if (shouldCoalesceInlineSegments(segments)) {
-    return renderInlineMarkdownFallback(getCoalescedInlineSegmentsText(segments, block && block.text));
+    return renderInlineMarkdownFallback(getCoalescedInlineSegmentsText(segments, block && block.text), block && block.textSource);
   }
   return segments.map(function (segment) {
     if (!segment) return "";
@@ -215,9 +234,7 @@ function renderInlineSegments(block) {
     var mathMl = isMath ? sanitizeExportMathMl(segment.mathMl) : "";
     var text = mathMl || (isMath
       ? escapeHtml(formatLatexUnicode("\\(" + sanitizedText.trim() + "\\)"))
-      : isCode
-      ? renderEscapedInlineText(sanitizedText)
-      : renderInlineMarkdownSource(sanitizedText, 0));
+      : renderLiteralInlineText(sanitizedText));
     var inlineStyle = styleAttribute(segment.htmlStyle);
     if (inlineStyle) text = "<span" + inlineStyle + ">" + text + "</span>";
     if (isMath) text = '<span class="math-inline">' + text + "</span>";
@@ -242,7 +259,7 @@ function renderListItems(items) {
     if (!item) return "";
     var content = item.segments && item.segments.length
       ? renderInlineSegments(item)
-      : renderInlineMarkdownFallback(item.text || "");
+      : renderInlineMarkdownFallback(item.text || "", item.textSource);
     var children = item.subItems && item.subItems.length
       ? "<ul>" + renderListItems(item.subItems) + "</ul>"
       : "";
@@ -262,14 +279,14 @@ function renderTable(block) {
   if (headers.length) {
     head = "<thead><tr>";
     for (var index = 0; index < columnCount; index += 1) {
-      head += "<th>" + renderInlineMarkdownFallback(headers[index] || "") + "</th>";
+      head += "<th>" + renderInlineMarkdownFallback(headers[index] || "", block.textSource) + "</th>";
     }
     head += "</tr></thead>";
   }
   var body = "<tbody>" + rows.map(function (row) {
     var cells = "";
     for (var index = 0; index < columnCount; index += 1) {
-      cells += "<td>" + renderInlineMarkdownFallback(row && row[index] || "") + "</td>";
+      cells += "<td>" + renderInlineMarkdownFallback(row && row[index] || "", block.textSource) + "</td>";
     }
     return "<tr>" + cells + "</tr>";
   }).join("") + "</tbody>";
@@ -337,7 +354,7 @@ function renderBlock(block, imageMap) {
       : '<div class="image-placeholder">' + escapeHtml(t("export_image_unavailable", "Image unavailable in offline export")) + "</div>";
   }
   if (block.type === "separator") return "<hr" + blockStyle + ">";
-  return block.text ? "<p" + blockStyle + ">" + renderInlineMarkdownFallback(block.text) + "</p>" : "";
+  return block.text ? "<p" + blockStyle + ">" + renderInlineMarkdownFallback(block.text, block.textSource) + "</p>" : "";
 }
 
 function pageBackground(theme) {
@@ -352,15 +369,16 @@ function pageBackground(theme) {
 function buildCss(theme, styleId, settings) {
   var color = theme.color || {};
   var natural = styleId === "natural";
+  var flat = styleId === "default" || natural;
   var userAlign = settings.align_user_messages_right ? "width:fit-content;max-width:88%;margin-left:auto;margin-right:0" : "width:auto;max-width:100%;margin-left:0";
   return `
     :root{color-scheme:light;--ink:${color.ink || "#17202a"};--muted:${color.muted || "#64748b"};--accent:${color.accent || "#16869a"};--line:${color.line || "#d9e2ec"};--code-bg:${color.codeBg || "#162334"};--code-text:${color.codeText || "#e5eef8"};--quote-bg:${color.quoteBg || "#f8fafc"};--quote-border:${color.quoteBorder || color.accent || "#16869a"}}
     *{box-sizing:border-box}html{background:#fff}body{margin:0;background:${natural ? "#fff" : pageBackground(theme)};color:var(--ink);font:16px/1.72 ${theme.font && theme.font.body || "sans-serif"};overflow-wrap:anywhere}
     main{width:min(920px,calc(100% - 32px));margin:0 auto;padding:56px 0 40px}header{padding-bottom:24px;border-bottom:1px solid var(--line);margin-bottom:30px}h1,h2,h3,h4,h5,h6{font-family:${theme.font && theme.font.title || "sans-serif"};line-height:1.3;margin:1.35em 0 .55em}h1{font-size:2rem;margin:0 0 12px}.meta{display:flex;flex-wrap:wrap;gap:8px 18px;color:var(--muted);font-size:.9rem}
-    .message{max-width:100%;margin:0 0 22px;padding:${natural ? "4px 0 22px" : "22px 24px"};background:transparent;border:${natural ? "0" : "1px solid"};border-bottom:${natural ? "1px solid var(--line)" : "1px solid"};border-radius:${natural ? "0" : "16px"};box-shadow:none}.message.user{${userAlign};background:${natural ? "transparent" : color.cardBgUser || "#eef8fb"};border-color:${natural ? "var(--line)" : color.cardBorderUser || "#bfe6ee"}}.message.assistant{background:${natural ? "transparent" : color.cardBgAssistant || "#fff"};border-color:${natural ? "var(--line)" : color.cardBorderAssistant || "#dbe7ef"}}
+    .message{max-width:100%;margin:0 0 22px;padding:${flat ? "4px 0 22px" : "22px 24px"};background:transparent;border:${flat ? "0" : "1px solid"};border-bottom:${flat ? "1px solid var(--line)" : "1px solid"};border-radius:${flat ? "0" : "16px"};box-shadow:none}.message.user{${userAlign};background:${flat ? "transparent" : color.cardBgUser || "#eef8fb"};border-color:${flat ? "var(--line)" : color.cardBorderUser || "#bfe6ee"}}.message.assistant{background:${flat ? "transparent" : color.cardBgAssistant || "#fff"};border-color:${flat ? "var(--line)" : color.cardBorderAssistant || "#dbe7ef"}}
     .message p{margin:.35em 0 1em}.message> :last-child{margin-bottom:0}a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:2px}code{font-family:${theme.font && theme.font.mono || "monospace"};background:${natural ? "#f3f4f6" : color.tagBgAssistant || "#f1f5f9"};padding:.12em .35em;border-radius:5px}.math-inline{display:inline-block;max-width:100%;vertical-align:middle;white-space:nowrap;overflow-x:auto;font-family:${theme.font && theme.font.body || "serif"}}.math-inline math{font-size:1em}mark{color:inherit;border-radius:3px;padding:0 .08em}.code-block{margin:18px 0;background:var(--code-bg);color:var(--code-text);border-radius:10px;overflow:hidden}.code-label{padding:8px 14px;border-bottom:1px solid rgba(255,255,255,.15);font:700 .72rem ${theme.font && theme.font.mono || "monospace"};opacity:.8}.code-block pre{margin:0;padding:16px;overflow:auto;white-space:pre}.code-block code{padding:0;background:transparent;color:inherit}
     blockquote{margin:18px 0;padding:12px 16px;background:var(--quote-bg);border-left:4px solid var(--quote-border);border-radius:0 8px 8px 0}hr{height:0;margin:24px 0;border:0;border-top:1px solid var(--line)}.table-wrap{overflow-x:auto;margin:18px 0}table{width:100%;border-collapse:collapse;font-size:.92rem}th,td{padding:10px 12px;border:1px solid var(--line);text-align:left;vertical-align:top}th{background:${natural ? "#f8fafc" : color.tagBgAssistant || "#f1f5f9"}}figure{margin:20px 0}img{display:block;max-width:100%;height:auto;border-radius:8px}figcaption{margin-top:6px;color:var(--muted);font-size:.8rem}.image-placeholder{margin:16px 0;padding:14px;border:1px dashed var(--line);color:var(--muted);text-align:center}footer{display:flex;justify-content:space-between;gap:18px;margin-top:34px;padding-top:16px;border-top:${natural ? "0" : "1px solid var(--line)"};color:var(--muted);font-size:.8rem}footer span:last-child{text-align:right}
-    @media(max-width:640px){main{width:min(100% - 24px,920px);padding-top:28px}.message{max-width:100%;padding:${natural ? "4px 0 18px" : "18px"}}footer{display:block}footer span{display:block;margin-top:6px}footer span:last-child{text-align:left}}
+    @media(max-width:640px){main{width:min(100% - 24px,920px);padding-top:28px}.message{max-width:100%;padding:${flat ? "4px 0 18px" : "18px"}}footer{display:block}footer span{display:block;margin-top:6px}footer span:last-child{text-align:left}}
     @media print{body{background:#fff}main{width:auto;padding:0}.message{break-inside:avoid;box-shadow:none}a{color:inherit}footer{break-before:avoid}}
   `;
 }
@@ -369,8 +387,9 @@ export async function buildHtmlBlob(messages, metadata, settings, options) {
   var opts = options || {};
   notifyProgress(opts, t("export_progress_preparing_html", "Preparing HTML export"), 0.03);
   var imageMap = await buildEmbeddedImageMap(messages, opts);
-  var styleId = settings.export_style || "default";
+  var styleId = "natural"; // HTML export does not use custom themes; force native web presentation
   var theme = getExportTheme(styleId);
+  var flat = styleId === "default" || styleId === "natural";
   var body = [];
   for (var index = 0; index < messages.length; index += 1) {
     if (opts.signal && opts.signal.aborted) {
@@ -381,7 +400,7 @@ export async function buildHtmlBlob(messages, metadata, settings, options) {
     var message = messages[index];
     if (settings.export_ai_replies_only && message.role === "user") continue;
     var role = message.role === "user" ? "user" : "assistant";
-    body.push('<section class="message ' + role + '"' + styleAttribute(message.htmlStyle) + '>' + (message.contentBlocks || []).map(function (block) {
+    body.push('<section class="message ' + role + '"' + messageStyleAttribute(message.htmlStyle, flat) + '>' + (message.contentBlocks || []).map(function (block) {
       return renderBlock(block, imageMap);
     }).join("") + "</section>");
     if (index % 5 === 4 || index === messages.length - 1) {

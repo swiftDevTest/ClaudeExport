@@ -20,32 +20,27 @@ import {
 import { compareElementsInDocument, pushDistinctDocumentElement } from './platforms/shared.js';
 import { parseMessagesForPlatform } from './platforms/registry.js';
 import { createExportDocument, normalizeExportBlocks, validateExportDocument } from './document.js';
-
-const PRODUCT_CONFIG = globalThis.CHATVAULT_PRODUCT_CONFIG || {};
-
-function defaultPlatformLabel(platform) {
-  if (platform === "claude") return "Claude";
-  if (platform === "gemini") return "Gemini";
-  if (platform === "chatgpt") return "ChatGPT";
-  return "supported AI chat";
-}
-
-function getSupportedPlatformLabel() {
-  const platformLabels = PRODUCT_CONFIG.platformLabels || {};
-  const supportedPlatforms = Array.isArray(PRODUCT_CONFIG.supportedPlatforms) && PRODUCT_CONFIG.supportedPlatforms.length
-    ? PRODUCT_CONFIG.supportedPlatforms
-    : ["chatgpt", "claude", "gemini"];
-  const names = supportedPlatforms.map((platform) => platformLabels[platform] || defaultPlatformLabel(platform));
-  if (!names.length) return "supported AI chat";
-  if (names.length === 1) return names[0];
-  if (names.length === 2) return `${names[0]} or ${names[1]}`;
-  return `${names.slice(0, -1).join(", ")}, or ${names[names.length - 1]}`;
-}
+import { withExportHtmlStyleCapture } from './html-style.js';
 
 var selectionSelectedMessages = new Map();
 var selectionOrderCounter = 0;
 var selectionDomKeys = new WeakMap();
 var selectionDomKeyCounter = 0;
+
+// 解析统计：用于 export-health 检测 DOM 选择器命中率，识别"静默丢内容"风险
+// 当 AI 平台 DOM 结构变化导致选择器不再匹配时，parseMessages 仍会返回结果，
+// 但部分消息会被悄悄丢弃。此处记录候选 turn 数与实际解析数，供 health check 比对。
+var lastParseStats = {
+  platform: "",
+  candidateTurnCount: 0,
+  parsedMessageCount: 0,
+  droppedTurnCount: 0,
+  collectedAt: 0
+};
+
+function shouldCaptureHtmlStyles(options) {
+  return !options || options.includeHtmlStyles !== false;
+}
 
 function resetSelectionState() {
   selectionSelectedMessages.clear();
@@ -54,29 +49,135 @@ function resetSelectionState() {
   selectionDomKeyCounter = 0;
 }
 
+function collapseCandidateElements(elements) {
+  var collapsed = [];
+  Array.prototype.forEach.call(elements || [], function (element) {
+    var overlaps = collapsed.some(function (existing) {
+      return existing === element ||
+        existing && typeof existing.contains === "function" && existing.contains(element) ||
+        element && typeof element.contains === "function" && element.contains(existing);
+    });
+    if (!overlaps) collapsed.push(element);
+  });
+  return collapsed;
+}
 
+function queryCollapsedCandidates(root, selectors) {
+  var candidates = [];
+  (selectors || []).forEach(function (selector) {
+    Array.prototype.forEach.call(root.querySelectorAll(selector), function (element) {
+      candidates.push(element);
+    });
+  });
+  return collapseCandidateElements(candidates);
+}
 
-function parseChatGPTMessages() {
-  return parseMessagesForPlatform("chatgpt");
+function countCandidateTurns(platform) {
+  try {
+    if (typeof document === "undefined" || !document.querySelectorAll) return 0;
+    var root = document.querySelector("main") || document.body || document;
+
+    if (platform === "chatgpt") {
+      var turns = root.querySelectorAll("[data-testid^='conversation-turn-']");
+      return turns.length || collapseCandidateElements(root.querySelectorAll("[data-message-author-role]")).length;
+    }
+
+    if (platform === "claude") {
+      return queryCollapsedCandidates(root, [
+        "[data-testid='human-message']",
+        "[data-testid='user-message']",
+        "[data-testid='assistant-message']",
+        "[data-message-author-role='user']",
+        "[data-message-author-role='assistant']",
+        "[data-testid*='human-message']",
+        "[data-testid*='user-message']",
+        "[data-testid*='assistant-message']",
+        "[data-testid*='chat-message']",
+        "[class*='human-message']",
+        "[class*='user-message']",
+        "[class*='assistant-message']",
+        "[data-is-streaming]"
+      ]).length;
+    }
+
+    if (platform === "gemini") {
+      var geminiTurns = queryCollapsedCandidates(root, [
+        "conversation-turn",
+        ".conversation-turn",
+        "[class*='conversation-turn']",
+        "[data-test-id='conversation-turn']"
+      ]);
+      var userSelector = "user-query, [data-test-id='user-query'], .user-query, .query-container, [class*='query-text'], .query-text, .query-content, [class*='query-content'], .user-prompt, [class*='user-prompt'], [data-message-author-role='user'], [data-testid*='user'], [data-test-id*='user'], [class*='user-message'], [class*='human-message']";
+      var assistantSelector = "model-response, [data-test-id='model-response'], .model-response, .response-container, message-content, .markdown, [class*='markdown'], [data-message-author-role='assistant'], [data-testid*='assistant'], [data-test-id*='assistant'], [class*='assistant-message'], [class*='model-response']";
+      if (geminiTurns.length) {
+        return geminiTurns.reduce(function (count, turn) {
+          var roleCount = 0;
+          if (turn.querySelector(userSelector)) roleCount += 1;
+          if (turn.querySelector(assistantSelector)) roleCount += 1;
+          return count + Math.max(1, roleCount);
+        }, 0);
+      }
+      return queryCollapsedCandidates(root, [userSelector, assistantSelector]).length;
+    }
+
+    return 0;
+  } catch (error) {
+    return 0;
+  }
+}
+
+function getParseStats() {
+  return {
+    platform: lastParseStats.platform,
+    candidateTurnCount: lastParseStats.candidateTurnCount,
+    parsedMessageCount: lastParseStats.parsedMessageCount,
+    droppedTurnCount: lastParseStats.droppedTurnCount,
+    collectedAt: lastParseStats.collectedAt
+  };
 }
 
 
-function parseClaudeMessages() {
-  return parseMessagesForPlatform("claude");
+
+function parseChatGPTMessages(options) {
+  return withExportHtmlStyleCapture(shouldCaptureHtmlStyles(options), function () {
+    return parseChatGPTMessagesFromPlatform();
+  });
 }
 
 
-function parseGeminiMessages() {
-  return parseMessagesForPlatform("gemini");
+function parseClaudeMessages(options) {
+  return withExportHtmlStyleCapture(shouldCaptureHtmlStyles(options), function () {
+    return parseClaudeMessagesFromPlatform();
+  });
 }
 
 
-function parseMessages() {
+function parseGeminiMessages(options) {
+  return withExportHtmlStyleCapture(shouldCaptureHtmlStyles(options), function () {
+    return parseGeminiMessagesFromPlatform();
+  });
+}
+
+
+function parseMessages(options) {
   var platform = detectPlatform();
-  var messages = parseMessagesForPlatform(platform);
+  // 解析前先统计 DOM 候选消息元素数，用于事后检测"静默丢内容"
+  var candidateTurnCount = countCandidateTurns(platform);
+  var messages = withExportHtmlStyleCapture(shouldCaptureHtmlStyles(options), function () {
+    return parseMessagesForPlatform(platform);
+  });
   messages.forEach(function (message, index) {
     message.index = index;
   });
+  // 记录解析统计：droppedTurnCount = 候选数 - 实际解析数
+  // 注意：candidateTurnCount 可能略大于实际消息数（包含嵌套或重复元素），故 droppedTurnCount 仅作风险提示
+  lastParseStats = {
+    platform: platform,
+    candidateTurnCount: candidateTurnCount,
+    parsedMessageCount: messages.length,
+    droppedTurnCount: Math.max(0, candidateTurnCount - messages.length),
+    collectedAt: Date.now()
+  };
   return messages;
 }
 
@@ -112,7 +213,8 @@ function cloneExportMessage(message) {
   var deduped = dedupeImageBlocksWithinMessage(cloned);
   return {
     role: role,
-    contentBlocks: orderUserImageBlocksFirst(role, deduped)
+    contentBlocks: orderUserImageBlocksFirst(role, deduped),
+    ...(message && message.htmlStyle ? { htmlStyle: { ...message.htmlStyle } } : {})
   };
 }
 
@@ -226,13 +328,17 @@ function getSelectedIndices() {
 function resolveMessages(request) {
   var platform = request && request.platform || detectPlatform();
   var hasSelectedMessages = Array.isArray(request && request.selectedMessages) && request.selectedMessages.length > 0;
-  var allMessages = request && Array.isArray(request.messages) ? request.messages : hasSelectedMessages ? [] : parseMessages();
+  var allMessages = request && Array.isArray(request.messages)
+    ? request.messages
+    : hasSelectedMessages
+    ? []
+    : parseMessages({ includeHtmlStyles: Boolean(request && (request.includeHtmlStyles || request.format === "html")) });
   var settings = normalizeExportSettings(request && request.settings);
   var scope = request && request.scope || (settings.export_ai_replies_only ? "ai_only" : "conversation");
   var messages = [];
 
   if (!platform) {
-    return { ok: false, error: `Open a ${getSupportedPlatformLabel()} conversation to export.` };
+    return { ok: false, error: "Open a ChatGPT, Claude, or Gemini conversation to export." };
   }
 
   if (!allMessages.length && !hasSelectedMessages) {
@@ -349,7 +455,11 @@ function getImageEligibility(input) {
     return stats;
   }, { cells: 0, chars: 0 });
   if (tableStats.cells > 48 || tableStats.chars > 1800) {
-    return { ok: false, reason: "Large tables are best exported as PDF or Word." };
+    return {
+      ok: false,
+      code: "IMAGE_CANVAS_LIMIT_EXCEEDED",
+      reason: t("export_image_large_tables", "This conversation contains large tables that are best exported as PDF or Word.")
+    };
   }
 
   var settings = normalizeExportSettings(resolved.settings);
@@ -358,6 +468,7 @@ function getImageEligibility(input) {
   if (!fittedScale) {
     return {
       ok: false,
+      code: "IMAGE_CANVAS_LIMIT_EXCEEDED",
       reason: t("export_image_canvas_limit", "This conversation is too long for a high-quality image export because browsers limit canvas size. Export as PDF instead."),
       charCount: charCount,
       estimatedHeight: estimatedHeight,
@@ -389,6 +500,7 @@ export {
   parseClaudeMessages,
   parseGeminiMessages,
   parseMessages,
+  getParseStats,
   getBlockText,
   getPlainText,
   getMessagesPlainText,

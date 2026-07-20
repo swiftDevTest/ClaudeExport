@@ -135,7 +135,7 @@
       });
     }
 
-    // 5. Canvas 物理像素超高分割检查（仅适用于 Image 导出）
+    // 5. Canvas 物理像素缩放检查（仅适用于 Image 导出）
     let estimatedImagePages = 1;
     if (format === "image" && messages.length > 0) {
       // 粗略估算渲染高度：每个字符大约占用 0.5px 物理高度（在特定宽度下分行），每个消息至少占用 120px，每张图片 300px，每个代码块 200px
@@ -144,12 +144,13 @@
       
       if (estHeight > maxHeight) {
         estimatedImagePages = Math.ceil(estHeight / maxHeight);
-        if (status !== "high_risk") status = "attention";
         issues.push({
-          id: "png_will_split",
-          severity: "attention",
-          message: isZh ? `对话内容较长，生成的长图将被自动分割为 ${estimatedImagePages} 张图片，以防浏览器崩溃。` : `The chat is long. The image export will be automatically split into ${estimatedImagePages} images to prevent browser crash.`,
-          action: "split_image"
+          id: "png_scale_reduced",
+          severity: "info",
+          message: isZh
+            ? "对话内容较长，长图导出会自动降低像素倍率以适配浏览器画布限制；如需保持分页清晰度，请改用 PDF。"
+            : "The chat is long. Image export will reduce its pixel scale to fit browser canvas limits; use PDF to preserve full paginated fidelity.",
+          action: "use_pdf"
         });
       }
     }
@@ -175,7 +176,43 @@
       });
     }
 
-    return {
+    // 7. DOM 解析丢内容检查（防止 AI 平台 DOM 变动导致静默丢消息）
+    // parseStats 由 platform.parseMessages 收集，传入后用于比对候选 turn 数与实际解析数
+    // 当 droppedTurnCount 较大且占比较高时，提示用户可能是扩展版本过旧或页面结构变化
+    const parseStats = input?.parseStats || null;
+    if (parseStats && typeof parseStats === "object") {
+      const candidateCount = Number(parseStats.candidateTurnCount) || 0;
+      const parsedCount = Number(parseStats.parsedMessageCount) || 0;
+      const droppedCount = Number(parseStats.droppedTurnCount) || 0;
+      if (candidateCount > 0 && parsedCount > 0) {
+        const dropRate = droppedCount / candidateCount;
+        // 阈值：丢弃数 >= 3 且丢弃率 >= 30% 才告警，避免候选选择器略宽导致的误报
+        if (droppedCount >= 3 && dropRate >= 0.3) {
+          if (status !== "high_risk") status = "attention";
+          issues.push({
+            id: "dom_parse_drop",
+            severity: "attention",
+            message: isZh
+              ? `检测到 ${droppedCount}/${candidateCount} 个候选消息未被解析，可能是页面结构变化导致部分内容丢失。请滚动加载完整或更新扩展。`
+              : `${droppedCount} of ${candidateCount} candidate messages were not parsed. The page layout may have changed; scroll to load fully or update the extension.`,
+            action: "scroll_or_update_extension"
+          });
+        }
+      } else if (candidateCount > 0 && parsedCount === 0 && mode !== "ai_only") {
+        // 候选元素存在但解析结果为空，说明选择器全部失效，高风险
+        status = "high_risk";
+        issues.push({
+          id: "dom_parse_empty",
+          severity: "high_risk",
+          message: isZh
+            ? "页面检测到消息元素但解析结果为空，扩展可能已过时。请更新扩展后再试。"
+            : "Message elements were detected on the page but parsing returned nothing. The extension may be out of date; please update.",
+          action: "update_extension"
+        });
+      }
+    }
+
+    const result = {
       status,
       summary: {
         messageCount: messages.length,
@@ -188,6 +225,16 @@
       },
       issues
     };
+
+    if (parseStats) {
+      result.parseStats = {
+        candidateTurnCount: Number(parseStats.candidateTurnCount) || 0,
+        parsedMessageCount: Number(parseStats.parsedMessageCount) || 0,
+        droppedTurnCount: Number(parseStats.droppedTurnCount) || 0
+      };
+    }
+
+    return result;
   }
 
   globalThis.CHATVAULT_EXPORT_HEALTH = {

@@ -1,18 +1,18 @@
-import { isSubstantialSvg, convertSvgToDataUrl, mapLimit, yieldToBrowser, notifyProgress, isGoogleUserContentUrl, isGoogleAccountAvatarUrl, isTrustedConversationImageSrc, isPlatformOrSystemIcon, isTestEnv, canvasToBlob, ensureImageBlockMetadata, getImageDedupKey } from './utils.js';
+import { isSubstantialSvg, convertSvgToDataUrl, mapLimit, yieldToBrowser, notifyProgress, isGoogleUserContentUrl, isGoogleAccountAvatarUrl, isTrustedConversationImageSrc, isPlatformOrSystemIcon, isTestEnv, canvasToBlob, ensureImageBlockMetadata, getImageDedupKey, IMAGE_MAX_CANVAS_PIXELS, IMAGE_MAX_CANVAS_DIMENSION } from './utils.js';
 
 var IMAGE_CACHE_MAX = 50;
 var IMAGE_CACHE_MAX_BYTES = 24 * 1024 * 1024;
 var IMAGE_FETCH_MAX_BYTES = 8 * 1024 * 1024;
+var IMAGE_PRELOAD_MAX_COUNT = 50;
+var IMAGE_PRELOAD_MAX_BYTES = 32 * 1024 * 1024;
+var IMAGE_PRELOAD_MAX_IMAGE_PIXELS = 16 * 1024 * 1024;
+var IMAGE_PRELOAD_MAX_TOTAL_PIXELS = 48 * 1024 * 1024;
 var IMAGE_PRELOAD_CONCURRENCY = 2;
 var IMAGE_PRELOAD_CANVAS_TIMEOUT_MS = 5000;
 var IMAGE_ELEMENT_LOAD_TIMEOUT_MS = 8000;
 var _imageBytesCache = new Map();
 var _imageBytesCacheBytes = 0;
 var _imageBytesInFlight = new Map();
-
-// Standalone consumers can inject an image loader without coupling the core
-// package to extension-only runtime APIs.
-export var activeAdapters = { current: null };
 
 function normalizeImageMimeType(value) {
   var mimeType = String(value || "").split(";")[0].trim().toLowerCase();
@@ -102,6 +102,52 @@ function assertImageByteLength(byteLength) {
   }
 }
 
+function assertSafeCanvasDimensions(width, height) {
+  var safeWidth = Math.max(0, Number(width) || 0);
+  var safeHeight = Math.max(0, Number(height) || 0);
+  if (!safeWidth || !safeHeight || safeWidth > IMAGE_MAX_CANVAS_DIMENSION || safeHeight > IMAGE_MAX_CANVAS_DIMENSION || safeWidth * safeHeight > IMAGE_MAX_CANVAS_PIXELS) {
+    throw new Error("Image dimensions are too large to export safely.");
+  }
+}
+
+async function readResponseBytesWithinLimit(response, maxBytes) {
+  var contentLength = Number(response && response.headers && response.headers.get ? response.headers.get("content-length") || 0 : 0);
+  if (Number.isFinite(contentLength) && contentLength > maxBytes) {
+    throw new Error("Image is too large to export safely. Reduce images or export a shorter conversation.");
+  }
+  if (!response.body || typeof response.body.getReader !== "function") {
+    var fallbackBuffer = await response.arrayBuffer();
+    assertImageByteLength(fallbackBuffer.byteLength);
+    return new Uint8Array(fallbackBuffer);
+  }
+
+  var reader = response.body.getReader();
+  var chunks = [];
+  var total = 0;
+  try {
+    while (true) {
+      var next = await reader.read();
+      if (next.done) break;
+      var chunk = next.value instanceof Uint8Array ? next.value : new Uint8Array(next.value || 0);
+      total += chunk.byteLength;
+      if (total > maxBytes) {
+        try { await reader.cancel(); } catch (error) {}
+        throw new Error("Image is too large to export safely. Reduce images or export a shorter conversation.");
+      }
+      chunks.push(chunk);
+    }
+  } finally {
+    try { reader.releaseLock(); } catch (error) {}
+  }
+  var output = new Uint8Array(total);
+  var offset = 0;
+  chunks.forEach(function (chunk) {
+    output.set(chunk, offset);
+    offset += chunk.byteLength;
+  });
+  return output;
+}
+
 function binaryStringToBytes(binaryStr) {
   return Uint8Array.from(binaryStr, function (char) {
     return char.charCodeAt(0);
@@ -131,20 +177,27 @@ export function parseImageDataUrl(src) {
 
   try {
     if (/;base64(?:;|$)/i.test(";" + meta)) {
+      var compactPayload = payload.replace(/\s/g, "");
+      var paddingBytes = compactPayload.endsWith("==") ? 2 : compactPayload.endsWith("=") ? 1 : 0;
+      var decodedUpperBound = Math.floor(compactPayload.length * 3 / 4) - paddingBytes;
+      if (decodedUpperBound > IMAGE_FETCH_MAX_BYTES) return null;
       return {
-        bytes: binaryStringToBytes(atob(payload.replace(/\s/g, ""))),
+        bytes: binaryStringToBytes(atob(compactPayload)),
         mimeType: mimeType
       };
     }
 
+    if (payload.length > IMAGE_FETCH_MAX_BYTES) return null;
     var decodedPayload = payload;
     try {
       decodedPayload = decodeURIComponent(payload);
     } catch (decodeErr) {
       decodedPayload = payload;
     }
+    var decodedBytes = textToUtf8Bytes(decodedPayload);
+    if (decodedBytes.byteLength > IMAGE_FETCH_MAX_BYTES) return null;
     return {
-      bytes: textToUtf8Bytes(decodedPayload),
+      bytes: decodedBytes,
       mimeType: mimeType
     };
   } catch (err) {
@@ -221,27 +274,6 @@ export async function fetchImageBytes(src, options) {
   if (_imageBytesInFlight.has(src)) {
     return _imageBytesInFlight.get(src);
   }
-  if (activeAdapters.current && typeof activeAdapters.current.imageFetcher === "function") {
-    var customPending = Promise.resolve().then(function () {
-      return activeAdapters.current.imageFetcher(src, {
-        signal: options && options.signal
-      });
-    }).then(function (result) {
-      if (result && result.bytes) {
-        assertImageByteLength(result.bytes.byteLength);
-      }
-      if (!isTestEnv && result) {
-        imageBytesCache.set(src, result);
-      }
-      return result;
-    }).catch(function () {
-      return null;
-    }).finally(function () {
-      _imageBytesInFlight.delete(src);
-    });
-    _imageBytesInFlight.set(src, customPending);
-    return await customPending;
-  }
   var pending = _fetchImageBytesDirectly(src, options).then(function (result) {
     if (result && result.bytes) {
       assertImageByteLength(result.bytes.byteLength);
@@ -291,8 +323,9 @@ function isCurrentCredentialedImageApi(src) {
   var isChatGptHost = hostname === "chatgpt.com" || hostname === "chat.openai.com";
   var isClaudeHost = hostname === "claude.ai";
 
-  return (isChatGptHost && pathname.indexOf("/backend-api/") !== -1) ||
-    (isClaudeHost && pathname.indexOf("/api/organizations/") !== -1);
+  var isChatGptImagePath = /^\/backend-api\/(?:estuary\/content|files\/[^/]+(?:\/(?:download|content))?)$/.test(pathname);
+  var isClaudeImagePath = /^\/api\/(?:organizations\/[^/]+\/(?:chat_conversations\/[^/]+\/)?files\/[^/]+(?:\/content)?|files\/[^/]+)$/.test(pathname);
+  return (isChatGptHost && isChatGptImagePath) || (isClaudeHost && isClaudeImagePath);
 }
 
 async function fetchImageBytesViaNetwork(src, options) {
@@ -362,14 +395,11 @@ async function fetchImageBytesViaNetwork(src, options) {
       };
       if (shouldUseCredentialedApi) {
         fetchOptions.credentials = "include";
+        fetchOptions.redirect = "error";
       }
       var response = await globalThis["fetch"](src, fetchOptions);
       if (!response.ok) throw new Error("Fetch response not OK: " + response.status);
-      var contentLength = Number(response.headers && response.headers.get ? response.headers.get("content-length") || 0 : 0);
-      assertImageByteLength(contentLength);
-      var arrayBuffer = await response.arrayBuffer();
-      assertImageByteLength(arrayBuffer.byteLength);
-      var bytes = new Uint8Array(arrayBuffer);
+      var bytes = await readResponseBytesWithinLimit(response, IMAGE_FETCH_MAX_BYTES);
       var mimeType = detectImageMimeType(bytes, response.headers.get("content-type") || "image/png");
       if (!mimeType) return null;
       return { bytes: bytes, mimeType: mimeType };
@@ -451,10 +481,14 @@ async function fetchImageBytesViaNetwork(src, options) {
         mimeType: detectedMimeType
       };
     }
+    if (bgResponse && !bgResponse.ok && /too large|size limit|exceeds/i.test(String(bgResponse.error || ""))) {
+      throw new Error("Image exceeds the 8 MiB browser capture limit and was skipped.");
+    }
   } catch (bgErr) {
     if (options && options.signal && options.signal.aborted) {
       throw createAbortError();
     }
+    if (/8 MiB browser capture limit/i.test(String(bgErr && bgErr.message || ""))) throw bgErr;
   }
 
   return null;
@@ -584,6 +618,7 @@ async function _fetchImageBytesDirectly(src, options) {
       }
 
       if (imgEl && imgEl.naturalWidth > 0) {
+        assertSafeCanvasDimensions(imgEl.naturalWidth || imgEl.width || 600, imgEl.naturalHeight || imgEl.height || 400);
         var canvas = document.createElement("canvas");
         canvas.width = imgEl.naturalWidth || imgEl.width || 600;
         canvas.height = imgEl.naturalHeight || imgEl.height || 400;
@@ -636,6 +671,7 @@ async function _fetchImageBytesDirectly(src, options) {
         img.crossOrigin = "anonymous";
         img.onload = function () {
           try {
+            assertSafeCanvasDimensions(img.naturalWidth || 600, img.naturalHeight || 400);
             var canvas = document.createElement("canvas");
             canvas.width = img.naturalWidth || 600;
             canvas.height = img.naturalHeight || 400;
@@ -774,8 +810,10 @@ export async function preloadCanvasImages(messages, options) {
   });
 
   var cache = {};
-  var uniqueImages = Array.from(imageEntriesByKey.values()).filter(function (entry) { return entry.src; });
+  var uniqueImages = Array.from(imageEntriesByKey.values()).filter(function (entry) { return entry.src; }).slice(0, IMAGE_PRELOAD_MAX_COUNT);
   if (uniqueImages.length === 0) return cache;
+  var aggregateBytes = 0;
+  var aggregateDecodedPixels = 0;
 
   await mapLimit(uniqueImages, IMAGE_PRELOAD_CONCURRENCY, async function (entry) {
     try {
@@ -784,6 +822,11 @@ export async function preloadCanvasImages(messages, options) {
       if (!bytesInfo) {
         return;
       }
+      var byteLength = Number(bytesInfo.bytes && bytesInfo.bytes.byteLength || 0);
+      if (!byteLength || aggregateBytes + byteLength > IMAGE_PRELOAD_MAX_BYTES) {
+        return;
+      }
+      aggregateBytes += byteLength;
 
       var img = await new Promise(function (resolve, reject) {
         if (typeof Image === "undefined" || typeof URL === "undefined" || typeof Blob === "undefined") {
@@ -825,6 +868,13 @@ export async function preloadCanvasImages(messages, options) {
         width: img.naturalWidth || 600,
         height: img.naturalHeight || 400
       };
+      var decodedPixels = Number(cached.width) * Number(cached.height);
+      if (!Number.isFinite(decodedPixels) || decodedPixels <= 0 ||
+          decodedPixels > IMAGE_PRELOAD_MAX_IMAGE_PIXELS ||
+          aggregateDecodedPixels + decodedPixels > IMAGE_PRELOAD_MAX_TOTAL_PIXELS) {
+        return;
+      }
+      aggregateDecodedPixels += decodedPixels;
       cache[src] = cached;
       cache[entry.key] = cached;
       entry.aliases.forEach(function (alias) {

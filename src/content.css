@@ -1733,3 +1733,28 @@
   color: #ffffff;
   border-color: transparent;
 }
+
+
+.cv-batch-modal, .cv-batch-modal * {
+  box-sizing: border-box !important;
+}
+
+.cv-batch-search-container {
+  padding: 12px 24px 8px 24px !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+}
+
+.cv-batch-search-box {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  height: 40px !important;
+  background: #f1f5f9 !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 10px !important;
+  padding: 0 14px !important;
+  font-size: 13.5px !important;
+  color: #0f172a !important;
+  outline: none !important;
+  transition: all 0.2s !important;
+}

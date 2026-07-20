@@ -93,7 +93,7 @@ export function normalizeExportSettings(input) {
   var out = {};
   Object.keys(DEFAULT_EXPORT_SETTINGS).forEach(function (key) {
     if (key === "export_style") {
-      out[key] = typeof src[key] === "string" && EXPORT_THEMES[src[key]] ? src[key] : DEFAULT_EXPORT_SETTINGS[key];
+      out[key] = typeof src[key] === "string" && EXPORT_THEMES && Boolean(EXPORT_THEMES[src[key]]) ? src[key] : DEFAULT_EXPORT_SETTINGS[key];
     } else {
       out[key] = normalizeBooleanSetting(src[key], DEFAULT_EXPORT_SETTINGS[key]);
     }
@@ -120,6 +120,23 @@ export function getPlatformLabel(platform) {
   if (platform === PLATFORM_CLAUDE) return "Claude";
   if (platform === PLATFORM_CHATGPT) return "ChatGPT";
   return "AI";
+}
+
+export function collapseRepeatedConversationTitle(value) {
+  var title = String(value || "").replace(/\s+/g, " ").trim();
+  if (!title || title.length < 2) return title;
+
+  // Claude can keep a visible and a transition/accessibility copy inside the
+  // same heading. textContent concatenates them, sometimes without a space.
+  if (title.length % 2 === 0) {
+    var half = title.length / 2;
+    if (title.slice(0, half) === title.slice(half)) {
+      return title.slice(0, half).trim();
+    }
+  }
+
+  var spacedRepeat = title.match(/^(.{3,}?)\s+\1$/i);
+  return spacedRepeat ? spacedRepeat[1].trim() : title;
 }
 
 export function getConversationTitle() {
@@ -180,7 +197,7 @@ export function getConversationTitle() {
       }
     }
     var h1 = document.querySelector("main h1") || document.querySelector('[data-testid*="conversation"] h1');
-    var title = (h1 && h1.textContent ? h1.textContent : searchTitle || document.title || "")
+    var title = collapseRepeatedConversationTitle(searchTitle || (h1 && h1.textContent ? h1.textContent : document.title || ""))
       .replace(/\s*[-|]\s*Claude\s*$/i, "")
       .replace(/^Claude$/i, "")
       .trim();
@@ -449,6 +466,37 @@ export function normalizeExportLinkHref(value) {
   }
 }
 
+export function normalizeGeneratedFileHref(value) {
+  var href = String(value || "").trim().replace(/[\u0000-\u001f\u007f]/g, "");
+  return /^sandbox:\/mnt\/data\/[^\s<>"']+$/i.test(href) ? href : "";
+}
+
+export function getGeneratedFileNameFromHref(value) {
+  var href = normalizeGeneratedFileHref(value);
+  if (!href) return "";
+  var rawName = href.replace(/^sandbox:\/mnt\/data\//i, "").split(/[?#]/)[0];
+  try {
+    return decodeURIComponent(rawName) || rawName;
+  } catch (error) {
+    return rawName;
+  }
+}
+
+export function getPortableExportLinkHref(value, sourceUrl) {
+  var regular = normalizeExportLinkHref(value);
+  if (regular) return regular;
+  if (!normalizeGeneratedFileHref(value)) return "";
+  var fallback = normalizeExportLinkHref(sourceUrl);
+  if (!fallback) return "";
+  try {
+    var parsed = new URL(fallback);
+    var hostname = parsed.hostname.toLowerCase();
+    return hostname === "chatgpt.com" || hostname === "chat.openai.com" ? parsed.href : "";
+  } catch (error) {
+    return "";
+  }
+}
+
 export function decodeVisibleTextEscapes(value) {
   var source = String(value || "");
   if (!/\\u[0-9a-fA-F]{4}|\\["']/.test(source)) {
@@ -564,6 +612,51 @@ function parseJsonObjectAt(source, startIndex) {
   return null;
 }
 
+function parseJsonArrayAt(source, startIndex) {
+  var text = String(source || "");
+  var start = Number(startIndex);
+  if (!Number.isFinite(start) || text[start] !== "[") return null;
+  var depth = 0;
+  var inString = false;
+  var escaped = false;
+
+  for (var index = start; index < text.length; index += 1) {
+    var char = text[index];
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (char === "\\") {
+        escaped = true;
+      } else if (char === "\"") {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (char === "\"") {
+      inString = true;
+      continue;
+    }
+    if (char === "[") {
+      depth += 1;
+    } else if (char === "]") {
+      depth -= 1;
+      if (depth === 0) {
+        try {
+          return {
+            value: JSON.parse(text.slice(start, index + 1)),
+            end: index + 1
+          };
+        } catch (error) {
+          return null;
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
 function hasStructuredUiQuestionShape(value, depth) {
   if (!value || depth > 5) return false;
   if (Array.isArray(value)) {
@@ -629,11 +722,11 @@ export function isStructuredUiPayloadValue(value, depth, allowShapeOnly) {
 export function stripSerializedUiPayloads(value) {
   var source = String(value || "");
   if (!source) return "";
-  if (!/(?:^|\b)genui\s*\{|\{\s*"|(?:^|\n)[ \t]*genui[A-Za-z0-9_-]{3,64}[ \t]*(?:\n|$)/i.test(source)) {
+  if (!/(?:^|\b)genui[\s\uE000-\uF8FF]*\{|\{\s*"|(?:^|\n)[ \t]*genui[A-Za-z0-9_-]{3,64}[ \t]*(?:\n|$)/i.test(source)) {
     return source;
   }
 
-  var markerPattern = /\bgenui\s*(?=\{)/gi;
+  var markerPattern = /\bgenui[\s\uE000-\uF8FF]*(?=\{)/gi;
   var output = "";
   var cursor = 0;
   var match;
@@ -704,8 +797,46 @@ export function chooseStructuredLinkText(label, href) {
   return cleanHref;
 }
 
+function getStructuredEntityDisplayText(value) {
+  if (!Array.isArray(value) || value.length < 3) return null;
+  if (!/^[A-Za-z][A-Za-z0-9_-]{0,63}$/.test(String(value[0] || ""))) return null;
+  var displayValue = value[1];
+  if (displayValue && typeof displayValue === "object" && !Array.isArray(displayValue)) {
+    displayValue = displayValue.label || displayValue.title || displayValue.name || displayValue.text || "";
+  }
+  if (typeof displayValue !== "string" && typeof displayValue !== "number") return null;
+  var displayText = normalizeStructuredLinkPart(displayValue);
+  return displayText || null;
+}
+
+function sanitizeBracketedEntityAnnotations(value) {
+  var source = String(value || "");
+  if (!/\bentity\s*\[/i.test(source)) return source;
+
+  var markerPattern = /(^|[^A-Za-z0-9_$])entity\s*(?=\[)/gi;
+  var output = "";
+  var cursor = 0;
+  var replaced = false;
+  var match;
+
+  while ((match = markerPattern.exec(source)) !== null) {
+    var markerStart = match.index + String(match[1] || "").length;
+    var arrayStart = source.indexOf("[", markerPattern.lastIndex);
+    var parsed = parseJsonArrayAt(source, arrayStart);
+    var displayText = parsed ? getStructuredEntityDisplayText(parsed.value) : null;
+    if (!parsed || !displayText) continue;
+
+    output += source.slice(cursor, markerStart) + displayText;
+    cursor = parsed.end;
+    markerPattern.lastIndex = parsed.end;
+    replaced = true;
+  }
+
+  return replaced ? output + source.slice(cursor) : source;
+}
+
 export function sanitizeStructuredLinkText(value) {
-  var text = stripInvisibleTextControls(value);
+  var text = sanitizeBracketedEntityAnnotations(stripInvisibleTextControls(value));
   var previous = "";
   var guard = 0;
 
@@ -768,11 +899,48 @@ function getInlineSegmentsSanitizedText(segments) {
 export function shouldCoalesceInlineSegments(segments) {
   if (!Array.isArray(segments) || !segments.length) return false;
   var raw = getInlineSegmentsRawText(segments);
-  if (!/\bgenui\s*\{|ask\s*user\s*input|askuserinput|userinput/i.test(raw) &&
-      !hasStandaloneGenUiPlaceholderToken(raw)) {
+  if (!/\bgenui[\s\uE000-\uF8FF]*\{|ask\s*user\s*input|askuserinput|userinput/i.test(raw) &&
+      !hasStandaloneGenUiPlaceholderToken(raw) &&
+      !/(?:^|[^A-Za-z0-9_$])entity\s*\[/i.test(raw)) {
     return false;
   }
   return sanitizeExportText(raw) !== getInlineSegmentsSanitizedText(segments);
+}
+
+export function overlayCoalescedInlineLinks(text, sourceSegments) {
+  var output = [{ text: String(text || "") }];
+  var searchCursor = 0;
+  (sourceSegments || []).forEach(function (sourceSegment) {
+    var href = normalizeExportLinkHref(sourceSegment && (sourceSegment.href || sourceSegment.url));
+    var label = sanitizeInlineSegmentText(sourceSegment && sourceSegment.text || "").trim();
+    if (!href || !label) return;
+    var fullText = output.map(function (segment) { return segment.text || ""; }).join("");
+    var matchIndex = fullText.indexOf(label, searchCursor);
+    if (matchIndex < 0) matchIndex = fullText.indexOf(label);
+    if (matchIndex < 0) return;
+    var next = [];
+    var offset = 0;
+    output.forEach(function (segment) {
+      var segmentText = String(segment.text || "");
+      var segmentStart = offset;
+      var segmentEnd = offset + segmentText.length;
+      offset = segmentEnd;
+      if (matchIndex < segmentStart || matchIndex + label.length > segmentEnd || segment.href) {
+        next.push(segment);
+        return;
+      }
+      var localStart = matchIndex - segmentStart;
+      var before = segmentText.slice(0, localStart);
+      var matched = segmentText.slice(localStart, localStart + label.length);
+      var after = segmentText.slice(localStart + label.length);
+      if (before) next.push({ ...segment, text: before });
+      next.push({ ...segment, text: matched, href: href });
+      if (after) next.push({ ...segment, text: after });
+    });
+    output = next;
+    searchCursor = matchIndex + label.length;
+  });
+  return output.filter(function (segment) { return segment.text !== ""; });
 }
 
 export function getCoalescedInlineSegmentsText(segments, fallbackText) {
@@ -986,14 +1154,30 @@ function getInlineElementMarks(element, inheritedMarks) {
   return marks;
 }
 
+function getGeneratedFileDownloadButtonDescriptor(element) {
+  if (!element || String(element.tagName || "").toLowerCase() !== "button") return null;
+  var className = String(element.className || "");
+  if (!/(?:behavior-btn|entity-underline|text-token-text-link)/i.test(className)) return null;
+  var rawName = String(element.getAttribute && element.getAttribute("aria-label") || element.textContent || "").trim();
+  rawName = rawName.replace(/^sandbox:\/mnt\/data\//i, "").split(/[?#]/)[0];
+  if (!rawName || rawName.length > 500 || /[\\/]/.test(rawName) || !/\.[a-z0-9]{1,12}$/i.test(rawName)) return null;
+  var safePathName = rawName.replace(/\s/g, "%20");
+  var href = normalizeGeneratedFileHref("sandbox:/mnt/data/" + safePathName);
+  if (!href) return null;
+  var name = rawName;
+  try { name = decodeURIComponent(rawName); } catch (error) {}
+  return { href: href, name: name || rawName };
+}
+
 function isRenderedMathElement(element) {
   if (!element || element.nodeType !== 1) return false;
   var tag = String(element.tagName || "").toLowerCase();
   if (tag === "math" || tag === "mjx-container") return true;
-  if (element.classList && element.classList.contains("katex")) return true;
   var className = String(element.getAttribute && element.getAttribute("class") || "");
-  return /(?:^|\s)MathJax(?:\s|$)/.test(className) || Boolean(
-    element.hasAttribute && (element.hasAttribute("data-latex") || element.hasAttribute("data-tex"))
+  return /(?:^|\s)(?:katex(?:-display)?|MathJax|math-inline|math-display|math-rendered)(?:\s|$)/i.test(className) || Boolean(
+    element.hasAttribute && (
+      element.hasAttribute("data-latex") || element.hasAttribute("data-tex") || element.hasAttribute("data-math")
+    )
   );
 }
 
@@ -1065,15 +1249,84 @@ function getRenderedMathMl(element) {
   return math ? sanitizeExportMathMl(math.outerHTML || "", element.ownerDocument) : "";
 }
 
+var MATHML_OPERATOR_LATEX = Object.freeze({
+  "−": "-", "×": "\\times ", "÷": "\\div ", "·": "\\cdot ", "±": "\\pm ",
+  "≤": "\\le ", "≥": "\\ge ", "≠": "\\ne ", "≈": "\\approx ", "∞": "\\infty ",
+  "∑": "\\sum ", "∏": "\\prod ", "∫": "\\int ", "∂": "\\partial ", "∇": "\\nabla ",
+  "→": "\\to ", "←": "\\leftarrow ", "↔": "\\leftrightarrow ", "∈": "\\in ", "∉": "\\notin ",
+  "⊂": "\\subset ", "⊆": "\\subseteq ", "∩": "\\cap ", "∪": "\\cup ", "∧": "\\land ", "∨": "\\lor "
+});
+
+var MATHML_IDENTIFIER_LATEX = Object.freeze({
+  "α": "\\alpha ", "β": "\\beta ", "γ": "\\gamma ", "δ": "\\delta ", "ε": "\\epsilon ",
+  "θ": "\\theta ", "λ": "\\lambda ", "μ": "\\mu ", "π": "\\pi ", "ρ": "\\rho ",
+  "σ": "\\sigma ", "τ": "\\tau ", "φ": "\\phi ", "ω": "\\omega ",
+  "Γ": "\\Gamma ", "Δ": "\\Delta ", "Θ": "\\Theta ", "Λ": "\\Lambda ", "Π": "\\Pi ",
+  "Σ": "\\Sigma ", "Φ": "\\Phi ", "Ω": "\\Omega "
+});
+
+function mathMlChildrenToLatex(node) {
+  return Array.prototype.map.call(node && node.children || [], function (child) {
+    return mathMlNodeToLatex(child);
+  }).join("");
+}
+
+function mathMlNodeToLatex(node) {
+  if (!node || node.nodeType !== 1) return "";
+  var tag = String(node.localName || node.tagName || "").toLowerCase();
+  var children = Array.prototype.slice.call(node.children || []);
+  var child = function (index) { return mathMlNodeToLatex(children[index]); };
+  var text = String(node.textContent || "").trim();
+  if (tag === "annotation") return "";
+  if (tag === "semantics") {
+    var semantic = children.find(function (candidate) {
+      return String(candidate.localName || candidate.tagName || "").toLowerCase() !== "annotation";
+    });
+    return mathMlNodeToLatex(semantic);
+  }
+  if (tag === "math" || tag === "mrow" || tag === "mstyle" || tag === "mpadded" || tag === "mphantom" || tag === "merror" || tag === "menclose") {
+    return mathMlChildrenToLatex(node);
+  }
+  if (tag === "mi") {
+    return Array.from(text).map(function (character) { return MATHML_IDENTIFIER_LATEX[character] || character; }).join("");
+  }
+  if (tag === "mn") return text;
+  if (tag === "mo") return MATHML_OPERATOR_LATEX[text] || text;
+  if (tag === "mtext" || tag === "ms") return "\\text{" + text.replace(/[{}]/g, "") + "}";
+  if (tag === "mspace") return " ";
+  if (tag === "mfrac") return "\\frac{" + child(0) + "}{" + child(1) + "}";
+  if (tag === "msqrt") return "\\sqrt{" + mathMlChildrenToLatex(node) + "}";
+  if (tag === "mroot") return "\\sqrt[" + child(1) + "]{" + child(0) + "}";
+  if (tag === "msup") return "{" + child(0) + "}^{" + child(1) + "}";
+  if (tag === "msub") return "{" + child(0) + "}_{" + child(1) + "}";
+  if (tag === "msubsup") return "{" + child(0) + "}_{" + child(1) + "}^{" + child(2) + "}";
+  if (tag === "munder") return "{" + child(0) + "}_{" + child(1) + "}";
+  if (tag === "mover") return "{" + child(0) + "}^{" + child(1) + "}";
+  if (tag === "munderover") return "{" + child(0) + "}_{" + child(1) + "}^{" + child(2) + "}";
+  if (tag === "mfenced") {
+    var open = node.getAttribute && node.getAttribute("open") || "(";
+    var close = node.getAttribute && node.getAttribute("close") || ")";
+    var separator = node.getAttribute && node.getAttribute("separators") || ",";
+    return open + children.map(mathMlNodeToLatex).join(separator.charAt(0) || ",") + close;
+  }
+  if (tag === "mtable") {
+    return "\\begin{matrix}" + children.map(mathMlNodeToLatex).join("\\\\") + "\\end{matrix}";
+  }
+  if (tag === "mtr") return children.map(mathMlNodeToLatex).join(" & ");
+  if (tag === "mtd") return mathMlChildrenToLatex(node);
+  return "";
+}
+
 function getRenderedMathSource(element) {
   if (!element) return "";
   var annotation = element.querySelector && element.querySelector('annotation[encoding*="tex" i], annotation[encoding*="latex" i]');
   var script = element.querySelector && element.querySelector('script[type^="math/tex"]');
   var source = annotation && annotation.textContent || script && script.textContent ||
-    element.getAttribute && (element.getAttribute("data-latex") || element.getAttribute("data-tex") || element.getAttribute("aria-label")) || "";
-  if (!source && String(element.tagName || "").toLowerCase() === "math") {
-    source = element.textContent || "";
-  }
+    element.getAttribute && (element.getAttribute("data-latex") || element.getAttribute("data-tex") || element.getAttribute("data-math")) || "";
+  var tag = String(element.tagName || "").toLowerCase();
+  var math = tag === "math" ? element : element.querySelector && element.querySelector("math");
+  if (!source && math) source = mathMlNodeToLatex(math);
+  if (!source && element.getAttribute) source = element.getAttribute("aria-label") || "";
   return normalizeInlineMathSource(source);
 }
 
@@ -1131,6 +1384,8 @@ export function cleanInlineSegments(element) {
   function walk(node, inheritedHref, inheritedMarks, inheritedComputedStyle) {
     if (!node) return;
     if (node.nodeType === 3) {
+      var nextFileButton = getGeneratedFileDownloadButtonDescriptor(node.nextSibling);
+      if (nextFileButton && /^\s*(?:📄|📎|🗎)\s*$/u.test(node.textContent || "")) return;
       pushInlineSegment(segments, node.textContent || "", inheritedHref, inheritedMarks, getExportHtmlStyleDifference(inheritedComputedStyle, rootStyle));
       return;
     }
@@ -1146,6 +1401,11 @@ export function cleanInlineSegments(element) {
     }
 
     var marks = getInlineElementMarks(node, inheritedMarks);
+    var generatedFileButton = getGeneratedFileDownloadButtonDescriptor(node);
+    if (generatedFileButton) {
+      pushInlineSegment(segments, "📄 " + generatedFileButton.name, generatedFileButton.href, marks, htmlStyle);
+      return;
+    }
     if (isRenderedMathElement(node)) {
       var mathSource = getRenderedMathSource(node);
       if (mathSource) {
@@ -2097,68 +2357,122 @@ export function drawMacTerminalHeader(ctx, x, y, width, height, lang) {
 }
 
 export function parseInlineMarkdown(text) {
-  var str = String(text == null ? "" : text)
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1");
-
+  var str = String(text == null ? "" : text);
   var chunks = [];
-  var i = 0;
-  while (i < str.length) {
-    if (str.indexOf("**", i) === i || str.indexOf("__", i) === i) {
-      var marker = str.substr(i, 2);
-      var endIdx = str.indexOf(marker, i + 2);
-      if (endIdx !== -1) {
-        chunks.push({ text: str.substring(i + 2, endIdx), bold: true });
-        i = endIdx + 2;
-        continue;
-      }
-    }
-    if (str.indexOf("`", i) === i) {
-      var endIdx = str.indexOf("`", i + 1);
-      if (endIdx !== -1) {
-        chunks.push({ text: str.substring(i + 1, endIdx), code: true });
-        i = endIdx + 1;
-        continue;
-      }
-    }
-    if (str.indexOf("*", i) === i || str.indexOf("_", i) === i) {
-      var marker = str.substr(i, 1);
-      var endIdx = str.indexOf(marker, i + 1);
-      if (endIdx !== -1) {
-        chunks.push({ text: str.substring(i + 1, endIdx), italic: true });
-        i = endIdx + 1;
-        continue;
-      }
-    }
 
-    var nextMarkerIdx = -1;
-    var markers = ["**", "__", "*", "_", "`"];
-    for (var m = 0; m < markers.length; m++) {
-      var idx = str.indexOf(markers[m], i);
-      if (idx !== -1 && (nextMarkerIdx === -1 || idx < nextMarkerIdx)) {
-        nextMarkerIdx = idx;
-      }
-    }
-
-    if (nextMarkerIdx === -1) {
-      chunks.push({ text: str.substring(i) });
-      break;
+  function push(value, style) {
+    if (!value) return;
+    var chunk = { text: value };
+    ["bold", "italic", "code", "href"].forEach(function (key) {
+      if (style && style[key]) chunk[key] = style[key];
+    });
+    var previous = chunks[chunks.length - 1];
+    if (previous && previous.bold === chunk.bold && previous.italic === chunk.italic &&
+        previous.code === chunk.code && previous.href === chunk.href) {
+      previous.text += chunk.text;
     } else {
-      if (nextMarkerIdx > i) {
-        chunks.push({ text: str.substring(i, nextMarkerIdx) });
-      }
-      if (nextMarkerIdx === i) {
-        var markerLen = 1;
-        if (str.indexOf("**", i) === i || str.indexOf("__", i) === i) {
-          markerLen = 2;
-        }
-        var markerText = str.substring(i, i + markerLen);
-        chunks.push({ text: markerText });
-        i += markerLen;
-      } else {
-        i = nextMarkerIdx;
-      }
+      chunks.push(chunk);
     }
   }
+
+  function findClosingMarker(source, marker, start) {
+    var index = start;
+    while (index < source.length) {
+      index = source.indexOf(marker, index);
+      if (index < 0) return -1;
+      if (source[index - 1] !== "\\") return index;
+      index += marker.length;
+    }
+    return -1;
+  }
+
+  function findLinkDestinationEnd(source, start) {
+    var depth = 0;
+    for (var index = start; index < source.length; index += 1) {
+      if (source[index] === "\\") {
+        index += 1;
+        continue;
+      }
+      if (source[index] === "(") depth += 1;
+      if (source[index] === ")") {
+        if (depth === 0) return index;
+        depth -= 1;
+      }
+    }
+    return -1;
+  }
+
+  function canOpenUnderscore(source, index, markerLength) {
+    var before = source[index - 1] || "";
+    var after = source[index + markerLength] || "";
+    return !/[\p{L}\p{N}]/u.test(before) && Boolean(after) && !/\s/.test(after);
+  }
+
+  function parse(source, inherited, depth) {
+    if (!source || depth > 8) {
+      push(source, inherited);
+      return;
+    }
+    var index = 0;
+    while (index < source.length) {
+      if (source[index] === "\\" && index + 1 < source.length) {
+        push(source[index + 1], inherited);
+        index += 2;
+        continue;
+      }
+
+      if (source[index] === "[") {
+        var labelEnd = findClosingMarker(source, "]", index + 1);
+        if (labelEnd >= 0 && source[labelEnd + 1] === "(") {
+          var destinationEnd = findLinkDestinationEnd(source, labelEnd + 2);
+          if (destinationEnd >= 0) {
+            var href = source.slice(labelEnd + 2, destinationEnd).trim();
+            parse(source.slice(index + 1, labelEnd), Object.assign({}, inherited, { href: href }), depth + 1);
+            index = destinationEnd + 1;
+            continue;
+          }
+        }
+      }
+
+      var codeRun = source.slice(index).match(/^`+/);
+      if (codeRun) {
+        var codeMarker = codeRun[0];
+        var codeEnd = findClosingMarker(source, codeMarker, index + codeMarker.length);
+        if (codeEnd >= 0) {
+          push(source.slice(index + codeMarker.length, codeEnd), Object.assign({}, inherited, { code: true }));
+          index = codeEnd + codeMarker.length;
+          continue;
+        }
+      }
+
+      var paired = source.startsWith("**", index) ? "**" : source.startsWith("__", index) ? "__" : "";
+      if (paired && (paired !== "__" || canOpenUnderscore(source, index, 2))) {
+        var boldEnd = findClosingMarker(source, paired, index + 2);
+        if (boldEnd >= 0) {
+          parse(source.slice(index + 2, boldEnd), Object.assign({}, inherited, { bold: true }), depth + 1);
+          index = boldEnd + 2;
+          continue;
+        }
+      }
+
+      var italicMarker = source[index] === "*" ? "*" : source[index] === "_" ? "_" : "";
+      if (italicMarker && (italicMarker !== "_" || canOpenUnderscore(source, index, 1))) {
+        var italicEnd = findClosingMarker(source, italicMarker, index + 1);
+        if (italicEnd >= 0) {
+          parse(source.slice(index + 1, italicEnd), Object.assign({}, inherited, { italic: true }), depth + 1);
+          index = italicEnd + 1;
+          continue;
+        }
+      }
+
+      var next = source.slice(index + 1).search(/[\\[`*_]/);
+      var end = next < 0 ? source.length : index + 1 + next;
+      push(source.slice(index, end), inherited);
+      index = end;
+    }
+  }
+
+  parse(str, {}, 0);
   return chunks;
 }
 
@@ -2248,7 +2562,8 @@ export function wrapRichText(ctx, text, maxWidth, baseFont, DESIGN_fonts) {
                 text: lastChar + token,
                 bold: chunk.bold,
                 italic: chunk.italic,
-                code: chunk.code
+                code: chunk.code,
+                href: chunk.href
               });
               return;
             }
@@ -2282,7 +2597,8 @@ export function wrapRichText(ctx, text, maxWidth, baseFont, DESIGN_fonts) {
               text: subPart,
               bold: chunk.bold,
               italic: chunk.italic,
-              code: chunk.code
+              code: chunk.code,
+              href: chunk.href
             });
             lines.push(currentLine);
             currentLine = { chunks: [] };
@@ -2291,14 +2607,16 @@ export function wrapRichText(ctx, text, maxWidth, baseFont, DESIGN_fonts) {
           }
         } else {
           var lastChunk = currentLine.chunks[currentLine.chunks.length - 1];
-          if (lastChunk && lastChunk.bold === chunk.bold && lastChunk.italic === chunk.italic && lastChunk.code === chunk.code) {
+          if (lastChunk && lastChunk.bold === chunk.bold && lastChunk.italic === chunk.italic &&
+              lastChunk.code === chunk.code && lastChunk.href === chunk.href) {
             lastChunk.text += token;
           } else {
             currentLine.chunks.push({
               text: token,
               bold: chunk.bold,
               italic: chunk.italic,
-              code: chunk.code
+              code: chunk.code,
+              href: chunk.href
             });
           }
         }
@@ -2329,6 +2647,9 @@ export function getInlinePlainText(value) {
       }
       if (marks.subscript || segment && segment.subscript) {
         return formatLatexUnicode("\\(X_{" + text.trim() + "}\\)").replace(/^X/, "");
+      }
+      if (marks.code || segment && segment.code) {
+        return text;
       }
       return formatLatexUnicode(text);
     }).join("");
@@ -2372,6 +2693,11 @@ export function getInlineRichText(value) {
     }
     if (marks.italic && canWrapWithMarkdown(text, "*") && canWrapWithMarkdown(text, "_")) {
       text = "*" + text + "*";
+    }
+    var href = normalizeExportLinkHref(segment && (segment.href || segment.url));
+    if (href) {
+      text = "[" + text.replace(/([\\\[\]])/g, "\\$1") + "](" +
+        href.replace(/\s/g, "%20").replace(/\(/g, "%28").replace(/\)/g, "%29") + ")";
     }
     return text;
   }).join("");

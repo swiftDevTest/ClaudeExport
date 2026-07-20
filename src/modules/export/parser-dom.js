@@ -1,5 +1,5 @@
 import { isChatVaultNode, isIgnoredContentNode, isTrustedConversationImageSrc, isPlatformOrSystemIcon, isSubstantialSvg, convertSvgToDataUrl, isDalleMetadataText, isGeminiImagePlaceholderText, hasImageAttachment, cleanText, cleanInlineSegments, stripThoughtText, isIgnoredRoleLabel, isGeminiUINoiseText, isImageOrFileSignature, sanitizeExportText, decodeVisibleTextEscapes, getBlockText, getPlainText, dedupeImageBlocksWithinMessage } from './utils.js';
-import { captureExportHtmlStyle, getExportHtmlStyleDifference } from './html-style.js';
+import { captureExportHtmlStyle, getExportHtmlStyleDifference, isExportHtmlStyleCaptureEnabled, isTransparentCssColor } from './html-style.js';
 
 export function getElementLabel(element) {
   if (!element) return "";
@@ -22,14 +22,33 @@ export function isCodeLikeElement(element) {
 
 export function extractCodeLanguage(element) {
   if (!element || !element.querySelector) return "";
+
   var codeEl = element.matches && element.matches("code") ? element : element.querySelector("code");
   var dataLanguage = (codeEl && codeEl.getAttribute && codeEl.getAttribute("data-language")) ||
     (element.getAttribute && element.getAttribute("data-language")) ||
     "";
   if (dataLanguage) return dataLanguage;
+
   var label = getElementLabel(codeEl || element);
   var match = label.match(/language-([a-z0-9_-]+)/i);
-  return match ? match[1] : "";
+  if (match) return match[1];
+
+  // Some platforms render a visible language chip outside <code>. Keep this
+  // deliberately narrow so toolbar text or prose is never mistaken for a
+  // language (a prior broad "decoration span" selector caused that regression).
+  var langEl = element.querySelector("[class*='code-lang'], [class*='code-language'], [class*='code-header'] [data-language], [class*='code-header'] span");
+  if (langEl && langEl.textContent) {
+    var txt = String((langEl.getAttribute && langEl.getAttribute("data-language")) || langEl.textContent || "")
+      .trim()
+      .toLowerCase()
+      .replace(/^(?:language|lang|code)\s*:\s*/i, "");
+    var knownLanguage = /^(?:abap|arduino|bash|basic|c|c\+\+|cpp|c#|csharp|clojure|css|dart|diff|dockerfile?|elixir|elm|erlang|f#|fortran|go|graphql|groovy|haskell|html|java|javascript|js|json|julia|kotlin|latex|less|lisp|lua|makefile|markdown|matlab|mermaid|objective-c|ocaml|perl|php|plaintext|powershell|python|py|r|ruby|rust|sass|scala|scheme|scss|shell|sql|swift|text|typescript|ts|tsx|vb\.net|verilog|vhdl|xml|yaml|yml|zsh)$/i;
+    if (knownLanguage.test(txt)) {
+      return txt;
+    }
+  }
+
+  return "";
 }
 
 export function cleanCodeText(element) {
@@ -56,12 +75,8 @@ function getCodeTextElement(element) {
   return element.querySelector("pre code") || element.querySelector("pre") || element.querySelector("code") || element;
 }
 
-function isTransparentBackground(value) {
-  var color = String(value || "").replace(/\s+/g, "").toLowerCase();
-  return !color || color === "transparent" || color === "rgba(0,0,0,0)" || color === "hsla(0,0%,0%,0)";
-}
-
 function captureCodeBlockVisualStyle(element) {
+  if (!isExportHtmlStyleCaptureEnabled()) return undefined;
   var current = element && (String(element.tagName || "").toLowerCase() === "pre"
     ? element
     : element.querySelector && element.querySelector("pre") || element);
@@ -69,14 +84,14 @@ function captureCodeBlockVisualStyle(element) {
   for (var depth = 0; current && depth < 5; depth += 1) {
     var style = captureExportHtmlStyle(current);
     if (!fallback && style) fallback = { ...style };
-    if (style && !isTransparentBackground(style["background-color"])) return style;
+    if (style && !isTransparentCssColor(style["background-color"])) return style;
     var parent = current.parentElement;
     if (!parent) break;
     var preCount = parent.querySelectorAll ? parent.querySelectorAll("pre").length : 0;
     if (depth > 0 && preCount > 1) break;
     current = parent;
   }
-  if (fallback && isTransparentBackground(fallback["background-color"])) {
+  if (fallback && isTransparentCssColor(fallback["background-color"])) {
     delete fallback["background-color"];
   }
   return fallback;
@@ -108,6 +123,7 @@ function trimCodeSegments(segments) {
 }
 
 export function extractCodeSegments(element) {
+  if (!isExportHtmlStyleCaptureEnabled()) return undefined;
   var target = getCodeTextElement(element);
   if (!target) return undefined;
   var segments = [];
@@ -175,6 +191,9 @@ export function collectContentElements(root, selectors) {
 
 export function attachBlockSource(block, element) {
   if (!block || !element) return block;
+  if (block.type !== "image" && block.type !== "separator") {
+    block.textSource = "dom";
+  }
   var htmlStyle = captureExportHtmlStyle(element);
   if (htmlStyle) block.htmlStyle = htmlStyle;
   if (typeof Object.defineProperty !== "function") return block;
@@ -563,17 +582,27 @@ export function walkElement(parent, blocks, structSet, depth) {
   });
 }
 
-export function extractListItems(listEl) {
+var EXPORT_LIST_MAX_DEPTH = 32;
+var EXPORT_LIST_MAX_ITEMS = 2000;
+
+export function extractListItems(listEl, depth, budget) {
+  var currentDepth = Number.isFinite(Number(depth)) ? Number(depth) : 0;
+  var remaining = budget || { value: EXPORT_LIST_MAX_ITEMS };
+  if (!listEl || currentDepth >= EXPORT_LIST_MAX_DEPTH || remaining.value <= 0) return [];
   var items = [];
   var lis = listEl.querySelectorAll(":scope > li");
   Array.prototype.forEach.call(lis, function (li) {
+    if (remaining.value <= 0) return;
+    remaining.value -= 1;
     var clone = li.cloneNode(true);
     Array.prototype.forEach.call(clone.querySelectorAll("ul,ol"), function (nested) {
       nested.remove();
     });
     var subItems = [];
+    var subItemsOrdered;
     Array.prototype.forEach.call(li.querySelectorAll(":scope > ul, :scope > ol"), function (nestedList) {
-      subItems = subItems.concat(extractListItems(nestedList));
+      if (subItemsOrdered === undefined) subItemsOrdered = String(nestedList.tagName || "").toLowerCase() === "ol";
+      subItems = subItems.concat(extractListItems(nestedList, currentDepth + 1, remaining));
     });
     var segments = cleanInlineSegments(clone);
     if (!hasMeaningfulInlineSegments(segments)) {
@@ -581,8 +610,10 @@ export function extractListItems(listEl) {
     }
     items.push({
       text: cleanText(clone),
+      textSource: "dom",
       segments: segments,
-      subItems: subItems
+      subItems: subItems,
+      subItemsOrdered: subItemsOrdered
     });
   });
   return items;

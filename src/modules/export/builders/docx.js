@@ -3,6 +3,9 @@ import { preloadImageForDocx, calculateWordImageDimensions } from '../media.js';
 import { createZip } from '../zip.js';
 import { getWordTheme } from '../themes/word.js';
 
+var DOCX_MAX_IMAGES = 50;
+var DOCX_MAX_AGGREGATE_IMAGE_BYTES = 32 * 1024 * 1024;
+
 export function xmlEscape(value) {
   return String(value == null ? "" : value)
     .replace(/&/g, "&amp;")
@@ -141,7 +144,14 @@ export function wordParagraph(text, options) {
   return "<w:p>" + (pPr ? "<w:pPr>" + pPr + "</w:pPr>" : "") + runsXml + "</w:p>";
 }
 
-function getMessageWordStyle(themeWord, isUser, alignRight, hyperlinks) {
+function getMessageWordStyle(themeWord, isUser, alignRight, hyperlinks, flatLayout) {
+  if (flatLayout) {
+    return {
+      inlineCodeBg: themeWord.inlineCodeBg,
+      inlineCodeText: themeWord.inlineCodeText,
+      hyperlinks: hyperlinks
+    };
+  }
   return {
     shading: isUser ? themeWord.userBg : themeWord.assistantBg,
     borderColor: isUser ? themeWord.userBorder : themeWord.assistantBorder,
@@ -167,42 +177,7 @@ function getVisualWordBlock(block, role) {
   return block;
 }
 
-function getWordBlockPlainText(block) {
-  if (!block) return "";
-  if (block.text != null) return String(block.text);
-  if (Array.isArray(block.segments)) {
-    return block.segments.map(function (segment) {
-      return segment && segment.text != null ? String(segment.text) : "";
-    }).join("");
-  }
-  return "";
-}
-
-function getEstimatedWordLineUnits(text) {
-  var units = 0;
-  var chars = Array.from(String(text || ""));
-  chars.forEach(function (char) {
-    if (/\s/.test(char)) {
-      units += 0.6;
-    } else if (/[\u1100-\u11FF\u2E80-\uA4CF\uAC00-\uD7AF\uF900-\uFAFF\uFE10-\uFE6F\uFF00-\uFFEF]/.test(char)) {
-      units += 2;
-    } else {
-      units += 1;
-    }
-  });
-  return units;
-}
-
-function shouldRightAlignUserWordText(blocks, alignRight, role) {
-  if (!alignRight || role !== "user" || !Array.isArray(blocks) || blocks.length !== 1) return false;
-  var block = getVisualWordBlock(blocks[0], role);
-  if (!block || (block.type !== "paragraph" && block.type !== "heading")) return false;
-  var text = getWordBlockPlainText(block);
-  if (!text.trim() || /[\r\n]/.test(text)) return false;
-  return getEstimatedWordLineUnits(text) <= 52;
-}
-
-function wordRoleLabel(label, alignRight, isUser, themeWord) {
+function wordRoleLabel(label, alignRight, isUser, themeWord, flatLayout) {
   var text = String(label || "");
   var align = alignRight ? "right" : "left";
   var color = isUser ? themeWord.roleUserColor : themeWord.roleAssistantColor;
@@ -216,12 +191,12 @@ function wordRoleLabel(label, alignRight, isUser, themeWord) {
     keepNext: true,
     plainText: true
   };
-  if (themeWord.roleLabelBg) opts.shading = themeWord.roleLabelBg;
-  if (themeWord.roleLabelBg) {
+  if (!flatLayout && themeWord.roleLabelBg) opts.shading = themeWord.roleLabelBg;
+  if (!flatLayout && themeWord.roleLabelBg) {
     opts.textShading = themeWord.roleLabelBg;
     opts.shading = undefined;
   }
-  if (themeWord.roleLabelBorder) {
+  if (!flatLayout && themeWord.roleLabelBorder) {
     opts.borderColor = themeWord.roleLabelBorder;
     opts.borderSide = alignRight ? "right" : "left";
   }
@@ -363,12 +338,12 @@ export function wordImageGridParagraph(blocks, imageCache, alignRight, themeWord
   return xml;
 }
 
-export function wordBlocks(blocks, imageCache, alignRight, themeWord, role, hyperlinks) {
+export function wordBlocks(blocks, imageCache, alignRight, themeWord, role, hyperlinks, flatLayout) {
   var xml = "";
   var isUser = role === "user";
-  var messageStyle = getMessageWordStyle(themeWord, isUser, alignRight, hyperlinks);
+  var messageStyle = getMessageWordStyle(themeWord, isUser, alignRight, hyperlinks, flatLayout);
   // Right-align only likely single-line user prompts; wrapped text should start from the left.
-  var messageTextAlign = shouldRightAlignUserWordText(blocks, alignRight, role) ? "right" : undefined;
+  var messageTextAlign = alignRight && role === "user" ? "right" : undefined;
   for (var blockIndex = 0; blockIndex < blocks.length; blockIndex += 1) {
     var block = getVisualWordBlock(blocks[blockIndex], role);
     if (block.type === "heading") {
@@ -459,6 +434,7 @@ export async function buildDocxBlob(messages, metadata, settingsInput, options) 
   var platform = getPlatformLabel(metadata.platform);
   var date = formatDateDisplay(metadata.exportedAt);
   var themeWord = themeConfig.word;
+  var flatLayout = themeConfig.styleId === "default" || themeConfig.styleId === "natural";
   var pageBg = themeConfig.pageBg;
   var hyperlinks = {
     byHref: new Map(),
@@ -497,14 +473,21 @@ export async function buildDocxBlob(messages, metadata, settingsInput, options) 
   });
 
 
-  var uniqueImages = Array.from(imageEntriesByKey.values()).filter(function (entry) { return entry.src; });
+  var uniqueImages = Array.from(imageEntriesByKey.values()).filter(function (entry) { return entry.src; }).slice(0, DOCX_MAX_IMAGES);
   var imageCache = {};
   if (uniqueImages.length > 0) {
     var loadedImages = 0;
+    var aggregateImageBytes = 0;
     var preloadedResults = await mapLimit(uniqueImages, 2, async function (entry, index) {
       throwIfAborted();
       var result = await preloadImageForDocx(entry.src, index, options);
       throwIfAborted();
+      var resultBytes = Number(result && result.bytes && result.bytes.byteLength || 0);
+      if (resultBytes && aggregateImageBytes + resultBytes > DOCX_MAX_AGGREGATE_IMAGE_BYTES) {
+        result = null;
+      } else {
+        aggregateImageBytes += resultBytes;
+      }
       loadedImages += 1;
       notifyProgress(
         options,
@@ -588,9 +571,9 @@ export async function buildDocxBlob(messages, metadata, settingsInput, options) 
     var isUser = message.role === "user";
     var alignRight = isUser && settings.align_user_messages_right;
     if (settings.show_role_labels && metadata.scope !== "ai_only") {
-      bodyParts.push(wordRoleLabel(isUser ? t("export_role_user", "You Asked") : platform.toUpperCase(), alignRight, isUser, themeWord));
+      bodyParts.push(wordRoleLabel(isUser ? t("export_role_user", "You Asked") : platform.toUpperCase(), alignRight, isUser, themeWord, flatLayout));
     }
-    bodyParts.push(wordBlocks(message.contentBlocks, imageCache, alignRight, themeWord, message.role, hyperlinks));
+    bodyParts.push(wordBlocks(message.contentBlocks, imageCache, alignRight, themeWord, message.role, hyperlinks, flatLayout));
     bodyParts.push(wordParagraph("", { spacing: 120, align: alignRight ? "right" : undefined }));
     if (mi % 5 === 0 || mi === messages.length - 1) {
       notifyProgress(
@@ -626,7 +609,7 @@ export async function buildDocxBlob(messages, metadata, settingsInput, options) 
     { path: "word/document.xml", content: documentXml }
   ];
 
-  Object.values(imageCache).forEach(function (img) {
+  getUniqueDocxImages(imageCache).forEach(function (img) {
     zipFiles.push({
       path: "word/" + img.path,
       content: img.bytes
@@ -642,10 +625,20 @@ export async function buildDocxBlob(messages, metadata, settingsInput, options) 
   return blob;
 }
 
+export function getUniqueDocxImages(imageCache) {
+  var seenPaths = new Set();
+  return Object.values(imageCache || {}).filter(function (img) {
+    var path = String(img && img.path || "");
+    if (!path || seenPaths.has(path)) return false;
+    seenPaths.add(path);
+    return true;
+  });
+}
+
 export function contentTypesXml(imageCache) {
   var extensions = { rels: true, xml: true };
   var imageDefaults = "";
-  Object.values(imageCache || {}).forEach(function (img) {
+  getUniqueDocxImages(imageCache).forEach(function (img) {
     if (!extensions[img.ext]) {
       extensions[img.ext] = true;
       imageDefaults += '<Default Extension="' + img.ext + '" ContentType="' + img.mimeType + '"/>';
@@ -675,7 +668,7 @@ export function packageRelsXml() {
 
 export function documentRelsXml(imageCache, hyperlinks) {
   var relsXml = "";
-  Object.values(imageCache || {}).forEach(function (img) {
+  getUniqueDocxImages(imageCache).forEach(function (img) {
     relsXml += '<Relationship Id="' + img.relId + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="' + img.path + '"/>';
   });
   (hyperlinks && hyperlinks.entries || []).forEach(function (link) {

@@ -257,6 +257,7 @@ export function renderProgressUI(format, progress, targetShadowRoot, onCancel) {
         <div class="cv-export-progress-fill"></div>
       </div>
       <div class="cv-export-progress-detail"></div>
+      <div class="cv-export-progress-notice" hidden></div>
     `;
     targetShadowRoot.appendChild(progressStripElement);
   } else if (!progressStripElement.isConnected || progressStripElement.parentElement !== targetShadowRoot) {
@@ -265,10 +266,15 @@ export function renderProgressUI(format, progress, targetShadowRoot, onCancel) {
 
   var title = getProgressTitle(format, progress);
   var status = String(progress.message || t("content_progress_checking_export_access", "Preparing export..."));
+  var notice = String(progress.notice || "");
+  var noticeSeverity = String(progress.noticeSeverity || "");
 
   progressStripElement.dataset.mode = mode;
   progressStripElement.classList.remove("is-hidden");
-  progressStripElement.setAttribute("aria-label", title + ". " + status + ". " + percent + "%");
+  progressStripElement.setAttribute(
+    "aria-label",
+    title + ". " + status + ". " + percent + "%" + (notice ? ". " + notice : "")
+  );
 
   var titleEl = progressStripElement.querySelector(".cv-export-progress-title");
   if (titleEl) titleEl.textContent = title;
@@ -281,6 +287,13 @@ export function renderProgressUI(format, progress, targetShadowRoot, onCancel) {
 
   var detailEl = progressStripElement.querySelector(".cv-export-progress-detail");
   if (detailEl) detailEl.textContent = getProgressDetail(progress, percent);
+
+  var noticeEl = progressStripElement.querySelector(".cv-export-progress-notice");
+  if (noticeEl) {
+    noticeEl.hidden = !notice;
+    noticeEl.dataset.severity = noticeSeverity;
+    noticeEl.textContent = notice;
+  }
 
   var fillEl = progressStripElement.querySelector(".cv-export-progress-fill");
   if (fillEl) {

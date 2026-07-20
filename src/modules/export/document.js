@@ -5,11 +5,14 @@ import {
   sanitizeImageAlt,
   sanitizeExportMathMl,
   normalizeExportLinkHref,
+  normalizeGeneratedFileHref,
+  getGeneratedFileNameFromHref,
   ensureImageBlockMetadata,
   dedupeImageBlocksWithinMessage,
   getBlockText,
   shouldCoalesceInlineSegments,
   getCoalescedInlineSegmentsText,
+  overlayCoalescedInlineLinks,
   isDalleMetadataText,
   isGeminiImagePlaceholderText
 } from './utils.js';
@@ -45,13 +48,125 @@ function normalizeExportHref(value) {
   return normalizeExportLinkHref(value);
 }
 
-export function normalizeInlineSegments(segments, fallbackText) {
+function normalizeGeneratedFileEntry(value) {
+  if (!value || typeof value !== "object") return null;
+  var source = normalizeGeneratedFileHref(value.source || value.href || value.url);
+  if (!source) return null;
+  var href = normalizeExportHref(value.href || value.downloadUrl || value.download_url);
+  var name = sanitizeExportText(value.name || "");
+  var rawName = sanitizeExportText(value.rawName || "");
+  return {
+    name: name || getGeneratedFileNameFromHref(source) || rawName || source.split("/").pop() || "Generated file",
+    rawName: rawName || name,
+    source: source,
+    ...(href ? { href: href } : {})
+  };
+}
+
+function normalizeGeneratedFileEntries(block) {
+  var entries = [];
+  if (block && block.generatedFile) entries.push(block.generatedFile);
+  if (block && Array.isArray(block.generatedFiles)) entries.push.apply(entries, block.generatedFiles);
+  if (block && Array.isArray(block.segments)) {
+    block.segments.forEach(function (segment) {
+      var source = normalizeGeneratedFileHref(segment && (segment.href || segment.url));
+      if (!source) return;
+      var name = getGeneratedFileNameFromHref(source);
+      entries.push({ name: name, rawName: source.split("/").pop() || name, source: source });
+    });
+  }
+  return entries.map(normalizeGeneratedFileEntry).filter(Boolean).filter(function (entry, index, all) {
+    return all.findIndex(function (candidate) { return candidate.source === entry.source; }) === index;
+  });
+}
+
+function makeGeneratedFileSegmentsPortable(messages) {
+  function normalizeSegments(segments, generatedFiles) {
+    (Array.isArray(segments) ? segments : []).forEach(function (segment) {
+      var source = normalizeGeneratedFileHref(segment && (segment.href || segment.url));
+      if (!source) return;
+      var match = (generatedFiles || []).find(function (entry) {
+        return entry && entry.source === source && entry.href;
+      });
+      var portableHref = normalizeExportHref(match && match.href);
+      if (portableHref) segment.href = portableHref;
+      else delete segment.href;
+      delete segment.url;
+    });
+  }
+  function normalizeItems(items) {
+    (Array.isArray(items) ? items : []).forEach(function (item) {
+      normalizeSegments(item && item.segments, normalizeGeneratedFileEntries(item));
+      normalizeItems(item && item.subItems);
+    });
+  }
+  (Array.isArray(messages) ? messages : []).forEach(function (message) {
+    (message && message.contentBlocks || []).forEach(function (block) {
+      normalizeSegments(block && block.segments, normalizeGeneratedFileEntries(block));
+      if (block && block.type === "list") normalizeItems(block.items);
+    });
+  });
+  return messages;
+}
+
+function collapseGeneratedFileMarkdownWrappers(segments) {
+  var source = (Array.isArray(segments) ? segments : []).map(function (segment) {
+    return segment && typeof segment === "object" ? { ...segment } : { text: String(segment || "") };
+  });
+  var wrappers = [
+    { marker: "**", mark: "bold" },
+    { marker: "__", mark: "bold" },
+    { marker: "~~", mark: "strike" },
+    { marker: "==", mark: "highlight" },
+    { marker: "*", mark: "italic" },
+    { marker: "_", mark: "italic" }
+  ];
+
+  for (var index = 0; index < source.length; index += 1) {
+    var segment = source[index];
+    if (!normalizeGeneratedFileHref(segment && (segment.href || segment.url))) continue;
+    var marks = segment.marks && typeof segment.marks === "object" ? { ...segment.marks } : {};
+    wrappers.some(function (wrapper) {
+      var text = String(segment.text || "");
+      if (text.startsWith(wrapper.marker) && text.endsWith(wrapper.marker) && text.length > wrapper.marker.length * 2) {
+        segment.text = text.slice(wrapper.marker.length, -wrapper.marker.length);
+        marks[wrapper.mark] = true;
+        return true;
+      }
+      var previous = source[index - 1];
+      var next = source[index + 1];
+      var previousText = String(previous && previous.text || "");
+      var nextText = String(next && next.text || "");
+      var openingIndex = previousText.lastIndexOf(wrapper.marker);
+      if (!previous || !next || openingIndex < 0 || !nextText.startsWith(wrapper.marker)) return false;
+      var wrappedPrefix = previousText.slice(openingIndex + wrapper.marker.length);
+      previous.text = previousText.slice(0, openingIndex);
+      if (wrappedPrefix) {
+        var prefixMarks = previous.marks && typeof previous.marks === "object" ? { ...previous.marks } : {};
+        prefixMarks[wrapper.mark] = true;
+        source.splice(index, 0, { text: wrappedPrefix, marks: prefixMarks });
+        index += 1;
+        segment = source[index];
+        next = source[index + 1];
+        nextText = String(next && next.text || "");
+      }
+      next.text = nextText.slice(wrapper.marker.length);
+      marks[wrapper.mark] = true;
+      return true;
+    });
+    if (Object.keys(marks).length) segment.marks = marks;
+  }
+  return source.filter(function (segment) { return String(segment && segment.text || "") !== ""; });
+}
+
+export function normalizeInlineSegments(segments, fallbackText, options) {
   if (!Array.isArray(segments)) {
     return undefined;
   }
+  segments = collapseGeneratedFileMarkdownWrappers(segments);
   if (shouldCoalesceInlineSegments(segments)) {
     var coalesced = getCoalescedInlineSegmentsText(segments, fallbackText);
-    return coalesced ? [{ text: coalesced }] : undefined;
+    segments = coalesced ? overlayCoalescedInlineLinks(coalesced, segments) : [];
   }
   var normalized = segments.map(function (segment) {
     if (typeof segment === "string") {
@@ -64,7 +179,21 @@ export function normalizeInlineSegments(segments, fallbackText) {
     var out = {
       text: text
     };
-    var href = normalizeExportHref(segment.href || segment.url);
+    var rawHref = segment.href || segment.url;
+    var href = normalizeExportHref(rawHref);
+    if (!href && options && options.allowGeneratedFileLinks) {
+      var generatedSource = normalizeGeneratedFileHref(rawHref);
+      var generatedEntry = (options.generatedFileEntries || []).find(function (entry) {
+        return entry && entry.source === generatedSource;
+      });
+      href = normalizeExportHref(generatedEntry && generatedEntry.href) || generatedSource;
+      if (generatedSource) {
+        var rawName = generatedSource.replace(/^sandbox:\/mnt\/data\//i, "").split(/[?#]/)[0];
+        var decodedName = getGeneratedFileNameFromHref(generatedSource);
+        if (rawName && decodedName && rawName !== decodedName) text = text.split(rawName).join(decodedName);
+      }
+    }
+    out.text = text;
     if (href) out.href = href;
     var normalizedMarks = {};
     if (segment.bold || marks.bold) normalizedMarks.bold = true;
@@ -95,11 +224,27 @@ export function normalizeInlineSegments(segments, fallbackText) {
 
 function copyTextBlock(block, type, index) {
   var copy = { ...block, type: type };
+  if (copy.textSource !== "dom") delete copy.textSource;
   copy.text = type === "code"
     ? String(copy.text == null ? "" : copy.text).replace(/\u00a0/g, " ").trim()
     : sanitizeExportText(copy.text);
-  var segments = normalizeInlineSegments(copy.segments, copy.text);
-  if (segments) copy.segments = segments;
+  var generatedFiles = normalizeGeneratedFileEntries(copy);
+  if (generatedFiles.length) {
+    copy.generatedFile = generatedFiles[0];
+    if (generatedFiles.length > 1) copy.generatedFiles = generatedFiles;
+    else delete copy.generatedFiles;
+  } else {
+    delete copy.generatedFile;
+    delete copy.generatedFiles;
+  }
+  var segments = normalizeInlineSegments(copy.segments, copy.text, {
+    allowGeneratedFileLinks: generatedFiles.length > 0,
+    generatedFileEntries: generatedFiles
+  });
+  if (segments) {
+    copy.segments = segments;
+    if (generatedFiles.length) copy.text = segments.map(function (segment) { return segment.text || ""; }).join("");
+  }
   var htmlStyle = sanitizeExportHtmlStyle(copy.htmlStyle);
   if (htmlStyle) copy.htmlStyle = htmlStyle;
   else delete copy.htmlStyle;
@@ -132,19 +277,40 @@ function copyTextBlock(block, type, index) {
   return copy;
 }
 
-function normalizeListItems(items) {
+var EXPORT_LIST_MAX_DEPTH = 32;
+var EXPORT_LIST_MAX_ITEMS = 2000;
+
+function normalizeListItems(items, depth, budget) {
+  var currentDepth = Number.isFinite(Number(depth)) ? Number(depth) : 0;
+  var remaining = budget || { value: EXPORT_LIST_MAX_ITEMS };
+  if (currentDepth >= EXPORT_LIST_MAX_DEPTH || remaining.value <= 0) return [];
   return (items || []).map(function (item) {
+    if (remaining.value <= 0) return null;
+    remaining.value -= 1;
     if (typeof item === "string") item = { text: item };
     if (!item || typeof item !== "object") return null;
     var text = sanitizeExportText(item.text);
-    var subItems = normalizeListItems(item.subItems);
+    var subItems = normalizeListItems(item.subItems, currentDepth + 1, remaining);
     if (!text && !subItems.length) return null;
     var out = {
       text: text,
       subItems: subItems
     };
-    var segments = normalizeInlineSegments(item.segments, text);
-    if (segments) out.segments = segments;
+    if (item.textSource === "dom") out.textSource = "dom";
+    var generatedFiles = normalizeGeneratedFileEntries(item);
+    if (generatedFiles.length) {
+      out.generatedFile = generatedFiles[0];
+      if (generatedFiles.length > 1) out.generatedFiles = generatedFiles;
+    }
+    var segments = normalizeInlineSegments(item.segments, text, {
+      allowGeneratedFileLinks: generatedFiles.length > 0,
+      generatedFileEntries: generatedFiles
+    });
+    if (segments) {
+      out.segments = segments;
+      if (generatedFiles.length) out.text = segments.map(function (segment) { return segment.text || ""; }).join("");
+    }
+    if (typeof item.subItemsOrdered === "boolean") out.subItemsOrdered = item.subItemsOrdered;
     return out;
   }).filter(Boolean);
 }
@@ -183,6 +349,7 @@ export function normalizeExportBlock(block, index) {
       ordered: Boolean(block.ordered),
       items: normalizeListItems(block.items)
     };
+    if (listBlock.textSource !== "dom") delete listBlock.textSource;
     var listHtmlStyle = sanitizeExportHtmlStyle(block.htmlStyle);
     if (listHtmlStyle) listBlock.htmlStyle = listHtmlStyle;
     return listBlock.items.length ? listBlock : null;
@@ -195,6 +362,7 @@ export function normalizeExportBlock(block, index) {
       headers: normalizeTableRows([block.headers || []])[0] || [],
       rows: normalizeTableRows(block.rows)
     };
+    if (tableBlock.textSource !== "dom") delete tableBlock.textSource;
     var tableHtmlStyle = sanitizeExportHtmlStyle(block.htmlStyle);
     if (tableHtmlStyle) tableBlock.htmlStyle = tableHtmlStyle;
     return tableBlock.headers.length || tableBlock.rows.length ? tableBlock : null;
@@ -276,6 +444,7 @@ export function createExportDocument(input) {
     exportedAt: normalizeExportDate(metadataInput.exportedAt || source.exportedAt),
     scope: scope
   };
+  makeGeneratedFileSegmentsPortable(messages);
 
   return {
     version: EXPORT_DOCUMENT_VERSION,

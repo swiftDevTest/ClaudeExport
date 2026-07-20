@@ -25,14 +25,14 @@ import {
 import { preloadCanvasImages } from '../media.js';
 import { getImageTheme } from '../themes/image.js';
 
-const PRODUCT_NAME = globalThis.CHATVAULT_PRODUCT_CONFIG?.productName || "Claude Export";
-
 var SEPARATOR_MARGIN_TOP = 25;
 var SEPARATOR_MARGIN_BOTTOM = 25;
 var IMAGE_MESSAGE_BOTTOM_GAP = 32;
 var IMAGE_FOOTER_TOP_GAP = 28;
 var IMAGE_FOOTER_BOTTOM_GAP = 36;
-var IMAGE_HEADER_TOP = 70;
+// Keep the first card visually separated from the image edge, even when all
+// optional header fields are hidden.
+var IMAGE_HEADER_TOP = 96;
 var IMAGE_TITLE_LINE_HEIGHT = 42;
 var IMAGE_TITLE_META_GAP = 14;
 var IMAGE_META_LINE_HEIGHT = 24;
@@ -55,6 +55,8 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
   var themeConfig = getImageTheme(settingsInput);
   var settings = themeConfig.settings;
   var theme = themeConfig.theme;
+  var flatLayout = themeConfig.styleId === "natural";
+  var messageBottomGap = flatLayout ? 20 : IMAGE_MESSAGE_BOTTOM_GAP;
   var width = IMAGE_RENDER_WIDTH;
   var scale = options && options.preview ? IMAGE_PREVIEW_SCALE : IMAGE_EXPORT_SCALE;
   var pad = 64;
@@ -89,7 +91,7 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
     var message = messages[mi];
     var layout = measureImageMessage(message);
     messageLayouts.push(layout);
-    y += layout.cardHeight + IMAGE_MESSAGE_BOTTOM_GAP;
+    y += layout.cardHeight + messageBottomGap;
     if (mi % 5 === 4 || mi === messages.length - 1) {
       notifyProgress(options, t("export_progress_measuring", "Measuring image layout"), 0.08 + 0.24 * ((mi + 1) / Math.max(1, messages.length)));
       await yieldToBrowser();
@@ -117,7 +119,8 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
     var alignRight = isUser && settings.align_user_messages_right;
     
     var maxCardWidth = alignRight ? contentWidth * 0.75 : contentWidth;
-    var maxInnerWidth = maxCardWidth - 48;
+    var horizontalPadding = flatLayout ? 8 : 48;
+    var maxInnerWidth = maxCardWidth - horizontalPadding;
     var allBlocks = (message.contentBlocks || []).map(function (block) {
       return measureImageBlock(getVisualMessageBlock(block, message.role), maxInnerWidth);
     }).filter(Boolean);
@@ -155,12 +158,12 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
         }
       });
       var limit = contentWidth * 0.75;
-      cardWidth = Math.min(limit, Math.max(120, maxContentW + 48));
+      cardWidth = Math.min(limit, Math.max(120, maxContentW + horizontalPadding));
     }
     
     var currentRoleHeight = 0;
     if (settings.show_role_labels && metadata.scope !== "ai_only") {
-      currentRoleHeight = 39;
+      currentRoleHeight = flatLayout ? 24 : 39;
     }
     
     var flowSections = buildImageFlowSections(allBlocks, cardWidth);
@@ -174,7 +177,7 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
       .filter(function (section) { return section.type === "bubble"; })
       .reduce(function (sum, section) { return sum + section.height; }, 0);
     var labelInBubble = false;
-    var totalHeight = currentRoleHeight + totalFlowHeight + (currentRoleHeight > 0 ? 8 : 0);
+    var totalHeight = currentRoleHeight + totalFlowHeight + (currentRoleHeight > 0 ? (flatLayout ? 4 : 8) : 0);
     
     return {
       message: message,
@@ -204,7 +207,7 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
       sections.push({
         type: "bubble",
         blocks: pendingText,
-        height: 18 + Math.max(contentHeight, imageBodyLineHeight) + 18
+        height: (flatLayout ? 6 : 18) + Math.max(contentHeight, imageBodyLineHeight) + (flatLayout ? 6 : 18)
       });
       pendingText = [];
     }
@@ -470,7 +473,10 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
   if (!(options && options.preview)) {
     var fittedScale = getFittedCanvasScale(width, height, scale, IMAGE_MIN_EXPORT_SCALE);
     if (!fittedScale) {
-      throw new Error(t("export_image_canvas_limit", "This conversation is too long for a high-quality image export because browsers limit canvas size. Export as PDF instead."));
+      // 用 code 标记图片超限错误，让上层弹窗替代普通 toast
+      var err = new Error(t("export_image_canvas_limit", "This conversation is too long for a high-quality image export because browsers limit canvas size. Export as PDF instead."));
+      err.code = "IMAGE_CANVAS_LIMIT_EXCEEDED";
+      throw err;
     }
     scale = fittedScale;
   }
@@ -575,10 +581,20 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
         
         ctx.fillStyle = theme.color.accentDark;
       } else {
-        ctx.fillStyle = defaultColor || theme.color.ink;
+        ctx.fillStyle = chunk.href ? theme.color.accentDark : (defaultColor || theme.color.ink);
       }
       
       ctx.fillText(chunk.text, currentX, textY);
+      if (chunk.href && !chunk.code && chunkW > 0) {
+        ctx.save();
+        ctx.strokeStyle = theme.color.accentDark;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(currentX, textY + fontSize + 1);
+        ctx.lineTo(currentX + chunkW, textY + fontSize + 1);
+        ctx.stroke();
+        ctx.restore();
+      }
       return chunkW;
     }
 
@@ -909,13 +925,26 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
       var tagStroke = message.role === "user" ? theme.color.tagBorderUser : theme.color.tagBorderAssistant;
       
       var tagX = layout.alignRight ? (cardX + cardWidth - tagWidth) : cardX;
-      drawRoundRect(ctx, tagX, currentY, tagWidth, 28, 8, tagFill, tagStroke);
       var tagText = message.role === "user"
         ? (theme.color.tagTextUser || theme.color.accentDark)
         : (theme.color.tagTextAssistant || theme.color.muted);
-      ctx.fillStyle = tagText;
-      ctx.fillText(label, tagX + 13, imageLabelBaseline(currentY, 28));
-      currentY += layout.roleHeight + 8;
+      if (flatLayout) {
+        ctx.fillStyle = tagText;
+        ctx.fillText(label, tagX, imageLabelBaseline(currentY, 18));
+        ctx.fillStyle = theme.color.line;
+        ctx.fillRect(tagX + Math.max(64, ctx.measureText(label).width + 18), currentY + 9, Math.max(20, cardWidth - Math.max(64, ctx.measureText(label).width + 18)), 1);
+      } else {
+        drawRoundRect(ctx, tagX, currentY, tagWidth, 28, 8, tagFill, tagStroke);
+        ctx.fillStyle = tagText;
+        var prevAlign = ctx.textAlign;
+        var prevBaseline = ctx.textBaseline;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(label, tagX + tagWidth / 2, currentY + 14);
+        ctx.textAlign = prevAlign;
+        ctx.textBaseline = prevBaseline;
+      }
+      currentY += layout.roleHeight + (flatLayout ? 4 : 8);
     }
     
     (layout.flowSections || []).forEach(function (section, sectionIndex) {
@@ -943,14 +972,16 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
         return;
       }
 
-      drawPremiumCard(ctx, cardX, currentY, cardWidth, section.height, 16, cardFill, cardStroke, cardShadow);
-      if (theme.id !== "editorial" && !layout.alignRight) {
+      if (!flatLayout) {
+        drawPremiumCard(ctx, cardX, currentY, cardWidth, section.height, 16, cardFill, cardStroke, cardShadow);
+      }
+      if (!flatLayout && theme.id !== "editorial" && !layout.alignRight) {
         ctx.fillStyle = message.role === "user" ? theme.color.accent : theme.color.muted;
         ctx.fillRect(cardX, currentY + 20, 4, Math.max(12, section.height - 40));
       }
-      var innerX = cardX + 24;
-      var innerWidth = cardWidth - 48;
-      var innerY = currentY + 18;
+      var innerX = cardX + (flatLayout ? 4 : 24);
+      var innerWidth = cardWidth - (flatLayout ? 8 : 48);
+      var innerY = currentY + (flatLayout ? 6 : 18);
 
       section.blocks.forEach(function (block, index) {
         if (index) innerY += 8;
@@ -960,7 +991,7 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
       currentY += section.height;
     });
     
-    y = currentY + IMAGE_MESSAGE_BOTTOM_GAP;
+    y = currentY + messageBottomGap;
     if (layoutIndex % 5 === 4 || layoutIndex === messageLayouts.length - 1) {
       notifyProgress(options, t("export_progress_rendering", "Rendering image"), 0.36 + 0.5 * ((layoutIndex + 1) / Math.max(1, messageLayouts.length)));
       await yieldToBrowser();
@@ -970,7 +1001,7 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
   if (settings.show_chatvault_badge) {
     var footerY = y + IMAGE_FOOTER_TOP_GAP;
     ctx.font = "700 15px " + theme.font.body;
-    var footerText = PRODUCT_NAME;
+    var footerText = t("export_pdf_footer_branding", "AI Chat Export");
     var footerWidth = Math.max(120, ctx.measureText(footerText).width);
     var logoGradient = ctx.createLinearGradient(pad, footerY, pad + footerWidth, footerY);
     logoGradient.addColorStop(0, theme.color.accent);

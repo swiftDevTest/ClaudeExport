@@ -11,6 +11,7 @@ function stripHtmlPresentationFromSegment(segment) {
 function stripHtmlPresentationFromListItem(item) {
   if (!item || typeof item !== "object") return item;
   var copy = { ...item };
+  delete copy.textSource;
   if (Array.isArray(copy.segments)) copy.segments = copy.segments.map(stripHtmlPresentationFromSegment);
   if (Array.isArray(copy.subItems)) copy.subItems = copy.subItems.map(stripHtmlPresentationFromListItem);
   return copy;
@@ -22,6 +23,7 @@ function stripHtmlPresentationFromBlock(block) {
   delete copy.htmlStyle;
   delete copy.codeStyle;
   delete copy.codeSegments;
+  delete copy.textSource;
   if (Array.isArray(copy.segments)) copy.segments = copy.segments.map(stripHtmlPresentationFromSegment);
   if (Array.isArray(copy.items)) copy.items = copy.items.map(stripHtmlPresentationFromListItem);
   return copy;

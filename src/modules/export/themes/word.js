@@ -65,7 +65,7 @@ export function normalizeWordTheme(theme) {
 
 export function getWordTheme(settingsInput) {
   var settings = normalizeExportSettings(settingsInput);
-  var styleId = settings.export_style || "default";
+  var styleId = "natural"; // Word export does not use custom themes; force native web presentation
   var theme = getExportTheme(styleId);
   var word = normalizeWordTheme(theme);
   return {

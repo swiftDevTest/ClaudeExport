@@ -49,7 +49,11 @@
         "src/offscreen.html",
         "src/obsidian-content.css",
         "src/obsidian-settings.html",
-        "images/*"
+        "images/*",
+        "src/modules/export/notion-sync-engine.js",
+        "src/modules/obsidian/coordinator.js",
+        "src/modules/obsidian/renderer.js",
+        "src/modules/obsidian/media.js"
       ],
       "matches": [
         "https://claude.ai/*"
@@ -86,7 +90,11 @@
         "src/modules/export/themes/tokens.js",
         "src/modules/export/themes/pdf.js",
         "src/modules/export/themes/word.js",
-        "src/modules/export/themes/image.js"
+        "src/modules/export/themes/image.js",
+        "src/modules/export/notion-sync-engine.js",
+        "src/modules/obsidian/coordinator.js",
+        "src/modules/obsidian/renderer.js",
+        "src/modules/obsidian/media.js"
       ],
       "matches": [
         "https://claude.ai/*"

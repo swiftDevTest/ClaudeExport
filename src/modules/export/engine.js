@@ -69,7 +69,7 @@ export async function createExportBlob(request) {
       });
     } else {
       var eligibility = getImageEligibility({ messages: resolved.messages, metadata: resolved.metadata, settings: resolved.settings });
-      if (!eligibility.ok) return { ok: false, error: eligibility.reason };
+      if (!eligibility.ok) return { ok: false, error: eligibility.reason, code: eligibility.code || "IMAGE_CANVAS_LIMIT_EXCEEDED" };
       blob = await renderImageDocument(document, {
         onProgress: request && request.onProgress,
         signal: request && request.signal
@@ -86,7 +86,7 @@ export async function createExportBlob(request) {
       metadata: resolved.metadata
     };
   } catch (error) {
-    return { ok: false, error: error.message || "Export failed." };
+    return { ok: false, error: error.message || "Export failed.", code: error.code };
   }
 }
 

@@ -10,7 +10,12 @@
   const HISTORY_STORE = "history";
   const ACTIVE_VAULT_KEY = "active";
   const CONFIG_KEY = "chatvault_obsidian_config_v1";
-  const STALE_JOB_MS = 24 * 60 * 60 * 1000;
+  // 历史问题：STALE_JOB_MS=24h，SW 崩溃后 job 卡在 writing 状态 24 小时，
+  // 用户期间无法启动新同步（job_conflict）。配合 alarms 周期清理降到 10min，
+  // SW 异常终止后用户最长等待 12min（2min alarm 周期 + 10min stale 阈值）即可恢复。
+  const STALE_JOB_MS = 10 * 60 * 1000;
+  const STALE_CLEANUP_ALARM = "chatvault-obsidian-stale-cleanup";
+  const STALE_CLEANUP_PERIOD_MIN = 2;
   const HISTORY_LIMIT = 20;
   const MAX_CHUNK_BYTES = 768 * 1024;
   const MAX_ASSET_BYTES = 8 * 1024 * 1024;
@@ -628,7 +633,13 @@
         case "CHATVAULT_OBSIDIAN_OPEN_SETTINGS": {
           const returnTabId = Number(sender && sender.tab && sender.tab.id || message.returnTabId || 0);
           const query = Number.isInteger(returnTabId) && returnTabId > 0 ? `?returnTabId=${returnTabId}` : "";
-          const tab = await chrome.tabs.create({ url: chrome.runtime.getURL(`src/obsidian-settings.html${query}`) });
+          // 当调用方（如批量导出弹窗）请求在后台打开时，不抢占当前标签焦点，
+          // 避免批量导出视图被切走。
+          const openInBackground = Boolean(message && message.background);
+          const tab = await chrome.tabs.create({
+            url: chrome.runtime.getURL(`src/obsidian-settings.html${query}`),
+            active: !openInBackground
+          });
           return { opened: true, tabId: tab && tab.id || null };
         }
         case "CHATVAULT_OBSIDIAN_OPEN_NOTE": {
@@ -653,6 +664,28 @@
       .catch((error) => sendResponse({ ok: false, code: error && error.code || "obsidian_error", error: safeError(error) }));
     return true;
   });
+
+  // 周期清理 stale job：SW 在 writeAssetChunk 中途崩溃后，job 卡在 "writing"
+  // 状态，新的 beginJob 会因 job_conflict 失败。alarms 周期触发 cleanupStaleJobs
+  // 让卡死的 job 在 10min 后自动 abort，恢复用户同步能力。
+  try {
+    chrome.alarms.create(STALE_CLEANUP_ALARM, { periodInMinutes: STALE_CLEANUP_PERIOD_MIN });
+    chrome.alarms.onAlarm.addListener((alarm) => {
+      if (!alarm || alarm.name !== STALE_CLEANUP_ALARM) return;
+      enqueueMutation(cleanupStaleJobs).catch(() => {});
+    });
+  } catch (error) {
+    // alarms API 不可用时（如旧版本 Chrome），退化为不周期清理，仍依赖 beginJob 时调用
+  }
+
+  // SW 重启时立即清理一次，避免 SW 被 Chrome 回收后遗留的 stale job
+  try {
+    if (chrome.runtime.onStartup) {
+      chrome.runtime.onStartup.addListener(() => {
+        enqueueMutation(cleanupStaleJobs).catch(() => {});
+      });
+    }
+  } catch (error) {}
 
   globalThis.CHATVAULT_OBSIDIAN_BACKGROUND = Object.freeze({
     databaseName: DATABASE_NAME,

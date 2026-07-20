@@ -59,7 +59,7 @@
     var out = {};
     Object.keys(DEFAULT_EXPORT_SETTINGS).forEach(function (key) {
       if (key === "export_style") {
-        out[key] = typeof src[key] === "string" && EXPORT_THEMES[src[key]] ? src[key] : DEFAULT_EXPORT_SETTINGS[key];
+        out[key] = typeof src[key] === "string" && EXPORT_THEMES && Boolean(EXPORT_THEMES[src[key]]) ? src[key] : DEFAULT_EXPORT_SETTINGS[key];
       } else {
         out[key] = normalizeBooleanSetting(src[key], DEFAULT_EXPORT_SETTINGS[key]);
       }
@@ -73,6 +73,19 @@
     if (/(^|\.)claude\.ai$/.test(hostname)) return PLATFORM_CLAUDE;
     if (hostname === "gemini.google.com") return PLATFORM_GEMINI;
     return "";
+  }
+
+  function collapseRepeatedConversationTitle(value) {
+    var title = String(value || "").replace(/\s+/g, " ").trim();
+    if (!title || title.length < 2) return title;
+    if (title.length % 2 === 0) {
+      var half = title.length / 2;
+      if (title.slice(0, half) === title.slice(half)) {
+        return title.slice(0, half).trim();
+      }
+    }
+    var spacedRepeat = title.match(/^(.{3,}?)\s+\1$/i);
+    return spacedRepeat ? spacedRepeat[1].trim() : title;
   }
 
   function getConversationTitle() {
@@ -133,7 +146,7 @@
         }
       }
       var h1 = document.querySelector("main h1") || document.querySelector('[data-testid*="conversation"] h1');
-      var title = (h1 && h1.textContent ? h1.textContent : searchTitle || document.title || "")
+      var title = collapseRepeatedConversationTitle(searchTitle || (h1 && h1.textContent ? h1.textContent : document.title || ""))
         .replace(/\s*[-|]\s*Claude\s*$/i, "")
         .replace(/^Claude$/i, "")
         .trim();
@@ -277,7 +290,8 @@
         import(resolveModulePath("src/modules/export/message-adapter.js")),
         import(resolveModulePath("src/modules/export/builders/txt.js")),
         import(resolveModulePath("src/modules/export/builders/json.js")),
-        import(resolveModulePath("src/modules/export/builders/html.js"))
+        import(resolveModulePath("src/modules/export/builders/html.js")),
+        import(resolveModulePath("src/modules/export/notion-sync-engine.js"))
       ]);
     } catch (error) {
       return Promise.reject(error);
@@ -292,7 +306,8 @@
           engine: arr[4], media: arr[5], zip: arr[6],
           save: arr[7], docx: arr[8], image: arr[9], pdf: arr[10],
           markdown: arr[11], uiController: arr[12], platformFetchers: arr[13], messageAdapter: arr[14],
-          txt: arr[15], json: arr[16], html: arr[17]
+          txt: arr[15], json: arr[16], html: arr[17],
+          notionSyncEngine: arr[18]
         };
       }).catch(function (err) {
         _ready = null;
@@ -395,13 +410,19 @@
     getConversationTitle: getConversationTitle,
     buildFilename: buildFilename,
 
-    parseMessages: function () {
+    parseMessages: function (options) {
       if (!_mods) { return []; }
-      return _mods.platform.parseMessages();
+      return _mods.platform.parseMessages(options);
+    },
+    getParseStats: function () {
+      if (!_mods || !_mods.platform || typeof _mods.platform.getParseStats !== "function") {
+        return { platform: "", candidateTurnCount: 0, parsedMessageCount: 0, droppedTurnCount: 0, collectedAt: 0 };
+      }
+      return _mods.platform.getParseStats();
     },
     getMessageCount: function () {
       if (!_mods) { return 0; }
-      return _mods.platform.parseMessages().length;
+      return _mods.platform.parseMessages({ includeHtmlStyles: false }).length;
     },
     getImageEligibility: function (opts) { return _mods ? _mods.platform.getImageEligibility(opts) : { ok: true, pending: true }; },
     getPlainText: function (msgs) { return _mods ? _mods.platform.getPlainText(msgs) : ""; },
@@ -411,7 +432,7 @@
     enterSelectionMode: function () { if (_mods) _mods.selection.enterSelectionMode(); },
     exitSelectionMode: function () { if (_mods) _mods.selection.exitSelectionMode(); },
     getSelectedIndices: function () { return _mods ? _mods.selection.getSelectedIndices() : []; },
-    getSelectedMessages: function () { return _mods ? _mods.selection.getSelectedMessages() : []; },
+    getSelectedMessages: function (options) { return _mods ? _mods.selection.getSelectedMessages(options) : []; },
     getSelectedCount: function () { return _mods ? _mods.selection.getSelectedCount() : 0; },
     clearSelection: function () { if (_mods) _mods.selection.clearSelection(); },
     selectAllAssistant: function () { if (_mods) _mods.selection.selectAllAssistant(); },
@@ -428,6 +449,12 @@
     },
     startExport: function (opts) {
       return ensureModules().then(function () { return _mods.engine.startExport(opts); });
+    },
+    prepareNotionJob: function (opts) {
+      return ensureModules().then(function () { return _mods.notionSyncEngine.prepareNotionJob(opts); });
+    },
+    syncToNotion: function (opts) {
+      return ensureModules().then(function () { return _mods.notionSyncEngine.syncToNotion(opts); });
     },
     saveBlob: function (blob, filename, options) { return ensureModules().then(function () { return _mods.save.saveBlob(blob, filename, options); }); },
     createZip: function (entries) { return ensureModules().then(function () { return _mods.zip.createZip(entries); }); },

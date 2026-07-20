@@ -3,6 +3,7 @@ import {
   t,
   formatDateDisplay,
   sanitizeExportText,
+  sanitizeImageAlt,
   sanitizeInlineSegmentText,
   formatLatexUnicode,
   hasLatexMathSyntax,
@@ -13,7 +14,7 @@ import {
   yieldToBrowser
 } from '../utils.js';
 
-var MESSAGE_SEPARATOR_HTML = '<hr style="border: 0; border-top: 1px solid #d9e2ec; margin: 25px 0;" />';
+var MESSAGE_SEPARATOR_MARKDOWN = "---";
 var BRANDING_FOOTER_STYLE = "display: flex; justify-content: space-between; gap: 16px; margin: 8px 0 0;";
 
 export async function buildMarkdownBlob(messages, metadata, settings, options) {
@@ -130,7 +131,7 @@ export async function buildMarkdownBlob(messages, metadata, settings, options) {
           break;
 
         case "image":
-          lines.push(t("export_image_placeholder", "[Image]"));
+          lines.push(renderMarkdownImage(block));
           lines.push("");
           break;
       }
@@ -138,7 +139,7 @@ export async function buildMarkdownBlob(messages, metadata, settings, options) {
 
     // Separator line between messages
     if (i < messages.length - 1 && !settings.export_ai_replies_only) {
-      lines.push(MESSAGE_SEPARATOR_HTML);
+      lines.push(MESSAGE_SEPARATOR_MARKDOWN);
       lines.push("");
     }
 
@@ -213,6 +214,15 @@ function renderInlineSegments(block) {
 
 function renderMarkdownText(value) {
   return formatLatexUnicode(sanitizeExportText(value));
+}
+
+function renderMarkdownImage(block) {
+  var alt = escapeMarkdownLinkText(sanitizeImageAlt(block && block.alt || "Image"));
+  var src = String(block && block.src || "").trim();
+  if (/^https?:\/\//i.test(src)) {
+    return "![" + alt + "](" + escapeMarkdownLinkDestination(src) + ")";
+  }
+  return t("export_image_placeholder", "[Image]");
 }
 
 function renderMarkdownInlineText(value) {
