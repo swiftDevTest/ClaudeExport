@@ -27,7 +27,7 @@
     "message": "Claude Export"
   },
   "extensionDescription": {
-    "message": "本機將 Claude 對話匯出為 PDF、Docs、MD 等。支援單個和批量匯出，保留精美且清晰的排版。"
+    "message": "隱私優先的 Claude 匯出工具。可將對話同步至 Notion 或 Obsidian，也可本機匯出為 PDF、Docs、Markdown、HTML、圖片、文字和 JSON。支援單個和批次匯出，提供專業主題。"
   },
   "extensionActionTitle": {
     "message": "Claude Exporter - 批量匯出聊天為 PDF、Word、Markdown 等"
@@ -35,38 +35,8 @@
   "brand_ai_workspace": {
     "message": "AI 工作區"
   },
-  "tab_folders": {
-    "message": "資料夾"
-  },
-  "tab_bookmarks": {
-    "message": "書籤"
-  },
-  "tab_history": {
-    "message": "歷史紀錄"
-  },
-  "tab_account": {
-    "message": "帳戶"
-  },
   "tab_settings": {
     "message": "設定"
-  },
-  "btn_reorder": {
-    "message": "重新排序"
-  },
-  "btn_sort_folders": {
-    "message": "排序資料夾"
-  },
-  "btn_expand_all": {
-    "message": "展開全部"
-  },
-  "btn_collapse_all": {
-    "message": "折疊全部"
-  },
-  "btn_new_folder": {
-    "message": "新建資料夾"
-  },
-  "btn_new_folder_group": {
-    "message": "新建資料夾群組"
   },
   "btn_bookmark": {
     "message": "書籤"
@@ -104,12 +74,6 @@
   "btn_refresh_sync": {
     "message": "重新整理同步"
   },
-  "btn_backup": {
-    "message": "備份資料夾与書籤"
-  },
-  "btn_import": {
-    "message": "匯入資料夾与書籤"
-  },
   "btn_select_ai": {
     "message": "選擇 AI 回覆"
   },
@@ -128,116 +92,14 @@
   "filter_all": {
     "message": "全部"
   },
-  "filter_gpt": {
-    "message": "GPT"
-  },
   "filter_claude": {
     "message": "Claude"
-  },
-  "filter_gemini": {
-    "message": "Gemini"
-  },
-  "empty_no_folders": {
-    "message": "暫無資料夾"
-  },
-  "empty_no_folders_desc": {
-    "message": "使用資料夾來整理匯入的 Claude 對話。"
-  },
-  "empty_no_bookmarks": {
-    "message": "暫無書籤"
-  },
-  "empty_no_bookmarks_desc": {
-    "message": "儲存的書籤將顯示在此處。"
-  },
-  "empty_no_history": {
-    "message": "暫無索引對話"
-  },
-  "empty_no_history_desc": {
-    "message": "將對話加入資料夾或書籤以建立僅標題的歷史紀錄索引。"
-  },
-  "login_title": {
-    "message": "登入以整理您的 AI 聊天紀錄"
-  },
-  "login_desc": {
-    "message": "ChatVault 僅儲存標題、連結、資料夾和書籤。對話內容不會被儲存。"
-  },
-  "login_btn_google": {
-    "message": "使用 Google 登入"
-  },
-  "linked_accounts_title": {
-    "message": "已連結帳戶"
-  },
-  "linked_accounts_desc": {
-    "message": "ChatVault 僅使用連結的帳戶來區分 Claude 標題索引。它不會儲存平台 Cookie、密碼、Token、提示詞、回覆或對話正文。"
   },
   "settings_export_title": {
     "message": "導出內容設置"
   },
-  "settings_workspace_title": {
-    "message": "工作區設定"
-  },
-  "setting_open_startup": {
-    "message": "啟動時開啟"
-  },
-  "setting_hide_bookmarks_sidebar": {
-    "message": "在左側側邊欄中隱藏書籤"
-  },
-  "setting_hide_tags": {
-    "message": "隱藏對話下方的資料夾標籤"
-  },
-  "settings_backup_title": {
-    "message": "備份與匯入"
-  },
-  "sync_ready": {
-    "message": "同步佇列已就緒。"
-  },
-  "backup_ready": {
-    "message": "在變更整理設定後將自動建立備份。"
-  },
-  "label_selected": {
-    "message": "已選擇 $1"
-  },
   "export_selected_as": {
     "message": "將所選匯出為"
-  },
-  "selection_header": {
-    "message": "訊息選擇"
-  },
-  "menu_add_folder": {
-    "message": "新增資料夾"
-  },
-  "menu_add_current_chat": {
-    "message": "新增目前對話"
-  },
-  "menu_add_chats": {
-    "message": "新增對話"
-  },
-  "menu_add_project": {
-    "message": "新增專案"
-  },
-  "menu_rename": {
-    "message": "重新命名"
-  },
-  "menu_change_color": {
-    "message": "變更顏色"
-  },
-  "menu_move_to": {
-    "message": "移動到..."
-  },
-  "color_title": {
-    "message": "變更資料夾顏色"
-  },
-  "color_preview": {
-    "message": "預覽"
-  },
-  "color_quick": {
-    "message": "快速顏色"
-  },
-  "color_custom": {
-    "message": "自訂顏色"
-  },
-  "color_custom_desc": {
-    "message": "使用色相和 RGB 值進行微調。"
   },
   "billing_title": {
     "message": "升級至 Claude Export Pro"
@@ -283,57 +145,6 @@
   },
   "export_run_save": {
     "message": "儲存設定"
-  },
-  "launcher_tooltip": {
-    "message": "ChatVault AI 管理器"
-  },
-  "toast_folder_deleted": {
-    "message": "資料夾已刪除。"
-  },
-  "toast_folders_deleted": {
-    "message": "已刪除 $1 个資料夾。"
-  },
-  "toast_chat_removed": {
-    "message": "對話已從資料夾中移除。"
-  },
-  "toast_added_to_folder": {
-    "message": "已將「$1」加入 $2。"
-  },
-  "toast_folder_already_has_chat": {
-    "message": "「$1」已在 $2 中。"
-  },
-  "toast_chats_removed": {
-    "message": "已從資料夾中移除 $1 個對話。"
-  },
-  "toast_history_deleted_single": {
-    "message": "已刪除 1 個歷史紀錄項。"
-  },
-  "toast_history_deleted": {
-    "message": "已刪除 $1 個歷史紀錄項。"
-  },
-  "toast_history_delete_failed": {
-    "message": "刪除歷史記錄失敗。"
-  },
-  "toast_moved_chat": {
-    "message": "已將「$1」移動到 $2。"
-  },
-  "toast_moved_chats": {
-    "message": "已移動 $1 個對話。"
-  },
-  "toast_move_failed": {
-    "message": "移動對話失敗。"
-  },
-  "toast_already_bookmarked": {
-    "message": "「$1」已加入書籤。"
-  },
-  "toast_bookmarked": {
-    "message": "已將「$1」加入書籤。"
-  },
-  "toast_queued_bookmark": {
-    "message": "已將「$1」的書籤加入佇列。"
-  },
-  "toast_removed_bookmark": {
-    "message": "已從書籤中移除「$1」。"
   },
   "toast_plan_expired": {
     "message": "方案已更新。Pro 功能已不再生效。"
@@ -388,15 +199,6 @@
   },
   "export_image_limit_pdf": {
     "message": "匯出 PDF"
-  },
-  "confirm_import": {
-    "message": "匯入此 ChatVault 備份嗎？\n\n$1\n\n資料夾將作為新複本匯入。現有書籤將保留，重複項將根據伺服器衝突規則進行跳過。"
-  },
-  "confirm_restore": {
-    "message": "還原此自動備份嗎？\n\n$1\n\n還原會將備份以複本方式匯入，並保留您現有的資料，除非伺服器衝突規則跳過了重複項。"
-  },
-  "prompt_move_selected": {
-    "message": "將所選對話移動到哪個資料夾名稱？"
   },
   "time_no_update": {
     "message": "無更新時間"

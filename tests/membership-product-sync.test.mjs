@@ -223,7 +223,7 @@ test("async entitlement refresh updates the already-open popup", () => {
 
   assert.match(listenerSource, /CHATVAULT_ENTITLEMENT_STATE_UPDATED/);
   assert.match(listenerSource, /sender\.tab\.id !== activeTabId/);
-  assert.match(listenerSource, /applyVerifiedPopupStateResponse\(message\.state \|\| message\)/);
+  assert.match(listenerSource, /applyVerifiedPopupStateResponse\(message\.state \|\| message(?:,|\s*\))/);
   assert.match(notifySource, /CHATVAULT_ENTITLEMENT_STATE_UPDATED/);
   assert.match(notifySource, /buildEntitlementPopupStateSnapshot\(\)/);
   assert.match(refreshSource, /notifyPopupEntitlementStateUpdated\(\)/);
@@ -235,7 +235,7 @@ test("export entitlement verification falls back to local quota gates", () => {
   const localResultStart = contentSource.indexOf("function getLocalExportAccessResult");
   const verifyStart = contentSource.indexOf("async function syncVerifiedExportEntitlement");
   const verifyEnd = contentSource.indexOf("\n  async function recordSuccessfulExportUsage", verifyStart);
-  const performStart = contentSource.indexOf("async function performExport()");
+  const performStart = contentSource.indexOf("async function performExport(");
   const performEnd = contentSource.indexOf("\n  function cancelExport()", performStart);
   const batchStart = contentSource.indexOf("async function startInPageBatchExport()");
   const batchEnd = contentSource.indexOf("\n  function cancelInPageBatchExport()", batchStart);

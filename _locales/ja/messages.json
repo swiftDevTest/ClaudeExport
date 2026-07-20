@@ -27,7 +27,7 @@
     "message": "Claude Export"
   },
   "extensionDescription": {
-    "message": "Claudeの会話をPDF、Docs、MDなどへローカル書き出し。個別および一括エクスポートに対応し、美しいレイアウトで保存。"
+    "message": "プライバシー重視のClaude書き出しツール。会話をNotionやObsidianへ同期、またはPDF、Docs、Markdown、HTML、画像、テキスト、JSONとしてローカル保存。個別・一括エクスポートとプロ仕様テーマに対応。"
   },
   "extensionActionTitle": {
     "message": "Claude Exporter - チャットを PDF、Word、Markdown などへ一括エクスポート"
@@ -35,38 +35,8 @@
   "brand_ai_workspace": {
     "message": "AI ワークスペース"
   },
-  "tab_folders": {
-    "message": "フォルダ"
-  },
-  "tab_bookmarks": {
-    "message": "ブックマーク"
-  },
-  "tab_history": {
-    "message": "履歴"
-  },
-  "tab_account": {
-    "message": "アカウント"
-  },
   "tab_settings": {
     "message": "設定"
-  },
-  "btn_reorder": {
-    "message": "並べ替え"
-  },
-  "btn_sort_folders": {
-    "message": "フォルダーを並べ替え"
-  },
-  "btn_expand_all": {
-    "message": "すべて展開"
-  },
-  "btn_collapse_all": {
-    "message": "すべて折りたたむ"
-  },
-  "btn_new_folder": {
-    "message": "新規フォルダ"
-  },
-  "btn_new_folder_group": {
-    "message": "新規フォルダグループ"
   },
   "btn_bookmark": {
     "message": "ブックマーク"
@@ -104,12 +74,6 @@
   "btn_refresh_sync": {
     "message": "同期を更新"
   },
-  "btn_backup": {
-    "message": "フォルダとブックマークをバックアップ"
-  },
-  "btn_import": {
-    "message": "フォルダとブックマークをインポート"
-  },
   "btn_select_ai": {
     "message": "AIの回答を選択"
   },
@@ -128,116 +92,14 @@
   "filter_all": {
     "message": "すべて"
   },
-  "filter_gpt": {
-    "message": "GPT"
-  },
   "filter_claude": {
     "message": "Claude"
-  },
-  "filter_gemini": {
-    "message": "Gemini"
-  },
-  "empty_no_folders": {
-    "message": "フォルダはまだありません"
-  },
-  "empty_no_folders_desc": {
-    "message": "フォルダを使用して、インポートしたClaudeのチャットを整理します。"
-  },
-  "empty_no_bookmarks": {
-    "message": "ブックマークはまだありません"
-  },
-  "empty_no_bookmarks_desc": {
-    "message": "保存されたブックマークがここに表示されます。"
-  },
-  "empty_no_history": {
-    "message": "インデックスされたチャットはまだありません"
-  },
-  "empty_no_history_desc": {
-    "message": "チャットをフォルダやブックマークに追加して、タイトルのみの履歴インデックスを作成します。"
-  },
-  "login_title": {
-    "message": "ログインしてAIチャットを整理する"
-  },
-  "login_desc": {
-    "message": "ChatVaultはタイトル、リンク、フォルダ、ブックマークのみを保存します。チャット本文は保存されません。"
-  },
-  "login_btn_google": {
-    "message": "Googleでログイン"
-  },
-  "linked_accounts_title": {
-    "message": "連携済みアカウント"
-  },
-  "linked_accounts_desc": {
-    "message": "ChatVaultは、Claudeのタイトルインデックスを個別に管理するためにのみ連携アカウントを使用します。プラットフォームのクッキー、パスワード、トークン、プロンプト、返信、またはチャット本文は保存しません。"
   },
   "settings_export_title": {
     "message": "エクスポート内容の設定"
   },
-  "settings_workspace_title": {
-    "message": "ワークスペース設定"
-  },
-  "setting_open_startup": {
-    "message": "起動時に開く"
-  },
-  "setting_hide_bookmarks_sidebar": {
-    "message": "左側サイドバーからブックマークを非表示にする"
-  },
-  "setting_hide_tags": {
-    "message": "チャットの下のフォルダタグを非表示にする"
-  },
-  "settings_backup_title": {
-    "message": "バックアップ & インポート"
-  },
-  "sync_ready": {
-    "message": "同期キュー準備完了。"
-  },
-  "backup_ready": {
-    "message": "整理設定の変更後に自動バックアップが作成されます。"
-  },
-  "label_selected": {
-    "message": "$1 件選択中"
-  },
   "export_selected_as": {
     "message": "選択したメッセージをエクスポートする形式"
-  },
-  "selection_header": {
-    "message": "メッセージの選択"
-  },
-  "menu_add_folder": {
-    "message": "フォルダを追加"
-  },
-  "menu_add_current_chat": {
-    "message": "現在のチャットを追加"
-  },
-  "menu_add_chats": {
-    "message": "チャットを追加"
-  },
-  "menu_add_project": {
-    "message": "プロジェクトを追加"
-  },
-  "menu_rename": {
-    "message": "名前を変更"
-  },
-  "menu_change_color": {
-    "message": "色を変更"
-  },
-  "menu_move_to": {
-    "message": "フォルダへ移動..."
-  },
-  "color_title": {
-    "message": "フォルダの色の変更"
-  },
-  "color_preview": {
-    "message": "プレビュー"
-  },
-  "color_quick": {
-    "message": "クイックカラー"
-  },
-  "color_custom": {
-    "message": "カスタムカラー"
-  },
-  "color_custom_desc": {
-    "message": "色相とRGB値で微調整します。"
   },
   "billing_title": {
     "message": "Claude Export Proにアップグレード"
@@ -283,57 +145,6 @@
   },
   "export_run_save": {
     "message": "設定を保存"
-  },
-  "launcher_tooltip": {
-    "message": "ChatVault AI マネージャー"
-  },
-  "toast_folder_deleted": {
-    "message": "フォルダを削除しました。"
-  },
-  "toast_folders_deleted": {
-    "message": "$1 件のフォルダを削除しました。"
-  },
-  "toast_chat_removed": {
-    "message": "フォルダからチャットを削除しました。"
-  },
-  "toast_added_to_folder": {
-    "message": "「$1」を $2 に追加しました。"
-  },
-  "toast_folder_already_has_chat": {
-    "message": "「$1」はすでに $2 にあります。"
-  },
-  "toast_chats_removed": {
-    "message": "フォルダから $1 件のチャットを削除しました。"
-  },
-  "toast_history_deleted_single": {
-    "message": "履歴アイテムを1件削除しました。"
-  },
-  "toast_history_deleted": {
-    "message": "$1 件の履歴アイテムを削除しました。"
-  },
-  "toast_history_delete_failed": {
-    "message": "履歴項目を削除できませんでした。"
-  },
-  "toast_moved_chat": {
-    "message": "\"$1\" を $2 に移動しました。"
-  },
-  "toast_moved_chats": {
-    "message": "$1 件のチャットを移動しました。"
-  },
-  "toast_move_failed": {
-    "message": "チャットの移動に失敗しました。"
-  },
-  "toast_already_bookmarked": {
-    "message": "\"$1\" はすでにブックマークされています。"
-  },
-  "toast_bookmarked": {
-    "message": "\"$1\" をブックマークしました。"
-  },
-  "toast_queued_bookmark": {
-    "message": "\"$1\" のブックマークをキューに追加しました。"
-  },
-  "toast_removed_bookmark": {
-    "message": "\"$1\" をブックマークから削除しました。"
   },
   "toast_plan_expired": {
     "message": "プランが更新されました。Pro機能は無効になりました。"
@@ -388,15 +199,6 @@
   },
   "export_image_limit_pdf": {
     "message": "PDFをエクスポート"
-  },
-  "confirm_import": {
-    "message": "このChatVaultバックアップをインポートしますか？\n\n$1\n\nフォルダは新しいコピーとしてインポートされます。既存のブックマークは保持され、重複はサーバーの競合ルールによってスキップされます。"
-  },
-  "confirm_restore": {
-    "message": "この自動バックアップを復元しますか？\n\n$1\n\n復元によりバックアップがコピーとしてインポートされ、サーバーの競合ルールで重複がスキップされない限り、既存のデータは保持されます。"
-  },
-  "prompt_move_selected": {
-    "message": "選択したチャットをどのフォルダ名に移動しますか？"
   },
   "time_no_update": {
     "message": "更新時間なし"

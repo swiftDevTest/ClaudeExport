@@ -27,7 +27,7 @@
     "message": "Claude Export"
   },
   "extensionDescription": {
-    "message": "Exportiere Claude-Chats lokal als PDF, Docs, MD und mehr. Unterstützt Einzel- und Massenexport mit eleganten Layouts."
+    "message": "Datenschutzorientierter Claude-Exporter. Chats mit Notion oder Obsidian synchronisieren oder lokal als PDF, Docs, Markdown, HTML, Bild, Text und JSON speichern. Einzel- und Massenexport mit professionellen Themes."
   },
   "extensionActionTitle": {
     "message": "Claude Exporter - Chats per Massenexport in PDF, Word, Markdown und mehr"
@@ -35,38 +35,8 @@
   "brand_ai_workspace": {
     "message": "AI-Arbeitsbereich"
   },
-  "tab_folders": {
-    "message": "Ordner"
-  },
-  "tab_bookmarks": {
-    "message": "Lesezeichen"
-  },
-  "tab_history": {
-    "message": "Verlauf"
-  },
-  "tab_account": {
-    "message": "Konto"
-  },
   "tab_settings": {
     "message": "Einstellungen"
-  },
-  "btn_reorder": {
-    "message": "Neu sortieren"
-  },
-  "btn_sort_folders": {
-    "message": "Ordner sortieren"
-  },
-  "btn_expand_all": {
-    "message": "Alle aufklappen"
-  },
-  "btn_collapse_all": {
-    "message": "Alle einklappen"
-  },
-  "btn_new_folder": {
-    "message": "Neuer Ordner"
-  },
-  "btn_new_folder_group": {
-    "message": "Neue Ordnergruppe"
   },
   "btn_bookmark": {
     "message": "Lesezeichen"
@@ -104,12 +74,6 @@
   "btn_refresh_sync": {
     "message": "Synchronisation aktualisieren"
   },
-  "btn_backup": {
-    "message": "Ordner & Lesezeichen sichern"
-  },
-  "btn_import": {
-    "message": "Ordner & Lesezeichen importieren"
-  },
   "btn_select_ai": {
     "message": "AI-Antworten auswählen"
   },
@@ -128,116 +92,14 @@
   "filter_all": {
     "message": "Alle"
   },
-  "filter_gpt": {
-    "message": "GPT"
-  },
   "filter_claude": {
     "message": "Claude"
-  },
-  "filter_gemini": {
-    "message": "Gemini"
-  },
-  "empty_no_folders": {
-    "message": "Noch keine Ordner"
-  },
-  "empty_no_folders_desc": {
-    "message": "Verwenden Sie Ordner, um importierte ChatGPT-, Claude- und Gemini-Chats zu organisieren."
-  },
-  "empty_no_bookmarks": {
-    "message": "Noch keine Lesezeichen"
-  },
-  "empty_no_bookmarks_desc": {
-    "message": "Gespeicherte Lesezeichen werden hier angezeigt."
-  },
-  "empty_no_history": {
-    "message": "Noch keine indizierten Chats"
-  },
-  "empty_no_history_desc": {
-    "message": "Fügen Sie Chats zu Ordnern oder Lesezeichen hinzu, um einen reinen Titelindex Ihres Verlaufs zu erstellen."
-  },
-  "login_title": {
-    "message": "Anmelden, um Ihre AI-Chats zu organisieren"
-  },
-  "login_desc": {
-    "message": "ChatVault speichert nur Titel, Links, Ordner und Lesezeichen. Der Chat-Inhalt wird nicht gespeichert."
-  },
-  "login_btn_google": {
-    "message": "Mit Google anmelden"
-  },
-  "linked_accounts_title": {
-    "message": "Verknüpfte Konten"
-  },
-  "linked_accounts_desc": {
-    "message": "ChatVault verwendet verknüpfte Konten nur, um die Titelindizes für Claude getrennt zu halten. Es werden keine Plattform-Cookies, Passwörter, Token, Prompts, Antworten oder Chat-Inhalte gespeichert."
   },
   "settings_export_title": {
     "message": "Inhaltsexport-Einstellungen"
   },
-  "settings_workspace_title": {
-    "message": "Arbeitsbereich-Einstellungen"
-  },
-  "setting_open_startup": {
-    "message": "Beim Start öffnen"
-  },
-  "setting_hide_bookmarks_sidebar": {
-    "message": "Lesezeichen in linker Seitenleiste ausblenden"
-  },
-  "setting_hide_tags": {
-    "message": "Ordner-Tags unter Chats ausblenden"
-  },
-  "settings_backup_title": {
-    "message": "Sicherung & Import"
-  },
-  "sync_ready": {
-    "message": "Synchronisationswarteschlange bereit."
-  },
-  "backup_ready": {
-    "message": "Automatische Backups werden nach Änderungen an der Organisation erstellt."
-  },
-  "label_selected": {
-    "message": "$1 ausgewählt"
-  },
   "export_selected_as": {
     "message": "Ausgewählte exportieren als"
-  },
-  "selection_header": {
-    "message": "Nachrichtenauswahl"
-  },
-  "menu_add_folder": {
-    "message": "Ordner hinzufügen"
-  },
-  "menu_add_current_chat": {
-    "message": "Aktuellen Chat hinzufügen"
-  },
-  "menu_add_chats": {
-    "message": "Chats hinzufügen"
-  },
-  "menu_add_project": {
-    "message": "Projekt hinzufügen"
-  },
-  "menu_rename": {
-    "message": "Umbenennen"
-  },
-  "menu_change_color": {
-    "message": "Farbe ändern"
-  },
-  "menu_move_to": {
-    "message": "Verschieben nach..."
-  },
-  "color_title": {
-    "message": "Ordnerfarbe ändern"
-  },
-  "color_preview": {
-    "message": "Vorschau"
-  },
-  "color_quick": {
-    "message": "Schnelle Farben"
-  },
-  "color_custom": {
-    "message": "Benutzerdefinierte Farbe"
-  },
-  "color_custom_desc": {
-    "message": "Feinabstimmung mit Farbton- und RGB-Werten."
   },
   "billing_title": {
     "message": "Upgrade auf Claude Export Pro"
@@ -283,57 +145,6 @@
   },
   "export_run_save": {
     "message": "Einstellungen speichern"
-  },
-  "launcher_tooltip": {
-    "message": "ChatVault AI-Manager"
-  },
-  "toast_folder_deleted": {
-    "message": "Ordner gelöscht."
-  },
-  "toast_folders_deleted": {
-    "message": "$1 Ordner gelöscht."
-  },
-  "toast_chat_removed": {
-    "message": "Chat aus Ordner entfernt."
-  },
-  "toast_added_to_folder": {
-    "message": "\"$1\" wurde zu $2 hinzugefügt."
-  },
-  "toast_folder_already_has_chat": {
-    "message": "\"$1\" ist bereits in $2."
-  },
-  "toast_chats_removed": {
-    "message": "$1 Chats aus Ordnern entfernt."
-  },
-  "toast_history_deleted_single": {
-    "message": "1 Verlaufseintrag gelöscht."
-  },
-  "toast_history_deleted": {
-    "message": "$1 Verlaufseinträge gelöscht."
-  },
-  "toast_history_delete_failed": {
-    "message": "Verlaufseinträge konnten nicht gelöscht werden."
-  },
-  "toast_moved_chat": {
-    "message": "\"$1\" nach $2 verschoben."
-  },
-  "toast_moved_chats": {
-    "message": "$1 Chats verschoben."
-  },
-  "toast_move_failed": {
-    "message": "Verschieben des Chats fehlgeschlagen."
-  },
-  "toast_already_bookmarked": {
-    "message": "\"$1\" ist bereits als Lesezeichen gespeichert."
-  },
-  "toast_bookmarked": {
-    "message": "\"$1\" zu Lesezeichen hinzugefügt."
-  },
-  "toast_queued_bookmark": {
-    "message": "Lesezeichen für \"$1\" in Warteschlange gestellt."
-  },
-  "toast_removed_bookmark": {
-    "message": "\"$1\" aus Lesezeichen entfernt."
   },
   "toast_plan_expired": {
     "message": "Abonnement aktualisiert. Pro-Funktionen sind nicht mehr aktiv."
@@ -388,15 +199,6 @@
   },
   "export_image_limit_pdf": {
     "message": "PDF exportieren"
-  },
-  "confirm_import": {
-    "message": "Diesen ChatVault-Backup importieren?\n\n$1\n\nOrdner werden als neue Kopien importiert. Bestehende Lesezeichen bleiben erhalten und Duplikate werden übersprungen."
-  },
-  "confirm_restore": {
-    "message": "Diesen automatischen Backup wiederherstellen?\n\n$1\n\nDurch die Wiederherstellung wird das Backup als Kopie importiert. Ihre bestehenden Daten bleiben erhalten, sofern Duplikate nicht übersprungen werden."
-  },
-  "prompt_move_selected": {
-    "message": "In welchen Ordnernamen sollen die ausgewählten Chats verschoben werden?"
   },
   "time_no_update": {
     "message": "Keine Aktualisierungszeit"

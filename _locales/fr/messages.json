@@ -27,7 +27,7 @@
     "message": "Claude Export"
   },
   "extensionDescription": {
-    "message": "Exportez vos chats Claude localement en PDF, Docs, MD et plus. Prend en charge l'exportation individuelle et en lot."
+    "message": "Exporteur Claude axé sur la confidentialité. Synchronisez avec Notion ou Obsidian, ou exportez localement en PDF, Docs, Markdown, HTML, image, texte et JSON. Export individuel et par lot avec thèmes professionnels."
   },
   "extensionActionTitle": {
     "message": "Claude Exporter - Exporter des chats en lot vers PDF, Word, MD et plus"
@@ -35,38 +35,8 @@
   "brand_ai_workspace": {
     "message": "Espace de travail IA"
   },
-  "tab_folders": {
-    "message": "Dossiers"
-  },
-  "tab_bookmarks": {
-    "message": "Favoris"
-  },
-  "tab_history": {
-    "message": "Historique"
-  },
-  "tab_account": {
-    "message": "Compte"
-  },
   "tab_settings": {
     "message": "Paramètres"
-  },
-  "btn_reorder": {
-    "message": "Réorganiser"
-  },
-  "btn_sort_folders": {
-    "message": "Trier les dossiers"
-  },
-  "btn_expand_all": {
-    "message": "Tout développer"
-  },
-  "btn_collapse_all": {
-    "message": "Tout réduire"
-  },
-  "btn_new_folder": {
-    "message": "Nouveau dossier"
-  },
-  "btn_new_folder_group": {
-    "message": "Nouveau groupe de dossiers"
   },
   "btn_bookmark": {
     "message": "Favori"
@@ -104,12 +74,6 @@
   "btn_refresh_sync": {
     "message": "Actualiser la synchronisation"
   },
-  "btn_backup": {
-    "message": "Sauvegarder dossiers & favoris"
-  },
-  "btn_import": {
-    "message": "Importer dossiers & favoris"
-  },
   "btn_select_ai": {
     "message": "Sélectionner les réponses IA"
   },
@@ -128,116 +92,14 @@
   "filter_all": {
     "message": "Tout"
   },
-  "filter_gpt": {
-    "message": "GPT"
-  },
   "filter_claude": {
     "message": "Claude"
-  },
-  "filter_gemini": {
-    "message": "Gemini"
-  },
-  "empty_no_folders": {
-    "message": "Aucun dossier pour l'instant"
-  },
-  "empty_no_folders_desc": {
-    "message": "Utilisez des dossiers pour organiser les discussions importées de Claude."
-  },
-  "empty_no_bookmarks": {
-    "message": "Aucun favori pour l'instant"
-  },
-  "empty_no_bookmarks_desc": {
-    "message": "Les favoris enregistrés s'afficheront ici."
-  },
-  "empty_no_history": {
-    "message": "Aucune discussion indexée"
-  },
-  "empty_no_history_desc": {
-    "message": "Ajoutez des discussions à des dossiers ou des favoris pour créer un historique indexé par titres uniquement."
-  },
-  "login_title": {
-    "message": "Connectez-vous pour organiser vos discussions IA"
-  },
-  "login_desc": {
-    "message": "ChatVault enregistre uniquement les titres, les liens, les dossiers et les favoris. Le contenu de la discussion n'est pas enregistré."
-  },
-  "login_btn_google": {
-    "message": "Se connecter avec Google"
-  },
-  "linked_accounts_title": {
-    "message": "Comptes associés"
-  },
-  "linked_accounts_desc": {
-    "message": "ChatVault utilise les comptes associés uniquement pour séparer les index de titres de Claude. Il ne stocke aucun cookie de plateforme, mot de passe, jeton, invite, réponse ou contenu de discussion."
   },
   "settings_export_title": {
     "message": "Paramètres d'exportation de contenu"
   },
-  "settings_workspace_title": {
-    "message": "Paramètres de l'espace de travail"
-  },
-  "setting_open_startup": {
-    "message": "Ouvrir au démarrage"
-  },
-  "setting_hide_bookmarks_sidebar": {
-    "message": "Masquer les favoris de la barre latérale gauche"
-  },
-  "setting_hide_tags": {
-    "message": "Masquer les étiquettes de dossiers sous les discussions"
-  },
-  "settings_backup_title": {
-    "message": "Sauvegarde & Importation"
-  },
-  "sync_ready": {
-    "message": "File de synchronisation prête."
-  },
-  "backup_ready": {
-    "message": "Les sauvegardes automatiques sont créées après chaque modification de l'organisation."
-  },
-  "label_selected": {
-    "message": "$1 sélectionné(s)"
-  },
   "export_selected_as": {
     "message": "Exporter la sélection sous"
-  },
-  "selection_header": {
-    "message": "Sélection de messages"
-  },
-  "menu_add_folder": {
-    "message": "Ajouter un dossier"
-  },
-  "menu_add_current_chat": {
-    "message": "Ajouter la discussion actuelle"
-  },
-  "menu_add_chats": {
-    "message": "Ajouter des discussions"
-  },
-  "menu_add_project": {
-    "message": "Ajouter un projet"
-  },
-  "menu_rename": {
-    "message": "Renommer"
-  },
-  "menu_change_color": {
-    "message": "Changer la couleur"
-  },
-  "menu_move_to": {
-    "message": "Déplacer vers..."
-  },
-  "color_title": {
-    "message": "Changer la couleur du dossier"
-  },
-  "color_preview": {
-    "message": "Aperçu"
-  },
-  "color_quick": {
-    "message": "Couleurs rapides"
-  },
-  "color_custom": {
-    "message": "Couleur personnalisée"
-  },
-  "color_custom_desc": {
-    "message": "Ajustement précis avec la teinte et les valeurs RVB."
   },
   "billing_title": {
     "message": "Passer à Claude Export Pro"
@@ -283,57 +145,6 @@
   },
   "export_run_save": {
     "message": "Enregistrer les paramètres"
-  },
-  "launcher_tooltip": {
-    "message": "Gestionnaire ChatVault AI"
-  },
-  "toast_folder_deleted": {
-    "message": "Dossier supprimé."
-  },
-  "toast_folders_deleted": {
-    "message": "$1 dossiers supprimés."
-  },
-  "toast_chat_removed": {
-    "message": "Discussion retirée du dossier."
-  },
-  "toast_added_to_folder": {
-    "message": "\"$1\" a été ajouté à $2."
-  },
-  "toast_folder_already_has_chat": {
-    "message": "\"$1\" est déjà dans $2."
-  },
-  "toast_chats_removed": {
-    "message": "$1 discussions retirées des dossiers."
-  },
-  "toast_history_deleted_single": {
-    "message": "1 élément de l'historique supprimé."
-  },
-  "toast_history_deleted": {
-    "message": "$1 éléments de l'historique supprimés."
-  },
-  "toast_history_delete_failed": {
-    "message": "Impossible de supprimer les éléments d’historique."
-  },
-  "toast_moved_chat": {
-    "message": "Déplacement de \"$1\" vers $2."
-  },
-  "toast_moved_chats": {
-    "message": "$1 discussions déplacées."
-  },
-  "toast_move_failed": {
-    "message": "Échec du déplacement de la discussion."
-  },
-  "toast_already_bookmarked": {
-    "message": "\"$1\" est déjà dans les favoris."
-  },
-  "toast_bookmarked": {
-    "message": "\"$1\" ajouté aux favoris."
-  },
-  "toast_queued_bookmark": {
-    "message": "Favori pour \"$1\" mis en attente."
-  },
-  "toast_removed_bookmark": {
-    "message": "\"$1\" retiré des favoris."
   },
   "toast_plan_expired": {
     "message": "Abonnement mis à jour. Les fonctionnalités Pro ne sont plus actives."
@@ -388,15 +199,6 @@
   },
   "export_image_limit_pdf": {
     "message": "Exporter en PDF"
-  },
-  "confirm_import": {
-    "message": "Importer cette sauvegarde ChatVault ?\n\n$1\n\nLes dossiers sont importés comme de nouvelles copies. Les favoris existants sont conservés et les doublons sont ignorés."
-  },
-  "confirm_restore": {
-    "message": "Restaurer cette sauvegarde automatique ?\n\n$1\n\nLa restauration importe la sauvegarde sous forme de copies et conserve vos données existantes."
-  },
-  "prompt_move_selected": {
-    "message": "Vers quel nom de dossier déplacer les discussions sélectionnées ?"
   },
   "time_no_update": {
     "message": "Aucune heure de mise à jour"

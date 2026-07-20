@@ -152,7 +152,10 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
     ctx.fillStyle = DESIGN.color.muted;
     var footer = [];
     if (settings.show_chatvault_badge) footer.push(t("export_pdf_footer_branding", "AI Chat Export"));
-    if (settings.show_platform_name && metadata.platform) footer.push(getPlatformLabel(metadata.platform));
+    if (settings.show_platform_name && metadata.platform) {
+      var platformLabel = getPlatformLabel(metadata.platform);
+      footer.push(platformLabel);
+    }
     if (settings.show_export_time) footer.push(formatDateDisplay(metadata.exportedAt));
     ctx.fillText(footer.join(" · "), margin, pageHeight - 36);
   }

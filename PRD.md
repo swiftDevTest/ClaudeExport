@@ -87,12 +87,9 @@ MVP 阶段不建议追逐以下功能：
 
 MVP 支持：
 
-- `https://chatgpt.com/*`
-- `https://chat.openai.com/*`（历史兼容）
 - `https://claude.ai/*`
-- `https://gemini.google.com/*`
 
-后续平台扩展按“导出质量优先”推进，不以平台数量作为核心卖点。
+当前产品定位为 Claude 专属导出工具（见 `src/product-config.js` 中 `supportedPlatforms=["claude"]`、`allowedHosts=["claude.ai"]`）。后续平台扩展按“导出质量优先”推进，不以平台数量作为核心卖点。
 
 ### 4.2 导出格式
 

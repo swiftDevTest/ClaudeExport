@@ -215,10 +215,10 @@
     setAriaLabel("#btn-close-subscribe", "btn_cancel", "Cancel");
     setText(".subscribe-subtitle", "billing_desc", "Unlock higher local export limits, polished themes, batch workflows, and PDF, Docs, MD and More output.");
     updateSubscribeLoginWarningText();
-    setPlanCardTexts("monthly", "billing_badge_monthly", "Monthly Pro", "billing_discount_monthly", "Save 44%", "billing_plan_title_monthly", "Pro Monthly", "billing_cadence_month", "/ month");
-    setPlanCardTexts("yearly", "billing_badge_yearly", "Yearly Pro", "billing_discount_yearly", "Save 50%", "billing_plan_title_yearly", "Pro Yearly", "billing_cadence_year", "/ year");
+    setPlanCardTexts("monthly", "billing_badge_monthly", "Monthly Pro", "billing_discount_monthly", "Save 56%", "billing_plan_title_monthly", "Pro Monthly", "billing_cadence_month", "/ month");
+    setPlanCardTexts("yearly", "billing_badge_yearly", "Yearly Pro", "billing_discount_yearly", "Save 58%", "billing_plan_title_yearly", "Pro Yearly", "billing_cadence_year", "/ year");
     setText(".recommended-tag", "popup_recommended", "Recommended");
-    setPlanCardTexts("lifetime", "billing_badge_lifetime", "Lifetime Pro", "billing_discount_lifetime", "Save 62%", "billing_plan_title_lifetime", "Lifetime Early Bird", "billing_cadence_lifetime", "one-time");
+    setPlanCardTexts("lifetime", "billing_badge_lifetime", "Lifetime Pro", "billing_discount_lifetime", "Save 69%", "billing_plan_title_lifetime", "Lifetime Early Bird", "billing_cadence_lifetime", "one-time");
     ["monthly", "yearly", "lifetime"].forEach(updatePlanPriceDisplay);
     setFeatureTexts();
     var subscribeSubmit = document.getElementById("btn-subscribe-submit");
@@ -1251,6 +1251,8 @@
           type: "CHATVAULT_POPUP_EXPORT",
           format: format,
           settings: currentSettings
+        }, {
+          closeImmediately: true
         });
       });
     });
@@ -1267,6 +1269,7 @@
           copyToClipboard: true,
           settings: getCurrentExportSettingsFromPopup()
         }, {
+          closeImmediately: true,
           onError: function () { copyJsonButton.disabled = false; }
         });
       });
@@ -1465,7 +1468,7 @@
         try {
           var api = globalThis.CHATVAULT_SUPABASE_API;
           if (api && session.access_token) {
-            await api.request("/functions/v1/sync-subscription-status", {
+            await api.request("/functions/v1/product-sync-subscription-status", {
               accessToken: session.access_token,
               method: "POST"
             });
@@ -1555,6 +1558,9 @@
   function sendMessageToActivePage(payload, options) {
     if (!requireSupportedPage()) return;
     options = options || {};
+    if (options.closeImmediately) {
+      window.close();
+    }
     chrome.tabs.sendMessage(activeTabId, payload, function (response) {
       if (chrome.runtime.lastError) {
         if (typeof options.onError === "function") options.onError(chrome.runtime.lastError);
@@ -1930,7 +1936,7 @@
     }
 
     try {
-      var result = await api.request("/functions/v1/verify-export-entitlement", {
+      var result = await api.request("/functions/v1/product-verify-export-entitlement", {
         accessToken: session.access_token,
         method: "POST",
         body: {

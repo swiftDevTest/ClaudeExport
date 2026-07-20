@@ -1,19 +1,24 @@
-Claude Exporter est un outil d'exportation de chat IA respectueux de la vie privée et exécuté localement dans votre navigateur. Il convertit vos conversations sur Claude en fichiers locaux PDF, Docs, MD et plus pour l'édition, le partage, l'archivage et la livraison.
+Claude Export est une extension de navigateur axée sur la confidentialité qui transforme les conversations Claude en connaissances organisées et en fichiers professionnels. Synchronisez les chats Claude directement vers Notion ou Obsidian, ou exportez-les localement dans le format souhaité.
 
-Points clés :
-1. Conversion locale privée : La génération de fichiers se fait entièrement dans votre navigateur. Les corps des messages ne sont pas téléchargés sur des serveurs ou sur un service de conversion à distance, protégeant le travail sensible, la recherche et la vie privée.
-2. Formatage de qualité rapport : Les fichiers générés utilisent des mises en page de documents soignées avec hiérarchie des titres, blocs de code, tableaux, citations, formules mathématiques, images et thèmes professionnels.
-3. Mode rapport réservé à l'IA : Filtrez les questions de l'utilisateur et combinez les réponses consécutives de l'IA en un rapport propre avec une table des matières automatique.
-4. Reçu d'exportation et preuve d'archivage : Créez un reçu d'exportation contenant l'heure d'exportation, l'URL source, le nom de la plateforme et la somme de contrôle SHA-256 du fichier pour vos dossiers.
-5. Exportation de code pour développeurs : Indexez automatiquement tous les blocs de code de la conversation et enregistrez plusieurs extraits de code sous forme de fichiers spécifiques au langage dans un package téléchargeable.
+Fonctionnalités principales :
+
+1. Notion / Obsidian en 1 clic : Envoyez la conversation Claude actuelle vers une base de données Notion ou un coffre Obsidian connecté, sans copier-coller.
+2. Synchronisation et export par lot : Sélectionnez plusieurs conversations Claude et synchronisez-les vers Notion ou Obsidian, ou exportez-les ensemble. Jusqu'à 10 chats peuvent être traités par lot.
+3. Nombreux formats : Prend en charge PDF, DOCX, Markdown, HTML, image, texte et JSON.
+4. Génération locale et privée : La conversion des fichiers s'effectue dans le navigateur. Le contenu des chats n'est pas envoyé à un serveur de conversion distant.
+5. Thèmes et champs professionnels : Choisissez parmi Minimalist, Natural, Editorial, Terminal, Aurora et Oxford. Contrôlez les titres, heures, plateformes et rôles.
+6. Conservez uniquement l'essentiel : Sélectionnez des messages, des échanges question-réponse ou uniquement les réponses de l'IA.
+7. Outils de rapport et de développement : Créez des rapports AI-only, conservez les blocs de code et enregistrez les extraits dans des fichiers propres à chaque langage.
 
 Mode d'emploi :
-- Installez l'extension et ouvrez n'importe quelle page de conversation sur Claude.
-- Un bouton Export léger apparaît dans le coin inférieur droit de la page.
-- Choisissez un type de sortie : PDF, Docs, MD et plus.
-- Sélectionnez la plage d'exportation et le thème, puis générez et téléchargez le fichier localement.
 
-Claude Exporter est conçu pour les rapports, les notes de recherche, les livrables de projets, les archives de code et les sauvegardes personnelles qui doivent rester lisibles et portables.
+- Installez l'extension et ouvrez une conversation Claude (claude.ai).
+- Ouvrez Claude Export et choisissez Notion, Obsidian ou un format de fichier.
+- Pour plusieurs conversations, ouvrez l'export par lot, sélectionnez les chats et la destination.
+- Vérifiez la portée et le thème, puis synchronisez ou téléchargez.
 
-Support :
-Pour toute question, commentaire ou demande de support, contactez-nous à chatvaultaisupport@gmail.com.
+Idéal pour les notes de recherche, transmissions de projet, bases de connaissances, archives de code, livrables clients, supports d'étude et sauvegardes personnelles.
+
+Assistance :
+
+Pour toute question, suggestion ou demande d'assistance, contactez chatvaultaisupport@gmail.com.

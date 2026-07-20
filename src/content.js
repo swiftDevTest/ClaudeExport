@@ -152,6 +152,8 @@
 
   function sanitizeExportSettings(settings) {
     const next = settings && typeof settings === "object" ? settings : {};
+    // redaction_enabled 与 include_prompt_appendix 当前未在导出引擎中接入
+    // 强制关闭以避免用户误以为脱敏已生效
     next.redaction_enabled = false;
     next.include_prompt_appendix = false;
     return next;
@@ -574,7 +576,7 @@
       });
     }
     try {
-      const result = await globalThis.CHATVAULT_SUPABASE_API.request("/functions/v1/sync-subscription-status", {
+      const result = await globalThis.CHATVAULT_SUPABASE_API.request("/functions/v1/product-sync-subscription-status", {
         accessToken: session.access_token,
         method: "POST"
       });
@@ -664,6 +666,21 @@
     return entitlements.canUseExport(profile, dailyUsage, count);
   }
 
+  function getLocalExportAccessResult(count) {
+    const requested = Math.max(1, Number(count) || 1);
+    const profile = currentUserProfile || entitlements.normalizeProfile({ plan: "free" });
+    const remaining = entitlements.getRemainingFreeExports(profile, dailyUsage);
+    const allowed = isProUser || entitlements.isPro(profile) || remaining >= requested;
+    return {
+      ok: true,
+      allowed,
+      serverVerified: false,
+      profile,
+      usage: dailyUsage,
+      remaining
+    };
+  }
+
   async function verifySignedInExportAccess(count) {
     if (isProUser || !currentSession?.access_token) {
       return { ok: true, allowed: true, serverVerified: false };
@@ -687,12 +704,17 @@
         console.warn("Server entitlement verification schema is stale; using local quota fallback:", error);
         return { ok: true, allowed: true, serverVerified: false };
       }
-      return {
-        ok: false,
-        allowed: false,
-        serverVerified: false,
-        error: tx("content_entitlement_verify_failed", "Could not verify your export entitlement. Check your connection and try again.", "无法验证您的导出权益，请检查网络后重试。")
-      };
+      const localAccess = getLocalExportAccessResult(count);
+      if (!localAccess.allowed || isProUser) {
+        return {
+          ok: false,
+          allowed: false,
+          serverVerified: false,
+          error: tx("content_entitlement_verify_failed", "Could not verify your export entitlement. Check your connection and try again.", "无法验证您的导出权益，请检查网络后重试。")
+        };
+      }
+      console.warn("Server entitlement verification failed; using local quota fallback:", error);
+      return localAccess;
     }
 
     if (!session?.access_token) {
@@ -700,7 +722,7 @@
     }
 
     try {
-      const result = await globalThis.CHATVAULT_SUPABASE_API.request("/functions/v1/verify-export-entitlement", {
+      const result = await globalThis.CHATVAULT_SUPABASE_API.request("/functions/v1/product-verify-export-entitlement", {
         accessToken: session.access_token,
         method: "POST",
         body: {
@@ -734,12 +756,17 @@
         remaining: entitlements.getRemainingFreeExports(currentUserProfile, dailyUsage)
       };
     } catch (error) {
-      return {
-        ok: false,
-        allowed: false,
-        serverVerified: false,
-        error: tx("content_entitlement_verify_failed", "Could not verify your export entitlement. Check your connection and try again.", "无法验证您的导出权益，请检查网络后重试。")
-      };
+      const localAccess = getLocalExportAccessResult(count);
+      if (!localAccess.allowed || isProUser) {
+        return {
+          ok: false,
+          allowed: false,
+          serverVerified: false,
+          error: tx("content_entitlement_verify_failed", "Could not verify your export entitlement. Check your connection and try again.", "无法验证您的导出权益，请检查网络后重试。")
+        };
+      }
+      console.warn("Server entitlement verification failed; using local quota fallback:", error);
+      return localAccess;
     }
   }
 
@@ -4984,6 +5011,9 @@
       return true;
     }
 
+    const localEntitlementPreflight = getLocalExportAccessResult(1);
+    const entitlementIssue = getEntitlementIssue(settingsForExport, presetForExport, currentUserProfile, formatForExport);
+
     if (isSingleExport) {
       renderExportProgress(formatForExport, {
         mode: "single",
@@ -5025,7 +5055,6 @@
       return;
     }
 
-    const entitlementIssue = getEntitlementIssue(settingsForExport, presetForExport, currentUserProfile, formatForExport);
     if (entitlementIssue) {
       hideExportProgress();
       clearCurrentExportController();

@@ -1,6 +1,6 @@
 # Chrome Web Store 上架清单 — Claude Exporter
 
-> 最后更新日期：2026-07-05
+> 最后更新日期：2026-07-21
 
 该文档是 Claude Exporter 上架 Chrome Web Store（CWS）的元数据与配置指南，开发者可直接复制相应内容填入 Chrome 开发者控制台（Chrome Developer Dashboard）。
 
@@ -10,30 +10,38 @@
 
 ### 扩展名称 (Extension Name)
 <!-- 必须与 manifest.json 中的 name 保持一致。最多 75 个字符。 -->
-Claude Exporter - Local Chat PDF, Docs, Markdown & JSON
+Claude Exporter - 批量导出聊天为 PDF、Word、Markdown 等
 
 ### 简短描述 (Short Description)
 <!-- 最多 132 个字符。显示在搜索结果中。 -->
-本地将 Claude 对话导出为 PDF、Docs、MD 等，保留清晰排版与浏览器内处理。
+隐私优先的 Claude 导出工具。可将对话同步至 Notion 或 Obsidian，也可本地导出为 PDF、Docs、Markdown、HTML、图片、文本和 JSON。支持单个和批量导出，提供专业主题。
 
 ### 详细描述 (Detailed Description)
-<!-- 最多 16,000 个字符。 -->
-Claude Exporter 是一款隐私优先、完全运行在浏览器本地的 Claude 聊天导出工具。支持将 Claude 对话转换为适合编辑、分享、归档和交付的 PDF、Docs、MD、图片、文本及 JSON 等本地 file。
+<!-- 最多 16,000 个字符。完整描述见 store-descriptions/ 目录下各语言版本。 -->
+Claude Export 是一款隐私优先的浏览器扩展，可将 Claude 对话整理为结构化知识和精美文件。你可以把 Claude 对话直接同步至 Notion 或 Obsidian，也可以按需要在本地导出多种文件格式。
 
-主要功能亮点：
-1. 【隐私安全，本地转换】所有文件的生成和转换过程 100% 在您的浏览器本地完成，聊天正文绝不上传到任何第三方服务器，确保商业敏感信息和个人隐私不外泄。
-2. 【出版级排版】生成的文件采用专业报告排版，保留标题层级、代码高亮、表格、引用、数学公式和插图，并提供多种专业主题供选择（学术、商业、复古等）。
-3. 【AI-only 报告模式】支持过滤用户提问，仅合并导出 AI 的连续回答，并自动生成目录，将聊天记录秒变专业教程、技术方案或总结报告。
-4. 【导出凭证与归档】为学术、审计和工作留档用户提供包含导出时间、来源 URL、平台名称、文件 SHA-256 校验和在内的“导出凭证”。
-5. 【开发者代码导出】自动为对话中的代码块生成索引，并支持将多段代码另存为对应的语言文件打包导出。
+主要功能：
 
-使用说明：
-- 安装扩展后，打开任一 Claude 聊天页面 (https://claude.ai/)。
-- 页面右下角将出现轻量的“Export”按钮。
-- 点击按钮选择 PDF、Docs、MD 等输出类型和导出主题，一键点击即可在本地完成下载。
+1. 一键同步 Notion / Obsidian：将当前 Claude 对话直接发送至已连接的 Notion 数据库或 Obsidian Vault，无需反复复制粘贴。
+2. 批量同步与批量导出：选择多个 Claude 对话后，可批量同步至 Notion 或 Obsidian，也可一次导出多个文件；每批最多处理 10 个对话。
+3. 多种导出格式：支持 PDF、DOCX、Markdown、HTML、图片、文本和 JSON 等格式。
+4. 隐私本地生成：文件转换在浏览器内完成，聊天正文不会上传至远程转换服务器。
+5. 专业主题与字段设置：提供 Minimalist、Natural、Editorial、Terminal、Aurora、Oxford 等文档主题，并可控制标题、时间、平台和角色字段。
+6. 只保留重要内容：同步或导出前，可选择指定消息、问答轮次或仅选择 AI 回复。
+7. 报告与开发者工具：支持 AI-only 报告、代码块保留，以及按编程语言打包代码片段。
+
+使用方法：
+
+- 安装扩展后，打开 Claude 对话（claude.ai）。
+- 打开 Claude Export，选择 Notion、Obsidian 或文件格式。
+- 如需处理多个对话，进入"批量导出"，选择对话和目标位置。
+- 检查导出范围与主题后，开始同步或下载。
+
+适用于研究笔记、项目交接、个人知识库、代码归档、客户交付、学习资料和个人备份。
 
 客服与支持：
-如有任何问题或建议，欢迎发送邮件至 chatvaultaisupport@gmail.com。
+
+如有问题、建议或支持需求，请发送邮件至 chatvaultaisupport@gmail.com。
 
 ### 类别 (Category)
 Productivity (效率)
@@ -115,6 +123,10 @@ English (United States) / Chinese (Simplified)
 上架必填，已部署在官方网站：
 `https://tabpilotpro.com/aichatexport/private.html`
 
+<!-- TODO: 确认隐私政策 URL 路径前缀与 checkout URL 一致。
+     当前 checkout 路径为 https://tabpilotpro.com/claude/checkout.html，
+     若统一为 /claude/ 前缀，则隐私政策应为 https://tabpilotpro.com/claude/private.html -->
+
 ---
 
 ## 5. 发布与分发设置 (Distribution)
@@ -132,3 +144,5 @@ English (United States) / Chinese (Simplified)
 | 版本号 | 提交日期 | 变更说明 | 审核状态 |
 | :--- | :--- | :--- | :--- |
 | `1.0.0` | 2026-07-05 | 1.0.0 稳定发版。支持 Claude 聊天记录本地导出为 PDF、Docs、MD、图片等功能，内置图片 CDN 安全下载，保障导出文档内嵌图的完整性。 | 待提交 (Draft) |
+| `1.1.0` | 2026-07-13 | 新增 HTML 导出格式；商店截图与文案微调；多语言文案修订。 | 待提交 (Draft) |
+| `1.2.0` | 2026-07-20 | 代码同步与稳定性优化；导出引擎与核心模块对齐主产品基线。 | 待提交 (Draft) |

@@ -1,19 +1,24 @@
-Claude Exporter es una herramienta de exportación de chat de IA que prioriza la privacidad y se ejecuta localmente en su navegador. Convierte sus conversaciones en Claude en archivos locales PDF, Docs, MD y más para su edición, uso compartido, archivado y entrega.
+Claude Export es una extensión de navegador centrada en la privacidad que convierte conversaciones de Claude en conocimiento organizado y archivos con un acabado profesional. Sincroniza chats de Claude directamente con Notion u Obsidian, o expórtalos localmente en el formato que necesites.
 
-Características destacadas:
-1. Conversión local privada: La generación de archivos se realiza completamente en su navegador. Los cuerpos de los mensajes de chat no se cargan a servidores ni a un servicio de conversión remoto, lo que ayuda a proteger el trabajo confidencial, la investigación y la privacidad personal.
-2. Formato de calidad de informe: Los archivos generados utilizan diseños de documentos pulidos con jerarquía de títulos, bloques de código, tablas, citas, fórmulas matemáticas, imágenes y temas profesionales para flujos de trabajo académicos, comerciales y de archivo.
-3. Modo de informe solo de IA: Filtre las preguntas del usuario y combine las respuestas consecutivas de la IA en un informe limpio con una tabla de contenido automática.
-4. Recibo de exportación y prueba de archivo: Cree un recibo de exportación con la hora de exportación, la URL de origen, el nombre de la plataforma y la suma de verificación SHA-256 del archivo para registros de investigación, auditoría, cumplimiento o trabajo.
-5. Exportación de código para desarrolladores: Indexe automáticamente todos los bloques de código en la conversación y guarde múltiples fragmentos de código como archivos específicos del lenguaje en un paquete descargable.
+Funciones principales:
 
-Instrucciones de uso:
-- Instale la extensión y abra cualquier página de conversación en Claude.
-- Aparecerá un botón Exportar ligero en la esquina inferior derecha de la página.
-- Elija un tipo de salida: PDF, Docs, MD y más.
-- Seleccione el rango de exportación y el tema, luego genere y descargue el archivo localmente.
+1. Notion / Obsidian en 1 clic: Envía la conversación actual de Claude a una base de datos de Notion o a un vault de Obsidian conectado, sin copiar y pegar.
+2. Sincronización y exportación por lotes: Selecciona varias conversaciones de Claude y sincronízalas con Notion u Obsidian, o expórtalas juntas. Puedes procesar hasta 10 chats por lote.
+3. Múltiples formatos: Compatible con PDF, DOCX, Markdown, HTML, imagen, texto y JSON.
+4. Generación local y privada: La conversión de archivos se realiza en el navegador. El contenido de los chats no se envía a un servidor remoto de conversión.
+5. Temas y campos profesionales: Elige temas como Minimalist, Natural, Editorial, Terminal, Aurora y Oxford. Controla títulos, horas, plataforma y roles.
+6. Conserva solo lo importante: Selecciona mensajes concretos, turnos de pregunta y respuesta o únicamente respuestas de la IA.
+7. Herramientas para informes y desarrollo: Crea informes AI-only, conserva bloques de código y guarda fragmentos en archivos según el lenguaje.
 
-Claude Exporter está diseñado para informes, notas de investigación, entregas de proyectos, archivos de código, entregables de clientes, materiales de estudio y copias de seguridad personales que deben seguir siendo legibles y portátiles.
+Cómo usarlo:
+
+- Instala la extensión y abre una conversación en Claude (claude.ai).
+- Abre Claude Export y elige Notion, Obsidian o un formato de archivo.
+- Para varias conversaciones, abre Exportación por lotes, selecciona los chats y el destino.
+- Revisa el intervalo y el tema, y después sincroniza o descarga.
+
+Ideal para notas de investigación, traspasos de proyectos, bases de conocimiento, archivos de código, entregables, materiales de estudio y copias personales.
 
 Soporte:
-Para preguntas, comentarios o solicitudes de soporte, contáctenos en chatvaultaisupport@gmail.com.
+
+Para preguntas, comentarios o solicitudes de soporte, escribe a chatvaultaisupport@gmail.com.

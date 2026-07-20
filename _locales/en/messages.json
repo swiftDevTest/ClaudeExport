@@ -27,7 +27,7 @@
     "message": "Claude Export"
   },
   "extensionDescription": {
-    "message": "Export Claude chats locally to PDF, Docs, MD and More. Supports single and bulk export with polished layouts."
+    "message": "Privacy-first Claude exporter. Sync conversations to Notion or Obsidian, or save locally as PDF, Docs, Markdown, HTML, image, text and JSON. Supports single and batch export with professional themes."
   },
   "extensionActionTitle": {
     "message": "Claude Exporter - Bulk Export Chats to PDF, Word, Markdown and More"
@@ -35,38 +35,8 @@
   "brand_ai_workspace": {
     "message": "AI Workspace"
   },
-  "tab_folders": {
-    "message": "Folders"
-  },
-  "tab_bookmarks": {
-    "message": "Bookmarks"
-  },
-  "tab_history": {
-    "message": "History"
-  },
-  "tab_account": {
-    "message": "Account"
-  },
   "tab_settings": {
     "message": "Settings"
-  },
-  "btn_reorder": {
-    "message": "Reorder"
-  },
-  "btn_sort_folders": {
-    "message": "Sort Folders"
-  },
-  "btn_expand_all": {
-    "message": "Expand All"
-  },
-  "btn_collapse_all": {
-    "message": "Collapse All"
-  },
-  "btn_new_folder": {
-    "message": "New Folder"
-  },
-  "btn_new_folder_group": {
-    "message": "New Folder Group"
   },
   "btn_bookmark": {
     "message": "Bookmark"
@@ -104,12 +74,6 @@
   "btn_refresh_sync": {
     "message": "Refresh Sync"
   },
-  "btn_backup": {
-    "message": "Backup Folders & Bookmarks"
-  },
-  "btn_import": {
-    "message": "Import Folders & Bookmarks"
-  },
   "btn_select_ai": {
     "message": "Select AI Replies"
   },
@@ -128,116 +92,14 @@
   "filter_all": {
     "message": "All"
   },
-  "filter_gpt": {
-    "message": "GPT"
-  },
   "filter_claude": {
     "message": "Claude"
-  },
-  "filter_gemini": {
-    "message": "Gemini"
-  },
-  "empty_no_folders": {
-    "message": "No Folders Yet"
-  },
-  "empty_no_folders_desc": {
-    "message": "Use folders to organize imported Claude chats."
-  },
-  "empty_no_bookmarks": {
-    "message": "No Bookmarks Yet"
-  },
-  "empty_no_bookmarks_desc": {
-    "message": "Saved bookmarks will appear here."
-  },
-  "empty_no_history": {
-    "message": "No Indexed Chats Yet"
-  },
-  "empty_no_history_desc": {
-    "message": "Add chats to folders or bookmarks to build a title-only history index."
-  },
-  "login_title": {
-    "message": "Sign In To Unlock Unlimited Exports"
-  },
-  "login_desc": {
-    "message": "Claude Export stores settings and daily free quotas only. Chat content is never saved."
-  },
-  "login_btn_google": {
-    "message": "Sign In With Google"
-  },
-  "linked_accounts_title": {
-    "message": "Linked Accounts"
-  },
-  "linked_accounts_desc": {
-    "message": "Claude Export uses linked accounts only to keep Claude export quotas separate. It does not store platform cookies, passwords, tokens, prompts, replies, or chat bodies."
   },
   "settings_export_title": {
     "message": "Export Content Settings"
   },
-  "settings_workspace_title": {
-    "message": "Workspace Settings"
-  },
-  "setting_open_startup": {
-    "message": "Open On Startup"
-  },
-  "setting_hide_bookmarks_sidebar": {
-    "message": "Hide Bookmarks From Left Sidebar"
-  },
-  "setting_hide_tags": {
-    "message": "Hide Folder Tags Under Chats"
-  },
-  "settings_backup_title": {
-    "message": "Backup & Import"
-  },
-  "sync_ready": {
-    "message": "Sync queue ready."
-  },
-  "backup_ready": {
-    "message": "Automatic Backups Are Created After Organizing Changes."
-  },
-  "label_selected": {
-    "message": "$1 Selected"
-  },
   "export_selected_as": {
     "message": "Export Selected As"
-  },
-  "selection_header": {
-    "message": "Message Selection"
-  },
-  "menu_add_folder": {
-    "message": "Add folder"
-  },
-  "menu_add_current_chat": {
-    "message": "Add current chat"
-  },
-  "menu_add_chats": {
-    "message": "Add chats"
-  },
-  "menu_add_project": {
-    "message": "Add project"
-  },
-  "menu_rename": {
-    "message": "Rename"
-  },
-  "menu_change_color": {
-    "message": "Change color"
-  },
-  "menu_move_to": {
-    "message": "Move to..."
-  },
-  "color_title": {
-    "message": "Change folder color"
-  },
-  "color_preview": {
-    "message": "Preview"
-  },
-  "color_quick": {
-    "message": "Quick colors"
-  },
-  "color_custom": {
-    "message": "Custom color"
-  },
-  "color_custom_desc": {
-    "message": "Fine tune with hue and RGB values."
   },
   "billing_title": {
     "message": "Upgrade To Claude Export Pro"
@@ -284,56 +146,50 @@
   "export_run_save": {
     "message": "Save Settings"
   },
-  "launcher_tooltip": {
-    "message": "Claude Export"
+  "popup_copy_json": {
+    "message": "Copy JSON"
   },
-  "toast_folder_deleted": {
-    "message": "Folder deleted."
+  "export_theme_tooltip": {
+    "message": "Themes apply only to PDF and Image exports. Other formats are not affected."
   },
-  "toast_folders_deleted": {
-    "message": "$1 folders deleted."
+  "popup_show_obsidian_sync": {
+    "message": "Show Obsidian Sync"
   },
-  "toast_chat_removed": {
-    "message": "Chat removed from folder."
+  "popup_show_obsidian_sync_desc": {
+    "message": "Show single and batch Obsidian sync in the export panel"
   },
-  "toast_added_to_folder": {
-    "message": "Added \"$1\" to $2."
+  "popup_language_system": {
+    "message": "System Default"
   },
-  "toast_folder_already_has_chat": {
-    "message": "\"$1\" is already in $2."
+  "notion_connect": {
+    "message": "Connect Notion"
   },
-  "toast_chats_removed": {
-    "message": "$1 chats removed from folders."
+  "notion_disconnect": {
+    "message": "Disconnect"
   },
-  "toast_history_deleted_single": {
-    "message": "Deleted 1 history item."
+  "obsidian_sync_subtitle": {
+    "message": "Local Markdown and assets"
   },
-  "toast_history_deleted": {
-    "message": "Deleted $1 history items."
+  "obsidian_configure": {
+    "message": "Configure Obsidian"
   },
-  "toast_history_delete_failed": {
-    "message": "Failed to delete history items."
+  "obsidian_disconnect": {
+    "message": "Disconnect"
   },
-  "toast_moved_chat": {
-    "message": "Moved \"$1\" to $2."
+  "popup_benefit_notion_obsidian": {
+    "message": "Notion & Obsidian sync"
   },
-  "toast_moved_chats": {
-    "message": "Moved $1 chats."
+  "btn_confirm": {
+    "message": "Confirm"
   },
-  "toast_move_failed": {
-    "message": "Failed to move chat."
+  "notion_status_checking": {
+    "message": "Checking connection"
   },
-  "toast_already_bookmarked": {
-    "message": "Already bookmarked \"$1\"."
+  "obsidian_status_checking": {
+    "message": "Checking"
   },
-  "toast_bookmarked": {
-    "message": "Bookmarked \"$1\"."
-  },
-  "toast_queued_bookmark": {
-    "message": "Queued bookmark for \"$1\"."
-  },
-  "toast_removed_bookmark": {
-    "message": "Removed \"$1\" from bookmarks."
+  "obsidian_status_checking_vault": {
+    "message": "Checking Vault"
   },
   "toast_plan_expired": {
     "message": "Plan updated. Pro features are no longer active."
@@ -388,15 +244,6 @@
   },
   "export_image_limit_pdf": {
     "message": "Export PDF"
-  },
-  "confirm_import": {
-    "message": "Import this ChatVault backup?\n\n$1\n\nFolders are imported as new copies. Existing bookmarks are kept and duplicates are skipped by server conflict rules."
-  },
-  "confirm_restore": {
-    "message": "Restore this automatic backup?\n\n$1\n\nRestore imports the backup as copies and keeps your existing data unless server conflict rules skip duplicates."
-  },
-  "prompt_move_selected": {
-    "message": "Move Selected Chats To Which Folder Name?"
   },
   "time_no_update": {
     "message": "No update time"
@@ -588,7 +435,7 @@
     "message": "Higher local export limits for regular AI users."
   },
   "billing_plan_desc_lifetime": {
-    "message": "Pay once. Keep Pro exports and organizing features."
+    "message": "Pay once. Keep Pro exports and all premium export features."
   },
   "billing_plan_detail_monthly": {
     "message": "Best if you want to try Pro first."

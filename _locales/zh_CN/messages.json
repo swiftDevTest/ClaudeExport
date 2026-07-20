@@ -27,7 +27,7 @@
     "message": "Claude Export"
   },
   "extensionDescription": {
-    "message": "本地将 Claude 对话导出为 PDF、Word、Markdown 与 JSON。支持单个和批量导出，保留美观且专业的排版。"
+    "message": "隐私优先的 Claude 导出工具。可将对话同步至 Notion 或 Obsidian，也可本地导出为 PDF、Docs、Markdown、HTML、图片、文本和 JSON。支持单个和批量导出，提供专业主题。"
   },
   "extensionActionTitle": {
     "message": "Claude Exporter - 批量导出聊天为 PDF、Word、Markdown 等"
@@ -35,38 +35,8 @@
   "brand_ai_workspace": {
     "message": "AI 工作区"
   },
-  "tab_folders": {
-    "message": "文件夹"
-  },
-  "tab_bookmarks": {
-    "message": "书签"
-  },
-  "tab_history": {
-    "message": "历史记录"
-  },
-  "tab_account": {
-    "message": "账户"
-  },
   "tab_settings": {
     "message": "设置"
-  },
-  "btn_reorder": {
-    "message": "重新排序"
-  },
-  "btn_sort_folders": {
-    "message": "排序文件夹"
-  },
-  "btn_expand_all": {
-    "message": "展开全部"
-  },
-  "btn_collapse_all": {
-    "message": "折叠全部"
-  },
-  "btn_new_folder": {
-    "message": "新建文件夹"
-  },
-  "btn_new_folder_group": {
-    "message": "新建文件夹组"
   },
   "btn_bookmark": {
     "message": "书签"
@@ -104,12 +74,6 @@
   "btn_refresh_sync": {
     "message": "刷新同步"
   },
-  "btn_backup": {
-    "message": "备份文件夹和书签"
-  },
-  "btn_import": {
-    "message": "导入文件夹和书签"
-  },
   "btn_select_ai": {
     "message": "选择 AI 回复"
   },
@@ -128,116 +92,14 @@
   "filter_all": {
     "message": "全部"
   },
-  "filter_gpt": {
-    "message": "GPT"
-  },
   "filter_claude": {
     "message": "Claude"
-  },
-  "filter_gemini": {
-    "message": "Gemini"
-  },
-  "empty_no_folders": {
-    "message": "暂无文件夹"
-  },
-  "empty_no_folders_desc": {
-    "message": "使用文件夹来整理导入的 Claude 聊天。"
-  },
-  "empty_no_bookmarks": {
-    "message": "暂无书签"
-  },
-  "empty_no_bookmarks_desc": {
-    "message": "保存的书签将显示在此处。"
-  },
-  "empty_no_history": {
-    "message": "暂无索引聊天"
-  },
-  "empty_no_history_desc": {
-    "message": "将聊天添加到文件夹或书签以构建仅标题的历史记录索引。"
-  },
-  "login_title": {
-    "message": "登录以整理您的 AI 聊天记录"
-  },
-  "login_desc": {
-    "message": "ChatVault 仅存储标题、链接、文件夹和书签。聊天内容不会被保存。"
-  },
-  "login_btn_google": {
-    "message": "使用 Google 登录"
-  },
-  "linked_accounts_title": {
-    "message": "已绑定账户"
-  },
-  "linked_accounts_desc": {
-    "message": "ChatVault 仅使用绑定的账户来区分 Claude 标题索引。它不会存储平台 Cookie、密码、Token、提示词、回复或聊天正文。"
   },
   "settings_export_title": {
     "message": "导出内容设置"
   },
-  "settings_workspace_title": {
-    "message": "工作区设置"
-  },
-  "setting_open_startup": {
-    "message": "启动时打开"
-  },
-  "setting_hide_bookmarks_sidebar": {
-    "message": "在左侧侧边栏中隐藏书签"
-  },
-  "setting_hide_tags": {
-    "message": "隐藏聊天下方的文件夹标签"
-  },
-  "settings_backup_title": {
-    "message": "备份与导入"
-  },
-  "sync_ready": {
-    "message": "同步队列已就绪。"
-  },
-  "backup_ready": {
-    "message": "在更改整理设置后将自动创建备份。"
-  },
-  "label_selected": {
-    "message": "已选择 $1"
-  },
   "export_selected_as": {
     "message": "将所选导出为"
-  },
-  "selection_header": {
-    "message": "消息选择"
-  },
-  "menu_add_folder": {
-    "message": "添加文件夹"
-  },
-  "menu_add_current_chat": {
-    "message": "添加当前聊天"
-  },
-  "menu_add_chats": {
-    "message": "添加聊天"
-  },
-  "menu_add_project": {
-    "message": "添加项目"
-  },
-  "menu_rename": {
-    "message": "重命名"
-  },
-  "menu_change_color": {
-    "message": "更改颜色"
-  },
-  "menu_move_to": {
-    "message": "移动到..."
-  },
-  "color_title": {
-    "message": "更改文件夹颜色"
-  },
-  "color_preview": {
-    "message": "预览"
-  },
-  "color_quick": {
-    "message": "快速颜色"
-  },
-  "color_custom": {
-    "message": "自定义颜色"
-  },
-  "color_custom_desc": {
-    "message": "使用色调和 RGB 值进行微调。"
   },
   "billing_title": {
     "message": "升级至 Claude Export Pro"
@@ -284,56 +146,50 @@
   "export_run_save": {
     "message": "保存设置"
   },
-  "launcher_tooltip": {
-    "message": "ChatVault AI 管理器"
+  "popup_copy_json": {
+    "message": "复制 JSON"
   },
-  "toast_folder_deleted": {
-    "message": "文件夹已删除。"
+  "export_theme_tooltip": {
+    "message": "主题仅对 PDF 和图片导出生效，其他格式不受影响。"
   },
-  "toast_folders_deleted": {
-    "message": "已删除 $1 个文件夹。"
+  "popup_show_obsidian_sync": {
+    "message": "显示 Obsidian 同步"
   },
-  "toast_chat_removed": {
-    "message": "聊天已从文件夹中移除。"
+  "popup_show_obsidian_sync_desc": {
+    "message": "在导出面板显示单个与批量 Obsidian 同步"
   },
-  "toast_added_to_folder": {
-    "message": "已将“$1”添加到 $2。"
+  "popup_language_system": {
+    "message": "跟随系统"
   },
-  "toast_folder_already_has_chat": {
-    "message": "“$1”已在 $2 中。"
+  "notion_connect": {
+    "message": "连接 Notion"
   },
-  "toast_chats_removed": {
-    "message": "已从文件夹中移除 $1 个聊天。"
+  "notion_disconnect": {
+    "message": "断开连接"
   },
-  "toast_history_deleted_single": {
-    "message": "已删除 1 个历史记录项。"
+  "obsidian_sync_subtitle": {
+    "message": "本地 Markdown 与资源"
   },
-  "toast_history_deleted": {
-    "message": "已删除 $1 个历史记录项。"
+  "obsidian_configure": {
+    "message": "配置 Obsidian"
   },
-  "toast_history_delete_failed": {
-    "message": "删除历史记录失败。"
+  "obsidian_disconnect": {
+    "message": "断开连接"
   },
-  "toast_moved_chat": {
-    "message": "已将“$1”移动到 $2。"
+  "popup_benefit_notion_obsidian": {
+    "message": "Notion 和 Obsidian 同步"
   },
-  "toast_moved_chats": {
-    "message": "已移动 $1 个聊天。"
+  "btn_confirm": {
+    "message": "确认"
   },
-  "toast_move_failed": {
-    "message": "移动聊天失败。"
+  "notion_status_checking": {
+    "message": "正在检查连接"
   },
-  "toast_already_bookmarked": {
-    "message": "“$1”已添加书签。"
+  "obsidian_status_checking": {
+    "message": "检查中"
   },
-  "toast_bookmarked": {
-    "message": "已将“$1”添加书签。"
-  },
-  "toast_queued_bookmark": {
-    "message": "已将“$1”的书签加入队列。"
-  },
-  "toast_removed_bookmark": {
-    "message": "已从书签中移除“$1”。"
+  "obsidian_status_checking_vault": {
+    "message": "正在检查 Vault"
   },
   "toast_plan_expired": {
     "message": "方案已更新。Pro 功能已不再生效。"
@@ -388,15 +244,6 @@
   },
   "export_image_limit_pdf": {
     "message": "导出 PDF"
-  },
-  "confirm_import": {
-    "message": "导入此 ChatVault 备份吗？\n\n$1\n\n文件夹将作为新副本导入。现有书签将被保留，重复项将根据服务器冲突规则进行跳过。"
-  },
-  "confirm_restore": {
-    "message": "恢复此自动备份吗？\n\n$1\n\n恢复会将备份作为副本导入，并保留您现有的数据，除非服务器冲突规则跳过了重复项。"
-  },
-  "prompt_move_selected": {
-    "message": "将所选聊天移动到哪个文件夹？"
   },
   "time_no_update": {
     "message": "无更新时间"
@@ -588,7 +435,7 @@
     "message": "适合 AI 深度用户的更高本地导出额度。"
   },
   "billing_plan_desc_lifetime": {
-    "message": "一次性付款。保留 Pro 导出和整理功能。"
+    "message": "一次性付款。保留 Pro 导出和全部高级导出功能。"
   },
   "billing_plan_detail_monthly": {
     "message": "如果您想先试用 Pro，这是最佳选择。"

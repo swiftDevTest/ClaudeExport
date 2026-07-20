@@ -27,7 +27,7 @@
     "message": "Claude Export"
   },
   "extensionDescription": {
-    "message": "Exporta chats de Claude localmente a PDF, Docs, MD y más. Admite exportación individual y por lotes con diseños elegantes."
+    "message": "Exportador de Claude centrado en la privacidad. Sincroniza con Notion u Obsidian, o exporta localmente a PDF, Docs, Markdown, HTML, imagen, texto y JSON. Exportación individual y por lotes con temas profesionales."
   },
   "extensionActionTitle": {
     "message": "Claude Exporter - Exportar chats en lote a PDF, Word, Markdown y más"
@@ -35,38 +35,8 @@
   "brand_ai_workspace": {
     "message": "Espacio de trabajo IA"
   },
-  "tab_folders": {
-    "message": "Carpetas"
-  },
-  "tab_bookmarks": {
-    "message": "Marcadores"
-  },
-  "tab_history": {
-    "message": "Historial"
-  },
-  "tab_account": {
-    "message": "Cuenta"
-  },
   "tab_settings": {
     "message": "Configuración"
-  },
-  "btn_reorder": {
-    "message": "Reordenar"
-  },
-  "btn_sort_folders": {
-    "message": "Ordenar carpetas"
-  },
-  "btn_expand_all": {
-    "message": "Expandir todo"
-  },
-  "btn_collapse_all": {
-    "message": "Contraer todo"
-  },
-  "btn_new_folder": {
-    "message": "Nueva carpeta"
-  },
-  "btn_new_folder_group": {
-    "message": "Nuevo grupo de carpetas"
   },
   "btn_bookmark": {
     "message": "Marcador"
@@ -104,12 +74,6 @@
   "btn_refresh_sync": {
     "message": "Actualizar sincronización"
   },
-  "btn_backup": {
-    "message": "Guardar carpetas y marcadores"
-  },
-  "btn_import": {
-    "message": "Importar carpetas y marcadores"
-  },
   "btn_select_ai": {
     "message": "Seleccionar respuestas IA"
   },
@@ -128,116 +92,14 @@
   "filter_all": {
     "message": "Todos"
   },
-  "filter_gpt": {
-    "message": "GPT"
-  },
   "filter_claude": {
     "message": "Claude"
-  },
-  "filter_gemini": {
-    "message": "Gemini"
-  },
-  "empty_no_folders": {
-    "message": "No hay carpetas aún"
-  },
-  "empty_no_folders_desc": {
-    "message": "Usa carpetas para organizar los chats importados de Claude."
-  },
-  "empty_no_bookmarks": {
-    "message": "No hay marcadores aún"
-  },
-  "empty_no_bookmarks_desc": {
-    "message": "Los marcadores guardados aparecerán aquí."
-  },
-  "empty_no_history": {
-    "message": "No hay chats indexados aún"
-  },
-  "empty_no_history_desc": {
-    "message": "Agrega chats a carpetas o marcadores para crear un historial indexado de solo títulos."
-  },
-  "login_title": {
-    "message": "Inicia sesión para organizar tus chats de IA"
-  },
-  "login_desc": {
-    "message": "ChatVault solo almacena títulos, enlaces, carpetas y marcadores. El contenido del chat no se guarda."
-  },
-  "login_btn_google": {
-    "message": "Iniciar sesión con Google"
-  },
-  "linked_accounts_title": {
-    "message": "Cuentas vinculadas"
-  },
-  "linked_accounts_desc": {
-    "message": "ChatVault usa las cuentas vinculadas únicamente para mantener separados los índices de títulos de Claude. No almacena cookies de plataforma, contraseñas, tokens, prompts, respuestas ni el cuerpo del chat."
   },
   "settings_export_title": {
     "message": "Ajustes de exportación de contenido"
   },
-  "settings_workspace_title": {
-    "message": "Ajustes del espacio de trabajo"
-  },
-  "setting_open_startup": {
-    "message": "Abrir al iniciar"
-  },
-  "setting_hide_bookmarks_sidebar": {
-    "message": "Ocultar marcadores de la barra lateral izquierda"
-  },
-  "setting_hide_tags": {
-    "message": "Ocultar etiquetas de carpeta debajo de los chats"
-  },
-  "settings_backup_title": {
-    "message": "Copia de seguridad e importación"
-  },
-  "sync_ready": {
-    "message": "Cola de sincronización lista."
-  },
-  "backup_ready": {
-    "message": "Las copias de seguridad automáticas se crean después de realizar cambios de organización."
-  },
-  "label_selected": {
-    "message": "$1 seleccionado(s)"
-  },
   "export_selected_as": {
     "message": "Exportar selección como"
-  },
-  "selection_header": {
-    "message": "Selección de mensajes"
-  },
-  "menu_add_folder": {
-    "message": "Agregar carpeta"
-  },
-  "menu_add_current_chat": {
-    "message": "Agregar chat actual"
-  },
-  "menu_add_chats": {
-    "message": "Agregar chats"
-  },
-  "menu_add_project": {
-    "message": "Agregar proyecto"
-  },
-  "menu_rename": {
-    "message": "Renombrar"
-  },
-  "menu_change_color": {
-    "message": "Cambiar color"
-  },
-  "menu_move_to": {
-    "message": "Mover a..."
-  },
-  "color_title": {
-    "message": "Cambiar color de carpeta"
-  },
-  "color_preview": {
-    "message": "Vista previa"
-  },
-  "color_quick": {
-    "message": "Colores rápidos"
-  },
-  "color_custom": {
-    "message": "Color personalizado"
-  },
-  "color_custom_desc": {
-    "message": "Ajuste fino con matiz y valores RGB."
   },
   "billing_title": {
     "message": "Subir a Claude Export Pro"
@@ -283,57 +145,6 @@
   },
   "export_run_save": {
     "message": "Guardar ajustes"
-  },
-  "launcher_tooltip": {
-    "message": "Gestor de ChatVault AI"
-  },
-  "toast_folder_deleted": {
-    "message": "Carpeta eliminada."
-  },
-  "toast_folders_deleted": {
-    "message": "$1 carpetas eliminadas."
-  },
-  "toast_chat_removed": {
-    "message": "Chat removido de la carpeta."
-  },
-  "toast_added_to_folder": {
-    "message": "Se agregó \"$1\" a $2."
-  },
-  "toast_folder_already_has_chat": {
-    "message": "\"$1\" ya está en $2."
-  },
-  "toast_chats_removed": {
-    "message": "$1 chats removidos de las carpetas."
-  },
-  "toast_history_deleted_single": {
-    "message": "Se eliminó 1 elemento del historial."
-  },
-  "toast_history_deleted": {
-    "message": "Se eliminaron $1 elementos del historial."
-  },
-  "toast_history_delete_failed": {
-    "message": "No se pudieron eliminar los elementos del historial."
-  },
-  "toast_moved_chat": {
-    "message": "Se movió \"$1\" a $2."
-  },
-  "toast_moved_chats": {
-    "message": "Se movieron $1 chats."
-  },
-  "toast_move_failed": {
-    "message": "Error al mover el chat."
-  },
-  "toast_already_bookmarked": {
-    "message": "\"$1\" ya está en marcadores."
-  },
-  "toast_bookmarked": {
-    "message": "\"$1\" agregado a marcadores."
-  },
-  "toast_queued_bookmark": {
-    "message": "Marcador para \"$1\" en cola."
-  },
-  "toast_removed_bookmark": {
-    "message": "\"$1\" removido de marcadores."
   },
   "toast_plan_expired": {
     "message": "Suscripción actualizada. Las funciones Pro ya no están activas."
@@ -388,15 +199,6 @@
   },
   "export_image_limit_pdf": {
     "message": "Exportar PDF"
-  },
-  "confirm_import": {
-    "message": "¿Importar esta copia de seguridad de ChatVault?\n\n$1\n\nLas carpetas se importan como copias nuevas. Los marcadores existentes se conservan y los duplicados se omiten."
-  },
-  "confirm_restore": {
-    "message": "¿Restaurar esta copia de seguridad automática?\n\n$1\n\nLa restauración importa la copia de seguridad y conserva tus datos existentes."
-  },
-  "prompt_move_selected": {
-    "message": "¿A qué nombre de carpeta mover los chats seleccionados?"
   },
   "time_no_update": {
     "message": "Sin hora de actualización"
