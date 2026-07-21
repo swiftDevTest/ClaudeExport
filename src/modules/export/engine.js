@@ -86,6 +86,10 @@ export async function createExportBlob(request) {
       metadata: resolved.metadata
     };
   } catch (error) {
+    // 保留 AbortError 语义，让 startExport 能识别取消而非失败
+    if (error && error.name === "AbortError") {
+      return { ok: false, cancelled: true };
+    }
     return { ok: false, error: error.message || "Export failed.", code: error.code };
   }
 }
@@ -106,6 +110,8 @@ export async function startExport(request) {
       messageCount: prepared.messageCount
     };
   } catch (error) {
+    // createExportBlob 已经捕获 AbortError 并返回 cancelled:true，此处兜底处理 saveBlobWithDialog 抛出的 AbortError
+
     if (error && error.name === "AbortError") {
       return { ok: false, cancelled: true };
     }

@@ -10,9 +10,6 @@
     "check": "node --check src/background.js && node --check src/content.js && node --check src/welcome.js && node --check src/product-config.js && node --check src/supabase-config.js && node --check src/supabase-api.js && node --check src/supabase-auth.js && node --check src/modules/analytics.js && node --check src/modules/billing.js && node --check src/modules/i18n.js && node --check src/modules/entitlements.js && node --check src/modules/usage-store.js && node --check src/modules/privacy-proof.js && node --check src/modules/export-health.js && node --check src/modules/redaction.js && node --check src/modules/template-presets.js && node --check src/modules/export-receipt.js && node --check src/modules/developer-export.js && node --check src/modules/share-cards.js && node --check src/modules/export-message-adapter.js && node --check src/modules/export.js && for file in src/modules/export/*.js src/modules/export/builders/*.js src/modules/export/platforms/*.js src/modules/export/platforms/*/*.js src/modules/export/renderers/*/*.js src/modules/export/themes/*.js; do node --check \"$file\"; done",
     "test": "node --test tests/*.test.mjs"
   },
-  "dependencies": {
-    "@chatexport/core": "git+ssh://git@github.com-swiftDevTest/swiftDevTest/ChatExportPlatform.git"
-  },
   "devDependencies": {
     "jsdom": "^29.1.1"
   },

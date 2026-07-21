@@ -376,6 +376,8 @@ async function fetchImageBytesViaNetwork(src, options) {
           }
         }
       } catch (sessionErr) {
+        // 关键错误：会话 token 获取失败会导致图片请求缺少 Authorization 头而失败，需要可见化。
+        console.warn("[media] Failed to acquire session token for authenticated image fetch:", sessionErr);
       }
     }
     var controller = typeof AbortController !== "undefined" ? new AbortController() : null;
@@ -571,6 +573,8 @@ async function _fetchImageBytesDirectly(src, options) {
           }
         }
       } catch (domErr) {
+        // 关键错误：DOM 提取失败会导致图片被静默丢失，需可见化以便定位选择器失效等问题。
+        console.warn("[media] Failed to extract image URL from DOM:", domErr);
       }
     }
   }
@@ -637,6 +641,8 @@ async function _fetchImageBytesDirectly(src, options) {
       } else {
       }
     } catch (canvasErr) {
+      // 关键错误：canvas 光栅化失败会导致图片导出静默降级，需可见化。
+      console.warn("[media] Failed to rasterize image via canvas:", canvasErr);
     }
   }
 

@@ -82,8 +82,10 @@ export function scheduleBlobUrlRevoke(objectUrl) {
 }
 
 var activeBlobUrls = new Map();
+var downloadStatusListenerAttached = false;
 
-if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.onMessage) {
+if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.onMessage && !downloadStatusListenerAttached) {
+  downloadStatusListenerAttached = true;
   chrome.runtime.onMessage.addListener(function (message) {
     if (message && message.type === "CHATVAULT_DOWNLOAD_STATUS") {
       var downloadId = message.downloadId;
@@ -133,7 +135,10 @@ export async function saveBlobWithDialog(blob, filename, options) {
       throw error;
     }
 
-    if (objectUrl && response.downloadId && response.state === "in_progress") {
+    if (objectUrl && response.downloadId) {
+      // 所有 response.ok 情况下都转移 objectUrl 到 activeBlobUrls，由 CHATVAULT_DOWNLOAD_STATUS
+      // 监听器在下载 complete/interrupted 时统一清理。之前仅在 state==="in_progress" 时转移，
+      // 若 background 返回 ok 但 state 字段缺失/为其他值，finally 会 60s 后过早 revoke。
       var safetyTimer = setTimeout(function () {
         try {
           URL.revokeObjectURL(objectUrl);
