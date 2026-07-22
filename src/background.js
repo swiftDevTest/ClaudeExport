@@ -75,6 +75,20 @@ try {
       return false;
     }
   }
+  const TRUSTED_CHECKOUT_HOSTS = new Set([
+    "tabpilotpro.com",
+    "checkout.paddle.com",
+    "sandbox-checkout.paddle.com"
+  ]);
+
+  function isTrustedCheckoutUrl(urlStr) {
+    try {
+      const url = new URL(String(urlStr || ""));
+      return url.protocol === "https:" && TRUSTED_CHECKOUT_HOSTS.has(url.hostname.toLowerCase());
+    } catch (error) {
+      return false;
+    }
+  }
 
   function isTrustedExtensionUrl(urlStr) {
     try {
@@ -860,6 +874,27 @@ try {
       const targetUrl = isTrustedExtensionUrl(message.url) ? message.url : chrome.runtime.getURL("welcome.html");
       chrome.tabs.create({ url: targetUrl });
       sendResponse({ ok: true });
+      return true;
+    }
+
+    if (message && message.type === "CHATVAULT_OPEN_CHECKOUT_TAB") {
+      if (rejectUntrustedSender(sender, sendResponse)) return false;
+      if (!isTrustedCheckoutUrl(message.url)) {
+        sendResponse({ ok: false, error: "SecurityError: Untrusted checkout URL." });
+        return false;
+      }
+      if (!chrome.tabs || typeof chrome.tabs.create !== "function") {
+        sendResponse({ ok: false, error: "Opening tabs is not available." });
+        return false;
+      }
+      chrome.tabs.create({ url: message.url, active: true }, (tab) => {
+        const lastError = chrome.runtime.lastError;
+        if (lastError) {
+          sendResponse({ ok: false, error: lastError.message || "Could not open checkout." });
+          return;
+        }
+        sendResponse({ ok: true, tabId: tab?.id || null });
+      });
       return true;
     }
 

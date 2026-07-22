@@ -9,6 +9,7 @@
   const checkoutIntentStorageKey = billing?.checkoutIntentStorageKey || "chatvault_pending_checkout_intent_v1";
   
   let currentSession = null;
+  let checkoutLoading = false;
 
   function applyProductTheme(target) {
     if (productConfig && typeof productConfig.applyThemeVars === "function") {
@@ -32,41 +33,77 @@
     return error && error.message ? error.message : "请稍后再试。";
   }
 
-  function openCheckoutUrl(url) {
-    return new Promise((resolve, reject) => {
+  function openCheckoutTabViaBackground(url) {
+    return new Promise((resolve) => {
+      if (typeof chrome === "undefined" || !chrome.runtime || typeof chrome.runtime.sendMessage !== "function") {
+        resolve(false);
+        return;
+      }
+      try {
+        chrome.runtime.sendMessage({
+          type: "CHATVAULT_OPEN_CHECKOUT_TAB",
+          url
+        }, (response) => {
+          if (chrome.runtime.lastError || !response || !response.ok) {
+            resolve(false);
+            return;
+          }
+          resolve(true);
+        });
+      } catch (error) {
+        resolve(false);
+      }
+    });
+  }
+
+  function openCheckoutTabDirect(url, resolve, reject) {
+    try {
+      if (typeof chrome !== "undefined" && chrome.tabs && typeof chrome.tabs.create === "function") {
+        chrome.tabs.create({ url, active: true }, () => {
+          try {
+            if (chrome.runtime.lastError) {
+              reject(new Error(chrome.runtime.lastError.message || "无法打开结账页面，请稍后再试。"));
+              return;
+            }
+          } catch (error) {}
+          resolve(true);
+        });
+        return;
+      }
+    } catch (error) {
+      reject(error);
+      return;
+    }
+
+    try {
+      const opened = window.open(url, "_blank");
+      if (!opened) {
+        reject(new Error("浏览器拦截了结账页面，请允许弹窗后重试。"));
+        return;
+      }
+      resolve(true);
+    } catch (error) {
+      reject(error);
+    }
+  }
+
+  function openCheckoutTab(url) {
+    return new Promise(async (resolve, reject) => {
       if (!url) {
         reject(new Error("无法构建结账页面，请稍后再试。"));
         return;
       }
 
-      try {
-        if (typeof chrome !== "undefined" && chrome.tabs && typeof chrome.tabs.create === "function") {
-          chrome.tabs.create({ url }, () => {
-            try {
-              if (chrome.runtime.lastError) {
-                reject(new Error(chrome.runtime.lastError.message || "无法打开结账页面，请稍后再试。"));
-                return;
-              }
-            } catch (error) {}
-            resolve(true);
-          });
-          return;
-        }
-      } catch (error) {
-        reject(error);
+      // Prefer background script path: validates URL and is robust after async
+      // sign-in flows where the original user gesture context is lost.
+      const opened = await openCheckoutTabViaBackground(url);
+      if (opened) {
+        resolve(true);
         return;
       }
 
-      try {
-        const opened = window.open(url, "_blank");
-        if (!opened) {
-          reject(new Error("浏览器拦截了结账页面，请重试。"));
-          return;
-        }
-        resolve(true);
-      } catch (error) {
-        reject(error);
-      }
+      // Fallback: direct chrome.tabs.create (works from extension pages)
+      openCheckoutTabDirect(url, resolve, reject);
     });
   }
 
@@ -217,6 +254,15 @@
   }
 
   async function handleCheckout(planId, buttonEl) {
+    // Debounce: ignore clicks while a checkout is already in progress. This
+    // prevents state from getting stuck if a previous click is still awaiting
+    // session refresh or the checkout network request, which is the main cause
+    // of "clicking the pay button has no response" for already-signed-in users.
+    if (checkoutLoading) {
+      return;
+    }
+
+    checkoutLoading = true;
     const originalText = buttonEl.textContent;
     buttonEl.disabled = true;
     buttonEl.textContent = "正在打开结账页面...";
@@ -239,7 +285,7 @@
       const checkoutUrl = checkout?.checkoutUrl || "";
 
       if (checkoutUrl) {
-        await openCheckoutUrl(checkoutUrl);
+        await openCheckoutTab(checkoutUrl);
         await clearPendingCheckoutIntent();
       } else {
         alert("无法构建结账页面，请稍后再试。");
@@ -248,6 +294,7 @@
       console.error("Checkout error:", err);
       alert("结账时发生错误: " + getCheckoutErrorMessage(err));
     } finally {
+      checkoutLoading = false;
       buttonEl.disabled = false;
       buttonEl.textContent = originalText;
     }
@@ -299,6 +346,16 @@
     applyProductCopy();
     await checkUserSession();
     await clearPendingCheckoutIntent();
+
+    // 监听 storage 变化，在其他页面（如 popup）登出时同步状态
+    if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.onChanged) {
+      chrome.storage.onChanged.addListener((changes, areaName) => {
+        if (areaName !== "local") return;
+        if ("chatvault_supabase_session" in changes) {
+          checkUserSession();
+        }
+      });
+    }
 
     // Bind subscribe buttons
     document.querySelectorAll(".cv-plan-btn").forEach((btn) => {
