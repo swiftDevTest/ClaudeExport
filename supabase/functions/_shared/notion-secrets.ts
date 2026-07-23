@@ -66,7 +66,11 @@ export function isAllowedIdentityRedirect(value: string) {
 // ChatVault Exporter (ai-chat-export) 不配 _AI_CHAT_EXPORT 变量，fallback 到 NOTION_CLIENT_ID。
 // 新产品各自配置 NOTION_CLIENT_ID_<PRODUCT> / NOTION_CLIENT_SECRET_<PRODUCT>。
 export function notionOAuthBasicAuthorization(productSlug?: string) {
-  const slug = (productSlug || "").toUpperCase().replace(/-/g, "_");
+  // The untouched ChatVault Exporter must always use the original credentials,
+  // even if an AI_CHAT_EXPORT-scoped secret is accidentally configured later.
+  const slug = !productSlug || productSlug === "ai-chat-export"
+    ? ""
+    : productSlug.toUpperCase().replace(/-/g, "_");
   const clientId = (slug && Deno.env.get(`NOTION_CLIENT_ID_${slug}`) || "") || Deno.env.get("NOTION_CLIENT_ID") || "";
   const clientSecret = (slug && Deno.env.get(`NOTION_CLIENT_SECRET_${slug}`) || "") || Deno.env.get("NOTION_CLIENT_SECRET") || "";
   if (!clientId || !clientSecret) throw new Error("Notion OAuth client configuration is missing.");
@@ -93,7 +97,9 @@ export function notionOAuthCallbackUri(productSlug?: string) {
 // 读取 Notion OAuth client_id（用于构造授权 URL 的 client_id 参数）。
 // 与 notionOAuthBasicAuthorization 使用相同的凭证选择逻辑。
 export function notionOAuthClientId(productSlug?: string) {
-  const slug = (productSlug || "").toUpperCase().replace(/-/g, "_");
+  const slug = !productSlug || productSlug === "ai-chat-export"
+    ? ""
+    : productSlug.toUpperCase().replace(/-/g, "_");
   return (slug && Deno.env.get(`NOTION_CLIENT_ID_${slug}`) || "") || Deno.env.get("NOTION_CLIENT_ID") || "";
 }
 
