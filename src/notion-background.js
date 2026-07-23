@@ -6,7 +6,7 @@
   const API_VERSION = "2026-03-11";
   const SUPABASE_URL = "https://acgehhqcgreatcjcefub.supabase.co";
   const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_GH05KXWPIo42YrorR0OGyQ_XdEWzY8Q";
-  const SESSION_KEY = "chatvault_supabase_session";
+  const SESSION_KEY = (globalThis.CHATVAULT_PRODUCT_CONFIG?.storageKey || ((name) => `claude_export.${name}`))("supabase_session.v1");
   const MANUAL_CONFIG_KEY = "chatvault_notion_manual_session_v1";
   const DATABASE_NAME = "chatvault-notion-sync-v2";
   const DATABASE_VERSION = 1;
