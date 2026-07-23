@@ -268,24 +268,33 @@ export async function fetchImageBytes(src, options) {
     throw createAbortError();
   }
   if (!src) return null;
-  if (!isTestEnv && imageBytesCache.has(src)) {
+  var isPlaceholderKey = typeof src === "string" && src.indexOf("image_generation_content") !== -1;
+  if (!isTestEnv && !isPlaceholderKey && imageBytesCache.has(src)) {
     return imageBytesCache.get(src);
   }
-  if (_imageBytesInFlight.has(src)) {
-    return _imageBytesInFlight.get(src);
+  // Placeholder URLs are per-turn 0-based indices; the same src (e.g.
+  // image_generation_content/0) can refer to different images in different
+  // turns. Include msgIdx/blockIdx in the in-flight key so each turn's
+  // placeholder fetch is independent and not deduplicated against another
+  // turn's in-flight request.
+  var inFlightKey = isPlaceholderKey && options && (options.msgIdx != null || options.blockIdx != null)
+    ? src + "@msg" + options.msgIdx + ":blk" + options.blockIdx
+    : src;
+  if (_imageBytesInFlight.has(inFlightKey)) {
+    return _imageBytesInFlight.get(inFlightKey);
   }
   var pending = _fetchImageBytesDirectly(src, options).then(function (result) {
     if (result && result.bytes) {
       assertImageByteLength(result.bytes.byteLength);
     }
-    if (!isTestEnv && result) {
+    if (!isTestEnv && result && !isPlaceholderKey) {
       imageBytesCache.set(src, result);
     }
     return result;
   }).finally(function () {
-    _imageBytesInFlight.delete(src);
+    _imageBytesInFlight.delete(inFlightKey);
   });
-  _imageBytesInFlight.set(src, pending);
+  _imageBytesInFlight.set(inFlightKey, pending);
   var result = await pending;
   return result;
 }
@@ -531,44 +540,48 @@ async function _fetchImageBytesDirectly(src, options) {
         var match = src.match(/image_generation_content\/(\d+)/);
         if (match) {
           var idx = parseInt(match[1], 10);
-          var candidateImgs = [];
+          var sourceEl = options && options.block ? (options.block.__sourceElement || options.block.sourceElement || options.block._sourceElement || null) : null;
+          var turnContainer = sourceEl && typeof sourceEl.closest === "function" ? (
+            sourceEl.closest('model-response, [data-test-id="model-response"], message-content, .response-container, conversation-turn, .conversation-turn, .markdown, [class*="markdown"]')
+          ) : null;
 
-          var responseContainers = document.querySelectorAll('.model-response, [data-test-id="model-response"], message-content, .response-container, .markdown, [class*="markdown"]');
-          if (responseContainers.length > 0) {
-            for (var c = 0; c < responseContainers.length; c++) {
-              var container = responseContainers[c];
-              var imgs = container.querySelectorAll('img');
-              for (var i = 0; i < imgs.length; i++) {
-                var imgUrl = getRealImgSrc(imgs[i]);
-                if (imgUrl && imgUrl.indexOf("image_generation_content") === -1) {
-                  if (!isPlatformOrSystemIcon(imgUrl) && imgUrl.indexOf("avatar") === -1 && imgUrl.indexOf("favicon") === -1 && imgUrl.indexOf("photo.jpg") === -1 && imgUrl.indexOf("profile") === -1 && !/=s\d+-c/.test(imgUrl)) {
-                    if (candidateImgs.indexOf(imgUrl) === -1) {
-                      candidateImgs.push(imgUrl);
-                    }
-                  }
-                }
+          // Fallback: when sourceEl is unavailable (cloneExportMessages
+          // strips __sourceElement via JSON serialization), locate the turn
+          // container by conversation position. msgIdx is the 0-based message
+          // index in the export; each turn = user+assistant pair, so
+          // assistant turn index = (msgIdx - 1) / 2 for role==="assistant".
+          if (!turnContainer && options && options.msgIdx != null) {
+            var allTurns = document.querySelectorAll('model-response, [data-test-id="model-response"]');
+            if (allTurns.length) {
+              // For assistant messages, map msgIdx to the Nth model-response.
+              // user messages don't carry generated images, so this branch
+              // only runs for assistant messages with placeholders.
+              var turnIdx = Math.floor((Number(options.msgIdx) - 1) / 2);
+              if (turnIdx >= 0 && turnIdx < allTurns.length) {
+                turnContainer = allTurns[turnIdx];
               }
             }
           }
 
-          if (idx < candidateImgs.length) {
-            src = candidateImgs[idx];
-          } else {
-            var allImgs = document.querySelectorAll('img');
-            var docCandidates = [];
-            for (var i = 0; i < allImgs.length; i++) {
-              var imgUrl = getRealImgSrc(allImgs[i]);
+          // The placeholder index (image_generation_content/N) is per-turn
+          // (0-based). Only a turn-scoped DOM scan can resolve it correctly.
+          // A global scan would map later turns' index 0 to the first image
+          // in the conversation, producing wrong images.
+          if (turnContainer) {
+            var candidateImgs = [];
+            var scopedImgs = turnContainer.querySelectorAll('img');
+            for (var i = 0; i < scopedImgs.length; i++) {
+              var imgUrl = getRealImgSrc(scopedImgs[i]);
               if (imgUrl && imgUrl.indexOf("image_generation_content") === -1) {
                 if (!isPlatformOrSystemIcon(imgUrl) && imgUrl.indexOf("avatar") === -1 && imgUrl.indexOf("favicon") === -1 && imgUrl.indexOf("photo.jpg") === -1 && imgUrl.indexOf("profile") === -1 && !/=s\d+-c/.test(imgUrl)) {
-                  if (docCandidates.indexOf(imgUrl) === -1) {
-                    docCandidates.push(imgUrl);
+                  if (candidateImgs.indexOf(imgUrl) === -1) {
+                    candidateImgs.push(imgUrl);
                   }
                 }
               }
             }
-
-            if (idx < docCandidates.length) {
-              src = docCandidates[idx];
+            if (idx < candidateImgs.length) {
+              src = candidateImgs[idx];
             }
           }
         }
@@ -596,26 +609,36 @@ async function _fetchImageBytesDirectly(src, options) {
   if (typeof document !== "undefined") {
     try {
       var imgEl = null;
+      var isUnresolvedPlaceholder = String(src || "").indexOf("image_generation_content") !== -1;
       var imgs = document.querySelectorAll("img");
 
-      for (var i = 0; i < imgs.length; i++) {
-        var img = imgs[i];
-        if (img.src === src || img.getAttribute("src") === src || img.getAttribute("data-src") === src) {
-          imgEl = img;
-          break;
+      // For unresolved placeholder URLs, the per-turn DOM scan above already
+      // tried and failed to resolve the real URL. A global document-wide scan
+      // would match the FIRST <img> with this placeholder src, which belongs
+      // to the earliest turn — producing cross-turn image confusion. Skip the
+      // global match entirely for placeholders; let the network/element-load
+      // fallback below handle it (or return null so the image is dropped
+      // rather than replaced with the wrong one).
+      if (!isUnresolvedPlaceholder) {
+        for (var i = 0; i < imgs.length; i++) {
+          var img = imgs[i];
+          if (img.src === src || img.getAttribute("src") === src || img.getAttribute("data-src") === src) {
+            imgEl = img;
+            break;
+          }
         }
-      }
 
-      if (!imgEl) {
-        var fileIdMatch = src.match(/\bfile[-_][a-zA-Z0-9]{15,}\b/);
-        if (fileIdMatch) {
-          var fileId = fileIdMatch[0];
-          for (var i = 0; i < imgs.length; i++) {
-            var img = imgs[i];
-            var imgStr = (img.src || "") + " " + (img.getAttribute("src") || "") + " " + (img.getAttribute("data-src") || "");
-            if (imgStr.indexOf(fileId) !== -1) {
-              imgEl = img;
-              break;
+        if (!imgEl) {
+          var fileIdMatch = src.match(/\bfile[-_][a-zA-Z0-9]{15,}\b/);
+          if (fileIdMatch) {
+            var fileId = fileIdMatch[0];
+            for (var i = 0; i < imgs.length; i++) {
+              var img = imgs[i];
+              var imgStr = (img.src || "") + " " + (img.getAttribute("src") || "") + " " + (img.getAttribute("data-src") || "");
+              if (imgStr.indexOf(fileId) !== -1) {
+                imgEl = img;
+                break;
+              }
             }
           }
         }
@@ -630,7 +653,20 @@ async function _fetchImageBytesDirectly(src, options) {
         ctx.drawImage(imgEl, 0, 0);
         var blob = await canvasToBlob(canvas, "image/png", undefined, IMAGE_PRELOAD_CANVAS_TIMEOUT_MS);
         var buffer = await blob.arrayBuffer();
-        assertImageByteLength(buffer.byteLength);
+        try {
+          assertImageByteLength(buffer.byteLength);
+        } catch (_byteErr) {
+          // PNG 光栅化结果超限时，回退到 JPEG 格式（照片类图片 PNG 体积远大于 JPEG）
+          var jpegBlob = await canvasToBlob(canvas, "image/jpeg", 0.92, IMAGE_PRELOAD_CANVAS_TIMEOUT_MS);
+          var jpegBuffer = await jpegBlob.arrayBuffer();
+          assertImageByteLength(jpegBuffer.byteLength);
+          return {
+            bytes: new Uint8Array(jpegBuffer),
+            mimeType: "image/jpeg",
+            width: imgEl.naturalWidth || imgEl.width || 600,
+            height: imgEl.naturalHeight || imgEl.height || 400
+          };
+        }
         var bytes = new Uint8Array(buffer);
         return {
           bytes: bytes,
@@ -686,13 +722,20 @@ async function _fetchImageBytesDirectly(src, options) {
             canvasToBlob(canvas, "image/png", undefined, IMAGE_PRELOAD_CANVAS_TIMEOUT_MS).then(function (blob) {
               return blob.arrayBuffer();
             }).then(function (buffer) {
-              assertImageByteLength(buffer.byteLength);
-              finish(resolve, {
-                bytes: new Uint8Array(buffer),
-                mimeType: "image/png",
-                width: img.naturalWidth || 600,
-                height: img.naturalHeight || 400
-              });
+              try {
+                assertImageByteLength(buffer.byteLength);
+              } catch (_byteErr) {
+                // PNG 超限时回退到 JPEG
+                return canvasToBlob(canvas, "image/jpeg", 0.92, IMAGE_PRELOAD_CANVAS_TIMEOUT_MS).then(function (jpegBlob) {
+                  return jpegBlob.arrayBuffer();
+                }).then(function (jpegBuffer) {
+                  assertImageByteLength(jpegBuffer.byteLength);
+                  return { bytes: new Uint8Array(jpegBuffer), mimeType: "image/jpeg", width: img.naturalWidth || 600, height: img.naturalHeight || 400 };
+                });
+              }
+              return { bytes: new Uint8Array(buffer), mimeType: "image/png", width: img.naturalWidth || 600, height: img.naturalHeight || 400 };
+            }).then(function (result) {
+              finish(resolve, result);
             }).catch(function (error) {
               finish(reject, error);
             });
@@ -800,13 +843,24 @@ export async function preloadCanvasImages(messages, options) {
     (message.contentBlocks || []).forEach(function (block, blockIdx) {
       if (block.type === "image" && block.src) {
         var imageBlock = ensureImageBlockMetadata(block, blockIdx);
-        var key = getImageDedupKey(imageBlock) || block.src;
+        var isPlaceholder = String(block.src || "").indexOf("image_generation_content") !== -1;
+        // Unresolved Gemini placeholder URLs (image_generation_content/N) are
+        // per-turn 0-based indices. Multiple turns can share the same
+        // placeholder URL (e.g. .../0) but refer to different images.
+        // Deduplicating by normalizedSrc would collapse them into one fetch
+        // and share the wrong image across turns. Use a unique key per
+        // message+block position so each turn fetches its own image.
+        var key = isPlaceholder
+          ? "__placeholder__:msg" + msgIdx + ":blk" + blockIdx
+          : (getImageDedupKey(imageBlock) || block.src);
         var entry = imageEntriesByKey.get(key);
         if (!entry) {
           entry = {
             key: key,
             src: block.src,
-            aliases: new Set()
+            aliases: new Set(),
+            msgIdx: msgIdx,
+            blockIdx: blockIdx
           };
           imageEntriesByKey.set(key, entry);
         }
@@ -824,7 +878,16 @@ export async function preloadCanvasImages(messages, options) {
   await mapLimit(uniqueImages, IMAGE_PRELOAD_CONCURRENCY, async function (entry) {
     try {
       var src = entry.src;
-      var bytesInfo = await fetchImageBytes(src, options);
+      var fetchOptions = options;
+      // Pass message/block position so _fetchImageBytesDirectly can locate
+      // the correct turn container for per-turn placeholder resolution.
+      if (String(src || "").indexOf("image_generation_content") !== -1 && (entry.msgIdx != null || entry.blockIdx != null)) {
+        fetchOptions = Object.assign({}, options || {}, {
+          msgIdx: entry.msgIdx,
+          blockIdx: entry.blockIdx
+        });
+      }
+      var bytesInfo = await fetchImageBytes(src, fetchOptions);
       if (!bytesInfo) {
         return;
       }

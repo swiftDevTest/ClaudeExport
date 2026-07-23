@@ -254,7 +254,7 @@ function createMissingDependencyError(name) {
 
   function cloneExportMessages(messages = []) {
     return messages
-      .filter((message) => message && (message.role === "user" || message.role === "assistant"))
+      .filter((message) => message && (message.role === "user" || message.role === "assistant" || message.role === "system"))
       .map((message) => {
         const blocks = cloneExportBlocks(message.contentBlocks || []).map((block, index) => (
           block?.type === "image" ? ensureExportImageBlockMetadata(block, index) : block
@@ -401,10 +401,22 @@ function createMissingDependencyError(name) {
   }
 
   function reconcileConversationMessages(apiMessages, pageMessages) {
-    var api = cloneExportMessages(apiMessages || []);
-    var page = cloneExportMessages(pageMessages || []);
-    if (!api.length) return page;
-    if (!page.length) return api;
+    // 优化：延迟克隆到真正需要时。原实现无论是否用到 page 都先克隆，
+    // 在 api 为空或 page 为空的常见分支下浪费一次大对象克隆。
+    var api = null;
+    var page = null;
+    var apiLen = (apiMessages || []).length;
+    var pageLen = (pageMessages || []).length;
+    if (!apiLen) {
+      // 只在此分支克隆 page（api 为空时 page 是唯一来源）。
+      return cloneExportMessages(pageMessages || []);
+    }
+    if (!pageLen) {
+      // 只克隆 api（page 为空时 api 是唯一来源）。
+      return cloneExportMessages(apiMessages || []);
+    }
+    api = cloneExportMessages(apiMessages || []);
+    page = cloneExportMessages(pageMessages || []);
 
     var pageHasBothRoles = hasConversationRole(page, "user") && hasConversationRole(page, "assistant");
     var apiMissingPageRole = pageHasBothRoles && (
@@ -865,8 +877,183 @@ function createMissingDependencyError(name) {
     return reconcileConversationMessages(apiMessages, pageMessages);
   }
 
-  function mergeGeminiExportMessages(primaryMessages) {
-    return cloneExportMessages(primaryMessages);
+  function getMessageImageBlocks(message) {
+    return (message && message.contentBlocks || []).filter(function (block) {
+      return block && block.type === "image" && String(block.src || "").trim();
+    });
+  }
+
+  function isCompleteGeminiLiveImageMessage(message) {
+    var images = getMessageImageBlocks(message);
+    if (!images.length) return false;
+    var seenSources = new Set();
+    var indexes = [];
+
+    for (var imageIndex = 0; imageIndex < images.length; imageIndex += 1) {
+      var image = images[imageIndex];
+      var src = String(image.src || "").trim();
+      var attachmentIndex = Number(image.geminiAttachmentIndex);
+      if (!src || seenSources.has(src) || !Number.isInteger(attachmentIndex) || attachmentIndex < 0) {
+        return false;
+      }
+      if (/image_generation_content|immersive_?entry_?chip/i.test(src)) {
+        return false;
+      }
+      seenSources.add(src);
+      indexes.push(attachmentIndex);
+    }
+
+    return indexes.every(function (attachmentIndex, index) {
+      return attachmentIndex === index;
+    });
+  }
+
+  function replaceGeminiMessageImages(apiMessage, pageMessage) {
+    var apiImages = getMessageImageBlocks(apiMessage);
+    var pageImages = getMessageImageBlocks(pageMessage);
+    if (!pageImages.length) return false;
+
+    // A contiguous 0..N live attachment set is the final rendered Gemini
+    // response. Use its complete block sequence, not merely its image URLs:
+    // RPC payloads can place otherwise-correct images into stale attachment
+    // slots, so retaining RPC block positions still associates each image
+    // with the wrong heading. This also removes transient generation text.
+    if (isCompleteGeminiLiveImageMessage(pageMessage)) {
+      apiMessage.contentBlocks = (pageMessage.contentBlocks || []).map(function (block, index) {
+        return block && block.type === "image" ? ensureExportImageBlockMetadata(block, index) : block;
+      });
+      if (pageMessage.htmlStyle) apiMessage.htmlStyle = pageMessage.htmlStyle;
+      return true;
+    }
+
+    // The live Gemini DOM is the only source that already resolved generated
+    // image attachment indexes to the exact rendered blob. Replace RPC images
+    // only when the sets are structurally compatible, so a partially rendered
+    // or virtualized page can never delete images that are available via RPC.
+    if (apiImages.length && apiImages.length !== pageImages.length) return false;
+
+    var replacements = pageImages.map(function (block, index) {
+      return ensureExportImageBlockMetadata(block, index);
+    });
+    var replacementIndex = 0;
+    var replaced = false;
+    var nextBlocks = [];
+
+    (apiMessage.contentBlocks || []).forEach(function (block) {
+      if (!block || block.type !== "image") {
+        nextBlocks.push(block);
+        return;
+      }
+      if (replacementIndex < replacements.length) {
+        nextBlocks.push(replacements[replacementIndex++]);
+        replaced = true;
+      }
+    });
+
+    // RPC occasionally omits generated-image blocks even though the current
+    // page has finished rendering them. Keep the API text and append the
+    // authoritative live images in that case.
+    while (replacementIndex < replacements.length) {
+      nextBlocks.push(replacements[replacementIndex++]);
+      replaced = true;
+    }
+
+    if (replaced) {
+      apiMessage.contentBlocks = dedupeImageBlocksWithinMessage(nextBlocks);
+    }
+    return replaced;
+  }
+
+  function getGeminiMessageMatches(apiMessages, pageMessages) {
+    var matches = getMonotonicConversationMatches(apiMessages, pageMessages);
+    var usedApiIndexes = new Set(matches.map(function (match) { return match.apiIndex; }));
+    var usedPageIndexes = new Set(matches.map(function (match) { return match.pageIndex; }));
+
+    // Exact text is preferred. Formatting differences between the RPC
+    // markdown and rendered DOM can prevent an exact key, so image-bearing
+    // messages get a conservative similarity fallback within the same role.
+    pageMessages.forEach(function (pageMessage, pageIndex) {
+      if (usedPageIndexes.has(pageIndex) || !getMessageImageBlocks(pageMessage).length) return;
+      var bestApiIndex = -1;
+      var bestScore = 0;
+      var secondBestScore = 0;
+
+      apiMessages.forEach(function (apiMessage, apiIndex) {
+        if (usedApiIndexes.has(apiIndex) || apiMessage.role !== pageMessage.role) return;
+        var apiImageCount = getMessageImageBlocks(apiMessage).length;
+        var pageImageCount = getMessageImageBlocks(pageMessage).length;
+        if (apiImageCount && apiImageCount !== pageImageCount) return;
+        var score = getConversationMessageSimilarity(apiMessage, pageMessage);
+        if (score > bestScore) {
+          secondBestScore = bestScore;
+          bestScore = score;
+          bestApiIndex = apiIndex;
+        } else if (score > secondBestScore) {
+          secondBestScore = score;
+        }
+      });
+
+      if (bestApiIndex >= 0 && bestScore >= 0.72 && bestScore - secondBestScore >= 0.08) {
+        matches.push({ apiIndex: bestApiIndex, pageIndex: pageIndex });
+        usedApiIndexes.add(bestApiIndex);
+        usedPageIndexes.add(pageIndex);
+      }
+    });
+
+    // Gemini's RPC text can contain transient generation status and internal
+    // placeholder URLs that never appear in the rendered response. In that
+    // case both exact-text and similarity matching can fail even though the
+    // live response owns a complete, correctly ordered set of blob images.
+    // Match that message structurally only when there is exactly one possible
+    // API target inside the surrounding monotonic match bounds. Requiring the
+    // same role and image count keeps virtualized/partial DOM responses from
+    // shifting images onto a different turn.
+    pageMessages.forEach(function (pageMessage, pageIndex) {
+      if (usedPageIndexes.has(pageIndex)) return;
+      var pageImageCount = getMessageImageBlocks(pageMessage).length;
+      if (!pageImageCount) return;
+
+      var previousApiIndex = -1;
+      var nextApiIndex = apiMessages.length;
+      matches.forEach(function (match) {
+        if (match.pageIndex < pageIndex && match.apiIndex > previousApiIndex) {
+          previousApiIndex = match.apiIndex;
+        }
+        if (match.pageIndex > pageIndex && match.apiIndex < nextApiIndex) {
+          nextApiIndex = match.apiIndex;
+        }
+      });
+
+      var structuralCandidates = [];
+      apiMessages.forEach(function (apiMessage, apiIndex) {
+        if (usedApiIndexes.has(apiIndex) || apiIndex <= previousApiIndex || apiIndex >= nextApiIndex) return;
+        if (apiMessage.role !== pageMessage.role) return;
+        if (getMessageImageBlocks(apiMessage).length !== pageImageCount) return;
+        structuralCandidates.push(apiIndex);
+      });
+
+      if (structuralCandidates.length === 1) {
+        var apiIndex = structuralCandidates[0];
+        matches.push({ apiIndex: apiIndex, pageIndex: pageIndex });
+        usedApiIndexes.add(apiIndex);
+        usedPageIndexes.add(pageIndex);
+      }
+    });
+
+    return matches.sort(function (left, right) {
+      return left.apiIndex - right.apiIndex;
+    });
+  }
+
+  function mergeGeminiExportMessages(primaryMessages, pageMessages) {
+    var api = cloneExportMessages(primaryMessages || []);
+    var page = cloneExportMessages(pageMessages || []);
+    if (!api.length || !page.length) return api.length ? api : page;
+
+    getGeminiMessageMatches(api, page).forEach(function (match) {
+      replaceGeminiMessageImages(api[match.apiIndex], page[match.pageIndex]);
+    });
+    return api;
   }
 
   function normalizeExportRole(value) {
@@ -2196,7 +2383,105 @@ function createMissingDependencyError(name) {
     return extractTextFromContentValue(part);
   }
 
-  function chatGptMessageToExportBlocks(message) {
+  // ChatGPT content_type → handler 显式映射表。
+  // 目的：让"已知类型"的处理逻辑可枚举、可审计；"未知类型"不再静默丢弃，
+  // 而是被显式标记，触发 DOM fallback，避免再次出现 voice 输入那种"API
+  // 新增 content_type 后内容悄悄消失"的问题。
+  // 与现有的 getChatGptImageBlockFromContentPart / isChatGptInternalContentPart
+  // 等判断函数并存：schema 表只负责"按 content_type 字段分发"，schema 未命中
+  // 时仍走原有判断函数（向后 100% 兼容）。
+  const CHATGPT_KNOWN_CONTENT_TYPES = {
+    // 文本类 → 提取为 paragraph/code/list 等 block
+    text: { handler: "text" },
+    markdown: { handler: "text" },
+    paragraph: { handler: "text" },
+    message: { handler: "text" },
+    multimodal_text: { handler: "text" },
+    input_text: { handler: "text" },
+    output_text: { handler: "text" },
+    thoughts_text: { handler: "text" },
+    reasoning_text: { handler: "text" },
+
+    // 转录类 → voice 通道（走 appendVoiceTranscript 去重）
+    audio_transcript: { handler: "voice" },
+    transcript: { handler: "voice" },
+    audio_transcription: { handler: "voice" },
+
+    // 图片类 → image block
+    image_asset_pointer: { handler: "image" },
+    image_generation: { handler: "image" },
+    image_generation_pointer: { handler: "image" },
+    generated_image_pointer: { handler: "image" },
+
+    // 音频原始指针 → voice fallback 通道（占位/transcript）
+    audio_asset_pointer: { handler: "voice" },
+    real_time_user_audio_video_asset_pointer: { handler: "voice" },
+
+    // 内部/系统类 → 静默跳过（与 isChatGptInternalContentPart 等价）
+    tool_use: { handler: "skip" },
+    tool_result: { handler: "skip" },
+    function_call: { handler: "skip" },
+    web_search: { handler: "skip" },
+    web_browse: { handler: "skip" },
+    browser: { handler: "skip" },
+    code_interpreter: { handler: "skip" },
+    code_interpreter_call: { handler: "skip" },
+    code_interpreter_output: { handler: "skip" },
+    execution: { handler: "skip" },
+    command: { handler: "skip" },
+    system_message: { handler: "skip" },
+    analysis: { handler: "skip" },
+    reasoning: { handler: "skip" },
+    thought: { handler: "skip" },
+    thinking: { handler: "skip" },
+    widget: { handler: "skip" },
+    component: { handler: "skip" },
+    canvas: { handler: "skip" },
+    artifact: { handler: "skip" }
+  };
+
+  // 分类一个 content part。返回 { handler, unknownType? }。
+  // handler 取值: text | voice | image | skip | unknown
+  // schema 表未命中时，回落到现有判断函数（保持行为等价）；
+  // 仍然无法识别时，标记为 unknown 并返回原始 type 字符串。
+  function classifyChatGptContentPart(part) {
+    if (part == null) return { handler: "skip" };
+    if (typeof part === "string" || typeof part === "number" || typeof part === "boolean") {
+      return { handler: "text" };
+    }
+    if (Array.isArray(part)) return { handler: "text" };
+    if (typeof part !== "object") return { handler: "skip" };
+
+    const type = String(part.content_type || part.type || "").trim().toLowerCase();
+
+    // schema 命中 → 直接返回
+    if (type) {
+      const entry = CHATGPT_KNOWN_CONTENT_TYPES[type];
+      if (entry) return { handler: entry.handler };
+    }
+
+    // schema 未命中 → 调用现有判断函数兜底（向后兼容）
+    if (getChatGptImageBlockFromContentPart(part)) return { handler: "image" };
+    if (isChatGptInternalContentPart(part)) return { handler: "skip" };
+    if (isChatGptAudioPointerPart(part)) return { handler: "voice" };
+    if (isChatGptAudioTranscriptionPart(part)) return { handler: "voice" };
+
+    const typeLabel = getChatGptContentPartTypeLabel(part);
+    // 与原 shouldExtractChatGptTextPart 行为等价：无 typeLabel 的对象 → 走 text 通道
+    // （extractTextFromContentValue 会尝试多种 fallback 提取文本）
+    if (!typeLabel) return { handler: "text" };
+
+    // 有 typeLabel 且明确属于可见文本类 → text
+    if (isChatGptVisibleTextPartType(typeLabel)) {
+      return { handler: "text" };
+    }
+
+    // 有 typeLabel 但完全未识别 → 标记为 unknown，让上游决定是否 fallback DOM。
+    // 注意：原逻辑在此分支会返回 ""（即不提取文本），本逻辑保持等价。
+    return { handler: "unknown", unknownType: type || "(missing_type)" };
+  }
+
+  function chatGptMessageToExportBlocks(message, diagnostics) {
     const blocks = [];
     const content = message?.content;
     const parts = Array.isArray(content?.parts) ? content.parts : null;
@@ -2211,6 +2496,15 @@ function createMissingDependencyError(name) {
     const hasNonPointerVisibleText = (parts || []).some((part) => {
       return !isChatGptAudioPointerPart(part) && Boolean(extractTextFromChatGptContentPart(part).trim());
     });
+
+    function recordUnknownType(typeLabel) {
+      if (!diagnostics) return;
+      diagnostics.hasUnknownContent = true;
+      if (!diagnostics.unknownTypes) diagnostics.unknownTypes = [];
+      if (diagnostics.unknownTypes.indexOf(typeLabel) === -1) {
+        diagnostics.unknownTypes.push(typeLabel);
+      }
+    }
 
     function appendVoiceTranscript(text) {
       const normalized = normalizeExportText(text).replace(/\s+/g, " ").trim();
@@ -2231,35 +2525,58 @@ function createMissingDependencyError(name) {
       appendVoiceTranscript("[Voice message: transcript unavailable]");
     }
 
-    if (parts) {
-      parts.forEach((part) => {
-        const imageBlock = getChatGptImageBlockFromContentPart(part);
-        if (imageBlock) {
-          if (imageBlock._chatGptFileId) {
-            seenFileIds.add(imageBlock._chatGptFileId);
+    function processContentPart(part) {
+      const classification = classifyChatGptContentPart(part);
+      switch (classification.handler) {
+        case "image": {
+          // schema 命中 image 类型 → 通过现有函数构造 block（保证字段一致）
+          const imageBlock = getChatGptImageBlockFromContentPart(part);
+          if (imageBlock) {
+            if (imageBlock._chatGptFileId) {
+              seenFileIds.add(imageBlock._chatGptFileId);
+            }
+            blocks.push(imageBlock);
           }
-          blocks.push(imageBlock);
           return;
         }
-        if (isChatGptAudioPointerPart(part)) {
-          appendAudioPointerFallback(part);
-          return;
-        }
-        const text = extractTextFromChatGptContentPart(part);
-        if (isChatGptAudioTranscriptionPart(part)) {
+        case "voice": {
+          // audio pointer 与 transcript 都走 voice 通道
+          if (isChatGptAudioPointerPart(part)) {
+            appendAudioPointerFallback(part);
+            return;
+          }
+          const text = extractTextFromChatGptContentPart(part);
           appendVoiceTranscript(text);
-        } else {
-          appendTextExportBlocks(blocks, text, textOptions);
+          return;
         }
-      });
-    } else {
-      if (isChatGptAudioPointerPart(content)) {
-        appendAudioPointerFallback(content);
-      } else if (isChatGptAudioTranscriptionPart(content)) {
-        appendVoiceTranscript(extractTextFromChatGptContentPart(content));
-      } else {
-        appendTextExportBlocks(blocks, extractTextFromChatGptContentPart(content), textOptions);
+        case "skip":
+          // 已知内部/系统类型 → 静默跳过
+          return;
+        case "text": {
+          // 已知文本类型 → 走现有 extract 路径（保留 segments / annotations 提取）
+          const text = extractTextFromChatGptContentPart(part);
+          appendTextExportBlocks(blocks, text, textOptions);
+          return;
+        }
+        case "unknown":
+        default: {
+          // 真正未知的 content_type → 标记诊断字段，尝试用现有 fallback 提取文本
+          recordUnknownType(classification.unknownType);
+          // 兜底尝试：依然调用 extractTextFromChatGptContentPart
+          // - 对无 typeLabel 的对象，原逻辑会进入 extractTextFromContentValue
+          // - 对有 typeLabel 但未知的，原逻辑会因 isChatGptVisibleTextPartType
+          //   返回 false 而 extractTextFromChatGptContentPart 返回 ""
+          // 这里保持与原逻辑等价：未知 → 不提取文本（避免误把内部数据当文本）
+          // 但记录 unknownType，让 detectApiCompletenessRisk 触发 DOM fallback
+          return;
+        }
       }
+    }
+
+    if (parts) {
+      parts.forEach((part) => processContentPart(part));
+    } else if (content != null) {
+      processContentPart(content);
     }
 
     collectChatGptImageBlocksFromValue(content)
@@ -3035,11 +3352,16 @@ function createMissingDependencyError(name) {
     return payloads;
   }
 
+  function isGeminiInternalPlaceholderUrl(url) {
+    return /googleusercontent\.com\/immersive_?entry_?chip\/\d+/i.test(String(url || ""));
+  }
+
   function isGeminiPayloadImageUrl(url) {
     const src = String(url || "").trim();
     if (!/^https?:\/\//i.test(src)) return false;
     if (!(src.indexOf("googleusercontent.com") !== -1 || /lh\d+\.google\.com/i.test(src))) return false;
-    return !/(favicon|googleusercontent\.com\/a\/|googleusercontent\.com\/a-|\/ogw\/|immersive_entry_chip|entry_chip|logo|sprite|emoji)/i.test(src);
+    if (isGeminiInternalPlaceholderUrl(src)) return false;
+    return !/(favicon|googleusercontent\.com\/a\/|googleusercontent\.com\/a-|\/ogw\/|entry_?chip|logo|sprite|emoji)/i.test(src);
   }
 
   function getGeminiPayloadUrls(text) {
@@ -3055,7 +3377,7 @@ function createMissingDependencyError(name) {
   function stripGeminiPayloadImageUrls(text) {
     return String(text || "").replace(/https?:\/\/[^\s"'<>\\\])]+/g, (match) => {
       const cleaned = match.replace(/[),.;:!?]+$/g, "");
-      return isGeminiPayloadImageUrl(cleaned) ? "" : match;
+      return isGeminiPayloadImageUrl(cleaned) || isGeminiInternalPlaceholderUrl(cleaned) ? "" : match;
     });
   }
 
@@ -3247,17 +3569,39 @@ function createMissingDependencyError(name) {
     }
   }
 
+  function getGeminiPayloadPlaceholderCount(value) {
+    var maxIndex = -1;
+
+    function scan(current) {
+      if (current == null) return;
+      if (typeof current === "string") {
+        var pattern = /image_generation_content\/(\d+)/g;
+        var match;
+        while ((match = pattern.exec(current))) {
+          var index = Number(match[1]);
+          if (Number.isFinite(index) && index > maxIndex) maxIndex = index;
+        }
+        return;
+      }
+      if (Array.isArray(current)) {
+        current.forEach(scan);
+        return;
+      }
+      if (typeof current === "object") {
+        Object.keys(current).forEach(function (key) { scan(current[key]); });
+      }
+    }
+
+    scan(value);
+    return maxIndex + 1;
+  }
+
   function collectGeminiPayloadImageBlocks(value, realImageUrls, out, seen) {
     if (value == null) return;
     if (typeof value === "string") {
       getGeminiPayloadUrls(value).forEach((url) => {
         if (!isGeminiPayloadImageUrl(url)) return;
-        let finalUrl = url;
-        const placeholderMatch = finalUrl.match(/image_generation_content\/(\d+)/);
-        if (placeholderMatch) {
-          const mappedUrl = realImageUrls[Number(placeholderMatch[1])];
-          if (mappedUrl) finalUrl = mappedUrl;
-        }
+        const finalUrl = resolveGeminiPayloadImageUrl(url, realImageUrls);
         if (seen.has(finalUrl)) return;
         seen.add(finalUrl);
         out.push({
@@ -3305,7 +3649,8 @@ function createMissingDependencyError(name) {
     let finalUrl = String(url || "").replace(/[),.;:!?]+$/g, "");
     const placeholderMatch = finalUrl.match(/image_generation_content\/(\d+)/);
     if (placeholderMatch) {
-      const mappedUrl = realImageUrls[Number(placeholderMatch[1])];
+      const idx = Number(placeholderMatch[1]);
+      const mappedUrl = Array.isArray(realImageUrls) ? realImageUrls[idx] : null;
       if (mappedUrl) finalUrl = mappedUrl;
     }
     return finalUrl;
@@ -3508,8 +3853,38 @@ function createMissingDependencyError(name) {
   function parseGeminiConversationPayloads(payloads) {
     const turns = [];
     const seen = new Set();
-    const realImageUrls = [];
-    collectGeminiPayloadRealImageUrls(payloads, realImageUrls, new Set());
+
+    function getTurnRealImageUrls(turn, rawNode) {
+      const placeholderCount = getGeminiPayloadPlaceholderCount(turn?.assistantValue);
+      const assistantUrls = [];
+      const userUrls = [];
+      const rawUrls = [];
+      collectGeminiPayloadRealImageUrls(turn?.assistantValue, assistantUrls, new Set());
+      collectGeminiPayloadRealImageUrls(turn?.userValue, userUrls, new Set());
+      if (rawNode) collectGeminiPayloadRealImageUrls(rawNode, rawUrls, new Set());
+
+      if (!placeholderCount) {
+        return assistantUrls;
+      }
+
+      // A raw Gemini turn can carry uploaded/context images from earlier in
+      // the conversation next to generated-image metadata. Those URLs must
+      // never shift image_generation_content/N. URLs structurally present in
+      // assistantValue are authoritative; only fill missing slots from the
+      // tail of the remaining turn-local candidates, where Gemini stores the
+      // generated attachments. User-upload URLs are explicitly excluded.
+      const userUrlSet = new Set(userUrls);
+      const assistantUrlSet = new Set(assistantUrls);
+      const supplementalUrls = rawUrls.filter(function (url) {
+        return !userUrlSet.has(url) && !assistantUrlSet.has(url);
+      });
+      const turnUrls = assistantUrls.slice(0, placeholderCount);
+      const missingCount = Math.max(0, placeholderCount - turnUrls.length);
+      if (missingCount) {
+        turnUrls.push(...supplementalUrls.slice(-missingCount));
+      }
+      return turnUrls;
+    }
 
     function scan(node) {
       if (!Array.isArray(node)) {
@@ -3518,10 +3893,11 @@ function createMissingDependencyError(name) {
 
       const turn = detectGeminiPayloadTurn(node);
       if (turn) {
+        const turnUrls = getTurnRealImageUrls(turn, node);
         const userImages = [];
         const assistantImages = [];
-        collectGeminiPayloadImageBlocks(turn.userValue, realImageUrls, userImages, new Set());
-        collectGeminiPayloadImageBlocks(turn.assistantValue, realImageUrls, assistantImages, new Set());
+        collectGeminiPayloadImageBlocks(turn.userValue, turnUrls, userImages, new Set());
+        collectGeminiPayloadImageBlocks(turn.assistantValue, turnUrls, assistantImages, new Set());
         const key = JSON.stringify([
           extractGeminiPayloadText(turn.userValue),
           extractGeminiPayloadText(turn.assistantValue),
@@ -3534,6 +3910,7 @@ function createMissingDependencyError(name) {
           seen.add(key);
           turns.push({
             ...turn,
+            turnUrls,
             order: turns.length
           });
         }
@@ -3553,9 +3930,10 @@ function createMissingDependencyError(name) {
     });
 
     const messages = turns.flatMap((turn) => {
+      const turnUrls = turn.turnUrls || getTurnRealImageUrls(turn);
       return [
-        geminiPayloadValueToExportMessage("user", turn.userValue, realImageUrls),
-        geminiPayloadValueToExportMessage("assistant", turn.assistantValue, realImageUrls)
+        geminiPayloadValueToExportMessage("user", turn.userValue, turnUrls),
+        geminiPayloadValueToExportMessage("assistant", turn.assistantValue, turnUrls)
       ].filter(Boolean);
     });
 
@@ -3567,6 +3945,21 @@ function createMissingDependencyError(name) {
 
   export function createExportPlatformFetchers(options) {
     var deps = options || {};
+    var _createdObjectUrls = [];
+
+    function trackObjectUrl(url) {
+      if (url && typeof url === "string" && url.startsWith("blob:") && _createdObjectUrls.indexOf(url) === -1) {
+        _createdObjectUrls.push(url);
+      }
+      return url;
+    }
+
+    function revokePlatformObjectUrls() {
+      while (_createdObjectUrls.length) {
+        var url = _createdObjectUrls.pop();
+        try { URL.revokeObjectURL(url); } catch (_e) {}
+      }
+    }
 
     function getChatGptRequestHeaders(session) {
       var headers = {};
@@ -3696,7 +4089,7 @@ function createMissingDependencyError(name) {
                 return normalizeChatGptDownloadUrl(getChatGptDownloadUrlFromPayload(jsonData));
               } catch (jsonErr) {
                 var fallbackBlob = await readPlatformResponseBody(fileResp, "blob", "ChatGPT file", 4000);
-                return fallbackBlob.size ? URL.createObjectURL(fallbackBlob) : "";
+                return fallbackBlob.size ? trackObjectUrl(URL.createObjectURL(fallbackBlob)) : "";
               }
             } catch (err) {
               return "";
@@ -3706,12 +4099,25 @@ function createMissingDependencyError(name) {
         return fileUrlPromises.get(fileId);
       }
 
+      // 收集本次 fetch 的完整性诊断：未知 content_type / 空消息 / 角色缺失等。
+      // 上游 fetchConversationMessagesForExport 会据此决定是否触发 DOM fallback。
+      var fetchDiagnostics = {
+        hasUnknownContent: false,
+        unknownTypes: [],
+        messageCount: 0,
+        emptyContentBlockCount: 0,
+        hasUserRole: false,
+        hasAssistantRole: false
+      };
+
       nodes.forEach(function (node) {
         var message = node && node.message;
         if (!message || isChatGptMessageHiddenFromConversation(message)) return;
 
         var hasUnresolvedGenUi = valueHasStandaloneGenUiPlaceholderToken(message.content);
-        var contentBlocks = chatGptMessageToExportBlocks(message);
+        // 传入 diagnostics 收集未知 content_type
+        var partDiagnostics = { hasUnknownContent: false, unknownTypes: [] };
+        var contentBlocks = chatGptMessageToExportBlocks(message, partDiagnostics);
         var role = normalizeChatGptExportRole(message, contentBlocks);
         if (!role || !contentBlocks.length) return;
 
@@ -3724,10 +4130,39 @@ function createMissingDependencyError(name) {
         if (hasUnresolvedGenUi) {
           msgObj._chatVaultHasUnresolvedGenUi = true;
         }
+        // 把每条消息的 unknown 标记透传到 msgObj，方便 reconcile 阶段使用。
+        // 注意：最终对外返回前会被 strip 掉，不会污染用户导出数据。
+        if (partDiagnostics.hasUnknownContent) {
+          msgObj._chatVaultHasUnknownContent = true;
+          msgObj._chatVaultUnknownTypes = partDiagnostics.unknownTypes.slice();
+          fetchDiagnostics.hasUnknownContent = true;
+          (partDiagnostics.unknownTypes || []).forEach(function (typeLabel) {
+            if (fetchDiagnostics.unknownTypes.indexOf(typeLabel) === -1) {
+              fetchDiagnostics.unknownTypes.push(typeLabel);
+            }
+          });
+        }
+        if (!contentBlocks.some(function (block) { return block && block.text; })) {
+          fetchDiagnostics.emptyContentBlockCount += 1;
+        }
+        if (role === "user") fetchDiagnostics.hasUserRole = true;
+        if (role === "assistant") fetchDiagnostics.hasAssistantRole = true;
 
         messages.push(msgObj);
 
       });
+
+      fetchDiagnostics.messageCount = messages.length;
+      // 把诊断挂到返回的 messages 数组上（非枚举属性），方便上游读取。
+      // 用 Object.defineProperty 避免被 JSON.stringify / cloneExportMessages 误带。
+      try {
+        Object.defineProperty(messages, "_chatVaultFetchDiagnostics", {
+          value: fetchDiagnostics,
+          enumerable: false,
+          configurable: true,
+          writable: true
+        });
+      } catch (error) {}
 
       messages = filterInheritedUserImages(messages);
 
@@ -3791,11 +4226,25 @@ function createMissingDependencyError(name) {
         });
         delete msg._chatVaultRawRole;
         delete msg._chatVaultGeneratedFileReferences;
+        // strip 诊断字段，避免污染对外 API。fetchDiagnostics 已经挂在
+        // messages 数组的非枚举属性上，msgObj 级别的标记可安全删除。
+        delete msg._chatVaultHasUnknownContent;
+        delete msg._chatVaultUnknownTypes;
       });
 
-      return messages.filter(function (msg) {
+      var finalMessages = messages.filter(function (msg) {
         return msg.contentBlocks && msg.contentBlocks.length > 0;
       });
+      // 把诊断透传到过滤后的数组上
+      try {
+        Object.defineProperty(finalMessages, "_chatVaultFetchDiagnostics", {
+          value: fetchDiagnostics,
+          enumerable: false,
+          configurable: true,
+          writable: true
+        });
+      } catch (error) {}
+      return finalMessages;
     }
 
     async function fetchClaudeConversationMessages(chat) {
@@ -3910,6 +4359,72 @@ function createMissingDependencyError(name) {
       return messages;
     }
 
+    // 检测 API 解析结果的完整性风险，决定是否需要 fallback 到 DOM。
+    // 风险信号：
+    //   1. fetchChatGptConversationMessages 挂载的 _chatVaultFetchDiagnostics 中
+    //      hasUnknownContent=true（出现 schema 未识别的 content_type）
+    //   2. 角色缺失（API 完全没有 user 或 assistant 消息）
+    //   3. 大量空 contentBlocks（内容可能被错误解析）
+    //   4. 消息数明显少于 DOM 候选数（platform.js countCandidateTurns 的简化版）
+    // 返回 { needsFallback, reasons: string[], unknownTypes?: string[] }
+    function detectApiCompletenessRisk(messages, options) {
+      var opts = options || {};
+      var reasons = [];
+      var unknownTypes = [];
+
+      // 1. 读取 fetchChatGptConversationMessages 挂载的诊断
+      var diagnostics = null;
+      try {
+        diagnostics = messages && messages._chatVaultFetchDiagnostics;
+      } catch (error) {}
+      if (diagnostics && diagnostics.hasUnknownContent) {
+        reasons.push("unknown_content_type");
+        (diagnostics.unknownTypes || []).forEach(function (typeLabel) {
+          if (unknownTypes.indexOf(typeLabel) === -1) unknownTypes.push(typeLabel);
+        });
+      }
+
+      // 2. 角色完整性
+      if (diagnostics) {
+        if (!diagnostics.hasUserRole) reasons.push("missing_user_role");
+        if (!diagnostics.hasAssistantRole) reasons.push("missing_assistant_role");
+      } else {
+        // 没有诊断字段（可能是 Claude/Gemini 或旧路径）→ 用 messages 数组推断
+        var hasUser = (messages || []).some(function (m) { return m && m.role === "user"; });
+        var hasAssistant = (messages || []).some(function (m) { return m && m.role === "assistant"; });
+        if (!hasUser && (messages || []).length > 0) reasons.push("missing_user_role");
+        if (!hasAssistant && (messages || []).length > 0) reasons.push("missing_assistant_role");
+      }
+
+      // 3. 空消息占比
+      var emptyCount = diagnostics ? diagnostics.emptyContentBlockCount : 0;
+      if (!diagnostics) {
+        (messages || []).forEach(function (m) {
+          if (m && m.contentBlocks && !m.contentBlocks.some(function (b) { return b && b.text; })) {
+            emptyCount += 1;
+          }
+        });
+      }
+      var totalCount = (messages || []).length;
+      if (totalCount > 0 && emptyCount / totalCount >= 0.3) {
+        reasons.push("high_empty_ratio");
+      }
+
+      // 4. 消息数明显少于 DOM 候选（仅当调用方提供 candidateCount 时检查）
+      var candidateCount = Number(opts.candidateCount);
+      if (Number.isFinite(candidateCount) && candidateCount > 0 && totalCount > 0) {
+        if (totalCount < candidateCount * 0.7) {
+          reasons.push("message_count_mismatch");
+        }
+      }
+
+      return {
+        needsFallback: reasons.length > 0,
+        reasons: reasons,
+        unknownTypes: unknownTypes
+      };
+    }
+
     return {
       fetchChatGptConversationMessages: fetchChatGptConversationMessages,
       fetchClaudeConversationMessages: fetchClaudeConversationMessages,
@@ -3920,6 +4435,13 @@ function createMissingDependencyError(name) {
       mergePageHtmlPresentation: mergePageHtmlPresentation,
       parseClaudeConversationPayload: parseClaudeConversationPayload,
       parseGeminiBatchExecutePayloads: parseGeminiBatchExecutePayloads,
-      parseGeminiConversationPayloads: parseGeminiConversationPayloads
+      parseGeminiConversationPayloads: parseGeminiConversationPayloads,
+      detectApiCompletenessRisk: detectApiCompletenessRisk,
+      revokePlatformObjectUrls: revokePlatformObjectUrls,
+      _test: {
+        chatGptMessageToExportBlocks: chatGptMessageToExportBlocks,
+        classifyChatGptContentPart: classifyChatGptContentPart,
+        CHATGPT_KNOWN_CONTENT_TYPES: CHATGPT_KNOWN_CONTENT_TYPES
+      }
     };
   }

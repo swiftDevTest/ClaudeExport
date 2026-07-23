@@ -24,13 +24,23 @@ const MIME_EXTENSIONS = Object.freeze({
   "image/tiff": "tiff"
 });
 
+// 使用 FileReader 原生 base64 编码，避免原实现中 binary += String.fromCharCode(...)
+// 的 O(n²) 字符串拼接（512KB chunk 需要 16 次循环拼接，每次拷贝不断增长的 binary 字符串）。
+// FileReader 在 C++ 层完成编码，性能与内存占用均优于 JS 字符串拼接路径。
 function bytesToBase64(bytes) {
-  let binary = "";
-  const chunk = 0x8000;
-  for (let index = 0; index < bytes.byteLength; index += chunk) {
-    binary += String.fromCharCode(...bytes.subarray(index, Math.min(bytes.byteLength, index + chunk)));
-  }
-  return btoa(binary);
+  return new Promise((resolve, reject) => {
+    const view = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes || 0);
+    const blob = new Blob([view]);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = String(reader.result || "");
+      // readAsDataURL 返回 "data:<mime>;base64,<payload>"，需截取逗号后的纯 base64。
+      const comma = result.indexOf(",");
+      resolve(comma >= 0 ? result.slice(comma + 1) : result);
+    };
+    reader.onerror = () => reject(reader.error || new Error("Failed to encode base64."));
+    reader.readAsDataURL(blob);
+  });
 }
 
 export async function sha256Bytes(bytes) {
@@ -67,6 +77,28 @@ async function compressStaticImage(bytes, mimeType, widthHint, heightHint, signa
   const bitmap = await createImageBitmap(sourceBlob);
   try {
     const { width, height } = safeBitmapDimensions(bitmap);
+    // 快速路径：触发压缩的图像通常 4-10MB，WebP 在 (scale=0.82, quality=0.82) 下
+    // 一般能达到 60-70% 压缩率，足以命中 4MB 目标。命中时跳过下方 4 quality × 5 scale
+    // = 20 次 canvasToBlob 网格搜索。视觉上 0.82 scale 与 0.82 quality 的损耗极小，
+    // 仅在 export 产物中体现，不影响原始资产。未命中则退化到完整网格搜索以找最优解。
+    try {
+      const fastCanvas = document.createElement("canvas");
+      fastCanvas.width = Math.max(1, Math.round(width * 0.82));
+      fastCanvas.height = Math.max(1, Math.round(height * 0.82));
+      const fastContext = fastCanvas.getContext("2d", { alpha: true });
+      if (fastContext) {
+        fastContext.drawImage(bitmap, 0, 0, fastCanvas.width, fastCanvas.height);
+        const fastBlob = await canvasToBlob(fastCanvas, "image/webp", 0.82);
+        if (fastBlob
+          && fastBlob.size <= OBSIDIAN_MEDIA_LIMITS.targetBytes
+          && fastBlob.size < bytes.byteLength) {
+          return { bytes: new Uint8Array(await fastBlob.arrayBuffer()), mimeType: "image/webp", width, height };
+        }
+      }
+    } catch (error) {
+      if (signal && signal.aborted) throw error;
+      // 快速路径失败（如 canvas 不可用）时静默退化到网格搜索。
+    }
     const qualities = [0.86, 0.76, 0.64, 0.52];
     const scales = [1, 0.82, 0.68, 0.55, 0.42];
     let best = null;
@@ -154,11 +186,11 @@ export async function prepareObsidianImage(image, options = {}) {
   };
 }
 
-export function* encodeAssetChunks(bytes, chunkBytes = OBSIDIAN_MEDIA_LIMITS.chunkBytes) {
+export async function* encodeAssetChunks(bytes, chunkBytes = OBSIDIAN_MEDIA_LIMITS.chunkBytes) {
   const source = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes || 0);
   for (let offset = 0; offset < source.byteLength; offset += chunkBytes) {
     const slice = source.subarray(offset, Math.min(source.byteLength, offset + chunkBytes));
-    yield { offset, base64: bytesToBase64(slice), byteLength: slice.byteLength };
+    yield { offset, base64: await bytesToBase64(slice), byteLength: slice.byteLength };
   }
 }
 

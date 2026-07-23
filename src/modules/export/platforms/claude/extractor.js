@@ -73,7 +73,9 @@ export function parseClaudeMessages() {
     var className = String(el.className || "");
     var authorRole = el.getAttribute("data-message-author-role") || "";
     var roleLabel = [testId, className, authorRole, el.getAttribute("aria-label") || ""].join(" ");
-    var isUser = /(^|[-_\s])(human|user)([-_\s]|$)/i.test(roleLabel);
+    var isUser = /(^|[-_\s])(human|user)([-_\s]|$)/i.test(roleLabel) ||
+                 /(?:^|[-_\s])(human|user)(?:[A-Z])/i.test(roleLabel) ||
+                 /(?:[a-z])(human|user)(?:[-_\s]|$)/i.test(roleLabel);
     var role = isUser ? "user" : "assistant";
     var contentElements = collectContentElements(el, [
       ".prose",

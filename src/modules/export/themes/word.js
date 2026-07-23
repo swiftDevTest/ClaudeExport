@@ -65,7 +65,8 @@ export function normalizeWordTheme(theme) {
 
 export function getWordTheme(settingsInput) {
   var settings = normalizeExportSettings(settingsInput);
-  var styleId = "natural"; // Word export does not use custom themes; force native web presentation
+  // Word 导出强制使用 natural 主题：自定义主题只作用于 PDF 和 Image 导出。
+  var styleId = "natural";
   var theme = getExportTheme(styleId);
   var word = normalizeWordTheme(theme);
   return {

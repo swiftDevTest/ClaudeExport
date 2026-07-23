@@ -557,7 +557,9 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
       
       if (chunk.code) {
         ctx.save();
-        var isDark = theme.id === "midnight";
+        var pageBgColor = (theme.bg && theme.bg.colors && theme.bg.colors[0]) || "#ffffff";
+        var bgLum = (parseInt(pageBgColor.slice(1, 3), 16) * 0.299 + parseInt(pageBgColor.slice(3, 5), 16) * 0.587 + parseInt(pageBgColor.slice(5, 7), 16) * 0.114);
+        var isDark = bgLum < 128;
         ctx.fillStyle = isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(100, 116, 139, 0.09)";
         var bgH = fontSize + 2;
         var bgY = textY - 1;
@@ -646,7 +648,7 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
       var frameX = x + (block.frameInset ?? frame.inset);
       var frameWidth = block.frameWidth || frame.width;
       var paddingX = block.paddingX || frame.paddingX;
-      drawRoundRect(ctx, frameX, cursor, frameWidth, block.height - 8, 11, theme.color.codeBg, theme.color.cardBorderAssistant);
+      drawRoundRect(ctx, frameX, cursor, frameWidth, block.height - 8, 11, theme.color.codeBg, theme.color.line);
       
       var isTerminalTheme = theme.id === "aurora" || theme.id === "terminal";
       if (isTerminalTheme) {
@@ -763,7 +765,7 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
     }
 
     if (block.type === "separator") {
-      ctx.strokeStyle = theme.color.cardBorderAssistant;
+      ctx.strokeStyle = theme.color.line;
       ctx.beginPath();
       ctx.moveTo(x, cursor + SEPARATOR_MARGIN_TOP);
       ctx.lineTo(x + width, cursor + SEPARATOR_MARGIN_TOP);

@@ -28,9 +28,7 @@ export function collapseNestedDocumentElements(elements, maxElements = 1000) {
   unique.sort(compareElementsInDocument);
   var collapsed = [];
   unique.forEach(function (element) {
-    var previous = collapsed[collapsed.length - 1];
-    if (previous && previous !== element && previous.contains && previous.contains(element)) return;
-    collapsed.push(element);
+    pushDistinctDocumentElement(collapsed, element);
   });
   return collapsed;
 }

@@ -436,7 +436,11 @@ export function createExportDocument(input) {
   var metadataInput = source.metadata || {};
   var settings = normalizeExportSettings(source.settings);
   var scope = source.scope || metadataInput.scope || (settings.export_ai_replies_only ? "ai_only" : "conversation");
-  var messages = normalizeExportMessages(source.messages);
+  // 优化：如果输入已经是 ExportDocument（带 _normalized 标记），messages 已归一化，
+  // 跳过 normalizeExportMessages 避免重复 sanitize/segments 处理。
+  // coerceExportDocument 传入已归一化的 document 时会走这条快路径。
+  var alreadyNormalized = Boolean(source._normalized) && Array.isArray(source.messages);
+  var messages = alreadyNormalized ? source.messages : normalizeExportMessages(source.messages);
   var metadata = {
     platform: source.platform || metadataInput.platform || "",
     title: metadataInput.title || source.title || "Untitled Chat",
@@ -444,7 +448,7 @@ export function createExportDocument(input) {
     exportedAt: normalizeExportDate(metadataInput.exportedAt || source.exportedAt),
     scope: scope
   };
-  makeGeneratedFileSegmentsPortable(messages);
+  if (!alreadyNormalized) makeGeneratedFileSegmentsPortable(messages);
 
   return {
     version: EXPORT_DOCUMENT_VERSION,
@@ -452,12 +456,15 @@ export function createExportDocument(input) {
     settings: settings,
     scope: scope,
     messages: messages,
-    contentBlocks: flattenDocumentContentBlocks(messages)
+    contentBlocks: alreadyNormalized ? source.contentBlocks : flattenDocumentContentBlocks(messages),
+    _normalized: true
   };
 }
 
 export function coerceExportDocument(documentOrMessages, metadata, settings) {
   if (documentOrMessages && typeof documentOrMessages === "object" && Array.isArray(documentOrMessages.messages)) {
+    // 已是 ExportDocument：若带 _normalized 标记则直接返回，避免重新归一化。
+    if (documentOrMessages._normalized) return documentOrMessages;
     return createExportDocument(documentOrMessages);
   }
   return createExportDocument({

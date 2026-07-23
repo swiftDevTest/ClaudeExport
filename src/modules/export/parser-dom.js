@@ -424,6 +424,35 @@ export function walkElement(parent, blocks, structSet, depth) {
         }
       }
 
+      if (imgSrc && imgSrc.indexOf("image_generation_content") !== -1 && child.closest) {
+        try {
+          var turnEl = child.closest('model-response, [data-test-id="model-response"], .model-response, conversation-turn, .conversation-turn, message-content, .response-container');
+          if (turnEl) {
+            var matchIdx = (imgSrc.match(/image_generation_content\/(\d+)/) || [])[1];
+            var parsedIdx = matchIdx != null ? parseInt(matchIdx, 10) : 0;
+            var turnImgs = turnEl.querySelectorAll('img, source');
+            var realTurnCandidates = [];
+            for (var t = 0; t < turnImgs.length; t += 1) {
+              var candidateUrl = turnImgs[t].getAttribute("src") || turnImgs[t].getAttribute("srcset") || turnImgs[t].getAttribute("data-src") || "";
+              if (candidateUrl && candidateUrl.indexOf(",") !== -1) {
+                var parts = candidateUrl.split(",").map(function (s) { return s.trim().split(" ")[0]; }).filter(Boolean);
+                if (parts.length > 0) candidateUrl = parts[parts.length - 1];
+              }
+              if (candidateUrl && candidateUrl.indexOf("image_generation_content") === -1 && !isPlatformOrSystemIcon(candidateUrl)) {
+                if (realTurnCandidates.indexOf(candidateUrl) === -1) {
+                  realTurnCandidates.push(candidateUrl);
+                }
+              }
+            }
+            if (realTurnCandidates.length > 0) {
+              imgSrc = (Number.isFinite(parsedIdx) && parsedIdx < realTurnCandidates.length)
+                ? realTurnCandidates[parsedIdx]
+                : realTurnCandidates[0];
+            }
+          }
+        } catch (e) {}
+      }
+
       if (!imgSrc && child.parentElement && child.parentElement.tagName.toLowerCase() === "picture") {
         var sourceEl = child.parentElement.querySelector("source");
         if (sourceEl) {
@@ -622,19 +651,29 @@ export function extractListItems(listEl, depth, budget) {
 export function extractTable(tableEl) {
   var headers = [];
   var rows = [];
-  var thead = tableEl.querySelector("thead");
+  var thead = tableEl.querySelector(":scope > thead, > thead");
 
   if (thead) {
-    Array.prototype.forEach.call(thead.querySelectorAll("th"), function (th) {
+    // 只选择直接子元素，避免嵌套表格的 th 被错误包含
+    Array.prototype.forEach.call(thead.querySelectorAll(":scope > tr > th, > tr > th"), function (th) {
       headers.push(cleanText(th));
     });
   }
 
-  Array.prototype.forEach.call(tableEl.querySelectorAll("tr"), function (tr) {
-    if (thead && tr.parentElement === thead) return;
+  // 只选择 table 的直接子 tr（不包含嵌套表格中的 tr）
+  var directTrs = tableEl.querySelectorAll(":scope > tbody > tr, > tr, > tbody > tr");
+  if (!directTrs.length) {
+    directTrs = tableEl.querySelectorAll("tbody > tr, > tr");
+  }
+
+  Array.prototype.forEach.call(directTrs, function (tr) {
+    if (thead && (tr.parentElement === thead || thead.contains(tr))) return;
     var cells = [];
-    Array.prototype.forEach.call(tr.querySelectorAll("td,th"), function (cell) {
-      cells.push(cleanText(cell));
+    // 只选择 tr 的直接子单元格，避免嵌套表格的单元格被包含
+    Array.prototype.forEach.call(tr.children, function (cell) {
+      if (cell.tagName === "TD" || cell.tagName === "TH") {
+        cells.push(cleanText(cell));
+      }
     });
     if (!cells.length) return;
     if (!headers.length && !rows.length) {

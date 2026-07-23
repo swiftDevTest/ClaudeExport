@@ -27,6 +27,26 @@
   ]);
   let databasePromise = null;
   let mutationQueue = Promise.resolve();
+  // 活动 job 内存缓存：writeAssetChunk/completeAsset 原本每次都 getRecord 读取完整 job
+  // （含 assets/completedAssets map），单图 8 chunk = 8 次 getRecord + 8 次 putRecord = 16 次 IDB 事务。
+  // 由于 mutationQueue 串行化所有 mutation，且 beginJob 强制同时只有一个活动 job，
+  // 缓存可安全跨 mutation 调用复用。SW 终止时缓存丢失，下次调用回退到 getRecord。
+  let activeJobCache = null;
+
+  function invalidateJobCache() {
+    activeJobCache = null;
+  }
+
+  async function getActiveJob(jobId) {
+    const id = String(jobId || "");
+    if (activeJobCache && activeJobCache.id === id && activeJobCache.status === "writing") {
+      return activeJobCache;
+    }
+    const job = await getRecord(JOB_STORE, id);
+    if (job && job.status === "writing") activeJobCache = job;
+    else activeJobCache = null;
+    return job;
+  }
 
   function isTrustedSender(sender) {
     if (sender && sender.id && sender.id !== chrome.runtime.id) return false;
@@ -186,20 +206,34 @@
     return record && record.handle ? record : null;
   }
 
-  async function getPermissionState(handle) {
+  async function getPermissionState(handle, options = {}) {
     if (!handle || typeof handle.queryPermission !== "function") return "unsupported";
+    const timeoutMs = Number.isFinite(options.timeoutMs) ? options.timeoutMs : 1000;
+    const retries = Math.max(0, Number.isFinite(options.retries) ? options.retries : 1);
     let timeout = null;
-    try {
-      const queryPromise = handle.queryPermission({ mode: "readwrite" });
-      const timeoutPromise = new Promise((resolve) => {
-        timeout = setTimeout(() => resolve("denied"), 1000);
-      });
-      return await Promise.race([queryPromise, timeoutPromise]);
-    } catch (error) {
-      return "denied";
-    } finally {
-      clearTimeout(timeout);
+    for (let attempt = 0; attempt <= retries; attempt += 1) {
+      try {
+        const queryPromise = handle.queryPermission({ mode: "readwrite" });
+        const timeoutPromise = new Promise((resolve) => {
+          timeout = setTimeout(() => resolve("__timeout__"), timeoutMs);
+        });
+        const result = await Promise.race([queryPromise, timeoutPromise]);
+        clearTimeout(timeout);
+        if (result === "__timeout__") {
+          // Timeout means the query has not resolved yet, not that permission
+          // was denied. Retry once before falling back to "prompt" so the UI
+          // does not wrongly tell the user to reauthorize a freshly granted
+          // Vault (Service Worker cold-start can make queryPermission slow).
+          if (attempt < retries) continue;
+          return "prompt";
+        }
+        return result;
+      } catch (error) {
+        clearTimeout(timeout);
+        return "denied";
+      }
     }
+    return "prompt";
   }
 
   async function requireWritableVault() {
@@ -328,8 +362,13 @@
   }
 
   async function abortJob(jobId, options) {
-    const job = await getRecord(JOB_STORE, String(jobId || ""));
-    if (!job) return null;
+    const id = String(jobId || "");
+    const job = await getRecord(JOB_STORE, id);
+    if (!job) {
+      // 即使 job 不存在也要清理可能残留的缓存（如 SW 重启后缓存指向已删除的 job）。
+      if (activeJobCache && activeJobCache.id === id) invalidateJobCache();
+      return null;
+    }
     try {
       const vault = await requireWritableVault();
       if (job.assetsDirectory) await removeDirectoryIfPresent(vault.handle, job.assetsDirectory);
@@ -337,6 +376,7 @@
       if (!(options && options.bestEffort)) throw error;
     }
     await deleteRecord(JOB_STORE, job.id);
+    if (activeJobCache && activeJobCache.id === job.id) invalidateJobCache();
     if (options && options.record) {
       await addHistory({
         id: `${job.id}:${Date.now()}`,
@@ -418,12 +458,13 @@
       updatedAt: now
     };
     await putRecord(JOB_STORE, job);
+    activeJobCache = job;
     return safeJob(job);
   }
 
   async function writeAssetChunk(payload) {
     const vault = await requireWritableVault();
-    const job = await getRecord(JOB_STORE, String(payload.jobId || ""));
+    const job = await getActiveJob(payload.jobId);
     if (!job || job.status !== "writing") throw new Error("Obsidian job is not active.");
     const asset = payload.asset && typeof payload.asset === "object" ? payload.asset : {};
     const assetId = String(asset.id || "");
@@ -458,7 +499,7 @@
 
   async function completeAsset(payload) {
     const vault = await requireWritableVault();
-    const job = await getRecord(JOB_STORE, String(payload.jobId || ""));
+    const job = await getActiveJob(payload.jobId);
     if (!job || job.status !== "writing") throw new Error("Obsidian job is not active.");
     const assetId = String(payload.assetId || "");
     const asset = job.assets[assetId];
@@ -476,7 +517,7 @@
 
   async function finalizeJob(payload) {
     const vault = await requireWritableVault();
-    const job = await getRecord(JOB_STORE, String(payload.jobId || ""));
+    const job = await getActiveJob(payload.jobId);
     if (!job || job.status !== "writing") throw new Error("Obsidian job is not active.");
     const markdown = String(payload.markdown || "");
     const markdownBytes = new TextEncoder().encode(markdown);
@@ -550,6 +591,7 @@
         warningCodes: warnings.map((warning) => warning.code)
       });
       await deleteRecord(JOB_STORE, job.id);
+      invalidateJobCache();
       return result;
     } catch (error) {
       try { await target.parent.removeEntry(target.filename); } catch (ignored) {}
@@ -562,9 +604,12 @@
     const config = normalizeConfig(await storageGet(CONFIG_KEY));
     if (!record) return { connected: false, permission: "missing", directoriesValid: false, vaultDetected: false, config, activeJob: null };
     const permission = await getPermissionState(record.handle);
-    if (permission === "granted") await cleanupStaleJobs();
+    // Fire-and-forget stale job cleanup so it does not block the status
+    // response (popup has a tight timeout).
+    if (permission === "granted") cleanupStaleJobs().catch(() => {});
     let directoriesValid = false;
     let vaultDetected = false;
+    let directoriesConfigured = Boolean(config.configured);
     if (permission === "granted") {
       vaultDetected = await detectObsidianVault(record.handle);
     }
@@ -584,6 +629,7 @@
       connected: true,
       permission,
       directoriesValid,
+      directoriesConfigured,
       vaultDetected,
       vaultName: String(record.handle.name || "Obsidian Vault").slice(0, 200),
       config,

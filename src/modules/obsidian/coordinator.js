@@ -230,7 +230,7 @@ export async function syncConversationToObsidian(input = {}) {
         const prepared = await prepareObsidianImage(image, { signal, fetchImageBytes: input.fetchImageBytes });
         const filename = `${String(index + 1).padStart(3, "0")}-${prepared.sha256.slice(0, 8)}.${prepared.extension}`;
         const assetPath = `${paths.assetsDirectory}/${filename}`;
-        for (const chunk of encodeAssetChunks(prepared.bytes)) {
+        for await (const chunk of encodeAssetChunks(prepared.bytes)) {
           throwIfAborted(signal);
           await runtimeMessage({
             type: "CHATVAULT_OBSIDIAN_WRITE_ASSET_CHUNK",

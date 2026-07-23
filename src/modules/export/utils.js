@@ -265,6 +265,7 @@ export function isGeminiUINoiseText(text, element) {
 
   if (/^Draft\s*\d+$/i.test(trimmed)) return true;
   if (/^Show\s+\d+\s+drafts?$/i.test(trimmed)) return true;
+  if (/^(?:生成中|正在生成|Generating|Creating)(?:\.{3}|…)?$/i.test(trimmed)) return true;
 
   if (/^(Hello|Hi|Hey),?\s+(I'm Gemini|how can I help)/i.test(trimmed)) return true;
 
@@ -284,6 +285,9 @@ export async function ensureAllGeminiMessagesLoaded(options) {
   var platform = detectPlatform();
   if (platform !== PLATFORM_GEMINI) return;
 
+  var signal = options && options.signal;
+  if (signal && signal.aborted) return;
+
   var scroller = document.querySelector(
     'infinite-scroller, .conversation-container, mat-sidenav-content, [role="main"], main'
   );
@@ -294,6 +298,8 @@ export async function ensureAllGeminiMessagesLoaded(options) {
   var maxAttempts = 60;
 
   for (var attempt = 0; attempt < maxAttempts; attempt++) {
+    if (signal && signal.aborted) return;
+
     var progress = Math.round(((attempt + 1) / maxAttempts) * 100);
     if (options && typeof notifyProgress === "function") {
       notifyProgress(options, "Loading Gemini messages: " + (attempt + 1) + "/" + maxAttempts, progress);
@@ -301,6 +307,8 @@ export async function ensureAllGeminiMessagesLoaded(options) {
 
     scroller.scrollTop = 0;
     await new Promise(function (resolve) { setTimeout(resolve, 300); });
+
+    if (signal && signal.aborted) return;
 
     if (scroller.scrollHeight === previousHeight) {
       stableCount++;
@@ -1560,7 +1568,7 @@ export function isGoogleAccountAvatarUrl(src) {
 export function isGoogleNonConversationImageUrl(src) {
   var value = String(src || "").toLowerCase();
   return isGoogleAccountAvatarUrl(value) ||
-    /(?:favicon|immersive_entry_chip|entry_chip|logo|sprite|emoji)/i.test(value);
+    /(?:favicon|immersive_?entry_?chip|entry_?chip|logo|sprite|emoji)/i.test(value);
 }
 
 export function isTrustedConversationImageSrc(src) {
@@ -1801,6 +1809,7 @@ export function isGeminiImagePlaceholderText(text) {
   if (!text) return false;
   var trimmed = String(text).trim();
   if (/googleusercontent\.com\/image_generation_content/i.test(trimmed)) return true;
+  if (/^https?:\/\/[^\s]*googleusercontent\.com\/immersive_?entry_?chip\/\d+/i.test(trimmed)) return true;
   if (GEMINI_MIME_TYPE_RE.test(trimmed)) return true;
   if (GEMINI_BASE64_BLOB_RE.test(trimmed)) return true;
   if (GEMINI_IMAGE_FILENAME_RE.test(trimmed)) return true;
@@ -2119,6 +2128,26 @@ function hasInlineMathSegment(segments) {
   });
 }
 
+// sanitizeExportText 在 ctx.fillText/measureText 热路径上被反复调用，
+// 同一字符串（如 footer 拼接、code language）会被多次 sanitize。
+// 用 LRU Map 缓存结果：相同输入只跑一次正则管道，命中缓存直接返回。
+// 容量 2000 条覆盖典型长会话的唯一 token 数；超出后删最旧条目避免内存膨胀。
+var _SANITIZE_CACHE_MAX = 2000;
+var _sanitizeCache = new Map();
+function sanitizeCached(text) {
+  if (typeof text !== "string" || text.length === 0) return text;
+  var cached = _sanitizeCache.get(text);
+  if (cached !== undefined) return cached;
+  var cleaned = sanitizeExportText(text);
+  if (_sanitizeCache.size >= _SANITIZE_CACHE_MAX) {
+    // Map 迭代按插入顺序，删第一个即最旧条目（简易 LRU）。
+    var firstKey = _sanitizeCache.keys().next().value;
+    _sanitizeCache.delete(firstKey);
+  }
+  _sanitizeCache.set(text, cleaned);
+  return cleaned;
+}
+
 export function createCanvas(width, height, scale) {
   var canvas = document.createElement("canvas");
   canvas.width = Math.round(width * scale);
@@ -2127,7 +2156,7 @@ export function createCanvas(width, height, scale) {
   var nativeFillText = ctx.fillText.bind(ctx);
   var nativeMeasureText = ctx.measureText.bind(ctx);
   ctx.fillText = function (text, x, y, maxWidth) {
-    var cleaned = sanitizeExportText(text);
+    var cleaned = sanitizeCached(text);
     var rx = Math.round(x);
     var ry = Math.round(y);
     return typeof maxWidth === "number"
@@ -2135,7 +2164,7 @@ export function createCanvas(width, height, scale) {
       : nativeFillText(cleaned, rx, ry);
   };
   ctx.measureText = function (text) {
-    return nativeMeasureText(sanitizeExportText(text));
+    return nativeMeasureText(sanitizeCached(text));
   };
   ctx.scale(scale, scale);
   ctx.imageSmoothingEnabled = true;
@@ -2500,6 +2529,9 @@ export function wrapRichText(ctx, text, maxWidth, baseFont, DESIGN_fonts) {
   var fonts = getFontsForStyle(baseFont, DESIGN_fonts);
   var lines = [];
   var currentLine = { chunks: [] };
+  // 增量维护当前行已用宽度，避免每个 token 都遍历 currentLine.chunks 重测（O(n²) → O(n)）。
+  // 每个 chunk 上挂 _w 缓存其测量宽度；标点避头尾分支会重新计算受影响 chunk 的宽度。
+  var currentLineWidth = 0;
 
   function getFont(chunk) {
     if (chunk.bold) return fonts.bold;
@@ -2508,12 +2540,18 @@ export function wrapRichText(ctx, text, maxWidth, baseFont, DESIGN_fonts) {
     return fonts.normal;
   }
 
+  function measureChunkWidth(chunk) {
+    ctx.font = getFont(chunk);
+    return ctx.measureText(chunk.text).width;
+  }
+
   var paragraphs = String(text == null ? "" : text).split("\n");
   paragraphs.forEach(function (paragraph, pIndex) {
     if (pIndex > 0) {
       if (currentLine.chunks.length > 0) {
         lines.push(currentLine);
         currentLine = { chunks: [] };
+        currentLineWidth = 0;
       }
       if (!paragraph.trim()) {
         lines.push({ chunks: [{ text: "", normal: true }] });
@@ -2537,12 +2575,6 @@ export function wrapRichText(ctx, text, maxWidth, baseFont, DESIGN_fonts) {
       }
 
       tokens.forEach(function (token) {
-        var currentLineWidth = 0;
-        currentLine.chunks.forEach(function (c) {
-          ctx.font = getFont(c);
-          currentLineWidth += ctx.measureText(c.text).width;
-        });
-
         ctx.font = font;
         var tokenWidth = ctx.measureText(token).width;
 
@@ -2553,18 +2585,28 @@ export function wrapRichText(ctx, text, maxWidth, baseFont, DESIGN_fonts) {
             if (lastChunk && lastChunk.text.length > 0) {
               var lastChar = lastChunk.text.slice(-1);
               lastChunk.text = lastChunk.text.slice(0, -1);
+              // 重新测量缩短后的 lastChunk；若变空则从行宽中扣除其原始宽度。
               if (lastChunk.text.length === 0) {
+                currentLineWidth -= lastChunk._w || 0;
                 currentLine.chunks.pop();
+              } else {
+                var newLastW = measureChunkWidth(lastChunk);
+                currentLineWidth += newLastW - (lastChunk._w || 0);
+                lastChunk._w = newLastW;
               }
               lines.push(currentLine);
               currentLine = { chunks: [] };
-              currentLine.chunks.push({
+              currentLineWidth = 0;
+              var wrappedChunk = {
                 text: lastChar + token,
                 bold: chunk.bold,
                 italic: chunk.italic,
                 code: chunk.code,
                 href: chunk.href
-              });
+              };
+              wrappedChunk._w = measureChunkWidth(wrappedChunk);
+              currentLine.chunks.push(wrappedChunk);
+              currentLineWidth = wrappedChunk._w;
               return;
             }
           }
@@ -2593,13 +2635,16 @@ export function wrapRichText(ctx, text, maxWidth, baseFont, DESIGN_fonts) {
             // Guard: ensure we always advance at least 1 char to prevent infinite loop
             var safeBest = Math.max(1, best);
             var subPart = currentText.substring(0, safeBest);
-            currentLine.chunks.push({
+            var subChunk = {
               text: subPart,
               bold: chunk.bold,
               italic: chunk.italic,
               code: chunk.code,
               href: chunk.href
-            });
+            };
+            subChunk._w = measureChunkWidth(subChunk);
+            currentLine.chunks.push(subChunk);
+            currentLineWidth += subChunk._w;
             lines.push(currentLine);
             currentLine = { chunks: [] };
             currentLineWidth = 0;
@@ -2610,14 +2655,19 @@ export function wrapRichText(ctx, text, maxWidth, baseFont, DESIGN_fonts) {
           if (lastChunk && lastChunk.bold === chunk.bold && lastChunk.italic === chunk.italic &&
               lastChunk.code === chunk.code && lastChunk.href === chunk.href) {
             lastChunk.text += token;
+            lastChunk._w = (lastChunk._w || 0) + tokenWidth;
+            currentLineWidth += tokenWidth;
           } else {
-            currentLine.chunks.push({
+            var newChunk = {
               text: token,
               bold: chunk.bold,
               italic: chunk.italic,
               code: chunk.code,
               href: chunk.href
-            });
+            };
+            newChunk._w = tokenWidth;
+            currentLine.chunks.push(newChunk);
+            currentLineWidth += tokenWidth;
           }
         }
       });

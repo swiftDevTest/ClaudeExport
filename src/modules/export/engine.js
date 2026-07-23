@@ -20,7 +20,7 @@ export async function createExportBlob(request) {
   }
 
   if (detectPlatform() === PLATFORM_GEMINI && !(request && Array.isArray(request.messages))) {
-    await ensureAllGeminiMessagesLoaded(request);
+    await ensureAllGeminiMessagesLoaded({ ...request, signal: request && request.signal });
   }
 
   var resolved = resolveMessages(request || {});
@@ -121,7 +121,7 @@ export async function startExport(request) {
 
 export async function renderImagePreview(request) {
   if (detectPlatform() === PLATFORM_GEMINI && !(request && Array.isArray(request.messages))) {
-    await ensureAllGeminiMessagesLoaded(request);
+    await ensureAllGeminiMessagesLoaded({ ...request, signal: request && request.signal });
   }
   var resolved = resolveMessages(request || {});
   if (!resolved.ok) return resolved;

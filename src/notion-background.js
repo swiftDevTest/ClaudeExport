@@ -1573,7 +1573,8 @@
       output.push({ id: manual.connectionId, workspace_name: "Manual integration", mode: "manual", data_source_id: manual.dataSourceId });
     }
     try {
-      const payload = await callEdgeFunction("notion-connection-token", { method: "GET" });
+      const productSlug = (globalThis.CHATVAULT_ENV && globalThis.CHATVAULT_ENV.PRODUCT_SLUG) || "claude-export";
+      const payload = await callEdgeFunction(`notion-connection-token?product_slug=${encodeURIComponent(productSlug)}`, { method: "GET" });
       (payload.connections || []).forEach((connection) => output.push({ ...connection, mode: "oauth" }));
     } catch (error) {
       if (!output.length && error.status !== 401) throw error;
@@ -1688,8 +1689,9 @@
     const verifierBytes = crypto.getRandomValues(new Uint8Array(32));
     const flowVerifier = Array.from(verifierBytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
     const flowChallenge = await sha256Text(flowVerifier);
+    const productSlug = (globalThis.CHATVAULT_ENV && globalThis.CHATVAULT_ENV.PRODUCT_SLUG) || "claude-export";
     const started = await callEdgeFunction("notion-oauth-start", {
-      body: { final_redirect_uri: finalRedirectUri, flow_challenge: flowChallenge }
+      body: { final_redirect_uri: finalRedirectUri, flow_challenge: flowChallenge, product_slug: productSlug }
     });
     if (!started.authorization_url) throw new Error("Notion OAuth start did not return an authorization URL.");
     const finalUrl = await new Promise((resolve, reject) => {
