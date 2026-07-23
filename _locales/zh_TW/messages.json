@@ -108,7 +108,7 @@
     "message": "解鎖更高本機匯出額度、專業主題、批次流程和 PDF、Docs、MD 等輸出。"
   },
   "billing_footnote": {
-    "message": "匯出是在您選擇的頁面中本地端產生的。結帳頁面將在 tabpilotpro.com 開啟，並由安全的支付處理器處理。ChatVault 僅儲存標題、連結、資料夾和書籤。對話內容不會被儲存。"
+    "message": "匯出是在您選擇的頁面中本地端產生的。結帳頁面將在 tabpilotpro.com 開啟，並由安全的支付處理器處理。Claude Export 僅儲存標題、連結、資料夾和書籤。對話內容不會被儲存。"
   },
   "billing_btn_restore": {
     "message": "還原購買"
@@ -141,7 +141,7 @@
     "message": "提問靠右對齊"
   },
   "export_privacy": {
-    "message": "在您的瀏覽器中本地端產生。ChatVault 不會上傳、儲存或記錄匯出的訊息內容。"
+    "message": "在您的瀏覽器中本地端產生。Claude Export 不會上傳、儲存或記錄匯出的訊息內容。"
   },
   "export_run_save": {
     "message": "儲存設定"
@@ -255,7 +255,7 @@
     "message": "登入以繼續"
   },
   "onboard_text_login_collapsed": {
-    "message": "在匯出、加入書籤或整理對話之前，請開啟 ChatVault 并登入。"
+    "message": "在匯出、加入書籤或整理對話之前，請開啟 Claude Export 并登入。"
   },
   "onboard_step_account": {
     "message": "帳戶設定"
@@ -582,16 +582,16 @@
     "message": "$1 個對話"
   },
   "dialog_delete_folder_and_chats": {
-    "message": "從 ChatVault 中刪除 $1 並移除 $2？原始來源對話不會被刪除。"
+    "message": "從 Claude Export 中刪除 $1 並移除 $2？原始來源對話不會被刪除。"
   },
   "dialog_delete_folder_with_chats": {
-    "message": "從 ChatVault 中刪除 $1 並移除 $2？原始來源對話不會被刪除。"
+    "message": "從 Claude Export 中刪除 $1 並移除 $2？原始來源對話不會被刪除。"
   },
   "dialog_delete_folders_with_chats": {
-    "message": "從 ChatVault 中刪除 $1 個資料夾並移除 $2？原始來源對話不會被刪除。"
+    "message": "從 Claude Export 中刪除 $1 個資料夾並移除 $2？原始來源對話不會被刪除。"
   },
   "dialog_delete_folder_desc": {
-    "message": "從 ChatVault 中刪除 $1？原始來源對話不會被刪除。"
+    "message": "從 Claude Export 中刪除 $1？原始來源對話不會被刪除。"
   },
   "backup_reason_folder_deleted": {
     "message": "資料夾已刪除"
@@ -678,10 +678,10 @@
     "message": "對話匯出失敗。"
   },
   "dialog_remove_bookmark": {
-    "message": "從 ChatVault 中移除此書籤？"
+    "message": "從 Claude Export 中移除此書籤？"
   },
   "dialog_delete_history": {
-    "message": "從 ChatVault 中刪除此歷史紀錄項？"
+    "message": "從 Claude Export 中刪除此歷史紀錄項？"
   },
   "toast_signin_export_folders": {
     "message": "登入以匯出資料夾。"
@@ -777,7 +777,7 @@
     "message": "$1 結帳頁面正在新分頁中開啟。"
   },
   "checkout_keep_open": {
-    "message": "請保持此分頁開啟，以便 ChatVault 能在付款後重新整理您的方案。"
+    "message": "請保持此分頁開啟，以便 Claude Export 能在付款後重新整理您的方案。"
   },
   "toast_allow_popups": {
     "message": "允許彈出式視窗以開啟安全結帳。"
@@ -792,7 +792,7 @@
     "message": "$1 結帳已開啟。Pro 狀態將在付款後自動更新。如果沒有重新整理，請重新整理此瀏覽器分頁。"
   },
   "toast_refreshing_session": {
-    "message": "正在重新整理您的 ChatVault 工作階段。請重試。"
+    "message": "正在重新整理您的 Claude Export 工作階段。請重試。"
   },
   "toast_purchase_restored": {
     "message": "Pro 購買已還原。"
@@ -846,7 +846,7 @@
     "message": "刪除 $1"
   },
   "dialog_delete_folder_with_subfolders": {
-    "message": "從 ChatVault 中刪除此資料夾及其子資料夾？原始來源對話不會被刪除。"
+    "message": "從 Claude Export 中刪除此資料夾及其子資料夾？原始來源對話不會被刪除。"
   },
   "folders_add_current_failed": {
     "message": "新增目前對話失敗。"
@@ -981,7 +981,7 @@
     "message": "備份檔案为空。"
   },
   "backup_invalid_product": {
-    "message": "這看起來不像是一個 ChatVault 備份檔案。"
+    "message": "這看起來不像是一個 Claude Export 備份檔案。"
   },
   "backup_invalid_missing": {
     "message": "備份檔案缺少必要的資料。"
@@ -1017,7 +1017,7 @@
     "message": "還原後的備份"
   },
   "aria_collapse_chatvault": {
-    "message": "折疊 ChatVault"
+    "message": "折疊 Claude Export"
   },
   "selected_zero": {
     "message": "0 已選擇"
@@ -1038,7 +1038,7 @@
     "message": "已索引的對話歷史紀錄"
   },
   "aria_expand_sidebar": {
-    "message": "展開 ChatVault 側邊欄"
+    "message": "展開 Claude Export 側邊欄"
   },
   "aria_open_export_actions": {
     "message": "開啟匯出操作"
@@ -1092,7 +1092,7 @@
     "message": "登入後可同步資料夾，並在更換裝置後繼續使用。"
   },
   "merge_dialog_title": {
-    "message": "同步本機 ChatVault 資料？"
+    "message": "同步本機 Claude Export 資料？"
   },
   "merge_dialog_desc": {
     "message": "偵測到此瀏覽器中有本機資料夾、書籤與標題記錄。你可以合併到目前帳號，也可以不合併並刪除本機副本。"
@@ -1125,7 +1125,7 @@
     "message": "正在刪除本機副本..."
   },
   "merge_status_merging": {
-    "message": "正在合併本機 ChatVault 資料..."
+    "message": "正在合併本機 Claude Export 資料..."
   },
   "merge_success": {
     "message": "本機資料已合併到帳號。"

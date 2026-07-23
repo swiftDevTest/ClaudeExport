@@ -108,7 +108,7 @@
     "message": "Débloquez plus d'exports locaux, des thèmes soignés, les lots et la sortie PDF, Docs, MD et plus."
   },
   "billing_footnote": {
-    "message": "Les exportations sont générées localement depuis la page choisie. Le paiement s'effectue sur tabpilotpro.com et est traité par un fournisseur de paiement sécurisé. ChatVault enregistre uniquement les titres, liens, dossiers et favoris. Le contenu de la discussion n'est pas enregistré."
+    "message": "Les exportations sont générées localement depuis la page choisie. Le paiement s'effectue sur tabpilotpro.com et est traité par un fournisseur de paiement sécurisé. Claude Export enregistre uniquement les titres, liens, dossiers et favoris. Le contenu de la discussion n'est pas enregistré."
   },
   "billing_btn_restore": {
     "message": "Restaurer l'achat"
@@ -141,7 +141,7 @@
     "message": "Aligner mes questions à droite"
   },
   "export_privacy": {
-    "message": "Généré localement dans votre navigateur. ChatVault ne télécharge, ne stocke et ne mémorise aucun contenu de message exporté."
+    "message": "Généré localement dans votre navigateur. Claude Export ne télécharge, ne stocke et ne mémorise aucun contenu de message exporté."
   },
   "export_run_save": {
     "message": "Enregistrer les paramètres"
@@ -255,7 +255,7 @@
     "message": "Connectez-vous pour continuer"
   },
   "onboard_text_login_collapsed": {
-    "message": "Ouvrez ChatVault et connectez-vous avant d'exporter, de mettre en favoris ou d'organiser des discussions."
+    "message": "Ouvrez Claude Export et connectez-vous avant d'exporter, de mettre en favoris ou d'organiser des discussions."
   },
   "onboard_step_account": {
     "message": "Configuration du compte"
@@ -582,16 +582,16 @@
     "message": "$1 discussions"
   },
   "dialog_delete_folder_and_chats": {
-    "message": "Supprimer $1 et retirer $2 de ChatVault ? Les chats sources d’origine ne sont pas supprimés."
+    "message": "Supprimer $1 et retirer $2 de Claude Export ? Les chats sources d’origine ne sont pas supprimés."
   },
   "dialog_delete_folder_with_chats": {
-    "message": "Supprimer $1 et retirer $2 de ChatVault ? Les chats sources d’origine ne sont pas supprimés."
+    "message": "Supprimer $1 et retirer $2 de Claude Export ? Les chats sources d’origine ne sont pas supprimés."
   },
   "dialog_delete_folders_with_chats": {
-    "message": "Supprimer $1 dossiers et retirer $2 de ChatVault ? Les chats sources d’origine ne sont pas supprimés."
+    "message": "Supprimer $1 dossiers et retirer $2 de Claude Export ? Les chats sources d’origine ne sont pas supprimés."
   },
   "dialog_delete_folder_desc": {
-    "message": "Supprimer $1 de ChatVault ? Les chats sources d’origine ne sont pas supprimés."
+    "message": "Supprimer $1 de Claude Export ? Les chats sources d’origine ne sont pas supprimés."
   },
   "backup_reason_folder_deleted": {
     "message": "Dossier supprimé"
@@ -678,10 +678,10 @@
     "message": "Échec de l’export de la conversation."
   },
   "dialog_remove_bookmark": {
-    "message": "Retirer ce favori de ChatVault ?"
+    "message": "Retirer ce favori de Claude Export ?"
   },
   "dialog_delete_history": {
-    "message": "Supprimer cet élément d’historique de ChatVault ?"
+    "message": "Supprimer cet élément d’historique de Claude Export ?"
   },
   "toast_signin_export_folders": {
     "message": "Connectez-vous pour exporter des dossiers."
@@ -777,7 +777,7 @@
     "message": "Le paiement $1 s’ouvre dans un nouvel onglet."
   },
   "checkout_keep_open": {
-    "message": "Gardez cet onglet ouvert pour que ChatVault actualise votre forfait après le paiement."
+    "message": "Gardez cet onglet ouvert pour que Claude Export actualise votre forfait après le paiement."
   },
   "toast_allow_popups": {
     "message": "Autorisez les pop-ups pour ouvrir le paiement sécurisé."
@@ -792,7 +792,7 @@
     "message": "Paiement $1 ouvert. Le statut Pro se met à jour automatiquement après le paiement. Sinon, actualisez cet onglet."
   },
   "toast_refreshing_session": {
-    "message": "Actualisation de votre session ChatVault. Réessayez."
+    "message": "Actualisation de votre session Claude Export. Réessayez."
   },
   "toast_purchase_restored": {
     "message": "Achat Pro restauré."
@@ -846,7 +846,7 @@
     "message": "Supprimer $1"
   },
   "dialog_delete_folder_with_subfolders": {
-    "message": "Supprimer ce dossier et ses sous-dossiers de ChatVault ? Les chats sources d’origine ne sont pas supprimés."
+    "message": "Supprimer ce dossier et ses sous-dossiers de Claude Export ? Les chats sources d’origine ne sont pas supprimés."
   },
   "folders_add_current_failed": {
     "message": "Impossible d’ajouter le chat actuel."
@@ -981,7 +981,7 @@
     "message": "Le fichier de sauvegarde est vide."
   },
   "backup_invalid_product": {
-    "message": "Ce fichier ne ressemble pas à une sauvegarde ChatVault."
+    "message": "Ce fichier ne ressemble pas à une sauvegarde Claude Export."
   },
   "backup_invalid_missing": {
     "message": "Il manque des données requises dans le fichier de sauvegarde."
@@ -1017,7 +1017,7 @@
     "message": "Sauvegarde après restauration"
   },
   "aria_collapse_chatvault": {
-    "message": "Réduire ChatVault"
+    "message": "Réduire Claude Export"
   },
   "selected_zero": {
     "message": "0 sélectionné"
@@ -1038,7 +1038,7 @@
     "message": "Historique de chat indexé"
   },
   "aria_expand_sidebar": {
-    "message": "Développer la barre latérale ChatVault"
+    "message": "Développer la barre latérale Claude Export"
   },
   "aria_open_export_actions": {
     "message": "Ouvrir les actions d’export"
@@ -1092,7 +1092,7 @@
     "message": "Connectez-vous pour synchroniser vos dossiers et les retrouver sur vos autres appareils."
   },
   "merge_dialog_title": {
-    "message": "Synchroniser les donnees ChatVault locales ?"
+    "message": "Synchroniser les donnees Claude Export locales ?"
   },
   "merge_dialog_desc": {
     "message": "Nous avons trouve des dossiers, favoris et titres locaux dans ce navigateur. Fusionnez-les avec votre compte connecte, ou supprimez la copie locale pour partir des donnees du compte."
@@ -1125,7 +1125,7 @@
     "message": "Suppression de la copie locale..."
   },
   "merge_status_merging": {
-    "message": "Fusion des donnees ChatVault locales..."
+    "message": "Fusion des donnees Claude Export locales..."
   },
   "merge_success": {
     "message": "Les donnees locales ont ete fusionnees avec votre compte."

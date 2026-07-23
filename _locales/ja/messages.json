@@ -108,7 +108,7 @@
     "message": "ローカル書き出し上限、整ったテーマ、一括ワークフロー、PDF、Docs、MD などの出力を利用できます。"
   },
   "billing_footnote": {
-    "message": "エクスポートは選択したページからローカルで生成されます。チェックアウトはtabpilotpro.comで開き、安全な決済プロバイダーによって処理されます。ChatVaultはタイトル、リンク、フォルダ、ブックマークのみを保存します。チャット本文は保存されません。"
+    "message": "エクスポートは選択したページからローカルで生成されます。チェックアウトはtabpilotpro.comで開き、安全な決済プロバイダーによって処理されます。Claude Exportはタイトル、リンク、フォルダ、ブックマークのみを保存します。チャット本文は保存されません。"
   },
   "billing_btn_restore": {
     "message": "購入を復元"
@@ -141,7 +141,7 @@
     "message": "自分の質問を右揃え"
   },
   "export_privacy": {
-    "message": "ブラウザ内でローカルに生成されます。ChatVaultがエクスポートされたメッセージ内容をアップロード、保存、または記憶することはありません。"
+    "message": "ブラウザ内でローカルに生成されます。Claude Exportがエクスポートされたメッセージ内容をアップロード、保存、または記憶することはありません。"
   },
   "export_run_save": {
     "message": "設定を保存"
@@ -255,7 +255,7 @@
     "message": "サインインして続行"
   },
   "onboard_text_login_collapsed": {
-    "message": "チャットのエクスポート、ブックマーク、整理を行う前に、ChatVaultを開いてサインインしてください。"
+    "message": "チャットのエクスポート、ブックマーク、整理を行う前に、Claude Exportを開いてサインインしてください。"
   },
   "onboard_step_account": {
     "message": "アカウント設定"
@@ -582,16 +582,16 @@
     "message": "$1 件のチャット"
   },
   "dialog_delete_folder_and_chats": {
-    "message": "$1 を削除し、$2 をChatVaultから外しますか？元のチャットは削除されません。"
+    "message": "$1 を削除し、$2 をClaude Exportから外しますか？元のチャットは削除されません。"
   },
   "dialog_delete_folder_with_chats": {
-    "message": "$1 を削除し、$2 をChatVaultから外しますか？元のチャットは削除されません。"
+    "message": "$1 を削除し、$2 をClaude Exportから外しますか？元のチャットは削除されません。"
   },
   "dialog_delete_folders_with_chats": {
-    "message": "$1 個のフォルダを削除し、$2 をChatVaultから外しますか？元のチャットは削除されません。"
+    "message": "$1 個のフォルダを削除し、$2 をClaude Exportから外しますか？元のチャットは削除されません。"
   },
   "dialog_delete_folder_desc": {
-    "message": "$1 をChatVaultから削除しますか？元のチャットは削除されません。"
+    "message": "$1 をClaude Exportから削除しますか？元のチャットは削除されません。"
   },
   "backup_reason_folder_deleted": {
     "message": "フォルダを削除"
@@ -678,10 +678,10 @@
     "message": "会話のエクスポートに失敗しました。"
   },
   "dialog_remove_bookmark": {
-    "message": "このブックマークをChatVaultから削除しますか？"
+    "message": "このブックマークをClaude Exportから削除しますか？"
   },
   "dialog_delete_history": {
-    "message": "この履歴項目をChatVaultから削除しますか？"
+    "message": "この履歴項目をClaude Exportから削除しますか？"
   },
   "toast_signin_export_folders": {
     "message": "フォルダをエクスポートするにはログインしてください。"
@@ -777,7 +777,7 @@
     "message": "$1 のチェックアウトを新しいタブで開いています。"
   },
   "checkout_keep_open": {
-    "message": "支払い後にChatVaultがプランを更新できるよう、このタブを開いたままにしてください。"
+    "message": "支払い後にClaude Exportがプランを更新できるよう、このタブを開いたままにしてください。"
   },
   "toast_allow_popups": {
     "message": "安全なチェックアウトを開くにはポップアップを許可してください。"
@@ -792,7 +792,7 @@
     "message": "$1 のチェックアウトを開きました。支払い後にPro状態は自動更新されます。更新されない場合はこのタブを再読み込みしてください。"
   },
   "toast_refreshing_session": {
-    "message": "ChatVaultセッションを更新中です。もう一度お試しください。"
+    "message": "Claude Exportセッションを更新中です。もう一度お試しください。"
   },
   "toast_purchase_restored": {
     "message": "Pro購入を復元しました。"
@@ -846,7 +846,7 @@
     "message": "$1 を削除"
   },
   "dialog_delete_folder_with_subfolders": {
-    "message": "このフォルダとサブフォルダをChatVaultから削除しますか？元のチャットは削除されません。"
+    "message": "このフォルダとサブフォルダをClaude Exportから削除しますか？元のチャットは削除されません。"
   },
   "folders_add_current_failed": {
     "message": "現在のチャットの追加に失敗しました。"
@@ -981,7 +981,7 @@
     "message": "バックアップファイルが空です。"
   },
   "backup_invalid_product": {
-    "message": "ChatVaultバックアップではないようです。"
+    "message": "Claude Exportバックアップではないようです。"
   },
   "backup_invalid_missing": {
     "message": "バックアップファイルに必要なデータがありません。"
@@ -1017,7 +1017,7 @@
     "message": "復元後のバックアップ"
   },
   "aria_collapse_chatvault": {
-    "message": "ChatVaultを折りたたむ"
+    "message": "Claude Exportを折りたたむ"
   },
   "selected_zero": {
     "message": "0 件選択中"
@@ -1038,7 +1038,7 @@
     "message": "インデックス済みチャット履歴"
   },
   "aria_expand_sidebar": {
-    "message": "ChatVaultサイドバーを展開"
+    "message": "Claude Exportサイドバーを展開"
   },
   "aria_open_export_actions": {
     "message": "エクスポート操作を開く"
@@ -1092,7 +1092,7 @@
     "message": "ログインするとフォルダーを同期し、別のデバイスでも続けて使えます。"
   },
   "merge_dialog_title": {
-    "message": "ローカルの ChatVault データを同期しますか？"
+    "message": "ローカルの Claude Export データを同期しますか？"
   },
   "merge_dialog_desc": {
     "message": "このブラウザーにローカルのフォルダー、ブックマーク、タイトル記録が見つかりました。ログイン中のアカウントに結合するか、結合せずにローカルコピーを削除できます。"
@@ -1125,7 +1125,7 @@
     "message": "ローカルコピーを削除中..."
   },
   "merge_status_merging": {
-    "message": "ローカルの ChatVault データを結合中..."
+    "message": "ローカルの Claude Export データを結合中..."
   },
   "merge_success": {
     "message": "ローカルデータをアカウントに結合しました。"

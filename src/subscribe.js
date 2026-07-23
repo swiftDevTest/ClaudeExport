@@ -6,7 +6,7 @@
   const productConfig = globalThis.CHATVAULT_PRODUCT_CONFIG || {};
   const productName = productConfig.productName || "Claude Export";
   const isolatedMembership = productConfig.isolatedMembership === true;
-  const checkoutIntentStorageKey = billing?.checkoutIntentStorageKey || "chatvault_pending_checkout_intent_v1";
+  const checkoutIntentStorageKey = billing?.checkoutIntentStorageKey || "claude_export.pending_checkout_intent.v1";
   
   let currentSession = null;
   let checkoutLoading = false;

@@ -108,7 +108,7 @@
     "message": "Schalten Sie höhere lokale Exportlimits, professionelle Designs, Batch-Workflows und PDF, Docs, MD und mehr frei."
   },
   "billing_footnote": {
-    "message": "Exporte werden lokal von der ausgewählten Seite generiert. Der Checkout wird auf tabpilotpro.com geöffnet und über einen sicheren Zahlungsanbieter abgewickelt. ChatVault speichert nur Titel, Links, Ordner und Lesezeichen. Der Chat-Inhalt wird nicht gespeichert."
+    "message": "Exporte werden lokal von der ausgewählten Seite generiert. Der Checkout wird auf tabpilotpro.com geöffnet und über einen sicheren Zahlungsanbieter abgewickelt. Claude Export speichert nur Titel, Links, Ordner und Lesezeichen. Der Chat-Inhalt wird nicht gespeichert."
   },
   "billing_btn_restore": {
     "message": "Kauf wiederherstellen"
@@ -141,7 +141,7 @@
     "message": "Meine Fragen rechts ausrichten"
   },
   "export_privacy": {
-    "message": "Lokal in Ihrem Browser generiert. ChatVault speichert oder überträgt exportierte Nachrichteninhalte nicht."
+    "message": "Lokal in Ihrem Browser generiert. Claude Export speichert oder überträgt exportierte Nachrichteninhalte nicht."
   },
   "export_run_save": {
     "message": "Einstellungen speichern"
@@ -255,7 +255,7 @@
     "message": "Anmelden, um fortzufahren"
   },
   "onboard_text_login_collapsed": {
-    "message": "Öffnen Sie ChatVault und melden Sie sich an, bevor Sie Chats exportieren, mit Lesezeichen versehen oder organisieren."
+    "message": "Öffnen Sie Claude Export und melden Sie sich an, bevor Sie Chats exportieren, mit Lesezeichen versehen oder organisieren."
   },
   "onboard_step_account": {
     "message": "Konto-Einrichtung"
@@ -582,16 +582,16 @@
     "message": "$1 Chats"
   },
   "dialog_delete_folder_and_chats": {
-    "message": "$1 löschen und $2 aus ChatVault entfernen? Ursprüngliche Quellchats werden nicht gelöscht."
+    "message": "$1 löschen und $2 aus Claude Export entfernen? Ursprüngliche Quellchats werden nicht gelöscht."
   },
   "dialog_delete_folder_with_chats": {
-    "message": "$1 löschen und $2 aus ChatVault entfernen? Ursprüngliche Quellchats werden nicht gelöscht."
+    "message": "$1 löschen und $2 aus Claude Export entfernen? Ursprüngliche Quellchats werden nicht gelöscht."
   },
   "dialog_delete_folders_with_chats": {
-    "message": "$1 Ordner löschen und $2 aus ChatVault entfernen? Ursprüngliche Quellchats werden nicht gelöscht."
+    "message": "$1 Ordner löschen und $2 aus Claude Export entfernen? Ursprüngliche Quellchats werden nicht gelöscht."
   },
   "dialog_delete_folder_desc": {
-    "message": "$1 aus ChatVault löschen? Ursprüngliche Quellchats werden nicht gelöscht."
+    "message": "$1 aus Claude Export löschen? Ursprüngliche Quellchats werden nicht gelöscht."
   },
   "backup_reason_folder_deleted": {
     "message": "Ordner gelöscht"
@@ -678,10 +678,10 @@
     "message": "Gesprächsexport fehlgeschlagen."
   },
   "dialog_remove_bookmark": {
-    "message": "Dieses Lesezeichen aus ChatVault entfernen?"
+    "message": "Dieses Lesezeichen aus Claude Export entfernen?"
   },
   "dialog_delete_history": {
-    "message": "Diesen Verlaufseintrag aus ChatVault löschen?"
+    "message": "Diesen Verlaufseintrag aus Claude Export löschen?"
   },
   "toast_signin_export_folders": {
     "message": "Anmelden, um Ordner zu exportieren."
@@ -777,7 +777,7 @@
     "message": "$1-Checkout wird in einem neuen Tab geöffnet."
   },
   "checkout_keep_open": {
-    "message": "Lasse diesen Tab offen, damit ChatVault deinen Plan nach der Zahlung aktualisieren kann."
+    "message": "Lasse diesen Tab offen, damit Claude Export deinen Plan nach der Zahlung aktualisieren kann."
   },
   "toast_allow_popups": {
     "message": "Erlaube Pop-ups, um den sicheren Checkout zu öffnen."
@@ -792,7 +792,7 @@
     "message": "$1-Checkout geöffnet. Pro-Status wird nach der Zahlung automatisch aktualisiert. Falls nicht, lade diesen Tab neu."
   },
   "toast_refreshing_session": {
-    "message": "ChatVault-Sitzung wird aktualisiert. Bitte erneut versuchen."
+    "message": "Claude Export-Sitzung wird aktualisiert. Bitte erneut versuchen."
   },
   "toast_purchase_restored": {
     "message": "Pro-Kauf wiederhergestellt."
@@ -846,7 +846,7 @@
     "message": "$1 löschen"
   },
   "dialog_delete_folder_with_subfolders": {
-    "message": "Diesen Ordner und seine Unterordner aus ChatVault löschen? Ursprüngliche Quellchats werden nicht gelöscht."
+    "message": "Diesen Ordner und seine Unterordner aus Claude Export löschen? Ursprüngliche Quellchats werden nicht gelöscht."
   },
   "folders_add_current_failed": {
     "message": "Aktueller Chat konnte nicht hinzugefügt werden."
@@ -981,7 +981,7 @@
     "message": "Backup-Datei ist leer."
   },
   "backup_invalid_product": {
-    "message": "Dies sieht nicht wie ein ChatVault-Backup aus."
+    "message": "Dies sieht nicht wie ein Claude Export-Backup aus."
   },
   "backup_invalid_missing": {
     "message": "In der Backup-Datei fehlen erforderliche Daten."
@@ -1017,7 +1017,7 @@
     "message": "Backup nach Wiederherstellung"
   },
   "aria_collapse_chatvault": {
-    "message": "ChatVault einklappen"
+    "message": "Claude Export einklappen"
   },
   "selected_zero": {
     "message": "0 ausgewählt"
@@ -1038,7 +1038,7 @@
     "message": "Indizierter Chatverlauf"
   },
   "aria_expand_sidebar": {
-    "message": "ChatVault-Seitenleiste aufklappen"
+    "message": "Claude Export-Seitenleiste aufklappen"
   },
   "aria_open_export_actions": {
     "message": "Exportaktionen öffnen"
@@ -1092,7 +1092,7 @@
     "message": "Melde dich an, um deine Ordner zu synchronisieren und auf anderen Geraeten weiter zu nutzen."
   },
   "merge_dialog_title": {
-    "message": "Lokale ChatVault-Daten synchronisieren?"
+    "message": "Lokale Claude Export-Daten synchronisieren?"
   },
   "merge_dialog_desc": {
     "message": "In diesem Browser wurden lokale Ordner, Lesezeichen und Titelaufzeichnungen gefunden. Du kannst sie mit deinem angemeldeten Konto zusammenfuehren oder die lokale Kopie loeschen."
@@ -1125,7 +1125,7 @@
     "message": "Lokale Kopie wird geloescht..."
   },
   "merge_status_merging": {
-    "message": "Lokale ChatVault-Daten werden zusammengefuehrt..."
+    "message": "Lokale Claude Export-Daten werden zusammengefuehrt..."
   },
   "merge_success": {
     "message": "Lokale Daten wurden mit deinem Konto zusammengefuehrt."

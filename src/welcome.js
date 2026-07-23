@@ -1,7 +1,12 @@
 (function initChatVaultWelcomePage() {
   "use strict";
 
-  const ONBOARDING_STATE_KEY = "chatvault.exporter.onboarding.v1";
+  // Fix H10: use product-config storageKey to ensure namespace consistency with background.js.
+  const productConfig = globalThis.CHATVAULT_PRODUCT_CONFIG || {};
+  const storageKey = typeof productConfig.storageKey === "function"
+    ? productConfig.storageKey
+    : (name) => `chatvault_exporter.${name}`;
+  const ONBOARDING_STATE_KEY = storageKey("onboarding.v1");
   const PLATFORM_URLS = {
     chatgpt: "https://chatgpt.com/",
     claude: "https://claude.ai/",

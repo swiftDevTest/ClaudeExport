@@ -104,26 +104,30 @@ Deno.serve(async (request) => {
       `product_payment_subscriptions?user_id=eq.${encodeURIComponent(user.id)}&product_slug=eq.${encodeURIComponent(productSlug)}&select=*&order=updated_at.desc`
     );
     const activeSubscription = (subscriptions || []).find(isActiveSubscription) || null;
-    const paidLifetimeTransaction = activeSubscription ? null : await getLatestPaidLifetimeTransactionForUser(user.id, profile, productSlug);
-    const lifetimeAccess = Boolean(profile.lifetime_access) || Boolean(paidLifetimeTransaction);
+    // Fix H4: always check paid lifetime transaction to detect refunds.
+    // Previously skipped when activeSubscription existed, and trusted profile.lifetime_access
+    // which could be stale after a refund. Now derives lifetimeAccess from actual transaction state.
+    const paidLifetimeTransaction = await getLatestPaidLifetimeTransactionForUser(user.id, profile, productSlug);
+    const lifetimeAccess = Boolean(paidLifetimeTransaction);
     const nextPlan = lifetimeAccess || activeSubscription ? "pro" : "free";
 
     const updatedProfile = await updateProfile(user.id, {
       email: user.email || profile.email || null,
       plan: nextPlan,
       product_slug: productSlug,
+      // Fix H4: always set lifetime_access explicitly so refunded lifetime is revoked
+      // even when user has an active subscription.
+      lifetime_access: lifetimeAccess,
       ...(!activeSubscription && !lifetimeAccess ? {
-        current_period_end: null,
-        lifetime_access: false
+        current_period_end: null
       } : {}),
       ...(paidLifetimeTransaction ? {
         paddle_customer_id: paidLifetimeTransaction.paddle_customer_id,
         paddle_subscription_id: paidLifetimeTransaction.paddle_subscription_id || profile.paddle_subscription_id || null,
         paddle_transaction_id: paidLifetimeTransaction.paddle_transaction_id,
         paddle_price_id: paidLifetimeTransaction.paddle_price_id,
-        billing_interval: paidLifetimeTransaction.billing_interval,
-        lifetime_access: lifetimeAccess
-      } : lifetimeAccess ? { lifetime_access: true } : {}),
+        billing_interval: paidLifetimeTransaction.billing_interval
+      } : {}),
       ...(activeSubscription ? {
         paddle_subscription_id: activeSubscription.paddle_subscription_id,
         paddle_customer_id: activeSubscription.paddle_customer_id,

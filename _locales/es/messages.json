@@ -108,7 +108,7 @@
     "message": "Desbloquea más exportaciones locales, temas pulidos, lotes y salida PDF, Docs, MD y más."
   },
   "billing_footnote": {
-    "message": "Las exportaciones se generan localmente desde la página que elijas. El pago se abre en tabpilotpro.com y se procesa mediante un proveedor de pago seguro. ChatVault solo almacena títulos, enlaces, carpetas y marcadores. El contenido del chat no se guarda."
+    "message": "Las exportaciones se generan localmente desde la página que elijas. El pago se abre en tabpilotpro.com y se procesa mediante un proveedor de pago seguro. Claude Export solo almacena títulos, enlaces, carpetas y marcadores. El contenido del chat no se guarda."
   },
   "billing_btn_restore": {
     "message": "Restaurar compra"
@@ -141,7 +141,7 @@
     "message": "Alinear mis preguntas a la derecha"
   },
   "export_privacy": {
-    "message": "Generado localmente en tu navegador. ChatVault no sube, almacena ni recuerda el contenido de los mensajes exportados."
+    "message": "Generado localmente en tu navegador. Claude Export no sube, almacena ni recuerda el contenido de los mensajes exportados."
   },
   "export_run_save": {
     "message": "Guardar ajustes"
@@ -255,7 +255,7 @@
     "message": "Inicia sesión para continuar"
   },
   "onboard_text_login_collapsed": {
-    "message": "Abre ChatVault e inicia sesión antes de exportar, marcar o clasificar chats."
+    "message": "Abre Claude Export e inicia sesión antes de exportar, marcar o clasificar chats."
   },
   "onboard_step_account": {
     "message": "Configuración de cuenta"
@@ -582,16 +582,16 @@
     "message": "$1 conversaciones"
   },
   "dialog_delete_folder_and_chats": {
-    "message": "¿Eliminar $1 y quitar $2 de ChatVault? Los chats originales no se eliminan."
+    "message": "¿Eliminar $1 y quitar $2 de Claude Export? Los chats originales no se eliminan."
   },
   "dialog_delete_folder_with_chats": {
-    "message": "¿Eliminar $1 y quitar $2 de ChatVault? Los chats originales no se eliminan."
+    "message": "¿Eliminar $1 y quitar $2 de Claude Export? Los chats originales no se eliminan."
   },
   "dialog_delete_folders_with_chats": {
-    "message": "¿Eliminar $1 carpetas y quitar $2 de ChatVault? Los chats originales no se eliminan."
+    "message": "¿Eliminar $1 carpetas y quitar $2 de Claude Export? Los chats originales no se eliminan."
   },
   "dialog_delete_folder_desc": {
-    "message": "¿Eliminar $1 de ChatVault? Los chats originales no se eliminan."
+    "message": "¿Eliminar $1 de Claude Export? Los chats originales no se eliminan."
   },
   "backup_reason_folder_deleted": {
     "message": "Carpeta eliminada"
@@ -678,10 +678,10 @@
     "message": "Falló la exportación de la conversación."
   },
   "dialog_remove_bookmark": {
-    "message": "¿Quitar este marcador de ChatVault?"
+    "message": "¿Quitar este marcador de Claude Export?"
   },
   "dialog_delete_history": {
-    "message": "¿Eliminar este elemento del historial de ChatVault?"
+    "message": "¿Eliminar este elemento del historial de Claude Export?"
   },
   "toast_signin_export_folders": {
     "message": "Inicia sesión para exportar carpetas."
@@ -777,7 +777,7 @@
     "message": "El pago de $1 se abrirá en una nueva pestaña."
   },
   "checkout_keep_open": {
-    "message": "Mantén esta pestaña abierta para que ChatVault actualice tu plan después del pago."
+    "message": "Mantén esta pestaña abierta para que Claude Export actualice tu plan después del pago."
   },
   "toast_allow_popups": {
     "message": "Permite ventanas emergentes para abrir el pago seguro."
@@ -792,7 +792,7 @@
     "message": "Pago de $1 abierto. El estado Pro se actualiza automáticamente después del pago. Si no se actualiza, recarga esta pestaña."
   },
   "toast_refreshing_session": {
-    "message": "Actualizando tu sesión de ChatVault. Inténtalo de nuevo."
+    "message": "Actualizando tu sesión de Claude Export. Inténtalo de nuevo."
   },
   "toast_purchase_restored": {
     "message": "Compra Pro restaurada."
@@ -846,7 +846,7 @@
     "message": "Eliminar $1"
   },
   "dialog_delete_folder_with_subfolders": {
-    "message": "¿Eliminar esta carpeta y sus subcarpetas de ChatVault? Los chats originales no se eliminan."
+    "message": "¿Eliminar esta carpeta y sus subcarpetas de Claude Export? Los chats originales no se eliminan."
   },
   "folders_add_current_failed": {
     "message": "No se pudo agregar el chat actual."
@@ -981,7 +981,7 @@
     "message": "El archivo de copia está vacío."
   },
   "backup_invalid_product": {
-    "message": "Esto no parece una copia de ChatVault."
+    "message": "Esto no parece una copia de Claude Export."
   },
   "backup_invalid_missing": {
     "message": "Al archivo de copia le faltan datos requeridos."
@@ -1017,7 +1017,7 @@
     "message": "Copia después de restaurar"
   },
   "aria_collapse_chatvault": {
-    "message": "Contraer ChatVault"
+    "message": "Contraer Claude Export"
   },
   "selected_zero": {
     "message": "0 seleccionados"
@@ -1038,7 +1038,7 @@
     "message": "Historial de chats indexado"
   },
   "aria_expand_sidebar": {
-    "message": "Expandir barra lateral de ChatVault"
+    "message": "Expandir barra lateral de Claude Export"
   },
   "aria_open_export_actions": {
     "message": "Abrir acciones de exportación"
@@ -1092,7 +1092,7 @@
     "message": "Inicia sesión para sincronizar tus carpetas y conservarlas al cambiar de dispositivo."
   },
   "merge_dialog_title": {
-    "message": "¿Sincronizar los datos locales de ChatVault?"
+    "message": "¿Sincronizar los datos locales de Claude Export?"
   },
   "merge_dialog_desc": {
     "message": "Encontramos carpetas, marcadores y registros de títulos locales en este navegador. Puedes fusionarlos con tu cuenta o borrar la copia local y usar solo los datos de la cuenta."
@@ -1125,7 +1125,7 @@
     "message": "Borrando copia local..."
   },
   "merge_status_merging": {
-    "message": "Fusionando datos locales de ChatVault..."
+    "message": "Fusionando datos locales de Claude Export..."
   },
   "merge_success": {
     "message": "Los datos locales se fusionaron con tu cuenta."

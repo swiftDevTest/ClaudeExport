@@ -108,7 +108,7 @@
     "message": "Desbloqueie mais exportações locais, temas refinados, fluxos em lote e saída PDF, Docs, MD e mais."
   },
   "billing_footnote": {
-    "message": "As exportações são geradas localmente a partir da página que você escolher. O pagamento abre no site tabpilotpro.com e é processado por meio de um provedor de pagamento seguro. O ChatVault armazena apenas títulos, links, pastas e favoritos. O conteúdo do chat não é salvo."
+    "message": "As exportações são geradas localmente a partir da página que você escolher. O pagamento abre no site tabpilotpro.com e é processado por meio de um provedor de pagamento seguro. O Claude Export armazena apenas títulos, links, pastas e favoritos. O conteúdo do chat não é salvo."
   },
   "billing_btn_restore": {
     "message": "Restaurar compra"
@@ -141,7 +141,7 @@
     "message": "Alinhar minhas perguntas à direita"
   },
   "export_privacy": {
-    "message": "Gerado localmente em seu navegador. O ChatVault não faz upload, armazena ou lembra do conteúdo de mensagens exportadas."
+    "message": "Gerado localmente em seu navegador. O Claude Export não faz upload, armazena ou lembra do conteúdo de mensagens exportadas."
   },
   "export_run_save": {
     "message": "Salvar ajustes"
@@ -255,7 +255,7 @@
     "message": "Faça login para continuar"
   },
   "onboard_text_login_collapsed": {
-    "message": "Abra o ChatVault e faça login antes de exportar, favoritar ou organizar conversas."
+    "message": "Abra o Claude Export e faça login antes de exportar, favoritar ou organizar conversas."
   },
   "onboard_step_account": {
     "message": "Configuração da conta"
@@ -582,16 +582,16 @@
     "message": "$1 conversas"
   },
   "dialog_delete_folder_and_chats": {
-    "message": "Excluir $1 e remover $2 do ChatVault? Os chats originais não serão excluídos."
+    "message": "Excluir $1 e remover $2 do Claude Export? Os chats originais não serão excluídos."
   },
   "dialog_delete_folder_with_chats": {
-    "message": "Excluir $1 e remover $2 do ChatVault? Os chats originais não serão excluídos."
+    "message": "Excluir $1 e remover $2 do Claude Export? Os chats originais não serão excluídos."
   },
   "dialog_delete_folders_with_chats": {
-    "message": "Excluir $1 pastas e remover $2 do ChatVault? Os chats originais não serão excluídos."
+    "message": "Excluir $1 pastas e remover $2 do Claude Export? Os chats originais não serão excluídos."
   },
   "dialog_delete_folder_desc": {
-    "message": "Excluir $1 do ChatVault? Os chats originais não serão excluídos."
+    "message": "Excluir $1 do Claude Export? Os chats originais não serão excluídos."
   },
   "backup_reason_folder_deleted": {
     "message": "Pasta excluída"
@@ -678,10 +678,10 @@
     "message": "Falha ao exportar a conversa."
   },
   "dialog_remove_bookmark": {
-    "message": "Remover este favorito do ChatVault?"
+    "message": "Remover este favorito do Claude Export?"
   },
   "dialog_delete_history": {
-    "message": "Excluir este item do histórico do ChatVault?"
+    "message": "Excluir este item do histórico do Claude Export?"
   },
   "toast_signin_export_folders": {
     "message": "Entre para exportar pastas."
@@ -777,7 +777,7 @@
     "message": "O checkout de $1 será aberto em uma nova aba."
   },
   "checkout_keep_open": {
-    "message": "Mantenha esta aba aberta para o ChatVault atualizar seu plano após o pagamento."
+    "message": "Mantenha esta aba aberta para o Claude Export atualizar seu plano após o pagamento."
   },
   "toast_allow_popups": {
     "message": "Permita pop-ups para abrir o checkout seguro."
@@ -792,7 +792,7 @@
     "message": "Checkout de $1 aberto. O status Pro é atualizado automaticamente após o pagamento. Se não atualizar, recarregue esta aba."
   },
   "toast_refreshing_session": {
-    "message": "Atualizando sua sessão do ChatVault. Tente novamente."
+    "message": "Atualizando sua sessão do Claude Export. Tente novamente."
   },
   "toast_purchase_restored": {
     "message": "Compra Pro restaurada."
@@ -846,7 +846,7 @@
     "message": "Excluir $1"
   },
   "dialog_delete_folder_with_subfolders": {
-    "message": "Excluir esta pasta e suas subpastas do ChatVault? Os chats originais não serão excluídos."
+    "message": "Excluir esta pasta e suas subpastas do Claude Export? Os chats originais não serão excluídos."
   },
   "folders_add_current_failed": {
     "message": "Falha ao adicionar o chat atual."
@@ -981,7 +981,7 @@
     "message": "O arquivo de backup está vazio."
   },
   "backup_invalid_product": {
-    "message": "Isso não parece ser um backup do ChatVault."
+    "message": "Isso não parece ser um backup do Claude Export."
   },
   "backup_invalid_missing": {
     "message": "Faltam dados obrigatórios no arquivo de backup."
@@ -1017,7 +1017,7 @@
     "message": "Backup após restauração"
   },
   "aria_collapse_chatvault": {
-    "message": "Recolher ChatVault"
+    "message": "Recolher Claude Export"
   },
   "selected_zero": {
     "message": "0 selecionados"
@@ -1038,7 +1038,7 @@
     "message": "Histórico de chats indexado"
   },
   "aria_expand_sidebar": {
-    "message": "Expandir barra lateral do ChatVault"
+    "message": "Expandir barra lateral do Claude Export"
   },
   "aria_open_export_actions": {
     "message": "Abrir ações de exportação"
@@ -1092,7 +1092,7 @@
     "message": "Entre para sincronizar suas pastas e continuar usando em outros dispositivos."
   },
   "merge_dialog_title": {
-    "message": "Sincronizar dados locais do ChatVault?"
+    "message": "Sincronizar dados locais do Claude Export?"
   },
   "merge_dialog_desc": {
     "message": "Encontramos pastas, favoritos e registros de títulos locais neste navegador. Você pode mesclar tudo com sua conta ou apagar a cópia local e usar apenas os dados da conta."
@@ -1125,7 +1125,7 @@
     "message": "Apagando cópia local..."
   },
   "merge_status_merging": {
-    "message": "Mesclando dados locais do ChatVault..."
+    "message": "Mesclando dados locais do Claude Export..."
   },
   "merge_success": {
     "message": "Dados locais mesclados com sua conta."

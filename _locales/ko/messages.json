@@ -108,7 +108,7 @@
     "message": "더 높은 로컬 내보내기 한도, 정돈된 테마, 일괄 작업, PDF, Docs, MD 등 출력을 사용할 수 있습니다."
   },
   "billing_footnote": {
-    "message": "내보내기는 선택한 페이지에서 로컬로 생성됩니다. 결제는 tabpilotpro.com에서 열리며 안전한 결제 시스템을 통해 처리됩니다. ChatVault는 제목, 링크, 폴더, 북마크만 저장합니다. 채팅 본문은 저장되지 않습니다."
+    "message": "내보내기는 선택한 페이지에서 로컬로 생성됩니다. 결제는 tabpilotpro.com에서 열리며 안전한 결제 시스템을 통해 처리됩니다. Claude Export는 제목, 링크, 폴더, 북마크만 저장합니다. 채팅 본문은 저장되지 않습니다."
   },
   "billing_btn_restore": {
     "message": "구매 복원"
@@ -141,7 +141,7 @@
     "message": "내 질문 오른쪽 정렬"
   },
   "export_privacy": {
-    "message": "브라우저에서 로컬로 생성됩니다. ChatVault는 내보낸 메시지 콘텐츠를 업로드, 저장 또는 기억하지 않습니다."
+    "message": "브라우저에서 로컬로 생성됩니다. Claude Export는 내보낸 메시지 콘텐츠를 업로드, 저장 또는 기억하지 않습니다."
   },
   "export_run_save": {
     "message": "설정 저장"
@@ -255,7 +255,7 @@
     "message": "계속하려면 로그인하세요"
   },
   "onboard_text_login_collapsed": {
-    "message": "채팅을 내보내거나 북마크하고 정리하기 전에 ChatVault를 열고 로그인해 주세요."
+    "message": "채팅을 내보내거나 북마크하고 정리하기 전에 Claude Export를 열고 로그인해 주세요."
   },
   "onboard_step_account": {
     "message": "계정 설정"
@@ -582,16 +582,16 @@
     "message": "채팅 $1개"
   },
   "dialog_delete_folder_and_chats": {
-    "message": "$1을 삭제하고 $2을 ChatVault에서 제거할까요? 원본 채팅은 삭제되지 않습니다."
+    "message": "$1을 삭제하고 $2을 Claude Export에서 제거할까요? 원본 채팅은 삭제되지 않습니다."
   },
   "dialog_delete_folder_with_chats": {
-    "message": "$1을 삭제하고 $2을 ChatVault에서 제거할까요? 원본 채팅은 삭제되지 않습니다."
+    "message": "$1을 삭제하고 $2을 Claude Export에서 제거할까요? 원본 채팅은 삭제되지 않습니다."
   },
   "dialog_delete_folders_with_chats": {
-    "message": "폴더 $1개를 삭제하고 $2을 ChatVault에서 제거할까요? 원본 채팅은 삭제되지 않습니다."
+    "message": "폴더 $1개를 삭제하고 $2을 Claude Export에서 제거할까요? 원본 채팅은 삭제되지 않습니다."
   },
   "dialog_delete_folder_desc": {
-    "message": "$1을 ChatVault에서 삭제할까요? 원본 채팅은 삭제되지 않습니다."
+    "message": "$1을 Claude Export에서 삭제할까요? 원본 채팅은 삭제되지 않습니다."
   },
   "backup_reason_folder_deleted": {
     "message": "폴더 삭제됨"
@@ -678,10 +678,10 @@
     "message": "대화 내보내기에 실패했습니다."
   },
   "dialog_remove_bookmark": {
-    "message": "이 북마크를 ChatVault에서 제거할까요?"
+    "message": "이 북마크를 Claude Export에서 제거할까요?"
   },
   "dialog_delete_history": {
-    "message": "이 기록 항목을 ChatVault에서 삭제할까요?"
+    "message": "이 기록 항목을 Claude Export에서 삭제할까요?"
   },
   "toast_signin_export_folders": {
     "message": "폴더를 내보내려면 로그인하세요."
@@ -777,7 +777,7 @@
     "message": "$1 결제가 새 탭에서 열립니다."
   },
   "checkout_keep_open": {
-    "message": "결제 후 ChatVault가 플랜을 새로고칠 수 있도록 이 탭을 열어 두세요."
+    "message": "결제 후 Claude Export가 플랜을 새로고칠 수 있도록 이 탭을 열어 두세요."
   },
   "toast_allow_popups": {
     "message": "안전한 결제창을 열 수 있도록 팝업을 허용하세요."
@@ -792,7 +792,7 @@
     "message": "$1 결제창이 열렸습니다. 결제 후 Pro 상태가 자동 업데이트됩니다. 새로고침되지 않으면 이 탭을 새로고침하세요."
   },
   "toast_refreshing_session": {
-    "message": "ChatVault 세션을 새로고침 중입니다. 다시 시도하세요."
+    "message": "Claude Export 세션을 새로고침 중입니다. 다시 시도하세요."
   },
   "toast_purchase_restored": {
     "message": "Pro 구매를 복원했습니다."
@@ -846,7 +846,7 @@
     "message": "$1 삭제"
   },
   "dialog_delete_folder_with_subfolders": {
-    "message": "이 폴더와 하위 폴더를 ChatVault에서 삭제할까요? 원본 채팅은 삭제되지 않습니다."
+    "message": "이 폴더와 하위 폴더를 Claude Export에서 삭제할까요? 원본 채팅은 삭제되지 않습니다."
   },
   "folders_add_current_failed": {
     "message": "현재 채팅 추가에 실패했습니다."
@@ -981,7 +981,7 @@
     "message": "백업 파일이 비어 있습니다."
   },
   "backup_invalid_product": {
-    "message": "ChatVault 백업이 아닌 것 같습니다."
+    "message": "Claude Export 백업이 아닌 것 같습니다."
   },
   "backup_invalid_missing": {
     "message": "백업 파일에 필요한 데이터가 없습니다."
@@ -1017,7 +1017,7 @@
     "message": "복원 후 백업"
   },
   "aria_collapse_chatvault": {
-    "message": "ChatVault 접기"
+    "message": "Claude Export 접기"
   },
   "selected_zero": {
     "message": "0개 선택됨"
@@ -1038,7 +1038,7 @@
     "message": "인덱싱된 채팅 기록"
   },
   "aria_expand_sidebar": {
-    "message": "ChatVault 사이드바 펼치기"
+    "message": "Claude Export 사이드바 펼치기"
   },
   "aria_open_export_actions": {
     "message": "내보내기 작업 열기"
@@ -1092,7 +1092,7 @@
     "message": "로그인하면 폴더를 동기화하고 다른 기기에서도 계속 사용할 수 있습니다."
   },
   "merge_dialog_title": {
-    "message": "로컬 ChatVault 데이터를 동기화할까요?"
+    "message": "로컬 Claude Export 데이터를 동기화할까요?"
   },
   "merge_dialog_desc": {
     "message": "이 브라우저에서 로컬 폴더, 북마크, 제목 기록을 찾았습니다. 로그인한 계정에 병합하거나 병합하지 않고 로컬 사본을 삭제할 수 있습니다."
@@ -1125,7 +1125,7 @@
     "message": "로컬 사본 삭제 중..."
   },
   "merge_status_merging": {
-    "message": "로컬 ChatVault 데이터를 병합하는 중..."
+    "message": "로컬 Claude Export 데이터를 병합하는 중..."
   },
   "merge_success": {
     "message": "로컬 데이터가 계정에 병합되었습니다."

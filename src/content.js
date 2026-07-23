@@ -16,8 +16,14 @@
   const developerExport = globalThis.CHATVAULT_DEVELOPER_EXPORT;
   const shareCards = globalThis.CHATVAULT_SHARE_CARDS;
   const exporter = globalThis.CHATVAULT_EXPORT;
-  const SUPABASE_SESSION_STORAGE_KEY = "chatvault_supabase_session";
-  const ENTITLEMENT_STATE_CACHE_KEY = "chatvault_exporter_entitlement_state_v1";
+  // Fix H10: use product-config storageKey to match the keys written by
+  // supabase-auth.js and entitlements.js (were hardcoded to wrong namespace).
+  const _productConfig = globalThis.CHATVAULT_PRODUCT_CONFIG || {};
+  const _storageKey = typeof _productConfig.storageKey === "function"
+    ? _productConfig.storageKey
+    : (name) => `chatvault_exporter.${name}`;
+  const SUPABASE_SESSION_STORAGE_KEY = _storageKey("supabase_session.v1");
+  const ENTITLEMENT_STATE_CACHE_KEY = _storageKey("entitlement_state.v1");
   const EXPORT_SETTINGS_STORAGE_KEY = "chatvault_export_settings";
   const FREE_QUOTA_EXHAUSTED_MESSAGE = "You have used today's 3 free exports.";
 
@@ -348,8 +354,14 @@
     const sessionEmail = session.user?.email || "";
     const sessionUserId = session.user?.id || "";
     if (!sessionEmail && !sessionUserId) return false;
-    return (!sessionEmail || cachedState.email === sessionEmail) &&
-      (!sessionUserId || cachedState.profile?.id === sessionUserId || !cachedState.profile?.id);
+    // SECURITY: Require strict identity match. Reject cache entries with empty
+    // identity to prevent impersonation via crafted cache (C3).
+    const cachedEmail = cachedState.email || cachedState.profile?.email || "";
+    const cachedUserId = cachedState.profile?.id || cachedState.sessionUser?.id || "";
+    if (!cachedEmail && !cachedUserId) return false;
+    const emailMatches = !sessionEmail || !cachedEmail || cachedEmail === sessionEmail;
+    const userIdMatches = !sessionUserId || !cachedUserId || cachedUserId === sessionUserId;
+    return emailMatches && userIdMatches;
   }
 
   async function getStoredAuthSessionSnapshot(sessionOverride) {

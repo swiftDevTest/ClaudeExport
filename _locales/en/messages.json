@@ -627,16 +627,16 @@
     "message": "$1 chats"
   },
   "dialog_delete_folder_and_chats": {
-    "message": "Delete $1 and remove $2 from ChatVault? Original source chats are not deleted."
+    "message": "Delete $1 and remove $2 from Claude Export? Original source chats are not deleted."
   },
   "dialog_delete_folder_with_chats": {
-    "message": "Delete $1 and remove $2 from ChatVault? Original source chats are not deleted."
+    "message": "Delete $1 and remove $2 from Claude Export? Original source chats are not deleted."
   },
   "dialog_delete_folders_with_chats": {
-    "message": "Delete $1 folders and remove $2 from ChatVault? Original source chats are not deleted."
+    "message": "Delete $1 folders and remove $2 from Claude Export? Original source chats are not deleted."
   },
   "dialog_delete_folder_desc": {
-    "message": "Delete $1 from ChatVault? Original source chats are not deleted."
+    "message": "Delete $1 from Claude Export? Original source chats are not deleted."
   },
   "backup_reason_folder_deleted": {
     "message": "Folder deleted"
@@ -723,10 +723,10 @@
     "message": "Conversation export failed."
   },
   "dialog_remove_bookmark": {
-    "message": "Remove this bookmark from ChatVault?"
+    "message": "Remove this bookmark from Claude Export?"
   },
   "dialog_delete_history": {
-    "message": "Delete this history item from ChatVault?"
+    "message": "Delete this history item from Claude Export?"
   },
   "toast_signin_export_folders": {
     "message": "Sign In To Export Folders."
@@ -822,7 +822,7 @@
     "message": "$1 checkout is opening in a new tab."
   },
   "checkout_keep_open": {
-    "message": "Keep this tab open so ChatVault can refresh your plan after payment."
+    "message": "Keep this tab open so Claude Export can refresh your plan after payment."
   },
   "toast_allow_popups": {
     "message": "Allow popups to open secure checkout."
@@ -837,7 +837,7 @@
     "message": "$1 checkout opened. Pro status updates automatically after payment. If it does not refresh, refresh this browser tab."
   },
   "toast_refreshing_session": {
-    "message": "Refreshing your ChatVault session. Please try again."
+    "message": "Refreshing your Claude Export session. Please try again."
   },
   "toast_purchase_restored": {
     "message": "Pro purchase restored."
@@ -891,7 +891,7 @@
     "message": "Delete $1"
   },
   "dialog_delete_folder_with_subfolders": {
-    "message": "Delete this folder and its subfolders from ChatVault? Original source chats are not deleted."
+    "message": "Delete this folder and its subfolders from Claude Export? Original source chats are not deleted."
   },
   "folders_add_current_failed": {
     "message": "Failed to add current chat."
@@ -1026,7 +1026,7 @@
     "message": "Backup file is empty."
   },
   "backup_invalid_product": {
-    "message": "This does not look like a ChatVault backup."
+    "message": "This does not look like a Claude Export backup."
   },
   "backup_invalid_missing": {
     "message": "Backup file is missing required data."
@@ -1062,7 +1062,7 @@
     "message": "Backup after restore"
   },
   "aria_collapse_chatvault": {
-    "message": "Collapse ChatVault"
+    "message": "Collapse Claude Export"
   },
   "selected_zero": {
     "message": "0 Selected"
@@ -1083,7 +1083,7 @@
     "message": "Indexed chat history"
   },
   "aria_expand_sidebar": {
-    "message": "Expand ChatVault sidebar"
+    "message": "Expand Claude Export sidebar"
   },
   "aria_open_export_actions": {
     "message": "Open export actions"
@@ -1137,7 +1137,7 @@
     "message": "Sign in to sync your folders and keep them after switching devices."
   },
   "merge_dialog_title": {
-    "message": "Sync local ChatVault data?"
+    "message": "Sync local Claude Export data?"
   },
   "merge_dialog_desc": {
     "message": "We found local folders, bookmarks, and title records on this browser. Merge them into your signed-in account, or delete the local copy and start with your account data."
@@ -1170,7 +1170,7 @@
     "message": "Deleting local copy..."
   },
   "merge_status_merging": {
-    "message": "Merging local ChatVault data..."
+    "message": "Merging local Claude Export data..."
   },
   "merge_success": {
     "message": "Local data merged into your account."

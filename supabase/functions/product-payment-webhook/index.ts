@@ -138,8 +138,10 @@ async function shouldTransactionGrantProfileAccess(info: ReturnType<typeof getPa
   }
 
   const subscription = await getSubscriptionById(info.subscriptionId, getWebhookProductSlug(info));
+  // Fix H5: default deny when subscription record is missing (was default grant).
+  // This prevents granting Pro when subscription table hasn't been populated yet.
   if (!subscription) {
-    return true;
+    return false;
   }
 
   return isActiveSubscriptionStatus(subscription.status);
@@ -224,6 +226,13 @@ async function handleTransaction(info: ReturnType<typeof getPaddleEventInfo>) {
     }
   });
 
+  // Fix H4: handle refund/voided events by revoking lifetime_access if no other paid lifetime tx exists.
+  const isRefundEvent = ["transaction.refunded", "transaction.voided", "transaction.canceled"].includes(info.eventType);
+  if (userId && isRefundEvent && info.plan.lifetime) {
+    await revokeLifetimeAccessIfNeeded(userId, productSlug);
+    return Boolean(userId);
+  }
+
   if (userId && ["transaction.completed", "transaction.paid"].includes(info.eventType) && await shouldTransactionGrantProfileAccess(info)) {
     await ensureProfile({ id: userId, email: paymentEmail }, {}, productSlug);
     const profile = await getProfileByUserId(userId, productSlug) || {};
@@ -240,6 +249,25 @@ async function handleTransaction(info: ReturnType<typeof getPaddleEventInfo>) {
     }, productSlug);
   }
   return Boolean(userId);
+}
+
+async function revokeLifetimeAccessIfNeeded(userId: string, productSlug: string) {
+  // Check if any other non-refunded lifetime transaction exists for this user.
+  const rows = await supabaseRest<Record<string, unknown>[]>(
+    `product_payment_transactions?user_id=eq.${encodeURIComponent(userId)}&product_slug=eq.${encodeURIComponent(productSlug)}&status=in.(completed,paid,active)&select=*&order=updated_at.desc&limit=20`
+  );
+  const hasOtherLifetime = (rows || []).some((row) =>
+    String(row.billing_interval || "").toLowerCase() === "lifetime" ||
+    String(row.plan_id || "").toLowerCase() === "lifetime"
+  );
+  if (!hasOtherLifetime) {
+    const profile = await getProfileByUserId(userId, productSlug) || {};
+    const hasActiveSub = Boolean(await getLatestActiveSubscription(userId, productSlug));
+    await updateProfile(userId, {
+      plan: hasActiveSub ? "pro" : "free",
+      lifetime_access: false
+    }, productSlug);
+  }
 }
 
 async function handleSubscription(info: ReturnType<typeof getPaddleEventInfo>) {
@@ -310,6 +338,16 @@ Deno.serve(async (request) => {
     if (!eventBelongsToProduct(info)) {
       await insertWebhookEvent(event, info, true, false);
       return jsonResponse({ ok: true, ignored: true });
+    }
+
+    // Fix C-webhook: idempotency check — skip if event_id was already processed.
+    if (info.eventId) {
+      const existing = await supabaseRest<Record<string, unknown>[]>(
+        `product_payment_webhook_events?event_id=eq.${encodeURIComponent(info.eventId)}&processed=eq.true&select=event_id&limit=1`
+      );
+      if (existing && existing.length > 0) {
+        return jsonResponse({ ok: true, processed: true, duplicate: true });
+      }
     }
 
     let processed = false;

@@ -12,6 +12,7 @@
   const ENTITLEMENT_STATE_CACHE_CRYPTO_VERSION = 1;
   const ENTITLEMENT_STATE_CACHE_CRYPTO_ALG = "AES-GCM";
   const ENTITLEMENT_STATE_CACHE_KEY_ID = `${productConfig.storageNamespace || "chatvault_exporter"}-entitlement-cache-v1`;
+  const ENTITLEMENT_CACHE_TTL_MS = 5 * 60 * 1000;
   let entitlementCacheCryptoKeyPromise = null;
 
   const PRO_PRICES = Object.freeze({
@@ -308,8 +309,10 @@
   }
 
   async function decryptCachedEntitlementState(value) {
+    // SECURITY: Reject plaintext cache entries to prevent cache poisoning (C2).
+    // Only accept properly encrypted structures with valid crypto metadata.
     if (!isEncryptedCachedEntitlementState(value)) {
-      return value;
+      return null;
     }
 
     const cryptoRef = getCacheCrypto();
@@ -383,7 +386,14 @@
       return null;
     }
 
+    // Enforce TTL so stale Pro status expires and re-verifies with server (H1).
+    // For Pro status, expire after TTL. For general cache (email/avatar), allow longer.
     const profile = normalizeProfile(value.profile || {});
+    const isCachedPro = isPro(profile);
+    if (isCachedPro && Date.now() - cachedAt > ENTITLEMENT_CACHE_TTL_MS) {
+      return null;
+    }
+
     const usage = normalizeDailyUsage(value.usage || {}, getTodayString());
     const sessionUser = getSessionUserForCache(value, profile);
     const email = profile.email || sessionUser?.email || "";
@@ -394,7 +404,7 @@
       cachedAt,
       email,
       avatarUrl,
-      isProUser: isPro(profile),
+      isProUser: isCachedPro,
       profile,
       remainingQuota,
       usage,
@@ -434,6 +444,7 @@
     ENTITLEMENT_STATE_CACHE_KEY,
     ENTITLEMENT_STATE_CACHE_CRYPTO_ALG,
     ENTITLEMENT_STATE_CACHE_CRYPTO_VERSION,
+    ENTITLEMENT_CACHE_TTL_MS,
     PRO_LIMIT,
     PRO_PRICES,
     canUseExport,

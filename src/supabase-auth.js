@@ -364,12 +364,11 @@
   }
 
   async function getSession(options = {}) {
-    const hashSession = sessionFromHash();
-
-    if (hashSession) {
-      cleanAuthHash();
-      await storeSession(normalizeSession(null, hashSession));
-    }
+    // SECURITY: Do not implicitly read session from window.location.hash.
+    // The OAuth flow uses chrome.identity.launchWebAuthFlow (handled in background.js)
+    // which stores the session directly. Reading tokens from the hash without state
+    // validation enables session fixation attacks (C1).
+    cleanAuthHash();
 
     let session = await getStoredSession();
 
@@ -428,7 +427,12 @@
     } catch (error) {
       const storedSession = await getStoredSession();
 
-      if (options.allowStaleOnError !== false && storedSession?.access_token && storedSession?.user?.id) {
+      // Only return stale session on transient network errors, not auth errors.
+      // If refresh_token is revoked/expired (auth error), returning stale gives a
+      // false "logged in" state while all API calls fail with 401 (H8).
+      const isAuthError = isLikelyAuthError(error);
+      const staleAllowed = options.allowStaleOnError !== false && !isAuthError;
+      if (staleAllowed && storedSession?.access_token && storedSession?.user?.id) {
         return storedSession;
       }
 
@@ -549,6 +553,24 @@
       await globalThis.CHATVAULT_ENTITLEMENTS?.clearCachedState?.();
     } catch (error) {
       // Entitlement cache cleanup is best-effort; local auth state is already cleared.
+    }
+
+    // Clean up all user-scoped cached state to prevent cross-account leakage (H9).
+    const cleanupKeys = [
+      storageKey("pending_checkout_intent.v1"),
+      storageKey("recent_checkout_session.v1"),
+      storageKey("open_subscribe_panel_request.v1"),
+      storageKey("analytics.identify_done.v1"),
+      "notion_token",
+      "notion_db_id",
+      "notion_selected_connection_id",
+      "notion_selected_data_sources",
+      "chatvault_notion_ui_cache_v1"
+    ];
+    try {
+      await storageRemove(cleanupKeys);
+    } catch (error) {
+      // Best-effort cleanup; storage may already be empty.
     }
   }
 

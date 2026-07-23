@@ -196,8 +196,82 @@ try {
       }
     };
 
-    await storageSet({ [ENTITLEMENT_STATE_CACHE_KEY]: snapshot });
+    // Fix C4: encrypt the cache using AES-GCM (same scheme as entitlements.js)
+    // to prevent the plaintext-cache bypass where decryptCachedEntitlementState
+    // accepts non-encrypted structures.
+    const encrypted = await encryptEntitlementCacheSnapshot(snapshot);
+    if (encrypted) {
+      await storageSet({ [ENTITLEMENT_STATE_CACHE_KEY]: encrypted });
+    }
+    // If encryption is unavailable, skip caching rather than store plaintext.
     return snapshot;
+  }
+
+  // Inline crypto helpers mirroring entitlements.js (background has no access to content-script modules).
+  const ENTITLEMENT_CACHE_CRYPTO_VERSION = 1;
+  const ENTITLEMENT_CACHE_CRYPTO_ALG = "AES-GCM";
+  const ENTITLEMENT_CACHE_KEY_ID = `${productConfig.storageNamespace || "chatvault_exporter"}-entitlement-cache-v1`;
+  let entitlementCacheCryptoKeyPromise = null;
+
+  function getRuntimeId() {
+    try {
+      return typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.id
+        ? chrome.runtime.id
+        : "dev";
+    } catch (error) {
+      return "dev";
+    }
+  }
+
+  function getCacheCrypto() {
+    try {
+      return typeof globalThis.crypto !== "undefined" &&
+        globalThis.crypto &&
+        globalThis.crypto.subtle &&
+        typeof globalThis.crypto.getRandomValues === "function"
+        ? globalThis.crypto
+        : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async function getEntitlementCacheCryptoKey() {
+    const cryptoRef = getCacheCrypto();
+    if (!cryptoRef || typeof TextEncoder !== "function") {
+      return null;
+    }
+    if (!entitlementCacheCryptoKeyPromise) {
+      const keySeed = `${ENTITLEMENT_CACHE_KEY_ID}:${getRuntimeId()}`;
+      entitlementCacheCryptoKeyPromise = cryptoRef.subtle
+        .digest("SHA-256", new TextEncoder().encode(keySeed))
+        .then((digest) => cryptoRef.subtle.importKey("raw", digest, ENTITLEMENT_CACHE_CRYPTO_ALG, false, ["encrypt", "decrypt"]))
+        .catch(() => null);
+    }
+    return entitlementCacheCryptoKeyPromise;
+  }
+
+  async function encryptEntitlementCacheSnapshot(snapshot) {
+    const cryptoRef = getCacheCrypto();
+    const key = await getEntitlementCacheCryptoKey();
+    if (!cryptoRef || !key || typeof TextEncoder !== "function") {
+      // Fallback: skip caching rather than store plaintext (C2/C4 defense).
+      return null;
+    }
+    try {
+      const iv = cryptoRef.getRandomValues(new Uint8Array(12));
+      const encoded = new TextEncoder().encode(JSON.stringify(snapshot));
+      const encrypted = await cryptoRef.subtle.encrypt({ name: ENTITLEMENT_CACHE_CRYPTO_ALG, iv }, key, encoded);
+      return {
+        v: ENTITLEMENT_CACHE_CRYPTO_VERSION,
+        alg: ENTITLEMENT_CACHE_CRYPTO_ALG,
+        kid: ENTITLEMENT_CACHE_KEY_ID,
+        iv: bytesToBase64Payload(iv),
+        payload: bytesToBase64Payload(new Uint8Array(encrypted))
+      };
+    } catch (error) {
+      return null;
+    }
   }
 
   function bytesToBase64Payload(bytes) {
