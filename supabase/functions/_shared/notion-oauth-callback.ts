@@ -50,6 +50,9 @@ export async function handleOAuthCallback(request: Request, productSlug: string)
     if (!isAllowedIdentityRedirect(stateRow.final_redirect_uri)) {
       return htmlResponse("Authorization redirect URI is untrusted.", 400);
     }
+    if (stateRow.product_slug !== productSlug) {
+      return htmlResponse("Authorization state does not belong to this product.", 400);
+    }
 
     const providerError = url.searchParams.get("error");
     if (providerError) {
@@ -65,7 +68,8 @@ export async function handleOAuthCallback(request: Request, productSlug: string)
       headers: {
         Authorization: notionOAuthBasicAuthorization(productSlug),
         "Content-Type": "application/json",
-        Accept: "application/json"
+        Accept: "application/json",
+        "Notion-Version": "2026-03-11"
       },
       body: JSON.stringify({
         grant_type: "authorization_code",

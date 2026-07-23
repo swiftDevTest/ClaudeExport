@@ -33,3 +33,6 @@ verify_jwt = true
 
 [functions.product-verify-export-entitlement]
 verify_jwt = true
+
+[functions.notion-oauth-claude]
+verify_jwt = false
