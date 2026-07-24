@@ -612,7 +612,12 @@
     try {
       const result = await globalThis.CHATVAULT_SUPABASE_API.request("/functions/v1/product-sync-subscription-status", {
         accessToken: session.access_token,
-        method: "POST"
+        method: "POST",
+        body: {
+          product_id: (globalThis.CHATVAULT_PRODUCT_CONFIG && globalThis.CHATVAULT_PRODUCT_CONFIG.productId) || "claude_export",
+          product_slug: (globalThis.CHATVAULT_PRODUCT_CONFIG && globalThis.CHATVAULT_PRODUCT_CONFIG.productSlug) || "claude-export",
+          product_name: (globalThis.CHATVAULT_PRODUCT_CONFIG && globalThis.CHATVAULT_PRODUCT_CONFIG.productName) || "Claude Export"
+        }
       });
       const syncedProfile = normalizeProfileResponse(result);
       if (syncedProfile) return syncedProfile;
@@ -814,10 +819,12 @@
     }
 
     try {
+      const productSlug = (globalThis.CHATVAULT_PRODUCT_CONFIG && globalThis.CHATVAULT_PRODUCT_CONFIG.productSlug) || "claude-export";
       const result = await globalThis.CHATVAULT_SUPABASE_API.request("/functions/v1/product-verify-export-entitlement", {
         accessToken: session.access_token,
         method: "POST",
         body: {
+          product_slug: productSlug,
           requested_count: count,
           consume
         }

@@ -405,11 +405,11 @@
       return null;
     }
 
-    // Enforce TTL so stale Pro status expires and re-verifies with server (H1).
-    // For Pro status, expire after TTL. For general cache (email/avatar), allow longer.
+    // Enforce TTL for all cached states so both Pro→Free and Free→Pro transitions
+    // are eventually detected. Without this, a stale Free cache would never expire
+    // and block server-side membership upgrades from reaching the frontend.
     const profile = normalizeProfile(value.profile || {});
-    const isCachedPro = isPro(profile);
-    if (isCachedPro && Date.now() - cachedAt > ENTITLEMENT_CACHE_TTL_MS) {
+    if (Date.now() - cachedAt > ENTITLEMENT_CACHE_TTL_MS) {
       return null;
     }
 
@@ -423,7 +423,7 @@
       cachedAt,
       email,
       avatarUrl,
-      isProUser: isCachedPro,
+      isProUser: isPro(profile),
       profile,
       remainingQuota,
       usage,

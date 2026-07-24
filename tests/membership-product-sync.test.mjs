@@ -283,7 +283,8 @@ test("checkout allows valid browser extension origins", () => {
   const httpSource = readText("../supabase/functions/_shared/http.ts");
   assert.match(httpSource, /function isAllowedChromeExtensionOrigin\(origin: string\)/);
   assert.match(httpSource, /url\.protocol === "chrome-extension:"/);
-  assert.match(httpSource, /\^\[a-p\]\{32\}\$/);
+  assert.match(httpSource, /CHATVAULT_ALLOWED_EXTENSION_IDS/);
+  assert.match(httpSource, /cjkfchfnmbhcpmbhobdanongbjkcbagj/);
   assert.match(httpSource, /isAllowedChromeExtensionOrigin\(origin\)/);
 
   const runtimeSource = httpSource
@@ -303,12 +304,12 @@ test("checkout allows valid browser extension origins", () => {
     }
   });
 
-  assert.equal(isAllowedBrowserOrigin(requestWithOrigin("chrome-extension://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")), true);
-  assert.equal(isAllowedBrowserOrigin(requestWithOrigin("chrome-extension://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/")), true);
-  assert.equal(isAllowedBrowserOrigin(requestWithOrigin("chrome-extension://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/path")), false);
-  assert.equal(isAllowedBrowserOrigin(requestWithOrigin("chrome-extension://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaq")), false);
-  assert.equal(isAllowedBrowserOrigin(requestWithOrigin("moz-extension://123e4567-e89b-12d3-a456-426614174000")), true);
-  assert.equal(isAllowedBrowserOrigin(requestWithOrigin("safari-web-extension://123e4567-e89b-12d3-a456-426614174000")), true);
+  assert.equal(isAllowedBrowserOrigin(requestWithOrigin("chrome-extension://cjkfchfnmbhcpmbhobdanongbjkcbagj")), true);
+  assert.equal(isAllowedBrowserOrigin(requestWithOrigin("chrome-extension://cjkfchfnmbhcpmbhobdanongbjkcbagj/")), true);
+  assert.equal(isAllowedBrowserOrigin(requestWithOrigin("chrome-extension://cjkfchfnmbhcpmbhobdanongbjkcbagj/path")), false);
+  assert.equal(isAllowedBrowserOrigin(requestWithOrigin("chrome-extension://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")), false);
+  assert.equal(isAllowedBrowserOrigin(requestWithOrigin("moz-extension://123e4567-e89b-12d3-a456-426614174000")), false);
+  assert.equal(isAllowedBrowserOrigin(requestWithOrigin("safari-web-extension://123e4567-e89b-12d3-a456-426614174000")), false);
   assert.equal(isAllowedBrowserOrigin(requestWithOrigin("https://evil.example")), false);
 });
 

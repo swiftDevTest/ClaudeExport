@@ -1510,7 +1510,8 @@ input:checked + .slider::before {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 10px 14px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
   border: 1px solid rgba(217, 228, 223, 0.9);
   border-radius: var(--radius-lg);
   background: rgba(246, 250, 248, 0.95);

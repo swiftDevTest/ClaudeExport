@@ -8,7 +8,9 @@
   const SESSION_KEY = storageKey("supabase_session.v1");
   const SESSION_MUTATION_EPOCH_KEY = storageKey("supabase_session_epoch.v1");
   const ENTITLEMENT_STATE_CACHE_KEY = storageKey("entitlement_state.v1");
-  const REFRESH_MARGIN_SECONDS = 300;
+  // access_token 默认有效期 1 小时，提前 1 小时刷新：
+  // 用户单次使用基本不触发刷新，跨会话使用也能无感续期。
+  const REFRESH_MARGIN_SECONDS = 3600;
   let refreshSessionPromise = null;
   let refreshSessionPromiseToken = "";
   let sessionGeneration = 0;

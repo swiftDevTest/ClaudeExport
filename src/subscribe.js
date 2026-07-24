@@ -4,12 +4,14 @@
   const auth = globalThis.CHATVAULT_SUPABASE_AUTH;
   const billing = globalThis.CHATVAULT_BILLING;
   const productConfig = globalThis.CHATVAULT_PRODUCT_CONFIG || {};
+  const _storageKeyFn = typeof productConfig.storageKey === "function" ? productConfig.storageKey : function (n) { return "claude_export." + n; };
   const productName = productConfig.productName || "Claude Export";
   const isolatedMembership = productConfig.isolatedMembership === true;
   const checkoutIntentStorageKey = billing?.checkoutIntentStorageKey || "claude_export.pending_checkout_intent.v1";
   
   let currentSession = null;
   let checkoutLoading = false;
+  let isAlreadyPro = false;
 
   function applyProductTheme(target) {
     if (productConfig && typeof productConfig.applyThemeVars === "function") {
@@ -133,6 +135,50 @@
 
   function clearPendingCheckoutIntent() {
     return storageRemove(checkoutIntentStorageKey);
+  }
+
+  async function checkProStatus() {
+    if (!auth || typeof auth.getSession !== "function") return;
+    try {
+      const session = await auth.getSession({ skipUserRefresh: false, allowStaleOnError: true });
+      if (!hasActiveAuthSession(session)) return;
+
+      const api = globalThis.CHATVAULT_SUPABASE_API;
+      if (!api || typeof api.request !== "function") return;
+
+      const cfg = globalThis.CHATVAULT_PRODUCT_CONFIG || {};
+      const result = await api.request("/functions/v1/product-sync-subscription-status", {
+        accessToken: session.access_token,
+        method: "POST",
+        body: {
+          product_id: cfg.productId || "claude_export",
+          product_slug: cfg.productSlug || "claude-export",
+          product_name: cfg.productName || "Claude Export"
+        }
+      });
+
+      const profile = result?.profile || result?.data?.profile;
+      if (profile && profile.plan === "pro") {
+        isAlreadyPro = true;
+        showAlreadyProState();
+      }
+    } catch (e) {
+      console.warn("Pro status check failed:", e);
+    }
+  }
+
+  function showAlreadyProState() {
+    document.querySelectorAll(".cv-plan-btn").forEach((btn) => {
+      btn.disabled = true;
+      btn.textContent = "已是 Pro 会员";
+    });
+    const header = document.querySelector(".cv-header");
+    if (header) {
+      const banner = document.createElement("div");
+      banner.style.cssText = "margin-top:10px;padding:10px 16px;border-radius:8px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);color:#22c55e;font-size:14px;";
+      banner.textContent = "您已是 Pro 会员，无需再次订阅。";
+      header.appendChild(banner);
+    }
   }
 
   async function checkUserSession() {
@@ -265,6 +311,11 @@
       return;
     }
 
+    if (isAlreadyPro) {
+      alert("您已是 Pro 会员，无需再次订阅。");
+      return;
+    }
+
     checkoutLoading = true;
     const originalText = buttonEl.textContent;
     buttonEl.disabled = true;
@@ -349,12 +400,13 @@
     applyProductCopy();
     await checkUserSession();
     await clearPendingCheckoutIntent();
+    await checkProStatus();
 
     // 监听 storage 变化，在其他页面（如 popup）登出时同步状态
     if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.onChanged) {
       chrome.storage.onChanged.addListener((changes, areaName) => {
         if (areaName !== "local") return;
-        if ("chatvault_supabase_session" in changes) {
+        if (_storageKeyFn("supabase_session.v1") in changes) {
           checkUserSession();
         }
       });
