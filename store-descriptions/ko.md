@@ -1,10 +1,10 @@
-Claude Export는 Claude 대화를 정돈된 지식과 완성도 높은 파일로 바꾸는 개인정보 보호 중심 브라우저 확장 프로그램입니다. Claude 대화를 Notion 또는 Obsidian에 직접 동기화하거나 필요한 형식으로 로컬 내보내기할 수 있습니다.
+Claude Exporter는 Claude 대화를 정돈된 지식과 완성도 높은 파일로 바꾸는 개인정보 보호 중심 브라우저 확장 프로그램입니다. Claude 대화를 Notion 또는 Obsidian에 직접 동기화하거나 필요한 형식으로 로컬 내보내기할 수 있습니다.
 
 주요 기능:
 
-1. Notion / Obsidian 원클릭 동기화: 현재 Claude 대화를 연결된 Notion 데이터베이스 또는 Obsidian Vault로 복사와 붙여넣기 없이 저장합니다.
-2. 일괄 동기화 및 일괄 내보내기: 여러 Claude 대화를 선택해 Notion 또는 Obsidian에 한 번에 동기화하거나 파일로 함께 내보낼 수 있습니다. 한 번에 최대 10개 채팅을 처리합니다.
-3. 다양한 파일 형식: PDF, DOCX, Markdown, HTML, 이미지, 텍스트, JSON 등을 지원합니다.
+1. Notion / Obsidian 원클릭 동기화: 현재 대화를 연결된 Notion 데이터베이스 또는 Obsidian Vault로 복사와 붙여넣기 없이 저장합니다.
+2. 일괄 동기화 및 일괄 내보내기: 여러 대화를 선택해 Notion 또는 Obsidian에 한 번에 동기화하거나 파일로 함께 내보낼 수 있습니다. 한 번에 최대 10개 채팅을 처리합니다.
+3. 다양한 파일 형식: PDF, DOCX, Markdown 및 기타 형식을 지원합니다.
 4. 비공개 로컬 생성: 파일 변환은 브라우저에서 실행되며 채팅 본문은 원격 변환 서버로 전송되지 않습니다.
 5. 전문 테마 및 필드 설정: Minimalist, Natural, Editorial, Terminal, Aurora, Oxford 등의 테마를 선택하고 제목, 시간, 플랫폼, 역할 필드를 조정할 수 있습니다.
 6. 필요한 내용만 저장: 개별 메시지, 질문과 답변 묶음 또는 AI 답변만 선택할 수 있습니다.
@@ -12,8 +12,8 @@ Claude Export는 Claude 대화를 정돈된 지식과 완성도 높은 파일로
 
 사용 방법:
 
-- 확장 프로그램을 설치하고 Claude 대화를 엽니다 (claude.ai).
-- Claude Export에서 Notion, Obsidian 또는 파일 형식을 선택합니다.
+- 확장 프로그램을 설치하고 Claude(claude.ai) 대화를 엽니다.
+- Claude Exporter에서 Notion, Obsidian 또는 파일 형식을 선택합니다.
 - 여러 대화를 처리하려면 일괄 내보내기를 열고 채팅과 대상을 선택합니다.
 - 범위와 테마를 확인한 뒤 동기화하거나 다운로드합니다.
 

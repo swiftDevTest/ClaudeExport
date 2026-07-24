@@ -366,7 +366,8 @@ export function wordBlocks(blocks, imageCache, alignRight, themeWord, role, hype
       xml += wordCodeBlock(block, alignRight, themeWord);
     } else if (block.type === "list") {
       block.items.forEach(function (item, index) {
-        var itemPrefix = block.ordered ? (index + 1) + ".  " : "•  ";
+        var listStart = block.start || 1;
+        var itemPrefix = block.ordered ? (listStart + index) + ".  " : "•  ";
         xml += wordParagraph(itemPrefix + item.text, mergeWordOptions({
           spacing: 80,
           color: themeWord.colorText,

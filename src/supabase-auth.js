@@ -6,10 +6,12 @@
     ? productConfig.storageKey
     : (name) => `chatvault_exporter.${name}`;
   const SESSION_KEY = storageKey("supabase_session.v1");
+  const SESSION_MUTATION_EPOCH_KEY = storageKey("supabase_session_epoch.v1");
   const ENTITLEMENT_STATE_CACHE_KEY = storageKey("entitlement_state.v1");
   const REFRESH_MARGIN_SECONDS = 300;
   let refreshSessionPromise = null;
   let refreshSessionPromiseToken = "";
+  let sessionGeneration = 0;
 
   if (!api || !config) {
     throw new Error("ChatVault Supabase API is missing.");
@@ -258,8 +260,53 @@
     return { ...rest, ...(minimalUser ? { user: minimalUser } : {}) };
   }
 
-  async function storeSession(session) {
+  function createSessionMutationEpoch() {
+    const randomPart = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2);
+    return `${Date.now()}:${randomPart}`;
+  }
+
+  async function getSessionMutationEpoch() {
+    return String(await storageGet(SESSION_MUTATION_EPOCH_KEY) || "");
+  }
+
+  async function createSessionOperation() {
+    return {
+      generation: sessionGeneration,
+      mutationEpoch: await getSessionMutationEpoch()
+    };
+  }
+
+  async function isSessionOperationCurrent(operation) {
+    if (!operation || operation.generation !== sessionGeneration) {
+      return false;
+    }
+    return await getSessionMutationEpoch() === operation.mutationEpoch;
+  }
+
+  async function removeStoredSessionIfMatching(session) {
+    const storedSession = await getStoredSession();
+    const storedToken = storedSession?.access_token || storedSession?.refresh_token || "";
+    const candidateToken = session?.access_token || session?.refresh_token || "";
+    if (storedToken && candidateToken && storedToken === candidateToken) {
+      await storageRemove(SESSION_KEY);
+    }
+  }
+
+  async function storeSession(session, operation) {
+    const sessionOperation = operation || await createSessionOperation();
+    if (!await isSessionOperationCurrent(sessionOperation)) {
+      return null;
+    }
+
     await storageSet(SESSION_KEY, sanitizeSessionForStorage(session));
+
+    if (!await isSessionOperationCurrent(sessionOperation)) {
+      await removeStoredSessionIfMatching(session);
+      return null;
+    }
+
     return session;
   }
 
@@ -268,7 +315,11 @@
   }
 
   async function clearSession() {
-    await storageRemove(SESSION_KEY);
+    sessionGeneration += 1;
+    refreshSessionPromise = null;
+    refreshSessionPromiseToken = "";
+    await storageSet(SESSION_MUTATION_EPOCH_KEY, createSessionMutationEpoch());
+    await storageSet(SESSION_KEY, null);
   }
 
   function refreshSessionThroughBackground(refreshToken) {
@@ -395,8 +446,7 @@
       }
 
       if (options.skipUserRefresh && session.user?.id) {
-        await storeSession(session);
-        return session;
+        return await storeSession(session);
       }
 
       try {
@@ -405,8 +455,7 @@
           ...session,
           user
         };
-        await storeSession(sessionWithUser);
-        return sessionWithUser;
+        return await storeSession(sessionWithUser);
       } catch (userError) {
         if (!isLikelyAuthError(userError)) {
           throw userError;
@@ -421,8 +470,7 @@
           ...refreshedSession,
           user
         };
-        await storeSession(sessionWithUser);
-        return sessionWithUser;
+        return await storeSession(sessionWithUser);
       }
     } catch (error) {
       const storedSession = await getStoredSession();
@@ -453,8 +501,7 @@
       });
 
       const session = normalizeSession(null, refreshed);
-      await storeSession(session);
-      return session;
+      return await storeSession(session);
     } catch (error) {
       throw error;
     }
@@ -508,6 +555,11 @@
           let session = response.session
             ? await storeSession(normalizeSession(null, response.session))
             : await signInWithIdToken(response.idToken, response.accessToken, response.nonce);
+          if (!session) {
+            setAuthLoading(false);
+            resolve(null);
+            return;
+          }
           if (response.session) {
             try {
               session = await getSession({ skipUserRefresh: false, allowStaleOnError: true }) || session;
@@ -536,17 +588,7 @@
   async function signOut() {
     const session = await getStoredSession();
 
-    if (session && session.access_token) {
-      try {
-        await api.request("/auth/v1/logout", {
-          accessToken: session.access_token,
-          method: "POST"
-        });
-      } catch (error) {
-        // Local logout should still succeed if the network request fails.
-      }
-    }
-
+    // 先 clearSession，使所有在飞的 getUser/refreshSession/storeSession 校验失败
     await clearSession();
     await storageRemove(ENTITLEMENT_STATE_CACHE_KEY);
     try {
@@ -571,6 +613,18 @@
       await storageRemove(cleanupKeys);
     } catch (error) {
       // Best-effort cleanup; storage may already be empty.
+    }
+
+    // 最后才发起网络 logout
+    if (session && session.access_token) {
+      try {
+        await api.request("/auth/v1/logout", {
+          accessToken: session.access_token,
+          method: "POST"
+        });
+      } catch (error) {
+        // Local logout should still succeed if the network request fails.
+      }
     }
   }
 

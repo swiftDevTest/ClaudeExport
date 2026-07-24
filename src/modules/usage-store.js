@@ -5,6 +5,13 @@
     : (name) => `chatvault_exporter.${name}`;
   const USAGE_KEY = storageKey("daily_usage.v1");
   const MAX_EXPORT_EVENTS = 50;
+  const USAGE_LOCK_NAME = "chatvault-usage-store-lock";
+  function withUsageLock(fn) {
+    if (typeof navigator !== "undefined" && navigator.locks && typeof navigator.locks.request === "function") {
+      return navigator.locks.request(USAGE_LOCK_NAME, () => fn());
+    }
+    return fn();
+  }
 
   function getChromeLocalStorage() {
     try {
@@ -69,23 +76,25 @@
   }
 
   async function incrementDailyUsage(count = 1) {
-    const current = await getDailyUsage();
-    current.exportedChats = Math.max(0, current.exportedChats + count);
-    
-    // Log export event metadata
-    if (!current.exportEvents) {
-      current.exportEvents = [];
-    }
-    current.exportEvents.push({
-      at: new Date().toISOString(),
-      count: count
-    });
-    if (current.exportEvents.length > MAX_EXPORT_EVENTS) {
-      current.exportEvents = current.exportEvents.slice(-MAX_EXPORT_EVENTS);
-    }
+    return withUsageLock(async () => {
+      const current = await getDailyUsage();
+      current.exportedChats = Math.max(0, current.exportedChats + count);
 
-    await saveDailyUsage(current);
-    return current;
+      // Log export event metadata
+      if (!current.exportEvents) {
+        current.exportEvents = [];
+      }
+      current.exportEvents.push({
+        at: new Date().toISOString(),
+        count: count
+      });
+      if (current.exportEvents.length > MAX_EXPORT_EVENTS) {
+        current.exportEvents = current.exportEvents.slice(-MAX_EXPORT_EVENTS);
+      }
+
+      await saveDailyUsage(current);
+      return current;
+    });
   }
 
   async function setDailyUsage(usage) {

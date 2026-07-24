@@ -738,8 +738,11 @@
   async function uploadMedia(job, mediaRef, token) {
     let uploadState = job.mediaUploads[mediaRef];
     if (typeof uploadState === "string") return uploadState;
-    if (uploadState && uploadState.id && uploadState.status === "uploaded") return uploadState.id;
     const media = (job.media || []).find((item) => item && item.id === mediaRef);
+    if (uploadState && uploadState.id && uploadState.status === "uploaded") {
+      if (media && media.base64) media.base64 = "";
+      return uploadState.id;
+    }
     if (!media || media.error) throw createNotionError("Captured image is unavailable.", 400, "image_capture_failed");
     if (Number(media.byteLength || 0) > FREE_WORKSPACE_SAFE_IMAGE_BYTES) {
       const workspaceLimit = await getWorkspaceFileUploadLimit(job, token);
@@ -753,6 +756,7 @@
         if (current.status === "uploaded") {
           uploadState.status = "uploaded";
           await putRecord(JOB_STORE, job);
+          if (media && media.base64) media.base64 = "";
           return uploadState.id;
         }
         if (current.status !== "pending") uploadState = null;
@@ -785,6 +789,7 @@
     job.mediaUploads[mediaRef] = uploadState;
     job.updatedAt = Date.now();
     await putRecord(JOB_STORE, job);
+    if (media && media.base64) media.base64 = "";
     return uploadState.id;
   }
 
@@ -1440,6 +1445,7 @@
       const operations = Array.isArray(job.executionPlan) ? job.executionPlan : job.renderPlan.operations || [];
       await reconcileInFlightOperation(job, operations, token);
       while (job.currentOperation < operations.length) {
+        if (jobController.signal.aborted) return;
         const latest = await getRecord(JOB_STORE, job.id);
         if (!latest || latest.status === "cancelled") return;
         await executeOperation(job, operations[job.currentOperation], job.currentOperation, token);

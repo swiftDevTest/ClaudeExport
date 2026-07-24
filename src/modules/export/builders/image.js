@@ -321,7 +321,7 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
           lineHeight: 28,
           font: itemFont,
           ordered: block.ordered,
-          index: index + 1,
+          index: (block.start || 1) + index,
           isSub: false
         });
         (item.subItems || []).forEach(function (sub) {

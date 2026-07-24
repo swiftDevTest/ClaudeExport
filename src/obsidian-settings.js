@@ -109,15 +109,35 @@
     return relativePath ? relativePath : t("obsidian_vault_root", "Vault root");
   }
 
-  function queryVaultPermission(handle, timeoutMs = 1500) {
+  function queryVaultPermission(handle, options = {}) {
     if (!handle || typeof handle.queryPermission !== "function") return Promise.resolve("denied");
-    let timeout = null;
-    return Promise.race([
-      handle.queryPermission({ mode: "readwrite" }).catch(() => "denied"),
-      new Promise((resolve) => {
-        timeout = setTimeout(() => resolve("prompt"), timeoutMs);
-      })
-    ]).finally(() => clearTimeout(timeout));
+    const timeoutMs = Number.isFinite(options.timeoutMs) ? options.timeoutMs : 1000;
+    const retries = Math.max(0, Number.isFinite(options.retries) ? options.retries : 1);
+    return (async () => {
+      for (let attempt = 0; attempt <= retries; attempt += 1) {
+        let timeout = null;
+        try {
+          const result = await Promise.race([
+            handle.queryPermission({ mode: "readwrite" }).catch(() => "denied"),
+            new Promise((resolve) => { timeout = setTimeout(() => resolve("__timeout__"), timeoutMs); })
+          ]);
+          clearTimeout(timeout);
+          if (result === "__timeout__") {
+            // Timeout means the query has not resolved yet, not that permission
+            // was denied. Retry once before falling back to "prompt" so the UI
+            // does not wrongly tell the user to reauthorize a freshly granted
+            // Vault (Service Worker cold-start can make queryPermission slow).
+            if (attempt < retries) continue;
+            return "prompt";
+          }
+          return result;
+        } catch (error) {
+          clearTimeout(timeout);
+          return "denied";
+        }
+      }
+      return "prompt";
+    })();
   }
 
   function joinPreviewPath(root, leaf) {
@@ -237,8 +257,13 @@
       elements.vaultStatus.textContent = t("obsidian_settings_vault_authorized", "Vault access is ready. Choose a notes folder next.");
       const isObsidian = await detectObsidianDirectory(selectedHandle);
       currentVaultDetected = isObsidian;
-      elements.warning.hidden = true;
-      elements.warning.textContent = "";
+      if (isObsidian) {
+        elements.warning.hidden = true;
+        elements.warning.textContent = "";
+      } else {
+        elements.warning.hidden = false;
+        elements.warning.textContent = t("obsidian_not_a_vault", "The selected folder does not look like an Obsidian Vault (no .obsidian directory). You can still use it, but opening notes in Obsidian may not work.");
+      }
       setResult("", "");
       updatePreview();
     } catch (error) {
@@ -450,13 +475,19 @@
       vaultPermissionGranted = permission === "granted";
       elements.vaultStatus.textContent = permission === "granted"
         ? t("obsidian_settings_connection_ready", "Connection is ready.")
-        : t("obsidian_permission_required", "Vault permission must be granted again.");
+        : permission === "prompt"
+          ? t("obsidian_permission_checking", "Checking Vault permission...")
+          : t("obsidian_permission_required", "Vault permission must be granted again.");
       elements.disconnect.hidden = false;
       if (permission === "granted") {
         const isObsidian = await detectObsidianDirectory(record.handle);
         currentVaultDetected = isObsidian;
         elements.warning.hidden = true;
         elements.warning.textContent = "";
+      } else if (permission === "prompt" && elements.warning) {
+        // Surface a non-blocking hint so the user knows a retry may resolve it.
+        elements.warning.hidden = false;
+        elements.warning.textContent = t("obsidian_permission_check_hint", "Permission check timed out. Click \"Verify and save\" to retry.");
       }
     }
     updatePreview();

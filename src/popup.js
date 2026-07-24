@@ -1633,7 +1633,10 @@
 
   function isBackendSchemaCacheError(error) {
     var message = String(error && error.message ? error.message : error || "");
-    return /schema cache|payment_products|Could not find the table/i.test(message);
+    if (error && error.code === "PGRST205") return true;
+    if (/Could not find the (?:'|\")?public\.\w+/i.test(message)) return true;
+    if (/schema cache miss/i.test(message)) return true;
+    return false;
   }
 
   function isCheckoutRateLimitedError(error) {

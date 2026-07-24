@@ -257,7 +257,8 @@ export function normalizeContent(element) {
   var structSet = markStructuralNodes(element);
   walkElement(element, blocks, structSet);
   var merged = mergeAdjacentParagraphs(blocks);
-  var result = deduplicateBlocks(merged);
+  var listMerged = mergeAdjacentLists(merged);
+  var result = deduplicateBlocks(listMerged);
   return result;
 }
 
@@ -278,6 +279,20 @@ export function mergeAdjacentParagraphs(blocks) {
   });
   return out;
 }
+
+  function mergeAdjacentLists(blocks) {
+    var out = [];
+    (blocks || []).forEach(function (block) {
+      if (!block || block.type !== "list") { out.push(block); return; }
+      var prev = out[out.length - 1];
+      if (prev && prev.type === "list" && prev.ordered === block.ordered && !block.start) {
+        prev.items = (prev.items || []).concat(block.items || []);
+        return;
+      }
+      out.push(block);
+    });
+    return out;
+  }
 
 export function walkElement(parent, blocks, structSet, depth) {
   if (!parent || isIgnoredContentNode(parent)) return;
@@ -380,11 +395,19 @@ export function walkElement(parent, blocks, structSet, depth) {
     }
 
     if (tag === "ul" || tag === "ol") {
-      blocks.push(attachBlockSource({
+      var listBlock = attachBlockSource({
         type: "list",
         ordered: tag === "ol",
         items: extractListItems(child)
-      }, child));
+      }, child);
+      if (tag === "ol") {
+        var startAttr = child.getAttribute && child.getAttribute("start");
+        var startNum = parseInt(startAttr, 10);
+        if (!isNaN(startNum) && startNum > 0 && startNum !== 1) {
+          listBlock.start = startNum;
+        }
+      }
+      blocks.push(listBlock);
       return;
     }
 

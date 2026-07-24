@@ -21,13 +21,13 @@
     "message": "导出为 JSON"
   },
   "extensionName": {
-    "message": "Claude Exporter - 批量导出聊天为 PDF、Word、Markdown 等"
+    "message": "Claude Exporter：PDF、Word、MD 导出与 Notion/Obsidian 同步"
   },
   "extensionShortName": {
     "message": "Claude Export"
   },
   "extensionDescription": {
-    "message": "隐私优先的 Claude 导出工具。可将对话同步至 Notion 或 Obsidian，也可本地导出为 PDF、Docs、Markdown、HTML、图片、文本和 JSON。支持单个和批量导出，提供专业主题。"
+    "message": "一键将 Claude 对话同步至 Notion / Obsidian，或私密导出 PDF、DOCX、Markdown 等文件。"
   },
   "extensionActionTitle": {
     "message": "Claude Exporter - 批量导出聊天为 PDF、Word、Markdown 等"
@@ -1516,5 +1516,14 @@
   },
   "export_image_unavailable": {
     "message": "图片无法用于离线导出"
+  },
+  "obsidian_not_a_vault": {
+    "message": "所选文件夹似乎不是 Obsidian Vault（未找到 .obsidian 目录）。仍可继续使用，但在 Obsidian 中打开笔记可能无法生效。"
+  },
+  "obsidian_permission_check_hint": {
+    "message": "权限检查超时，点击\"验证并保存\"重试。"
+  },
+  "obsidian_permission_checking": {
+    "message": "正在检查 Vault 权限..."
   }
 }

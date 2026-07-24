@@ -59,35 +59,35 @@
   
     
     <g>
-      <rect x="76" y="166" width="213.3" height="42" rx="21" fill="#ffffff" stroke="#e8c5b0" filter="url(#tightShadow)"/>
-      <text x="98" y="193" font-size="19" font-weight="820" fill="#8a3b23">Selected export</text>
+      <rect x="76" y="166" width="162" height="42" rx="21" fill="#ffffff" stroke="#e8c5b0" filter="url(#tightShadow)"/>
+      <text x="98" y="193" font-size="19" font-weight="820" fill="#8a3b23">选择消息导出</text>
       
-        <text x="76" y="294" font-size="58" font-weight="870" fill="#231814">Keep only</text>
+        <text x="76" y="294" font-size="58" font-weight="870" fill="#231814">只保留</text>
       
-        <text x="76" y="360" font-size="58" font-weight="870" fill="#231814">what matters</text>
+        <text x="76" y="360" font-size="58" font-weight="870" fill="#231814">重要内容</text>
       
       
-        <text x="76" y="452" font-size="24" font-weight="640" fill="#6b625c">Pick key messages on the page,</text>
+        <text x="76" y="452" font-size="24" font-weight="640" fill="#6b625c">选择页面中的关键消息，</text>
       
-        <text x="76" y="489" font-size="24" font-weight="640" fill="#6b625c">or grab AI replies in one click.</text>
+        <text x="76" y="489" font-size="24" font-weight="640" fill="#6b625c">或一键仅选择 AI 回复。</text>
       
       
         <g transform="translate(76 561)">
           <circle cx="11" cy="-8" r="10" fill="#fff7ed" stroke="#c96442" stroke-width="2"/>
           <path d="M6 -9l4 4 8-10" fill="none" stroke="#8a3b23" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-          <text x="34" y="0" font-size="24" font-weight="720" fill="#231814">Select specific messages</text>
+          <text x="34" y="0" font-size="24" font-weight="720" fill="#231814">选择指定消息</text>
         </g>
       
         <g transform="translate(76 609)">
           <circle cx="11" cy="-8" r="10" fill="#fff7ed" stroke="#c96442" stroke-width="2"/>
           <path d="M6 -9l4 4 8-10" fill="none" stroke="#8a3b23" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-          <text x="34" y="0" font-size="24" font-weight="720" fill="#231814">Filter AI replies fast</text>
+          <text x="34" y="0" font-size="24" font-weight="720" fill="#231814">快速筛选 AI 回复</text>
         </g>
       
         <g transform="translate(76 657)">
           <circle cx="11" cy="-8" r="10" fill="#fff7ed" stroke="#c96442" stroke-width="2"/>
           <path d="M6 -9l4 4 8-10" fill="none" stroke="#8a3b23" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-          <text x="34" y="0" font-size="24" font-weight="720" fill="#231814">Change format before export</text>
+          <text x="34" y="0" font-size="24" font-weight="720" fill="#231814">导出前切换格式</text>
         </g>
       
     </g>
@@ -108,14 +108,14 @@
   
     
     <g>
-      <rect x="884" y="680" width="126.8" height="40" rx="20" fill="url(#darkPanel)" stroke="#c96442"/>
-      <text x="947.4" y="706" font-size="16" font-weight="840" fill="#ffffff" text-anchor="middle">Selected 1</text>
+      <rect x="884" y="680" width="109.84" height="40" rx="20" fill="url(#darkPanel)" stroke="#c96442"/>
+      <text x="938.92" y="706" font-size="16" font-weight="840" fill="#ffffff" text-anchor="middle">已选 1 条</text>
     </g>
   
     
     <g>
-      <rect x="1080" y="680" width="89.68" height="40" rx="20" fill="url(#darkPanel)" stroke="#c96442"/>
-      <text x="1124.84" y="706" font-size="16" font-weight="840" fill="#ffffff" text-anchor="middle">Export</text>
+      <rect x="1080" y="680" width="86" height="40" rx="20" fill="url(#darkPanel)" stroke="#c96442"/>
+      <text x="1123" y="706" font-size="16" font-weight="840" fill="#ffffff" text-anchor="middle">导出</text>
     </g>
   
   

@@ -21,13 +21,13 @@
     "message": "Als JSON exportieren"
   },
   "extensionName": {
-    "message": "Claude Exporter - Chats per Massenexport in PDF, Word, Markdown und mehr"
+    "message": "Claude Exporter: PDF/Word/MD + Notion/Obsidian-Sync"
   },
   "extensionShortName": {
     "message": "Claude Export"
   },
   "extensionDescription": {
-    "message": "Datenschutzorientierter Claude-Exporter. Chats mit Notion oder Obsidian synchronisieren oder lokal als PDF, Docs, Markdown, HTML, Bild, Text und JSON speichern. Einzel- und Massenexport mit professionellen Themes."
+    "message": "Claude-Chats mit 1 Klick zu Notion / Obsidian synchronisieren oder privat als PDF, DOCX, Markdown und mehr exportieren."
   },
   "extensionActionTitle": {
     "message": "Claude Exporter - Chats per Massenexport in PDF, Word, Markdown und mehr"
@@ -1471,5 +1471,14 @@
   },
   "export_image_unavailable": {
     "message": "Bild im Offline-Export nicht verfügbar"
+  },
+  "obsidian_not_a_vault": {
+    "message": "Der ausgewählte Ordner scheint kein Obsidian Vault zu sein (kein .obsidian-Verzeichnis). Sie können ihn weiterhin verwenden, aber das Öffnen von Notizen in Obsidian funktioniert möglicherweise nicht."
+  },
+  "obsidian_permission_check_hint": {
+    "message": "Zeitüberschreitung bei der Berechtigungsprüfung. Klicken Sie auf „Überprüfen und speichern“, um es erneut zu versuchen."
+  },
+  "obsidian_permission_checking": {
+    "message": "Vault-Berechtigung wird geprüft..."
   }
 }

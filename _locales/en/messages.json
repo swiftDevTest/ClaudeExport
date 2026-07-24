@@ -21,13 +21,13 @@
     "message": "Export to JSON"
   },
   "extensionName": {
-    "message": "Claude Exporter - Bulk Export Chats to PDF, Word, Markdown and More"
+    "message": "Claude Exporter: PDF/Word/Markdown + Notion/Obsidian Sync"
   },
   "extensionShortName": {
     "message": "Claude Export"
   },
   "extensionDescription": {
-    "message": "Privacy-first Claude exporter. Sync conversations to Notion or Obsidian, or save locally as PDF, Docs, Markdown, HTML, image, text and JSON. Supports single and batch export with professional themes."
+    "message": "Sync Claude to Notion / Obsidian in one click, or export private PDF, DOCX, Markdown and more."
   },
   "extensionActionTitle": {
     "message": "Claude Exporter - Bulk Export Chats to PDF, Word, Markdown and More"
@@ -1516,5 +1516,14 @@
   },
   "export_image_unavailable": {
     "message": "Image unavailable in offline export"
+  },
+  "obsidian_not_a_vault": {
+    "message": "The selected folder does not look like an Obsidian Vault (no .obsidian directory). You can still use it, but opening notes in Obsidian may not work."
+  },
+  "obsidian_permission_check_hint": {
+    "message": "Permission check timed out. Click \"Verify and save\" to retry."
+  },
+  "obsidian_permission_checking": {
+    "message": "Checking Vault permission..."
   }
 }

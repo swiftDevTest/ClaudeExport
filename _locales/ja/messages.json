@@ -21,13 +21,13 @@
     "message": "JSON にエクスポート"
   },
   "extensionName": {
-    "message": "Claude Exporter - チャットを PDF、Word、Markdown などへ一括エクスポート"
+    "message": "Claude Exporter：PDF/Word/MD保存・Notion/Obsidian同期"
   },
   "extensionShortName": {
     "message": "Claude Export"
   },
   "extensionDescription": {
-    "message": "プライバシー重視のClaude書き出しツール。会話をNotionやObsidianへ同期、またはPDF、Docs、Markdown、HTML、画像、テキスト、JSONとしてローカル保存。個別・一括エクスポートとプロ仕様テーマに対応。"
+    "message": "Claudeの会話をNotion / Obsidianへワンクリック同期。PDF、DOCX、Markdownなどへの安全なローカル書き出しにも対応。"
   },
   "extensionActionTitle": {
     "message": "Claude Exporter - チャットを PDF、Word、Markdown などへ一括エクスポート"
@@ -1471,5 +1471,14 @@
   },
   "export_image_unavailable": {
     "message": "オフラインエクスポートでは画像を利用できません"
+  },
+  "obsidian_not_a_vault": {
+    "message": "選択したフォルダは Obsidian Vault ではないようです（.obsidian ディレクトリが見つかりません）。引き続き使用できますが、Obsidian でノートを開けない場合があります。"
+  },
+  "obsidian_permission_check_hint": {
+    "message": "権限チェックがタイムアウトしました。「検証して保存」をクリックして再試行してください。"
+  },
+  "obsidian_permission_checking": {
+    "message": "Vault 権限を確認中..."
   }
 }

@@ -21,13 +21,13 @@
     "message": "Exporter en JSON"
   },
   "extensionName": {
-    "message": "Claude Exporter - Exporter des chats en lot vers PDF, Word, MD et plus"
+    "message": "Claude Exporter : PDF/Word/MD + synchro Notion/Obsidian"
   },
   "extensionShortName": {
     "message": "Claude Export"
   },
   "extensionDescription": {
-    "message": "Exporteur Claude axé sur la confidentialité. Synchronisez avec Notion ou Obsidian, ou exportez localement en PDF, Docs, Markdown, HTML, image, texte et JSON. Export individuel et par lot avec thèmes professionnels."
+    "message": "Synchronisez Claude vers Notion / Obsidian en 1 clic ou exportez en privé en PDF, DOCX, Markdown et plus."
   },
   "extensionActionTitle": {
     "message": "Claude Exporter - Exporter des chats en lot vers PDF, Word, MD et plus"
@@ -1471,5 +1471,14 @@
   },
   "export_image_unavailable": {
     "message": "Image indisponible dans l’export hors ligne"
+  },
+  "obsidian_not_a_vault": {
+    "message": "Le dossier sélectionné ne semble pas être un Vault Obsidian (pas de répertoire .obsidian). Vous pouvez continuer à l'utiliser, mais l'ouverture des notes dans Obsidian peut ne pas fonctionner."
+  },
+  "obsidian_permission_check_hint": {
+    "message": "La vérification des autorisations a expiré. Cliquez sur « Vérifier et enregistrer » pour réessayer."
+  },
+  "obsidian_permission_checking": {
+    "message": "Vérification des autorisations du Vault..."
   }
 }

@@ -21,13 +21,13 @@
     "message": "JSON으로 내보내기"
   },
   "extensionName": {
-    "message": "Claude Exporter - 채팅을 PDF, Word, Markdown 등으로 일괄 내보내기"
+    "message": "Claude Exporter: PDF/Word/MD 내보내기 + Notion/Obsidian 동기화"
   },
   "extensionShortName": {
     "message": "Claude Export"
   },
   "extensionDescription": {
-    "message": "개인정보 보호 중심의 Claude 내보내기 도구. 대화를 Notion 또는 Obsidian에 동기화하거나 PDF, Docs, Markdown, HTML, 이미지, 텍스트, JSON으로 로컬 저장. 개별 및 일괄 내보내기와 전문 테마를 지원합니다."
+    "message": "Claude 대화를 Notion / Obsidian에 원클릭 동기화하거나 PDF, DOCX, Markdown 등으로 안전하게 내보내세요."
   },
   "extensionActionTitle": {
     "message": "Claude Exporter - 채팅을 PDF, Word, Markdown 등으로 일괄 내보내기"
@@ -1471,5 +1471,14 @@
   },
   "export_image_unavailable": {
     "message": "오프라인 내보내기에서 이미지를 사용할 수 없습니다"
+  },
+  "obsidian_not_a_vault": {
+    "message": "선택한 폴더가 Obsidian Vault가 아닌 것 같습니다 (.obsidian 디렉토리 없음). 계속 사용할 수 있지만 Obsidian에서 노트를 열 수 없을 수 있습니다."
+  },
+  "obsidian_permission_check_hint": {
+    "message": "권한 확인 시간이 초과되었습니다. \"확인 후 저장\"을 클릭하여 재시도하세요."
+  },
+  "obsidian_permission_checking": {
+    "message": "Vault 권한을 확인하는 중..."
   }
 }

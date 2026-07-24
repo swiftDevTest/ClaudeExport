@@ -340,7 +340,8 @@ function renderBlock(block, imageMap) {
   }
   if (block.type === "list") {
     var tag = block.ordered ? "ol" : "ul";
-    return "<" + tag + blockStyle + ">" + renderListItems(block.items) + "</" + tag + ">";
+    var startAttr = block.ordered && block.start ? ' start="' + block.start + '"' : "";
+    return "<" + tag + blockStyle + startAttr + ">" + renderListItems(block.items) + "</" + tag + ">";
   }
   if (block.type === "table") return renderTable(block);
   if (block.type === "blockquote" || block.type === "quote") {

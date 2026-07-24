@@ -21,13 +21,13 @@
     "message": "Exportar para JSON"
   },
   "extensionName": {
-    "message": "Claude Exporter - Exportar chats em lote para PDF, Word, Markdown e mais"
+    "message": "Claude Exporter: PDF/Word/MD + sincronização Notion/Obsidian"
   },
   "extensionShortName": {
     "message": "Claude Export"
   },
   "extensionDescription": {
-    "message": "Exportador de Claude com foco em privacidade. Sincronize com Notion ou Obsidian, ou exporte localmente em PDF, Docs, Markdown, HTML, imagem, texto e JSON. Exportação individual e em lote com temas profissionais."
+    "message": "Sincronize Claude com Notion / Obsidian em 1 clique ou exporte com privacidade para PDF, DOCX, Markdown e mais."
   },
   "extensionActionTitle": {
     "message": "Claude Exporter - Exportar chats em lote para PDF, Word, Markdown e mais"
@@ -1471,5 +1471,14 @@
   },
   "export_image_unavailable": {
     "message": "Imagem indisponível na exportação offline"
+  },
+  "obsidian_not_a_vault": {
+    "message": "A pasta selecionada não parece ser um Vault do Obsidian (sem diretório .obsidian). Você ainda pode usá-la, mas abrir notas no Obsidian pode não funcionar."
+  },
+  "obsidian_permission_check_hint": {
+    "message": "A verificação de permissão expirou. Clique em \"Verificar e salvar\" para tentar novamente."
+  },
+  "obsidian_permission_checking": {
+    "message": "Verificando permissão do Vault..."
   }
 }

@@ -274,6 +274,46 @@ try {
     }
   }
 
+  async function readImageResponseWithinLimit(response) {
+    const contentLength = Number(response.headers.get("content-length") || 0);
+    if (Number.isFinite(contentLength) && contentLength > MAX_IMAGE_FETCH_BYTES) {
+      throw new Error("Image is too large to export safely. Reduce images or export a shorter conversation.");
+    }
+    if (!response.body || typeof response.body.getReader !== "function") {
+      const fallback = await response.arrayBuffer();
+      if (fallback.byteLength > MAX_IMAGE_FETCH_BYTES) {
+        throw new Error("Image is too large to export safely. Reduce images or export a shorter conversation.");
+      }
+      return new Uint8Array(fallback);
+    }
+
+    const reader = response.body.getReader();
+    const chunks = [];
+    let total = 0;
+    try {
+      while (true) {
+        const next = await reader.read();
+        if (next.done) break;
+        const chunk = next.value instanceof Uint8Array ? next.value : new Uint8Array(next.value || 0);
+        total += chunk.byteLength;
+        if (total > MAX_IMAGE_FETCH_BYTES) {
+          try { await reader.cancel(); } catch (error) {}
+          throw new Error("Image is too large to export safely. Reduce images or export a shorter conversation.");
+        }
+        chunks.push(chunk);
+      }
+    } finally {
+      try { reader.releaseLock(); } catch (error) {}
+    }
+    const output = new Uint8Array(total);
+    let offset = 0;
+    for (const chunk of chunks) {
+      output.set(chunk, offset);
+      offset += chunk.byteLength;
+    }
+    return output;
+  }
+
   function bytesToBase64Payload(bytes) {
     let binary = "";
     const chunk = 8192;
@@ -1114,22 +1154,14 @@ try {
       }
 
       fetch(message.url, fetchOpts)
-        .then(response => {
+        .then(async response => {
           if (!response.ok) throw new Error("HTTP error " + response.status);
-          const contentLength = Number(response.headers.get("content-length") || 0);
-          if (Number.isFinite(contentLength) && contentLength > MAX_IMAGE_FETCH_BYTES) {
-            throw new Error("Image is too large to export safely. Reduce images or export a shorter conversation.");
-          }
           const mimeType = response.headers.get("content-type") || "image/png";
-          return response.arrayBuffer().then(arrayBuffer => {
-            return { mimeType, arrayBuffer };
-          });
+          const bytes = await readImageResponseWithinLimit(response);
+          return { mimeType, bytes };
         })
-        .then(async res => {
-          if (res.arrayBuffer.byteLength > MAX_IMAGE_FETCH_BYTES) {
-            throw new Error("Image is too large to export safely. Reduce images or export a shorter conversation.");
-          }
-          sendResponse({ ok: true, base64: bytesToBase64Payload(new Uint8Array(res.arrayBuffer)), mimeType: res.mimeType });
+        .then(res => {
+          sendResponse({ ok: true, base64: bytesToBase64Payload(res.bytes), mimeType: res.mimeType });
         })
         .catch(err => {
           sendResponse({

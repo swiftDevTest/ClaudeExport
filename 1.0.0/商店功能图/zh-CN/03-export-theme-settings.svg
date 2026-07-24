@@ -59,35 +59,35 @@
   
     
     <g>
-      <rect x="76" y="168" width="213.3" height="42" rx="21" fill="#ffffff" stroke="#e8c5b0" filter="url(#tightShadow)"/>
-      <text x="98" y="195" font-size="19" font-weight="820" fill="#8a3b23">Export settings</text>
+      <rect x="76" y="168" width="150" height="42" rx="21" fill="#ffffff" stroke="#e8c5b0" filter="url(#tightShadow)"/>
+      <text x="98" y="195" font-size="19" font-weight="820" fill="#8a3b23">导出设置</text>
       
-        <text x="76" y="296" font-size="58" font-weight="870" fill="#231814">Themes and</text>
+        <text x="76" y="296" font-size="58" font-weight="870" fill="#231814">主题与</text>
       
-        <text x="76" y="362" font-size="58" font-weight="870" fill="#231814">fields</text>
+        <text x="76" y="362" font-size="58" font-weight="870" fill="#231814">字段</text>
       
       
-        <text x="76" y="454" font-size="24" font-weight="640" fill="#6b625c">Choose document themes and control title,</text>
+        <text x="76" y="454" font-size="24" font-weight="640" fill="#6b625c">选择文档主题并控制标题、</text>
       
-        <text x="76" y="491" font-size="24" font-weight="640" fill="#6b625c">time, platform, receipt, and watermark fields.</text>
+        <text x="76" y="491" font-size="24" font-weight="640" fill="#6b625c">时间、平台、凭证及水印字段。</text>
       
       
         <g transform="translate(76 563)">
           <circle cx="11" cy="-8" r="10" fill="#fff7ed" stroke="#c96442" stroke-width="2"/>
           <path d="M6 -9l4 4 8-10" fill="none" stroke="#8a3b23" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-          <text x="34" y="0" font-size="24" font-weight="720" fill="#231814">Professional export themes</text>
+          <text x="34" y="0" font-size="24" font-weight="720" fill="#231814">专业导出主题</text>
         </g>
       
         <g transform="translate(76 611)">
           <circle cx="11" cy="-8" r="10" fill="#fff7ed" stroke="#c96442" stroke-width="2"/>
           <path d="M6 -9l4 4 8-10" fill="none" stroke="#8a3b23" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-          <text x="34" y="0" font-size="24" font-weight="720" fill="#231814">Document field controls</text>
+          <text x="34" y="0" font-size="24" font-weight="720" fill="#231814">文档字段可控</text>
         </g>
       
         <g transform="translate(76 659)">
           <circle cx="11" cy="-8" r="10" fill="#fff7ed" stroke="#c96442" stroke-width="2"/>
           <path d="M6 -9l4 4 8-10" fill="none" stroke="#8a3b23" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-          <text x="34" y="0" font-size="24" font-weight="720" fill="#231814">Clear Pro feature labels</text>
+          <text x="34" y="0" font-size="24" font-weight="720" fill="#231814">Pro 功能清晰标注</text>
         </g>
       
     </g>
@@ -109,10 +109,10 @@
     
     <g transform="translate(536 514)" filter="url(#softShadow)">
       <rect x="0" y="0" width="330" height="160" rx="28" fill="url(#darkPanel)"/>
-      <text x="28" y="52" font-size="28" font-weight="850" fill="#ffffff">Theme presets</text>
-      <text x="28" y="86" font-size="16" font-weight="660" fill="#e7fff7" opacity="0.82">Reports, papers, terminal style</text>
+      <text x="28" y="52" font-size="28" font-weight="850" fill="#ffffff">主题预设</text>
+      <text x="28" y="86" font-size="16" font-weight="660" fill="#e7fff7" opacity="0.82">报告、论文与终端风格</text>
       <path d="M28 110h274" stroke="#ffffff" stroke-width="1" opacity="0.22"/>
-      <text x="28" y="138" font-size="20" font-weight="850" fill="#ffffff">8 export themes</text>
+      <text x="28" y="138" font-size="20" font-weight="850" fill="#ffffff">8 款导出主题</text>
     </g>
   
   

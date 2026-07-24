@@ -2,6 +2,7 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { makeStoreCopy } from "./store-copy.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(process.env.STORE_ASSET_ROOT || path.join(__dirname, "../.."));
@@ -9,8 +10,28 @@ const outDir = process.env.STORE_ASSET_OUT || __dirname;
 const sourceDir = path.join(outDir, "source-screenshots");
 const chromePath = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 
-const locale = process.env.STORE_ASSET_LOCALE === "zh-CN" ? "zh-CN" : "en";
-const outputDir = locale === "zh-CN" ? path.join(outDir, "zh-CN") : outDir;
+const supportedLocales = ["en", "zh-CN", "zh-TW", "de", "es", "fr", "ja", "ko", "pt-BR"];
+const locale = process.env.STORE_ASSET_LOCALE || "en";
+
+if (!supportedLocales.includes(locale)) {
+  throw new Error(`Unsupported store asset locale: ${locale}`);
+}
+
+const localeMessageDirs = {
+  en: "en",
+  "zh-CN": "zh_CN",
+  "zh-TW": "zh_TW",
+  de: "de",
+  es: "es",
+  fr: "fr",
+  ja: "ja",
+  ko: "ko",
+  "pt-BR": "pt_BR",
+};
+
+// Preserve the current English-at-root convention. Other locales live in
+// explicit store-language folders beside the English assets.
+const outputDir = locale === "en" ? outDir : path.join(outDir, locale);
 
 const platformThemes = {
   chatgpt: {
@@ -102,9 +123,9 @@ function detectProject() {
     return productSlug.includes(name) || platformList.includes(`"${name}"`);
   }) || "chatgpt";
 
-  const messages = readJson(path.join(rootDir, "_locales", "en", "messages.json"));
+  const messages = readJson(path.join(rootDir, "_locales", localeMessageDirs[locale], "messages.json"));
   const extensionName = messages.extensionName?.message || productName;
-  const storeName = extensionName.split(" - ")[0].trim();
+  const storeName = extensionName.split(/\s*(?:-|:|：)\s*/)[0].trim();
   const displayName = storeName;
 
   return {
@@ -163,6 +184,12 @@ function estimateTextWidth(value, size) {
   }, 0);
 }
 
+function fitFontSize(value, preferred, maxWidth, minimum) {
+  const estimated = estimateTextWidth(value, preferred);
+  if (estimated <= maxWidth) return preferred;
+  return Math.max(minimum, Math.floor(preferred * (maxWidth / estimated)));
+}
+
 function defs() {
   return `
     <defs>
@@ -208,61 +235,7 @@ function defs() {
   `;
 }
 
-function makeCopy() {
-  const p = colors.platformLabel;
-  return {
-    slide1: {
-      label: "Extension panel",
-      title: ["Export chats", `from ${p}`],
-      body: [`Save ${p} conversations locally.`, "PDF, Word, Markdown, Image, Text, JSON."],
-      bullets: [`Built for ${p} web`, "Clear free quota", "Private local generation"],
-    },
-    slide2: {
-      label: "Batch export",
-      title: ["Package", "many chats"],
-      body: ["Select multiple conversations.", "Export them in one clean format."],
-      bullets: ["Up to 10 chats", "Switch formats fast", "Built for archives"],
-      cardTitle: "Batch ready",
-      cardBody: "Select chats, then export",
-      cardStat: "PDF / Word / MD",
-    },
-    slide3: {
-      label: "Export settings",
-      title: ["Themes and", "fields"],
-      body: ["Choose document themes and control title,", "time, platform, receipt, and watermark fields."],
-      bullets: ["Professional export themes", "Document field controls", "Clear Pro feature labels"],
-      cardTitle: "Theme presets",
-      cardBody: "Reports, papers, terminal style",
-      cardStat: "8 export themes",
-    },
-    slide4: {
-      label: "Selected export",
-      title: ["Keep only", "what matters"],
-      body: ["Pick key messages on the page,", "or grab AI replies in one click."],
-      bullets: ["Select specific messages", "Filter AI replies fast", "Change format before export"],
-    },
-    slide5: {
-      label: "Local private export",
-      title: ["Local files", "ready to share"],
-      body: ["Chat content stays on your device.", "Files are ready to edit, share, and archive."],
-      bullets: ["PDF / Word / PNG generated locally", "Redact sensitive info on device", "Receipts help verify exports"],
-    },
-    smallTitle: `${p} chats to files`,
-    smallSub: "PDF, Word, Markdown, Image",
-    promoTitle: `Export ${p} locally`,
-    promoSub: "PDF, Word, Markdown, JSON. No upload.",
-    batchLabel: "Batch export",
-    batchSub: "Package multi-chat files",
-    privateLabel: "Private by design",
-    privateSub: "No upload for conversion",
-    pipelineTitle: "Local export pipeline",
-    pipelineSub: "Generated in your browser",
-    noServerTitle: "No conversion server",
-    noServerSub: "Files are generated locally",
-  };
-}
-
-const t = makeCopy();
+const t = makeStoreCopy(locale, colors.platformLabel);
 
 function base(width, height, variant = 0) {
   const sweepY = Math.round(height * 0.2);
@@ -311,8 +284,15 @@ function platformSeal(x, y, size = 54) {
 function copyBlock({ label, title, body, bullets = [] }, x, y, options = {}) {
   const titleLines = Array.isArray(title) ? title : [title];
   const bodyLines = Array.isArray(body) ? body : [body];
-  const titleSize = options.titleSize || 58;
-  const bodySize = options.bodySize || 24;
+  const maxTextWidth = options.maxTextWidth || 620;
+  const preferredTitleSize = options.titleSize || 58;
+  const preferredBodySize = options.bodySize || 24;
+  const preferredBulletSize = options.bulletSize || 24;
+  const titleSize = Math.min(...titleLines.map((line) => fitFontSize(line, preferredTitleSize, maxTextWidth, options.minTitleSize || 38)));
+  const bodySize = Math.min(...bodyLines.map((line) => fitFontSize(line, preferredBodySize, maxTextWidth, options.minBodySize || 17)));
+  const bulletSize = bullets.length
+    ? Math.min(...bullets.map((line) => fitFontSize(line, preferredBulletSize, maxTextWidth - 34, options.minBulletSize || 17)))
+    : preferredBulletSize;
   const labelHeight = options.labelHeight || 42;
   const labelWidth = Math.min(options.labelMaxWidth || 390, Math.max(150, estimateTextWidth(label, 19) + 48));
   const titleY = y + labelHeight + 86;
@@ -334,7 +314,7 @@ function copyBlock({ label, title, body, bullets = [] }, x, y, options = {}) {
         <g transform="translate(${x} ${bulletY + index * 48})">
           <circle cx="11" cy="-8" r="10" fill="${colors.formatWash}" stroke="${colors.accent}" stroke-width="2"/>
           <path d="M6 -9l4 4 8-10" fill="none" stroke="${colors.accentDark}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-          <text x="34" y="0" font-size="24" font-weight="720" fill="${colors.ink}">${esc(item)}</text>
+          <text x="34" y="0" font-size="${bulletSize}" font-weight="720" fill="${colors.ink}">${esc(item)}</text>
         </g>
       `).join("")}
     </g>
@@ -379,6 +359,70 @@ function screenshotFrame({ img, x, y, w, h, rx = 24, fit = "slice", border = "#f
   `;
 }
 
+function batchInterface(x, y, w, h) {
+  const p = colors.platformLabel;
+  const rows = [
+    "Research notes",
+    "Project handoff",
+    "Technical plan",
+    "Study guide",
+    "Code review",
+    "Weekly summary",
+  ];
+  const rowStart = 206;
+  const rowGap = 52;
+
+  return `
+    <g transform="translate(${x} ${y})" filter="url(#deepShadow)">
+      <rect x="0" y="0" width="${w}" height="${h}" rx="30" fill="#ffffff" stroke="${colors.line}" stroke-width="2"/>
+      <text x="28" y="43" font-size="24" font-weight="860" fill="${colors.ink}">Batch Export ${esc(p)} Chats</text>
+      <path d="M${w - 38} 25l14 14m0-14l-14 14" stroke="${colors.muted}" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M0 66h${w}" stroke="${colors.line}" stroke-width="1.5"/>
+
+      <g transform="translate(24 82)">
+        <rect x="0" y="0" width="${w - 48}" height="54" rx="18" fill="${colors.formatWash}" stroke="${colors.line}"/>
+        <rect x="4" y="4" width="190" height="46" rx="15" fill="#ffffff" stroke="${colors.line}" filter="url(#tightShadow)"/>
+        <text x="99" y="34" font-size="16" font-weight="850" fill="${colors.ink}" text-anchor="middle">Export files</text>
+        <text x="300" y="34" font-size="16" font-weight="780" fill="${colors.muted}" text-anchor="middle">Sync to Notion</text>
+        <text x="500" y="34" font-size="16" font-weight="780" fill="${colors.muted}" text-anchor="middle">Sync to Obsidian</text>
+      </g>
+
+      <rect x="24" y="152" width="${w - 48}" height="42" rx="14" fill="#f8fafc" stroke="#e2e8f0"/>
+      <text x="44" y="179" font-size="16" font-weight="640" fill="#94a3b8">Search conversation titles…</text>
+
+      ${rows.map((title, index) => {
+        const rowY = rowStart + index * rowGap;
+        return `
+          <g transform="translate(24 ${rowY})">
+            <rect x="0" y="0" width="${w - 48}" height="42" rx="12" fill="${index === 1 ? colors.formatWash : "#fbfdff"}" stroke="#e2e8f0"/>
+            <rect x="16" y="11" width="20" height="20" rx="5" fill="#ffffff" stroke="${index === 1 ? colors.accent : "#cbd5e1"}" stroke-width="2"/>
+            <text x="52" y="27" font-size="17" font-weight="740" fill="${colors.ink}">${esc(title)}</text>
+            <text x="${w - 78}" y="27" font-size="13" font-weight="650" fill="#94a3b8" text-anchor="end">${esc(project.platform)} · Conversation history</text>
+          </g>
+        `;
+      }).join("")}
+
+      <path d="M0 526h${w}" stroke="${colors.line}" stroke-width="1.5"/>
+      <g transform="translate(24 542)">
+        ${["PDF", "Word", "Markdown", "HTML", "Image", "Text"].map((format, index) => {
+          const tileW = 88;
+          const tileX = index * 96;
+          return `
+            <g transform="translate(${tileX} 0)">
+              <rect x="0" y="0" width="${tileW}" height="38" rx="11" fill="${index === 0 ? colors.warmWash : "#f8fafc"}" stroke="${index === 0 ? colors.accent : "#dbe3ee"}"/>
+              <text x="${tileW / 2}" y="25" font-size="13" font-weight="800" fill="${index === 0 ? colors.accentDark : colors.muted}" text-anchor="middle">${format}</text>
+            </g>
+          `;
+        }).join("")}
+      </g>
+      <path d="M0 594h${w}" stroke="${colors.line}" stroke-width="1.5"/>
+      <text x="28" y="624" font-size="16" font-weight="680" fill="${colors.muted}">Selected 0 chats (max 10)</text>
+      <rect x="${w - 142}" y="604" width="114" height="28" rx="12" fill="${colors.line}"/>
+      <text x="${w - 85}" y="624" font-size="14" font-weight="820" fill="#ffffff" text-anchor="middle">Export</text>
+    </g>
+  `;
+}
+
 function darkInfoCard(x, y, title, body, stat) {
   return `
     <g transform="translate(${x} ${y})" filter="url(#softShadow)">
@@ -406,7 +450,7 @@ function slidePlugin() {
     ${base(1280, 800, 0)}
     ${brandMark(76, 70, 52, true)}
     ${platformSeal(548, 66, 56)}
-    ${copyBlock(t.slide1, 76, 168)}
+    ${copyBlock(t.slide1, 76, 168, { maxTextWidth: 600, bulletSize: 22 })}
     <rect x="714" y="42" width="500" height="690" rx="46" fill="url(#softPanel)" stroke="${colors.line}" opacity="0.72"/>
     ${screenshotFrame({ img: imageData.plugin, x: 748, y: 58, w: 430, h: 645, rx: 30 })}
     ${formatPills(76, 718, ["PDF", "Word", "Markdown", "PNG"])}
@@ -417,9 +461,9 @@ function slideBatch() {
   return svg(1280, 800, `
     ${base(1280, 800, 1)}
     ${brandMark(76, 70, 46, false)}
-    ${copyBlock(t.slide2, 76, 168)}
+    ${copyBlock(t.slide2, 76, 168, { maxTextWidth: 420, titleSize: 54, bodySize: 22, bulletSize: 21 })}
     <rect x="518" y="60" width="712" height="690" rx="46" fill="#ffffff" opacity="0.48" stroke="${colors.line}"/>
-    ${screenshotFrame({ img: imageData.batch, x: 548, y: 88, w: 650, h: 638, rx: 30 })}
+    ${batchInterface(548, 88, 650, 638)}
     ${darkInfoCard(804, 560, t.slide2.cardTitle, t.slide2.cardBody, t.slide2.cardStat)}
   `);
 }
@@ -428,7 +472,7 @@ function slideSettings() {
   return svg(1280, 800, `
     ${base(1280, 800, 2)}
     ${brandMark(76, 70, 46, false)}
-    ${copyBlock(t.slide3, 76, 168)}
+    ${copyBlock(t.slide3, 76, 168, { maxTextWidth: 600 })}
     <rect x="720" y="42" width="500" height="690" rx="46" fill="url(#softPanel)" stroke="${colors.line}" opacity="0.72"/>
     ${screenshotFrame({ img: imageData.settings, x: 752, y: 58, w: 430, h: 642, rx: 30 })}
     ${darkInfoCard(536, 514, t.slide3.cardTitle, t.slide3.cardBody, t.slide3.cardStat)}
@@ -439,11 +483,11 @@ function slideSelect() {
   return svg(1280, 800, `
     ${base(1280, 800, 3)}
     ${brandMark(76, 70, 46, false)}
-    ${copyBlock(t.slide4, 76, 166)}
+    ${copyBlock(t.slide4, 76, 166, { maxTextWidth: 380 })}
     <rect x="480" y="84" width="784" height="592" rx="42" fill="#ffffff" opacity="0.48" stroke="${colors.line}"/>
     ${screenshotFrame({ img: imageData.select, x: 506, y: 110, w: 730, h: 544, rx: 26, fit: "meet" })}
-    ${pill(884, 680, "Selected 1", "dark")}
-    ${pill(1080, 680, "Export", "dark")}
+    ${pill(884, 680, t.selectionPill, "dark")}
+    ${pill(1080, 680, t.exportPill, "dark")}
   `);
 }
 
@@ -451,16 +495,16 @@ function slidePrivacyReport() {
   return svg(1280, 800, `
     ${base(1280, 800, 4)}
     ${brandMark(76, 70, 46, false)}
-    ${copyBlock(t.slide5, 76, 166)}
+    ${copyBlock(t.slide5, 76, 166, { maxTextWidth: 470 })}
     <g transform="translate(582 96)" filter="url(#deepShadow)">
       <rect x="0" y="0" width="596" height="530" rx="34" fill="#ffffff" stroke="${colors.line}"/>
       <rect x="28" y="28" width="540" height="126" rx="28" fill="url(#darkPanel)"/>
       <text x="62" y="78" font-size="32" font-weight="870" fill="#ffffff">${esc(t.pipelineTitle)}</text>
       <text x="62" y="116" font-size="17" font-weight="660" fill="#ffffff" opacity="0.78">${esc(t.pipelineSub)}</text>
       <g transform="translate(42 202)">
-        ${formatTile(0, 0, "PDF", "Formatted", colors.warmWash, colors.warmLine, colors.accentDark)}
-        ${formatTile(154, 0, "Word", "Editable", colors.coolWash, colors.coolLine, colors.accentDark)}
-        ${formatTile(308, 0, "PNG", "Share card", colors.formatWash, colors.formatLine, colors.accentDark)}
+        ${formatTile(0, 0, "Notion", t.notionBody, colors.warmWash, colors.warmLine, colors.accentDark)}
+        ${formatTile(154, 0, "Obsidian", t.obsidianBody, colors.coolWash, colors.coolLine, colors.accentDark)}
+        ${formatTile(308, 0, "PDF / DOC", t.localFilesBody, colors.formatWash, colors.formatLine, colors.accentDark)}
       </g>
       <g transform="translate(42 350)">
         <rect x="0" y="0" width="382" height="88" rx="26" fill="${colors.formatWash}" stroke="${colors.line}"/>
@@ -475,8 +519,8 @@ function slidePrivacyReport() {
       <rect x="0" y="0" width="300" height="72" rx="24" fill="#ffffff" stroke="${colors.line}"/>
       <circle cx="42" cy="36" r="18" fill="${colors.formatWash}" stroke="${colors.line}"/>
       <path d="M33 36l7 7 13-18" fill="none" stroke="${colors.accentDark}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-      <text x="76" y="31" font-size="18" font-weight="850" fill="${colors.ink}">No chat upload</text>
-      <text x="76" y="53" font-size="13" font-weight="660" fill="${colors.muted}">local conversion only</text>
+      <text x="76" y="31" font-size="${fitFontSize(t.noUploadTitle, 18, 202, 13)}" font-weight="850" fill="${colors.ink}">${esc(t.noUploadTitle)}</text>
+      <text x="76" y="53" font-size="${fitFontSize(t.noUploadSub, 13, 202, 10)}" font-weight="660" fill="${colors.muted}">${esc(t.noUploadSub)}</text>
     </g>
   `);
 }
@@ -485,19 +529,25 @@ function promoSmall() {
   return svg(440, 280, `
     ${base(440, 280, 5)}
     <rect x="20" y="20" width="400" height="240" rx="30" fill="#ffffff" opacity="0.86" stroke="${colors.line}"/>
-    ${brandMark(42, 42, 48, false)}
-    ${platformSeal(346, 42, 48)}
-    <text x="104" y="72" font-size="28" font-weight="870" fill="${colors.ink}">${esc(project.displayName)}</text>
-    <text x="42" y="122" font-size="25" font-weight="870" fill="${colors.accentDark}">${esc(t.smallTitle)}</text>
-    <text x="42" y="152" font-size="15" font-weight="680" fill="${colors.muted}">${esc(t.smallSub)}</text>
-    <g transform="translate(42 184)">
-      <rect x="0" y="0" width="164" height="48" rx="24" fill="url(#darkPanel)"/>
-      <text x="24" y="29" font-size="17" font-weight="850" fill="#ffffff">${esc(t.batchLabel)}</text>
+    ${brandMark(36, 36, 38, false)}
+    <text x="86" y="61" font-size="${fitFontSize(project.displayName, 21, 170, 16)}" font-weight="870" fill="${colors.ink}">${esc(project.displayName)}</text>
+    <text x="36" y="107" font-size="${fitFontSize(t.smallTitle, 24, 220, 17)}" font-weight="880" fill="${colors.accentDark}">${esc(t.smallTitle)}</text>
+    <text x="36" y="137" font-size="${fitFontSize(t.smallSub, 14, 222, 10)}" font-weight="700" fill="${colors.muted}">${esc(t.smallSub)}</text>
+    <g transform="translate(36 171)">
+      <circle cx="8" cy="-4" r="8" fill="${colors.accent}"/>
+      <path d="M4 -4l3 3 5-7" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="23" y="0" font-size="${fitFontSize(t.batchLabel, 14, 192, 10)}" font-weight="800" fill="${colors.ink}">${esc(t.batchLabel)}</text>
     </g>
-    <g transform="translate(218 184)">
-      <rect x="0" y="0" width="158" height="48" rx="24" fill="${colors.formatWash}" stroke="${colors.line}"/>
-      <text x="24" y="29" font-size="17" font-weight="830" fill="${colors.accentDark}">Local files</text>
+    <g transform="translate(36 201)">
+      <circle cx="8" cy="-4" r="8" fill="${colors.accent}"/>
+      <path d="M4 -4l3 3 5-7" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="23" y="0" font-size="${fitFontSize(t.privateLabel, 14, 192, 10)}" font-weight="800" fill="${colors.ink}">${esc(t.privateLabel)}</text>
     </g>
+    <g transform="translate(36 223)">
+      <rect x="0" y="0" width="220" height="27" rx="13.5" fill="${colors.formatWash}" stroke="${colors.line}"/>
+      <text x="110" y="18" font-size="${fitFontSize(t.noUploadSub, 11, 194, 9)}" font-weight="760" fill="${colors.accentDark}" text-anchor="middle">${esc(t.noUploadSub)}</text>
+    </g>
+    ${screenshotFrame({ img: imageData.plugin, x: 284, y: 34, w: 122, h: 202, rx: 18, fit: "meet" })}
   `);
 }
 
@@ -507,12 +557,11 @@ function promoMarquee() {
     <path d="M0 0h1400v560H0z" fill="#ffffff" opacity="0.14"/>
     ${brandMark(80, 74, 62, true)}
     ${platformSeal(636, 76, 62)}
-    <text x="80" y="204" font-size="59" font-weight="880" fill="${colors.ink}">${esc(t.promoTitle)}</text>
-    <text x="80" y="262" font-size="25" font-weight="660" fill="${colors.muted}">${esc(t.promoSub)}</text>
+    <text x="80" y="204" font-size="${fitFontSize(t.promoTitle, 59, 630, 42)}" font-weight="880" fill="${colors.ink}">${esc(t.promoTitle)}</text>
+    <text x="80" y="262" font-size="${fitFontSize(t.promoSub, 25, 630, 17)}" font-weight="660" fill="${colors.muted}">${esc(t.promoSub)}</text>
     ${formatPills(80, 318, ["PDF", "Word", "Markdown", "PNG", "JSON"])}
-    <rect x="746" y="34" width="594" height="484" rx="48" fill="#ffffff" opacity="0.5" stroke="${colors.line}"/>
-    ${screenshotFrame({ img: imageData.select, x: 790, y: 150, w: 396, h: 294, rx: 24, rotate: -1, opacity: 0.94, fit: "meet" })}
-    ${screenshotFrame({ img: imageData.plugin, x: 1010, y: 54, w: 286, h: 430, rx: 28 })}
+    <rect x="746" y="22" width="594" height="516" rx="48" fill="#ffffff" opacity="0.5" stroke="${colors.line}"/>
+    ${screenshotFrame({ img: imageData.plugin, x: 878, y: 30, w: 330, h: 500, rx: 28, fit: "meet" })}
     <g transform="translate(80 410)" filter="url(#softShadow)">
       <rect x="0" y="0" width="250" height="72" rx="24" fill="url(#darkPanel)"/>
       <text x="28" y="31" font-size="20" font-weight="850" fill="#ffffff">${esc(t.batchLabel)}</text>
@@ -535,7 +584,7 @@ function svg(width, height, content) {
 `;
 }
 
-const assets = [
+const allAssets = [
   { name: "01-plugin-popup", width: 1280, height: 800, render: slidePlugin },
   { name: "02-batch-export", width: 1280, height: 800, render: slideBatch },
   { name: "03-export-theme-settings", width: 1280, height: 800, render: slideSettings },
@@ -544,6 +593,15 @@ const assets = [
   { name: "promo-small-440x280", width: 440, height: 280, render: promoSmall },
   { name: "promo-marquee-1400x560", width: 1400, height: 560, render: promoMarquee },
 ];
+
+const requestedAssetName = process.env.STORE_ASSET_NAME;
+const assets = requestedAssetName
+  ? allAssets.filter((asset) => asset.name === requestedAssetName)
+  : allAssets;
+
+if (requestedAssetName && assets.length === 0) {
+  throw new Error(`Unknown store asset: ${requestedAssetName}`);
+}
 
 function shellQuote(value) {
   return `'${String(value).replaceAll("'", "'\\''")}'`;

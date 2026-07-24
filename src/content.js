@@ -45,6 +45,8 @@
   let currentSession = null;
   let dailyUsage = { date: "", exportedChats: 0 };
   let usageStateLoaded = false;
+  const ENTITLEMENT_SERVER_CHECK_TTL_MS = 5 * 60 * 1000;
+  let lastEntitlementServerCheckAt = 0;
   let currentPreset = "default_transcript";
   let activeFormat = "pdf";
   let abortController = null;
@@ -100,7 +102,20 @@
 
   function isBackendSchemaCacheError(error) {
     const message = String(error?.message || error || "");
-    return /schema cache|payment_products|Could not find the table/i.test(message);
+    if (error?.code === "PGRST205") return true;
+    if (/Could not find the (?:'|")?public\.\w+/i.test(message)) return true;
+    if (/schema cache miss/i.test(message)) return true;
+    return false;
+  }
+
+  function localQuotaAllows(count) {
+    const requested = Math.max(1, Number(count) || 1);
+    if (entitlements?.canUseExport && currentUserProfile) {
+      return entitlements.canUseExport(currentUserProfile, dailyUsage || {}, requested);
+    }
+    const used = Number(dailyUsage?.exportedChats || 0);
+    const limit = Number(dailyUsage?.limit || 0) || 3;
+    return requested <= Math.max(0, limit - used);
   }
 
   function formatDefaultText(defaultText, args) {
@@ -501,6 +516,7 @@
     currentSession = null;
     currentUserProfile = null;
     isProUser = false;
+    lastEntitlementServerCheckAt = 0;
     dailyUsage = await getLocalUsageSnapshot() || dailyUsage;
     usageStateLoaded = true;
     invalidatePopupStateCache();
@@ -694,10 +710,28 @@
   }
 
   async function verifySignedInExportAccess(count) {
-    if (isProUser || !currentSession?.access_token) {
+    const hasSession = Boolean(currentSession?.access_token);
+    if (!hasSession) {
       return { ok: true, allowed: true, serverVerified: false };
     }
-    return syncVerifiedExportEntitlement(count, { consume: false });
+    const now = Date.now();
+    const isCacheFresh = now - lastEntitlementServerCheckAt < ENTITLEMENT_SERVER_CHECK_TTL_MS;
+    if (isProUser && isCacheFresh) {
+      return { ok: true, allowed: true, serverVerified: false };
+    }
+    try {
+      const result = await syncVerifiedExportEntitlement(count, { consume: false });
+      if (result && result.ok && result.serverVerified) {
+        lastEntitlementServerCheckAt = now;
+      }
+      return result;
+    } catch (error) {
+      if (isProUser) {
+        console.warn("Pro entitlement server check failed, using cached Pro state:", error);
+        return { ok: true, allowed: true, serverVerified: false };
+      }
+      throw error;
+    }
   }
 
   async function syncVerifiedExportEntitlement(conversationCount, options = {}) {
@@ -714,7 +748,17 @@
     } catch (error) {
       if (!consume && isBackendSchemaCacheError(error)) {
         console.warn("Server entitlement verification schema is stale; using local quota fallback:", error);
-        return { ok: true, allowed: true, serverVerified: false };
+        const localAllowed = localQuotaAllows(count);
+        return {
+          ok: true,
+          allowed: localAllowed,
+          serverVerified: false,
+          error: localAllowed ? null : tx(
+            "content_entitlement_local_quota_exhausted",
+            "Daily export limit reached (verified locally). Try again later or upgrade to Pro.",
+            "已达每日导出上限（本地校验），请稍后重试或升级 Pro。"
+          )
+        };
       }
       const localAccess = getLocalExportAccessResult(count);
       if (!localAccess.allowed || isProUser) {
@@ -768,6 +812,20 @@
         remaining: entitlements.getRemainingFreeExports(currentUserProfile, dailyUsage)
       };
     } catch (error) {
+      if (!consume && isBackendSchemaCacheError(error)) {
+        console.warn("Server entitlement verification schema is stale; using local quota fallback:", error);
+        const localAllowed = localQuotaAllows(count);
+        return {
+          ok: true,
+          allowed: localAllowed,
+          serverVerified: false,
+          error: localAllowed ? null : tx(
+            "content_entitlement_local_quota_exhausted",
+            "Daily export limit reached (verified locally). Try again later or upgrade to Pro.",
+            "已达每日导出上限（本地校验），请稍后重试或升级 Pro。"
+          )
+        };
+      }
       const localAccess = getLocalExportAccessResult(count);
       if (!localAccess.allowed || isProUser) {
         return {
@@ -1682,7 +1740,7 @@
     shadowRoot.getElementById("cv-batch-notion-connect")?.addEventListener("click", connectBatchNotionWorkspace);
 
     shadowRoot.getElementById("cv-batch-obsidian-configure")?.addEventListener("click", () => {
-      chrome.runtime.sendMessage({ type: "CHATVAULT_OBSIDIAN_OPEN_SETTINGS" }, (response) => {
+      chrome.runtime.sendMessage({ type: "CHATVAULT_OBSIDIAN_OPEN_SETTINGS", background: true }, (response) => {
         if (chrome.runtime.lastError || !response?.ok) {
           showPageToast(response?.error || tx("obsidian_settings_failed", "Could not open Obsidian settings.", "无法打开 Obsidian 设置。"));
         }
