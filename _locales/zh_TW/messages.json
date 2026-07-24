@@ -1196,6 +1196,12 @@
   "popup_open_chatgpt": {
     "message": "開啟 ChatGPT"
   },
+  "popup_contact_desc": {
+    "message": "有任何問題？歡迎隨時聯絡我們。"
+  },
+  "popup_contact_title": {
+    "message": "需要幫助？"
+  },
   "popup_current_session": {
     "message": "目前會話"
   },

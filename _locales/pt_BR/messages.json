@@ -1196,6 +1196,12 @@
   "popup_open_chatgpt": {
     "message": "Abrir ChatGPT"
   },
+  "popup_contact_desc": {
+    "message": "Tem alguma pergunta? Entre em contato conosco a qualquer momento."
+  },
+  "popup_contact_title": {
+    "message": "Precisa de ajuda?"
+  },
   "popup_current_session": {
     "message": "Sessão atual"
   },

@@ -1241,6 +1241,12 @@
   "popup_open_chatgpt": {
     "message": "Open ChatGPT"
   },
+  "popup_contact_desc": {
+    "message": "Have any questions? Feel free to reach out to us."
+  },
+  "popup_contact_title": {
+    "message": "Need help?"
+  },
   "popup_current_session": {
     "message": "Current session"
   },

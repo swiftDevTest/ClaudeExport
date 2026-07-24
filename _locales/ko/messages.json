@@ -1196,6 +1196,12 @@
   "popup_open_chatgpt": {
     "message": "ChatGPT 열기"
   },
+  "popup_contact_desc": {
+    "message": "질문이 있으신가요? 언제든지 문의해 주세요."
+  },
+  "popup_contact_title": {
+    "message": "도움이 필요하신가요?"
+  },
   "popup_current_session": {
     "message": "현재 세션"
   },

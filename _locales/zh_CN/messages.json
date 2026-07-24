@@ -1241,6 +1241,12 @@
   "popup_open_chatgpt": {
     "message": "打开 ChatGPT"
   },
+  "popup_contact_desc": {
+    "message": "有任何问题？欢迎随时联系我们。"
+  },
+  "popup_contact_title": {
+    "message": "需要帮助？"
+  },
   "popup_current_session": {
     "message": "当前会话"
   },

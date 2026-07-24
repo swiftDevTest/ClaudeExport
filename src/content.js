@@ -47,6 +47,10 @@
   let usageStateLoaded = false;
   const ENTITLEMENT_SERVER_CHECK_TTL_MS = 5 * 60 * 1000;
   let lastEntitlementServerCheckAt = 0;
+  // Session 失效冷却期：检测到 refresh token 失效后，短期内不再重复尝试刷新，
+  // 避免每次导出都触发一次注定失败的 refresh 请求。用户重新登录后会清零。
+  const SESSION_REFRESH_FAIL_COOLDOWN_MS = 5 * 60 * 1000;
+  let sessionRefreshFailedAt = 0;
   let currentPreset = "default_transcript";
   let activeFormat = "pdf";
   let abortController = null;
@@ -502,6 +506,8 @@
         plan: "free"
       });
       isProUser = entitlements.isPro(currentUserProfile);
+      // 新 session 写入时清零 session 失效冷却期（用户已重新登录）
+      sessionRefreshFailedAt = 0;
     } else {
       currentUserProfile = null;
       isProUser = false;
@@ -714,6 +720,13 @@
     if (!hasSession) {
       return { ok: true, allowed: true, serverVerified: false };
     }
+    // Session 失效冷却期：refresh token 已知失效时，短期内不再尝试服务端校验，
+    // 直接走未登录配额。用户重新登录后 sessionRefreshFailedAt 会被清零。
+    const isSessionRefreshInCooldown = sessionRefreshFailedAt > 0 &&
+      Date.now() - sessionRefreshFailedAt < SESSION_REFRESH_FAIL_COOLDOWN_MS;
+    if (isSessionRefreshInCooldown) {
+      return getLocalExportAccessResult(count);
+    }
     const now = Date.now();
     const isCacheFresh = now - lastEntitlementServerCheckAt < ENTITLEMENT_SERVER_CHECK_TTL_MS;
     if (isProUser && isCacheFresh) {
@@ -760,16 +773,39 @@
           )
         };
       }
-      const localAccess = getLocalExportAccessResult(count);
-      if (!localAccess.allowed || isProUser) {
+      // 登录失效（refresh token 过期/被吊销，导致 getSession 无法刷新 access token）
+      // 历史问题：原实现直接返回 ok:false，导致用户在 session 过期后完全无法导出，
+      // 且错误提示"Check your connection"误导用户以为是网络问题。
+      // 修复：不主动退出登录（避免用户感知"被登出"），而是标记 session 失效冷却期，
+      // 短期内不再重复尝试刷新；本次降级为未登录配额继续导出，并明确告知用户需要重新登录。
+      if (auth?.isLikelyAuthError?.(error)) {
+        console.warn("ChatVault session expired or revoked; falling back to anonymous quota.", error);
+        sessionRefreshFailedAt = Date.now();
+        try { invalidatePopupStateCache(); } catch (_e) {}
+        try { notifyPopupEntitlementStateUpdated(); } catch (_e) {}
+
+        const anonymousAllowed = localQuotaAllows(count);
         return {
-          ok: false,
-          allowed: false,
+          ok: true,
+          allowed: anonymousAllowed,
           serverVerified: false,
-          error: tx("content_entitlement_verify_failed", "Could not verify your export entitlement. Check your connection and try again.", "无法验证您的导出权益，请检查网络后重试。")
+          error: anonymousAllowed
+            ? tx(
+              "content_entitlement_session_expired",
+              "Your sign-in has expired. Please sign in again to sync your plan. Continuing with anonymous quota for now.",
+              "登录已过期，请重新登录以同步您的套餐。本次按未登录配额继续导出。"
+            )
+            : tx(
+              "content_entitlement_session_expired_exhausted",
+              "Your sign-in has expired and the anonymous daily quota is used up. Please sign in again to continue.",
+              "登录已过期且未登录配额已用完，请重新登录后继续导出。"
+            )
         };
       }
-      console.warn("Server entitlement verification failed; using local quota fallback:", error);
+
+      // 网络/未知错误：降级为本地配额，避免后端短暂故障导致用户完全无法导出
+      const localAccess = getLocalExportAccessResult(count);
+      console.warn("Session refresh failed; using local quota fallback:", error);
       return localAccess;
     }
 
@@ -788,6 +824,8 @@
       });
 
       currentSession = session;
+      // 服务端校验成功说明 session 有效，清零失效冷却期
+      sessionRefreshFailedAt = 0;
       const syncedProfile = normalizeProfileResponse(result);
       if (syncedProfile) {
         currentUserProfile = syncedProfile;

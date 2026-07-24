@@ -163,6 +163,8 @@
 
     setText(".privacy-text strong", "popup_privacy_title", "100% local and private");
     setText(".privacy-text span", "popup_privacy_desc", "All parsing and exports happen locally in your browser. Your chat data is not uploaded.");
+    setText(".contact-text-title", "popup_contact_title", "Need help?");
+    setText(".contact-text-desc", "popup_contact_desc", "Have any questions? Feel free to reach out to us.");
     setText("#quota-status-info", "popup_quota_loading", "Loading usage quota...");
 
     var connectionsTitle = document.querySelector("#connection-settings-card h3");

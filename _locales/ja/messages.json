@@ -1196,6 +1196,12 @@
   "popup_open_chatgpt": {
     "message": "ChatGPTを開く"
   },
+  "popup_contact_desc": {
+    "message": "ご質問がありますか？お気軽にお問い合わせください。"
+  },
+  "popup_contact_title": {
+    "message": "お困りですか？"
+  },
   "popup_current_session": {
     "message": "現在のセッション"
   },
