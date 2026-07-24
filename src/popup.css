@@ -316,6 +316,20 @@ button:focus-visible,
   cursor: wait;
 }
 
+.auth-btn .auth-btn-loading-placeholder {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid rgba(0, 0, 0, 0.15);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: auth-btn-flicker-spin 0.7s linear infinite;
+}
+
+@keyframes auth-btn-flicker-spin {
+  to { transform: rotate(360deg); }
+}
+
 .popup-body {
   flex: 1;
   min-width: 0;

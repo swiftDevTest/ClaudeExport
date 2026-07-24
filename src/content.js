@@ -1597,7 +1597,9 @@
       <div class="cv-obsidian-result-overlay" id="cv-obsidian-result-overlay" aria-hidden="true">
         <div class="cv-obsidian-result-card" role="dialog" aria-modal="true" aria-labelledby="cv-obsidian-result-title">
           <button class="cv-obsidian-result-close" id="cv-obsidian-result-close" type="button" aria-label="${getBatchCloseLabel()}">×</button>
-          <div class="cv-obsidian-result-mark" id="cv-obsidian-result-mark" aria-hidden="true">✓</div>
+          <div class="cv-obsidian-result-confetti" id="cv-obsidian-result-confetti" aria-hidden="true" hidden>
+            <span>✦</span><span>●</span><strong>🎉</strong><span>●</span><span>✦</span>
+          </div>          <div class="cv-obsidian-result-mark" id="cv-obsidian-result-mark" aria-hidden="true">✓</div>
           <h2 id="cv-obsidian-result-title">${tx("obsidian_sync_complete", "Synced to Obsidian", "已成功同步到 Obsidian")}</h2>
           <p id="cv-obsidian-result-description">${tx("obsidian_sync_complete_desc", "This conversation is ready in your Obsidian Vault.", "当前对话已写入你选择的 Obsidian Vault。")}</p>
           <button class="cv-obsidian-result-open" id="cv-obsidian-result-open" type="button">
@@ -4861,7 +4863,7 @@
     if (title) {
       title.textContent = partial
         ? tx("notion_sync_partial_title", "Synced to Notion with warnings", "已同步到 Notion，但有部分内容降级")
-        : tx("notion_sync_success_title", "Synced to Notion", "已成功同步到 Notion");
+        : tx("content_export_success_title", "Export successful! Export as another format?", "Export successful!");
     }
     if (description) {
       description.textContent = partial
@@ -4893,6 +4895,11 @@
     if (!overlay) return;
     overlay.classList.remove("active");
     overlay.setAttribute("aria-hidden", "true");
+    // reset confetti and mark display state to avoid next dialog leftover
+    const confetti = shadowRoot.getElementById("cv-obsidian-result-confetti");
+    if (confetti) confetti.hidden = true;
+    const mark = shadowRoot.getElementById("cv-obsidian-result-mark");
+    if (mark) mark.style.display = "";
   }
 
   function hideBatchSyncResultDialog() {
@@ -4911,6 +4918,7 @@
     const description = shadowRoot.getElementById("cv-batch-result-description");
     const itemsContainer = shadowRoot.getElementById("cv-batch-result-items");
     const mark = shadowRoot.getElementById("cv-batch-result-mark");
+    const confetti = shadowRoot.getElementById("cv-batch-result-confetti");
     if (!overlay || !itemsContainer) return;
 
     const service = result.service === "obsidian" ? "obsidian" : "notion";
@@ -4919,15 +4927,18 @@
     const failureCount = Math.max(0, Number(result.failureCount || 0));
     const partial = failureCount > 0 || Number(result.warningCount || 0) > 0;
     const failed = successCount === 0;
+    const isFullSuccess = !failed && !partial;
+
+    // confetti: show on full success, hide default checkmark
+    if (confetti) confetti.hidden = !isFullSuccess;
+    if (mark) mark.style.display = isFullSuccess ? "none" : "";
     title.textContent = failed
       ? tx("content_notion_failed", "Batch sync failed", "批量同步失败")
       : partial
         ? service === "obsidian"
           ? tx("obsidian_sync_partial_title", "Obsidian sync completed with warnings", "Obsidian 同步完成，但有部分警告")
           : tx("notion_sync_partial_title", "Synced to Notion with warnings", "已同步到 Notion，但有部分警告")
-        : service === "obsidian"
-          ? tx("obsidian_batch_complete", "Obsidian batch sync complete", "Obsidian 批量同步完成")
-          : tx("notion_sync_success_title", "Synced to Notion", "已成功同步到 Notion");
+        : tx("content_export_success_title", "Export successful! Export as another format?", "Export successful!");
     description.textContent = failed
       ? tx("obsidian_batch_all_failed", "No conversations could be synced.", "没有会话同步成功。")
       : `${tx("content_batch_success_failure", "Success: $1, failed: $2", "成功：$1，失败：$2", successCount, failureCount)}. ${service === "obsidian"
@@ -4983,6 +4994,11 @@
     const failed = result.status === "failed";
     const partial = result.status === "partial" || Number(result.failureCount || 0) > 0 || Number(result.warningCount || 0) > 0;
     const isBatch = Boolean(result.batchId || Number(result.total || 0) > 1);
+    const isFullSuccess = !failed && !partial;
+
+    // confetti: show on full success, hide default checkmark
+    if (confetti) confetti.hidden = !isFullSuccess;
+    if (mark) mark.style.display = isFullSuccess ? "none" : "";
 
     if (mark) {
       mark.textContent = failed ? "×" : partial ? "!" : "✓";
@@ -4995,8 +5011,8 @@
         : partial
           ? tx("obsidian_sync_partial_title", "Obsidian sync completed with warnings", "Obsidian 同步完成，但有部分警告")
           : isBatch
-            ? tx("obsidian_batch_complete", "Obsidian batch sync complete", "Obsidian 批量同步完成")
-            : tx("obsidian_sync_complete", "Synced to Obsidian", "已成功同步到 Obsidian");
+            ? tx("content_export_success_title", "Export successful! Export as another format?", "Export successful!")
+            : tx("content_export_success_title", "Export successful! Export as another format?", "Export successful!");
     }
     if (description) {
       description.hidden = false;
@@ -5010,7 +5026,7 @@
     const notePath = String(result.noteRelativePath || "");
     const vaultName = String(result.vaultName || "");
     if (documentTitle) documentTitle.textContent = String(result.title || notePath.replace(/^.*\//, "").replace(/\.md$/i, "") || tx("notion_untitled_conversation", "Untitled conversation", "未命名会话"));
-    open.hidden = !notePath || !vaultName || failed || result.canOpenInObsidian === false;
+    open.hidden = !notePath || !vaultName || failed;
     open.dataset.notePath = notePath;
     open.dataset.vaultName = vaultName;
     overlay.classList.add("active");

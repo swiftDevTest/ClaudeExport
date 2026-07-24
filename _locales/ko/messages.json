@@ -1486,5 +1486,8 @@
   },
   "obsidian_permission_checking": {
     "message": "Vault 권한을 확인하는 중..."
+  },
+  "content_export_success_title": {
+    "message": "내보내기 성공! 다른 형식으로 내보낼까요?"
   }
 }

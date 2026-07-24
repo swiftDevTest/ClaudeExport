@@ -412,7 +412,17 @@ export function walkElement(parent, blocks, structSet, depth) {
     }
 
     if (tag === "table") {
-      blocks.push(attachBlockSource(extractTable(child), child));
+      try {
+
+        blocks.push(attachBlockSource(extractTable(child), child));
+
+      } catch (tableErr) {
+
+        // 单个表格解析失败不应中断整个消息解析
+
+        console.warn("Table extraction failed, skipping:", tableErr);
+
+      }
       return;
     }
 
@@ -674,7 +684,7 @@ export function extractListItems(listEl, depth, budget) {
 export function extractTable(tableEl) {
   var headers = [];
   var rows = [];
-  var thead = tableEl.querySelector(":scope > thead, > thead");
+  var thead = tableEl.querySelector(":scope > thead") || tableEl.querySelector("thead");
 
   if (thead) {
     // 只选择直接子元素，避免嵌套表格的 th 被错误包含

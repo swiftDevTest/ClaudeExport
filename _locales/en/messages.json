@@ -1531,5 +1531,8 @@
   },
   "obsidian_permission_checking": {
     "message": "Checking Vault permission..."
+  },
+  "content_export_success_title": {
+    "message": "Export successful! Export as another format?"
   }
 }

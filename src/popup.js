@@ -631,7 +631,11 @@
 
       latestCachedEntitlementState = cached;
       isProUser = !!cached.isProUser;
-      updateLocalUI(cached.session, cached.profile, cached.remainingQuota);
+      // 历史 bug：cached.session 没有 access_token（entitlements.js 构造时仅含 user 字段），
+      // 直接传给 updateLocalUI 会让 hasActiveAuthSession 返回 false，UI 显示"未登录"。
+      // 修复：上方 sessionMatchesCache 已校验 storedSession 有 access_token 且身份匹配 cached，
+      // 优先传 storedSession 让登录态正确显示，cached.session 仅作兜底。
+      updateLocalUI(storedSession || cached.session, cached.profile, cached.remainingQuota);
       return true;
     } catch (error) {
       latestCachedEntitlementState = null;
@@ -2056,7 +2060,11 @@
           plan: "free"
         });
       }
-    } else if (entitlements) {
+    } else if (entitlements && !profile) {
+      // session 读取失败时保留已从缓存恢复的 profile，避免把已登录用户
+      // 短暂显示成 Free/Sign In（loadStateLocally 在非 AI 网站会被调用，
+      // 此时 auth.getSession 可能返回 null，不应覆盖 showStoredAuthStateImmediately
+      // 已经显示的头像/Pro 状态，后台刷新会负责同步真实状态）。
       profile = entitlements.normalizeProfile({ plan: "free" });
     }
 
@@ -2074,7 +2082,19 @@
     }
 
     // 更新 UI
-    updateLocalUI(session, profile, remainingQuota);
+    // 当 auth.getSession 返回 null（常见于非 AI 网站上的 session 刷新失败），
+    // 不能直接传 null 给 updateLocalUI，否则 hasActiveAuthSession(null)=false
+    // 会把按钮重置成 "Sign In"，覆盖 showStoredAuthStateImmediately 已经显示的头像。
+    // 改用 auth.getStoredSession() 拿到本地存储的 session 快照（不发起网络请求）。
+    var sessionForUI = session;
+    if (!sessionForUI && auth && typeof auth.getStoredSession === "function") {
+      try {
+        sessionForUI = await auth.getStoredSession();
+      } catch (_e) {
+        // ignore — fall back to null below
+      }
+    }
+    updateLocalUI(sessionForUI, profile, remainingQuota);
 
     if (shouldRefreshEntitlement) {
       refreshVerifiedEntitlementStateInBackground(session).catch(function (error) {

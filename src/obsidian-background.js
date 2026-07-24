@@ -694,11 +694,9 @@
           const vaultName = String(vault.handle.name || "").slice(0, 200);
           const notePath = normalizeRelativePath(message.noteRelativePath, { extension: ".md" }).replace(/\.md$/i, "");
           if (!vaultName) throw new Error("Obsidian Vault name is missing.");
-          if (!await detectObsidianVault(vault.handle)) {
-            const openError = new Error("The selected folder is not an initialized Obsidian Vault. Choose the actual Vault root in settings.");
-            openError.code = "vault_not_registered";
-            throw openError;
-          }
+          // 不再阻断式检查 .obsidian 目录：同步已成功说明 vault handle 可写，
+          // 用户可能选择了 vault 子文件夹而非根目录。直接用 vaultName 构造 URL，
+          // 如果 Obsidian 找不到对应 vault，会显示自己的错误提示，体验优于我们阻断。
           const url = `obsidian://open?vault=${encodeURIComponent(vaultName)}&file=${encodeURIComponent(notePath)}`;
           await chrome.tabs.create({ url });
           return { opened: true };

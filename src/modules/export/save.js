@@ -1,6 +1,8 @@
 import { blobToDataUrl } from './utils.js';
 
 export var SAVE_RESPONSE_TIMEOUT_MS = 30000;
+// 保存对话框可能长时间停留等待用户操作，给予充裕的等待上限。
+export var SAVE_DOWNLOAD_COMPLETION_TIMEOUT_MS = 5 * 60 * 1000;
 // Data URLs are only a small compatibility fallback when Blob URLs are unavailable.
 export var MAX_EXPORT_SAVE_BYTES = 512 * 1024;
 export var BLOB_URL_REVOKE_DELAY_MS = 60000;
@@ -82,6 +84,12 @@ export function scheduleBlobUrlRevoke(objectUrl) {
 }
 
 var activeBlobUrls = new Map();
+// 等待下载实际完成的 Promise resolve/reject 回调，按 downloadId 索引。
+// saveBlobWithDialog 在 background 返回 state="in_progress" 时注册 waiter，
+// 由 CHATVAULT_DOWNLOAD_STATUS 消息（下载 complete/interrupted 时触发）来 resolve。
+var downloadCompletionWaiters = new Map();
+// 缓存已完成的下载状态，处理"完成消息先于 waiter 注册到达"的竞态。
+var downloadCompletionCache = new Map();
 var downloadStatusListenerAttached = false;
 
 if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.onMessage && !downloadStatusListenerAttached) {
@@ -99,7 +107,79 @@ if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.onMessage 
         }
         activeBlobUrls.delete(downloadId);
       }
+      // resolve 对应的 saveBlobWithDialog waiter，让结果弹窗在下载真正完成后才弹出
+      var waiter = downloadCompletionWaiters.get(downloadId);
+      if (waiter) {
+        downloadCompletionWaiters.delete(downloadId);
+        if (message.cancelled) {
+          var cancelErr = new Error("Save cancelled.");
+          cancelErr.name = "AbortError";
+          waiter.reject(cancelErr);
+        } else if (message.state === "complete") {
+          waiter.resolve({ filename: message.filename });
+        } else {
+          waiter.reject(new Error(message.error || "Download failed."));
+        }
+      } else {
+        // waiter 尚未注册（竞态），缓存结果供 waitForDownloadCompletion 立即读取
+        downloadCompletionCache.set(downloadId, {
+          cancelled: message.cancelled,
+          state: message.state,
+          filename: message.filename,
+          error: message.error,
+          ts: Date.now()
+        });
+        // 清理 30 秒前的缓存条目，避免无限增长
+        setTimeout(function () {
+          downloadCompletionCache.delete(downloadId);
+        }, 30000);
+      }
     }
+  });
+}
+
+// 等待指定 downloadId 的下载真正完成（用户在保存对话框中确认保存或取消）。
+// 解决 saveBlob 在 saveAs 对话框仍打开时就 resolve、导致结果弹窗与保存对话框叠加的问题。
+function waitForDownloadCompletion(downloadId, timeoutMs) {
+  // 先检查缓存：下载可能在 waiter 注册前已完成（小文件 / saveAs:false 快速完成）
+  var cached = downloadCompletionCache.get(downloadId);
+  if (cached) {
+    downloadCompletionCache.delete(downloadId);
+    if (cached.cancelled) {
+      var cancelErr = new Error("Save cancelled.");
+      cancelErr.name = "AbortError";
+      return Promise.reject(cancelErr);
+    }
+    if (cached.state === "complete") {
+      return Promise.resolve({ filename: cached.filename });
+    }
+    return Promise.reject(new Error(cached.error || "Download failed."));
+  }
+
+  return new Promise(function (resolve, reject) {
+    var settled = false;
+    var timer = setTimeout(function () {
+      if (settled) return;
+      settled = true;
+      downloadCompletionWaiters.delete(downloadId);
+      // 超时不视为失败——下载可能仍在进行，resolve 让调用方继续流程
+      resolve({ filename: "", timedOut: true });
+    }, timeoutMs || SAVE_DOWNLOAD_COMPLETION_TIMEOUT_MS);
+
+    downloadCompletionWaiters.set(downloadId, {
+      resolve: function (result) {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve(result);
+      },
+      reject: function (err) {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        reject(err);
+      }
+    });
   });
 }
 
@@ -153,6 +233,20 @@ export async function saveBlobWithDialog(blob, filename, options) {
         timer: safetyTimer
       });
       objectUrl = "";
+    }
+
+    // background 在 saveAs 对话框打开时即返回 state="in_progress"。
+    // 必须等待下载真正完成（用户确认保存）后才 resolve，否则结果弹窗会与
+    // 保存对话框叠加显示。waitForDownloadCompletion 通过 CHATVAULT_DOWNLOAD_STATUS
+    // 消息获知下载 complete/interrupted/cancelled。
+    if (response.state === "in_progress" && response.downloadId) {
+      var completion = await waitForDownloadCompletion(
+        response.downloadId,
+        SAVE_DOWNLOAD_COMPLETION_TIMEOUT_MS
+      );
+      if (completion && completion.filename) {
+        response.filename = completion.filename;
+      }
     }
 
     return response.filename || filename;
