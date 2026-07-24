@@ -2319,7 +2319,12 @@
       chrome.runtime.sendMessage(payload, (response) => {
         const lastError = chrome.runtime.lastError;
         if (lastError) return reject(new Error(lastError.message));
-        if (!response || !response.ok) return reject(new Error(response?.error || "Notion background request failed."));
+        if (!response || !response.ok) {
+          const error = new Error(response?.error || "Notion background request failed.");
+          error.status = Number(response?.status || 0);
+          error.code = response?.code || "notion_background_error";
+          return reject(error);
+        }
         resolve(response);
       });
     });
@@ -2684,7 +2689,11 @@
     const auth = globalThis.CHATVAULT_SUPABASE_AUTH;
     buttons.forEach((button) => { button.disabled = true; });
     try {
-      let session = auth ? await auth.getSession({ skipUserRefresh: true }).catch(() => null) : null;
+      let session = auth ? await auth.getSession({
+        skipUserRefresh: false,
+        refreshUser: true,
+        allowStaleOnError: false
+      }).catch(() => null) : null;
       if (!hasActiveAuthSession(session)) {
         const confirmed = await showCustomConfirm(
           t("onboard_title_login", "Sign in to continue"),

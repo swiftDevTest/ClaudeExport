@@ -384,27 +384,61 @@
   }
 
   async function getFreshSupabaseSession(signal) {
-    let session = await storageGet("local", SESSION_KEY);
-    if (!session || !session.access_token) throw createNotionError("ChatVault sign-in is required.", 401, "chatvault_auth_required");
-    const expiresAt = Number(session.expires_at || 0);
-    if (expiresAt && expiresAt - Math.floor(Date.now() / 1000) < 180 && session.refresh_token) {
-      const { response, text } = await fetchTextWithTimeout(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
-        method: "POST",
-        headers: {
-          apikey: SUPABASE_PUBLISHABLE_KEY,
-          Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ refresh_token: session.refresh_token }),
-        signal
-      }, CONNECTION_SERVICE_TIMEOUT_MS);
-      let payload = {};
-      try { payload = text ? JSON.parse(text) : {}; } catch (error) {}
-      if (!response.ok) throw createNotionError("ChatVault session refresh failed.", response.status, "chatvault_auth_refresh_failed");
-      session = { ...session, ...payload, user: payload.user || session.user };
-      await storageSet("local", { [SESSION_KEY]: session });
+    const session = await storageGet("local", SESSION_KEY);
+    if (!session || !session.access_token) {
+      throw createNotionError("ChatVault sign-in is required.", 401, "chatvault_auth_required");
     }
-    return session;
+    const expiresAt = Number(session.expires_at || 0);
+    const needsRefresh = expiresAt && expiresAt - Math.floor(Date.now() / 1000) < 180 && session.refresh_token;
+    if (!needsRefresh) return session;
+
+    // Supabase rotates refresh tokens, so every extension caller must share
+    // background.js's deduplicated refresh path and persist the rotated token.
+    const refreshed = await refreshSupabaseSessionViaBackground(session.refresh_token, signal);
+    if (!refreshed) return session;
+    const mergedSession = { ...session, ...refreshed, user: refreshed.user || session.user };
+    await storageSet("local", { [SESSION_KEY]: mergedSession });
+    return mergedSession;
+  }
+
+  function refreshSupabaseSessionViaBackground(refreshToken, signal) {
+    return new Promise((resolve, reject) => {
+      try {
+        chrome.runtime.sendMessage(
+          { type: "CHATVAULT_SUPABASE_REFRESH_SESSION", refreshToken },
+          (response) => {
+            if (chrome.runtime.lastError) {
+              const error = new Error(chrome.runtime.lastError.message || "Supabase refresh bridge failed.");
+              error.code = "chatvault_auth_refresh_bridge_error";
+              reject(error);
+              return;
+            }
+            if (!response || !response.ok) {
+              const error = new Error((response && response.error) || "ChatVault session refresh failed.");
+              error.status = (response && response.status) || 0;
+              error.code = (response && response.code) || "chatvault_auth_refresh_failed";
+              reject(error);
+              return;
+            }
+            resolve(response.session || null);
+          }
+        );
+      } catch (error) {
+        reject(error);
+      }
+
+      if (signal) {
+        if (signal.aborted) {
+          reject(new DOMException("Aborted", "AbortError"));
+          return;
+        }
+        signal.addEventListener(
+          "abort",
+          () => reject(new DOMException("Aborted", "AbortError")),
+          { once: true }
+        );
+      }
+    });
   }
 
   async function callEdgeFunction(name, options) {
@@ -1577,7 +1611,7 @@
       const payload = await callEdgeFunction(`notion-connection-token?product_slug=${encodeURIComponent(productSlug)}`, { method: "GET" });
       (payload.connections || []).forEach((connection) => output.push({ ...connection, mode: "oauth" }));
     } catch (error) {
-      if (!output.length && error.status !== 401) throw error;
+      if (!output.length) throw error;
     }
     return output;
   }
@@ -1843,7 +1877,12 @@
       return false;
     }
     handleMessage(message, sender).then(sendResponse).catch((error) => {
-      sendResponse({ ok: false, error: safeErrorDetail(error), code: error.code || "notion_background_error" });
+      sendResponse({
+        ok: false,
+        error: safeErrorDetail(error),
+        status: Number(error.status || 0),
+        code: error.code || "notion_background_error"
+      });
     });
     return true;
   });
