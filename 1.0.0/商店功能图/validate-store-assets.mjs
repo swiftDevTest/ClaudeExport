@@ -71,8 +71,14 @@ for (const [locale, localeDir] of Object.entries(localeDirs)) {
       }
     }
     const imageCount = (svgText.match(/<image\b/g) || []).length;
-    if (name === "promo-marquee-1400x560" && imageCount !== 3) {
-      failures.push(`${locale}: ${name}.svg must contain only logo, platform seal, and one main UI screenshot`);
+    if (name === "promo-marquee-1400x560" && imageCount !== 2) {
+      failures.push(`${locale}: ${name}.svg must contain only the product logo and one main UI screenshot`);
+    }
+    if (
+      name === "promo-marquee-1400x560"
+      && (!visibleText.includes("Sync to Notion / Obsidian") || !/Batch [Ee]xport/.test(visibleText))
+    ) {
+      failures.push(`${locale}: ${name}.svg must describe the batch-export and Notion/Obsidian sync workflow`);
     }
     if (name === "02-batch-export" && imageCount !== 1) {
       failures.push(`${locale}: ${name}.svg must use the product-specific generated batch interface`);

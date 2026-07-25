@@ -397,7 +397,7 @@ function batchInterface(x, y, w, h) {
             <rect x="0" y="0" width="${w - 48}" height="42" rx="12" fill="${index === 1 ? colors.formatWash : "#fbfdff"}" stroke="#e2e8f0"/>
             <rect x="16" y="11" width="20" height="20" rx="5" fill="#ffffff" stroke="${index === 1 ? colors.accent : "#cbd5e1"}" stroke-width="2"/>
             <text x="52" y="27" font-size="17" font-weight="740" fill="${colors.ink}">${esc(title)}</text>
-            <text x="${w - 78}" y="27" font-size="13" font-weight="650" fill="#94a3b8" text-anchor="end">${esc(project.platform)} · Conversation history</text>
+            <text x="${w - 78}" y="27" font-size="13" font-weight="650" fill="#94a3b8" text-anchor="end">${esc(p)} - Conversation history</text>
           </g>
         `;
       }).join("")}
@@ -435,6 +435,41 @@ function darkInfoCard(x, y, title, body, stat) {
   `;
 }
 
+function miniBatchPanel(x, y, w, h) {
+  const rows = ["Research", "Project plan", "Weekly recap"];
+  return `
+    <g transform="translate(${x} ${y})" filter="url(#deepShadow)">
+      <rect x="0" y="0" width="${w}" height="${h}" rx="18" fill="#ffffff" stroke="${colors.line}" stroke-width="1.4"/>
+      <text x="14" y="26" font-size="${fitFontSize(t.batchLabel, 13, w - 28, 10)}" font-weight="880" fill="${colors.ink}">${esc(t.batchLabel)}</text>
+      <path d="M0 40h${w}" stroke="${colors.line}" stroke-width="1"/>
+      ${rows.map((row, index) => {
+        const rowY = 56 + index * 36;
+        return `
+          <g transform="translate(12 ${rowY})">
+            <rect x="0" y="0" width="${w - 24}" height="24" rx="8" fill="${index === 1 ? colors.formatWash : "#f8fafc"}" stroke="#e2e8f0"/>
+            <rect x="10" y="7" width="10" height="10" rx="3" fill="#ffffff" stroke="${index === 1 ? colors.accent : "#cbd5e1"}" stroke-width="1.4"/>
+            <text x="28" y="16" font-size="9" font-weight="760" fill="${colors.ink}">${esc(row)}</text>
+          </g>
+        `;
+      }).join("")}
+      <path d="M0 ${h - 40}h${w}" stroke="${colors.line}" stroke-width="1"/>
+      <text x="14" y="${h - 17}" font-size="10" font-weight="760" fill="${colors.muted}">Selected 3 chats</text>
+      <rect x="${w - 58}" y="${h - 31}" width="44" height="20" rx="9" fill="${colors.accent}"/>
+      <text x="${w - 36}" y="${h - 17}" font-size="9" font-weight="850" fill="#ffffff" text-anchor="middle">Export</text>
+    </g>
+  `;
+}
+
+function checkLine(x, y, label, size = 22) {
+  return `
+    <g transform="translate(${x} ${y})">
+      <circle cx="13" cy="-8" r="13" fill="${colors.accent}"/>
+      <path d="M7 -8l5 5 9-13" fill="none" stroke="#ffffff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="42" y="0" font-size="${fitFontSize(label, size, 560, 15)}" font-weight="820" fill="${colors.ink}">${esc(label)}</text>
+    </g>
+  `;
+}
+
 function formatTile(x, y, title, body, fill, stroke, textColor) {
   return `
     <g transform="translate(${x} ${y})">
@@ -449,11 +484,10 @@ function slidePlugin() {
   return svg(1280, 800, `
     ${base(1280, 800, 0)}
     ${brandMark(76, 70, 52, true)}
-    ${platformSeal(548, 66, 56)}
-    ${copyBlock(t.slide1, 76, 168, { maxTextWidth: 600, bulletSize: 22 })}
+    ${copyBlock(t.slide1, 76, 156, { maxTextWidth: 470, titleSize: 48, bodySize: 21, bulletSize: 20 })}
     <rect x="714" y="42" width="500" height="690" rx="46" fill="url(#softPanel)" stroke="${colors.line}" opacity="0.72"/>
-    ${screenshotFrame({ img: imageData.plugin, x: 748, y: 58, w: 430, h: 645, rx: 30 })}
-    ${formatPills(76, 718, ["PDF", "Word", "Markdown", "PNG"])}
+    ${screenshotFrame({ img: imageData.plugin, x: 748, y: 58, w: 430, h: 645, rx: 30, fit: "meet" })}
+    ${formatPills(76, 718, ["PDF", "Word", "Markdown", "JSON"])}
   `);
 }
 
@@ -528,24 +562,25 @@ function slidePrivacyReport() {
 function promoSmall() {
   return svg(440, 280, `
     ${base(440, 280, 5)}
-    <rect x="20" y="20" width="400" height="240" rx="30" fill="#ffffff" opacity="0.86" stroke="${colors.line}"/>
-    ${brandMark(36, 36, 38, false)}
-    <text x="86" y="61" font-size="${fitFontSize(project.displayName, 21, 170, 16)}" font-weight="870" fill="${colors.ink}">${esc(project.displayName)}</text>
-    <text x="36" y="107" font-size="${fitFontSize(t.smallTitle, 24, 220, 17)}" font-weight="880" fill="${colors.accentDark}">${esc(t.smallTitle)}</text>
-    <text x="36" y="137" font-size="${fitFontSize(t.smallSub, 14, 222, 10)}" font-weight="700" fill="${colors.muted}">${esc(t.smallSub)}</text>
-    <g transform="translate(36 171)">
+    <rect x="18" y="20" width="404" height="240" rx="30" fill="#ffffff" opacity="0.88" stroke="${colors.line}"/>
+    ${brandMark(34, 36, 38, false)}
+    <text x="84" y="60" font-size="${fitFontSize(project.displayName, 19, 180, 14)}" font-weight="870" fill="${colors.ink}">${esc(project.displayName)}</text>
+    <text x="34" y="105" font-size="${fitFontSize(t.smallTitle, 28, 218, 19)}" font-weight="900" fill="${colors.accentDark}">${esc(t.smallTitle)}</text>
+    ${t.smallTitle2 ? `<text x="34" y="132" font-size="${fitFontSize(t.smallTitle2, 28, 218, 19)}" font-weight="900" fill="${colors.accentDark}">${esc(t.smallTitle2)}</text>` : ""}
+    <text x="34" y="158" font-size="${fitFontSize(t.smallSub, 15, 222, 11)}" font-weight="760" fill="${colors.muted}">${esc(t.smallSub)}</text>
+    <g transform="translate(34 187)">
       <circle cx="8" cy="-4" r="8" fill="${colors.accent}"/>
       <path d="M4 -4l3 3 5-7" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-      <text x="23" y="0" font-size="${fitFontSize(t.batchLabel, 14, 192, 10)}" font-weight="800" fill="${colors.ink}">${esc(t.batchLabel)}</text>
+      <text x="23" y="0" font-size="${fitFontSize(t.batchSub, 14, 200, 10)}" font-weight="820" fill="${colors.ink}">${esc(t.batchSub)}</text>
     </g>
-    <g transform="translate(36 201)">
+    <g transform="translate(34 213)">
       <circle cx="8" cy="-4" r="8" fill="${colors.accent}"/>
       <path d="M4 -4l3 3 5-7" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-      <text x="23" y="0" font-size="${fitFontSize(t.privateLabel, 14, 192, 10)}" font-weight="800" fill="${colors.ink}">${esc(t.privateLabel)}</text>
+      <text x="23" y="0" font-size="${fitFontSize("PDF, Word, Markdown", 14, 200, 10)}" font-weight="820" fill="${colors.ink}">PDF, Word, Markdown</text>
     </g>
-    <g transform="translate(36 223)">
-      <rect x="0" y="0" width="220" height="27" rx="13.5" fill="${colors.formatWash}" stroke="${colors.line}"/>
-      <text x="110" y="18" font-size="${fitFontSize(t.noUploadSub, 11, 194, 9)}" font-weight="760" fill="${colors.accentDark}" text-anchor="middle">${esc(t.noUploadSub)}</text>
+    <g transform="translate(34 231)">
+      <rect x="0" y="0" width="226" height="27" rx="13.5" fill="${colors.formatWash}" stroke="${colors.line}"/>
+      <text x="113" y="18" font-size="${fitFontSize("Browser-side sync", 11, 198, 9)}" font-weight="780" fill="${colors.accentDark}" text-anchor="middle">Browser-side sync</text>
     </g>
     ${screenshotFrame({ img: imageData.plugin, x: 284, y: 34, w: 122, h: 202, rx: 18, fit: "meet" })}
   `);
@@ -555,23 +590,15 @@ function promoMarquee() {
   return svg(1400, 560, `
     ${base(1400, 560, 6)}
     <path d="M0 0h1400v560H0z" fill="#ffffff" opacity="0.14"/>
-    ${brandMark(80, 74, 62, true)}
-    ${platformSeal(636, 76, 62)}
-    <text x="80" y="204" font-size="${fitFontSize(t.promoTitle, 59, 630, 42)}" font-weight="880" fill="${colors.ink}">${esc(t.promoTitle)}</text>
-    <text x="80" y="262" font-size="${fitFontSize(t.promoSub, 25, 630, 17)}" font-weight="660" fill="${colors.muted}">${esc(t.promoSub)}</text>
-    ${formatPills(80, 318, ["PDF", "Word", "Markdown", "PNG", "JSON"])}
+    ${brandMark(80, 64, 62, true)}
+    <text x="80" y="172" font-size="${fitFontSize(t.promoTitle, 49, 630, 34)}" font-weight="900" fill="${colors.ink}">${esc(t.promoTitle)}</text>
+    ${t.promoTitle2 ? `<text x="80" y="230" font-size="${fitFontSize(t.promoTitle2, 49, 630, 34)}" font-weight="900" fill="${colors.ink}">${esc(t.promoTitle2)}</text>` : ""}
+    <text x="80" y="292" font-size="${fitFontSize(t.promoSub, 22, 630, 15)}" font-weight="680" fill="${colors.muted}">${esc(t.promoSub)}</text>
+    ${checkLine(80, 356, "Batch export multiple chats at once", 23)}
+    ${checkLine(80, 408, "Sync to Notion / Obsidian in 1 click", 23)}
+    ${formatPills(80, 474, ["PDF", "Word", "Markdown", "JSON"])}
     <rect x="746" y="22" width="594" height="516" rx="48" fill="#ffffff" opacity="0.5" stroke="${colors.line}"/>
     ${screenshotFrame({ img: imageData.plugin, x: 878, y: 30, w: 330, h: 500, rx: 28, fit: "meet" })}
-    <g transform="translate(80 410)" filter="url(#softShadow)">
-      <rect x="0" y="0" width="250" height="72" rx="24" fill="url(#darkPanel)"/>
-      <text x="28" y="31" font-size="20" font-weight="850" fill="#ffffff">${esc(t.batchLabel)}</text>
-      <text x="28" y="54" font-size="14" font-weight="660" fill="#ffffff" opacity="0.76">${esc(t.batchSub)}</text>
-    </g>
-    <g transform="translate(356 410)">
-      <rect x="0" y="0" width="312" height="72" rx="24" fill="#ffffff" stroke="${colors.line}"/>
-      <text x="28" y="31" font-size="17" font-weight="840" fill="${colors.accentDark}">${esc(t.privateLabel)}</text>
-      <text x="28" y="54" font-size="14" font-weight="650" fill="${colors.muted}">${esc(t.privateSub)}</text>
-    </g>
   `);
 }
 
@@ -663,7 +690,8 @@ fs.mkdirSync(outputDir, { recursive: true });
 
 for (const asset of assets) {
   clipCounter = 0;
-  fs.writeFileSync(path.join(outputDir, `${asset.name}.svg`), asset.render(), "utf8");
+  const svgSource = asset.render().replace(/[ \t]+$/gm, "");
+  fs.writeFileSync(path.join(outputDir, `${asset.name}.svg`), svgSource, "utf8");
 }
 
 if (process.env.STORE_ASSET_SVG_ONLY === "1") {

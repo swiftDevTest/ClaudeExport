@@ -28,6 +28,13 @@ ASSETS = [
 ]
 
 
+def split_env_list(name: str) -> set[str]:
+    raw = os.environ.get(name, "").strip()
+    if not raw:
+        return set()
+    return {item.strip() for item in raw.split(",") if item.strip()}
+
+
 def render_svg(svg_path: Path, png_path: Path, width: int, height: int) -> None:
     image = NSImage.alloc().initWithContentsOfFile_(str(svg_path))
     if image is None:
@@ -72,11 +79,32 @@ def render_svg(svg_path: Path, png_path: Path, width: int, height: int) -> None:
         raise RuntimeError(f"Failed to write PNG: {png_path}")
 
 
+def render_locale_dirs(render_dir: Path) -> list[Path]:
+    requested = split_env_list("STORE_ASSET_RENDER_LOCALES")
+    if not requested:
+        return [render_dir, render_dir / "zh-CN"]
+
+    dirs = []
+    for locale in requested:
+        if locale in {"en", "root"}:
+            dirs.append(render_dir)
+        else:
+            dirs.append(render_dir / locale)
+    return dirs
+
+
 def render_dir(render_dir: Path) -> None:
-    for locale_dir in [render_dir, render_dir / "zh-CN"]:
+    requested_assets = split_env_list("STORE_ASSET_NAMES")
+    assets = [asset for asset in ASSETS if not requested_assets or asset[0] in requested_assets]
+    if requested_assets and len(assets) != len(requested_assets):
+        known = {asset[0] for asset in ASSETS}
+        unknown = ", ".join(sorted(requested_assets - known))
+        raise ValueError(f"Unknown store asset name(s): {unknown}")
+
+    for locale_dir in render_locale_dirs(render_dir):
         if not locale_dir.is_dir():
             continue
-        for name, width, height in ASSETS:
+        for name, width, height in assets:
             svg_path = locale_dir / f"{name}.svg"
             png_path = locale_dir / f"{name}.png"
             if not svg_path.exists():

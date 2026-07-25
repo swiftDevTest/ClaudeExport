@@ -1,6 +1,6 @@
 # Chrome Web Store 上架清单 — Claude Exporter
 
-> 最后更新日期：2026-07-21
+> 最后更新日期：2026-07-26
 
 该文档是 Claude Exporter 上架 Chrome Web Store（CWS）的元数据与配置指南，开发者可直接复制相应内容填入 Chrome 开发者控制台（Chrome Developer Dashboard）。
 
@@ -47,7 +47,7 @@ Claude Export 是一款隐私优先的浏览器扩展，可将 Claude 对话整�
 Productivity (效率)
 
 ### 单一用途声明 (Single Purpose)
-在用户浏览器本地将 Claude 网页端的聊天对话导出为 PDF、Docs、MD 等本地文件。
+让用户将自己选择的 Claude 对话保存到个人知识库：可在浏览器本地导出为 PDF、DOCX、Markdown 等文件，或在用户明确操作后同步到其授权的 Notion 工作区或本地 Obsidian Vault。
 
 ### 主要语言 (Primary Language)
 English (United States) / Chinese (Simplified)
@@ -75,40 +75,42 @@ English (United States) / Chinese (Simplified)
 | :--- | :--- | :--- |
 | `storage` | permissions | 用于在本地存储用户的导出选项（如隐藏水印、显示时间等参数）、每日免费额度计数和临时会话状态（如 Supabase 登录 session 缓存）。 |
 | `downloads` | permissions | 用于在浏览器本地生成导出文件后，调用 Chrome 下载管理器将其保存到用户的本地磁盘。 |
+| `clipboardWrite` | permissions | 用于执行用户主动触发的“复制原文”或“复制 JSON”。JSON 需要先异步生成，弹窗可能在写入前关闭，因此需要该权限保证延迟写入剪贴板仍可完成。 |
 | `contextMenus` | permissions | 用于在 Claude 网页右键菜单中添加快捷导出入口（如右键“导出到 PDF”），提升用户在聊天页面时的操作便捷性。 |
 | `identity` | permissions | 用于发起 Google 登录流程（LaunchWebAuthFlow），从而让已购买主产品 Pro 订阅的用户激活并恢复其 Pro 会员权益。 |
 | `https://acgehhqcgreatcjcefub.supabase.co/*` | host_permissions | 用于与后端 Supabase 数据库和 Edge Functions 进行安全通信，以验证登录状态、同步 Pro 会员订阅 and 查询服务器验证的每日免费导出次数。 |
 | `https://claude.ai/*` | host_permissions | 允许内容脚本在 Claude 聊天页面运行，用于捕获聊天 DOM 树进行本地转换；允许背景脚本检测活动标签页以确定导出是否可用。 |
 | `https://images.anthropic.com/*`<br>`https://media.anthropic.com/*` | host_permissions | 允许背景脚本从 Claude 受信任的图片 CDN 安全抓取聊天对话中嵌入的用户上传图片或附件字节，以使本地生成的文件（如 PDF、Docs、Image）包含完整插图，避免因跨域导致图裂或缺失。 |
+| `https://api.notion.com/*` | host_permissions | 仅在用户连接 Notion 并主动选择同步时，将其选择的 Claude 对话和必要元数据写入用户授权的 Notion 工作区。 |
 
 ---
 
 ## 4. 隐私与数据使用声明 (Privacy & Data Use)
 
 ### 数据收集声明 (Data Collection)
-**该扩展是否收集或传输用户数据？**
-- **是 (Yes)**（注：虽然不上传聊天正文，但因包含 Supabase 登录及 Paddle 订阅功能，需收集必要的身份和交易凭证以提供付费功能）。
+**该扩展是否处理、收集或传输用户数据？**
+- **是 (Yes)**。扩展会处理用户主动选择的 Claude 对话；本地文件导出不会把聊天正文上传到我们的服务器。只有用户主动执行 Notion 同步时，所选对话才会直接传输到用户授权的 Notion 工作区。账户与订阅功能还会处理必要的身份和交易状态。
 
 #### 数据类型声明细则：
 1. **个人身份信息 (Personally identifiable info)**: 
    - *是否收集*: 是
    - *是否传输*: 是
    - *用途*: 仅用于用户账户登录和 Pro 订阅激活（通过 Supabase 账户注册邮箱）。
-   - *是否共享给第三方*: 否。
+   - *是否共享给第三方*: 仅由 Google/Supabase 等身份与基础设施服务商按提供登录和权益服务所必需的范围处理。
 2. **身份验证信息 (Authentication info)**: 
    - *是否收集*: 是
    - *是否传输*: 是
    - *用途*: 临时传输并缓存 Supabase 返回的安全 Access Token / Refresh Token，仅用于保持登录状态和验证 Pro 权益。扩展也可能在用户浏览器本地使用当前 Claude 会话 cookie 或 access token 拉取用户选择导出的历史/图片，但不会把这些平台凭证上传或保存到我们的服务器。
-   - *是否共享给第三方*: 否。
+   - *是否共享给第三方*: 仅由 Google/Supabase 按完成认证所必需的范围处理；Claude 平台凭证不会传输到我们的服务器。
 3. **财务/付款信息 (Financial info)**: 
    - *是否收集*: 是
    - *是否传输*: 是
    - *用途*: 当用户通过 Paddle 进行 Pro 订阅购买时，由 Paddle 支付服务处理交易并返回订单 ID。扩展本身不收集或存储卡号等敏感财务信息。
-   - *是否共享给第三方*: 否。
+   - *是否共享给第三方*: 是，仅由 Paddle 处理付款；扩展与我们的服务器不接触银行卡号。
 4. **网站内容 (Website content)**:
-   - *是否收集*: 否
-   - *是否传输*: 否
-   - *说明*: 扩展虽然在本地读取当前网页的 DOM（聊天对话），并可能用当前平台会话在浏览器本地请求用户选择导出的历史和图片进行格式排版和保存，但聊天正文和导出文件内容不传输（不上传）到我们的远程服务器。
+   - *是否处理*: 是，仅限用户主动选择的 Claude 对话及其标题、消息、代码、表格、图片和必要元数据。
+   - *是否传输*: 本地文件导出和本地 Obsidian 同步不传输到我们的服务器；用户主动执行 Notion 同步时，所选内容会直接传输给 Notion。
+   - *说明*: 我们不把聊天正文上传到 ChatVault、Supabase、Paddle 或远程转换服务器。Notion 仅作为用户明确选择并授权的同步目标。
 5. **用户 activity / 网络历史 (User activity / Web history)**:
    - *是否收集*: 否
    - *是否传输*: 否
@@ -118,14 +120,11 @@ English (United States) / Chinese (Simplified)
 - [x] 我们保证不将收集的数据出售给第三方。
 - [x] 我们保证不将收集的数据用于扩展核心功能以外的任何不相关目的（例如广告、画像等）。
 - [x] 我们保证不将收集的数据用于评估信用度、贷款发放等非授权业务。
+- [x] 我们对从 Google API 获得的信息的使用和传输遵守 Chrome Web Store User Data Policy，包括 Limited Use 要求。
 
 ### 隐私政策链接 (Privacy Policy URL)
 上架必填，已部署在官方网站：
-`https://tabpilotpro.com/aichatexport/private.html`
-
-<!-- TODO: 确认隐私政策 URL 路径前缀与 checkout URL 一致。
-     当前 checkout 路径为 https://tabpilotpro.com/claude/checkout.html，
-     若统一为 /claude/ 前缀，则隐私政策应为 https://tabpilotpro.com/claude/private.html -->
+`https://tabpilotpro.com/claude/private.html`
 
 ---
 
@@ -135,7 +134,7 @@ English (United States) / Chinese (Simplified)
 - **地区分布 (Regions)**: 所有地区 (All regions)
 - **定价模式 (Pricing)**: 免费下载 + 订阅增值 (Free with in-app subscription)
 - **支持联系方式**: chatvaultaisupport@gmail.com
-- **主页链接 (Homepage URL)**: `https://tabpilotpro.com/aichatexport/index.html`
+- **主页链接 (Homepage URL)**: `https://tabpilotpro.com/claude/index.html`
 
 ---
 

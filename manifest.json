@@ -24,6 +24,7 @@
   "permissions": [
     "storage",
     "downloads",
+    "clipboardWrite",
     "contextMenus",
     "identity",
     "alarms"

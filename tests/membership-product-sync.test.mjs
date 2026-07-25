@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 
 const storageMap = new Map();
 
@@ -355,4 +355,34 @@ test("product backend contract is present for local deployment and review", () =
   assert.match(config, /\[functions\.product-payment-webhook\]\s+verify_jwt = false/);
   assert.match(config, /\[functions\.product-sync-subscription-status\]\s+verify_jwt = true/);
   assert.match(config, /\[functions\.product-verify-export-entitlement\]\s+verify_jwt = true/);
+});
+
+test("local migration history matches the deployed Notion OAuth schema", () => {
+  const migrationNames = readdirSync(
+    new URL("../supabase/migrations/", import.meta.url)
+  ).sort();
+  const requiredMigrations = [
+    "20260716013901_security_boundary_hardening.sql",
+    "202607210001_profiles_rls_hardening.sql",
+    "202607230001_notion_oauth_product_isolation.sql",
+    "20260723021225_restore_notion_chatvault_legacy_upsert_constraint.sql",
+    "20260723021655_isolate_notion_oauth_pending_limits.sql"
+  ];
+
+  requiredMigrations.forEach((name) => {
+    assert.ok(migrationNames.includes(name), `missing deployed migration ${name}`);
+  });
+  assert.equal(
+    migrationNames.some((name) => name.includes("missing_rpc_and_notion_tables")),
+    false,
+    "do not re-create the deployed Notion OAuth schema under singular table names"
+  );
+
+  const migrationSource = requiredMigrations
+    .map((name) => readText(`../supabase/migrations/${name}`))
+    .join("\n");
+  assert.match(migrationSource, /public\.notion_oauth_states/);
+  assert.match(migrationSource, /public\.notion_oauth_results/);
+  assert.doesNotMatch(migrationSource, /public\.notion_oauth_state(?:\s|%|;|\))/);
+  assert.doesNotMatch(migrationSource, /public\.notion_oauth_result(?:\s|%|;|\))/);
 });

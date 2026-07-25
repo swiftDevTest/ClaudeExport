@@ -83,3 +83,14 @@ test("manifest exposes only the registered platform extractor", () => {
   assert.notEqual(registryExtractors.length, 0, "expected registry.js to import a platform extractor");
   assert.deepEqual(getExposedExtractorResources(manifest), registryExtractors);
 });
+
+test("manifest grants clipboard access required by delayed JSON copy", () => {
+  const manifest = readJson("../manifest.json");
+  const contentSource = readText("../src/content.js");
+
+  assert.match(contentSource, /await writeTextToClipboard\(jsonText\)/);
+  assert.ok(
+    manifest.permissions.includes("clipboardWrite"),
+    "copying generated JSON after asynchronous export work requires clipboardWrite"
+  );
+});
