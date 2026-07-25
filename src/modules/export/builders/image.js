@@ -1035,7 +1035,7 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
   if (settings.show_chatvault_badge) {
     var footerY = y + IMAGE_FOOTER_TOP_GAP;
     ctx.font = "700 15px " + theme.font.body;
-    var footerText = t("export_pdf_footer_branding", "AI Chat Export");
+    var footerText = t("export_pdf_footer_branding", "Claude Export");
     var footerWidth = Math.max(120, ctx.measureText(footerText).width);
     var logoGradient = ctx.createLinearGradient(pad, footerY, pad + footerWidth, footerY);
     logoGradient.addColorStop(0, theme.color.accent);

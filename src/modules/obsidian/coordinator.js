@@ -140,7 +140,7 @@ export async function createObsidianSyncPaths(input, status, runId) {
   const notesRoot = normalizeRoot(config.notesRoot);
   const assetsRoot = config.assetsRootCustom ? normalizeRoot(config.assetsRoot) : notesRoot;
   const suffix = runId.replace(/^obsidian_run_/, "").replace(/-/g, "").slice(0, 8) || Date.now().toString(36);
-  const baseName = sanitizePathSegment(input.title, "AI Chat Export");
+  const baseName = sanitizePathSegment(input.title, "Claude Export");
   const sourceIdentity = input.sourceUrl
     ? `${String(input.platform || "unknown").toLowerCase()}\n${String(input.sourceUrl)}`
     : `${String(input.platform || "unknown").toLowerCase()}\n${String(input.title || "")}\n${runId}`;
@@ -211,7 +211,7 @@ export async function syncConversationToObsidian(input = {}) {
       payload: {
         jobId,
         batchId: input.batchId || "",
-        title: input.title || "AI Chat Export",
+        title: input.title || "Claude Export",
         platform: input.platform || "unknown",
         scope: input.scope === "selected" ? "selected" : "conversation",
         sourceKey: paths.sourceKey,

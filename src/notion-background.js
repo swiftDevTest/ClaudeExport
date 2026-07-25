@@ -9,6 +9,7 @@
   const SESSION_KEY = (globalThis.CHATVAULT_PRODUCT_CONFIG?.storageKey || ((name) => `claude_export.${name}`))("supabase_session.v1");
   const _storageKey = globalThis.CHATVAULT_PRODUCT_CONFIG?.storageKey || ((name) => `claude_export.${name}`);
   const productName = globalThis.CHATVAULT_PRODUCT_CONFIG?.productName || "Claude Export";
+  const productSlug = globalThis.CHATVAULT_PRODUCT_CONFIG?.productSlug || "claude-export";
   const MANUAL_CONFIG_KEY = _storageKey("notion_manual_session.v1");
   const DATABASE_NAME = "chatvault-notion-sync-v2";
   const DATABASE_VERSION = 1;
@@ -1617,7 +1618,6 @@
       output.push({ id: manual.connectionId, workspace_name: "Manual integration", mode: "manual", data_source_id: manual.dataSourceId });
     }
     try {
-      const productSlug = (globalThis.CHATVAULT_ENV && globalThis.CHATVAULT_ENV.PRODUCT_SLUG) || "claude-export";
       const payload = await callEdgeFunction(`notion-connection-token?product_slug=${encodeURIComponent(productSlug)}`, { method: "GET" });
       (payload.connections || []).forEach((connection) => output.push({ ...connection, mode: "oauth" }));
     } catch (error) {
@@ -1733,7 +1733,6 @@
     const verifierBytes = crypto.getRandomValues(new Uint8Array(32));
     const flowVerifier = Array.from(verifierBytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
     const flowChallenge = await sha256Text(flowVerifier);
-    const productSlug = (globalThis.CHATVAULT_ENV && globalThis.CHATVAULT_ENV.PRODUCT_SLUG) || "claude-export";
     const started = await callEdgeFunction("notion-oauth-start", {
       body: { final_redirect_uri: finalRedirectUri, flow_challenge: flowChallenge, product_slug: productSlug }
     });

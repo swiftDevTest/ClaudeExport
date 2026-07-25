@@ -190,7 +190,7 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
     ctx.font = "10px " + DESIGN.font.body;
     ctx.fillStyle = DESIGN.color.muted;
     var footer = [];
-    if (settings.show_chatvault_badge) footer.push(t("export_pdf_footer_branding", "AI Chat Export"));
+    if (settings.show_chatvault_badge) footer.push(t("export_pdf_footer_branding", "Claude Export"));
     if (settings.show_platform_name && metadata.platform) {
       footer.push(getPlatformLabel(metadata.platform));
     }

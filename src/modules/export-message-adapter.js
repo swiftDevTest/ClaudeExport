@@ -31,7 +31,7 @@
           ? "https://gemini.google.com"
           : "https://chatgpt.com";
       var currentLabel = deps.getPlatformLabel ? deps.getPlatformLabel(deps.getCurrentPlatformId ? deps.getCurrentPlatformId() : "") : "";
-      return "Open " + label + " (" + host + ") and use AI Chat Export there to export this conversation body. " + (currentLabel || "This page") + " cannot read " + label + " message content.";
+      return "Open " + label + " (" + host + ") and use Claude Export there to export this conversation body. " + (currentLabel || "This page") + " cannot read " + label + " message content.";
     }
 
     function getPlatformExportRequirement(platform) {

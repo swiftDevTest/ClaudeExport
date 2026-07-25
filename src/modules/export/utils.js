@@ -376,7 +376,7 @@ export function getExportFooterSegments(settings, metadata) {
   var sourceUrl = getExportSourceUrl(metadata);
   return {
     left: settings && settings.show_chatvault_badge
-      ? t("export_pdf_footer_branding", "AI Chat Export")
+      ? t("export_pdf_footer_branding", "Claude Export")
       : "",
     right: settings && settings.include_source_url && sourceUrl
       ? t("export_footer_source", "Export From: $1", sourceUrl)

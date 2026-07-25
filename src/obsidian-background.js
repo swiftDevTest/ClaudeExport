@@ -455,7 +455,7 @@
     const job = {
       id,
       batchId: String(payload.batchId || "").slice(0, 160),
-      title: String(payload.title || "AI Chat Export").slice(0, 300),
+      title: String(payload.title || "Claude Export").slice(0, 300),
       platform: String(payload.platform || "unknown").slice(0, 40),
       sourceKey,
       scope: payload.scope === "selected" ? "selected" : "conversation",

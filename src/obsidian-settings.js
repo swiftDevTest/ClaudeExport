@@ -28,7 +28,7 @@
   }
 
   function applyStaticI18n() {
-    document.title = `${t("obsidian_settings_title", "Connect Obsidian Vault")} - AI Chat Export`;
+    document.title = `${t("obsidian_settings_title", "Connect Obsidian Vault")} - Claude Export`;
     i18n?.translateDOM?.();
     document.getElementById("obsidian-notes-root")?.setAttribute("placeholder", t("obsidian_settings_notes_placeholder", "Choose a notes folder inside the Vault"));
     document.getElementById("obsidian-assets-root")?.setAttribute("placeholder", t("obsidian_settings_assets_placeholder", "Uses the notes folder when not set"));

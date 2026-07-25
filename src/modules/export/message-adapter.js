@@ -1,6 +1,6 @@
 "use strict";
 
-const INCOMPLETE_EXPORT_NOTICE_PREFIX = "AI Chat Export notice:";
+const INCOMPLETE_EXPORT_NOTICE_PREFIX = "Claude Export notice:";
 
 function defaultPlatformLabel(platform) {
     if (platform === "claude") return "Claude";
@@ -32,7 +32,7 @@ function defaultPlatformLabel(platform) {
           ? "https://gemini.google.com"
           : "https://chatgpt.com";
       var currentLabel = deps.getPlatformLabel ? deps.getPlatformLabel(deps.getCurrentPlatformId ? deps.getCurrentPlatformId() : "") : "";
-      return "Open " + label + " (" + host + ") and use AI Chat Export there to export this conversation body. " + (currentLabel || "This page") + " cannot read " + label + " message content.";
+      return "Open " + label + " (" + host + ") and use Claude Export there to export this conversation body. " + (currentLabel || "This page") + " cannot read " + label + " message content.";
     }
 
     function getPlatformExportRequirement(platform) {
@@ -288,7 +288,7 @@ function defaultPlatformLabel(platform) {
       var label = deps.getPlatformLabel ? deps.getPlatformLabel(platform) : defaultPlatformLabel(platform);
       var title = getChatTitle(chat);
       var titleLabel = title ? "\"" + title + "\"" : "this conversation";
-      return INCOMPLETE_EXPORT_NOTICE_PREFIX + " This export may be incomplete. " + label + " returned AI replies for " + titleLabel + " without the original user questions, so AI Chat Export exported the available replies and marked this file. To recover the missing questions, open this conversation in " + label + " and export again, or use Select messages export after the conversation is open.";
+      return INCOMPLETE_EXPORT_NOTICE_PREFIX + " This export may be incomplete. " + label + " returned AI replies for " + titleLabel + " without the original user questions, so Claude Export exported the available replies and marked this file. To recover the missing questions, open this conversation in " + label + " and export again, or use Select messages export after the conversation is open.";
     }
 
     function hasIncompleteExportNotice(messages) {

@@ -587,7 +587,7 @@ export async function buildDocxBlob(messages, metadata, settingsInput, options) 
   }
 
   if (settings.show_chatvault_badge) {
-    bodyParts.push(wordParagraph(t("export_branding_footer", "Exported locally by AI Chat Export"), { color: themeWord.colorMuted, size: 9, spacing: 80 }));
+    bodyParts.push(wordParagraph(t("export_branding_footer", "Exported locally by Claude Export"), { color: themeWord.colorMuted, size: 9, spacing: 80 }));
   }
   var body = bodyParts.join("");
 
@@ -727,12 +727,12 @@ export function stylesXml(themeWord) {
 export function coreXml(title) {
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
     '<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">' +
-    "<dc:title>" + xmlEscape(title) + "</dc:title><dc:creator>AI Chat Export</dc:creator>" +
+    "<dc:title>" + xmlEscape(title) + "</dc:title><dc:creator>Claude Export</dc:creator>" +
     '<dcterms:created xsi:type="dcterms:W3CDTF">' + new Date().toISOString() + "</dcterms:created>" +
     "</cp:coreProperties>";
 }
 
 export function appXml() {
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
-    '<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>AI Chat Export</Application></Properties>';
+    '<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>Claude Export</Application></Properties>';
 }
