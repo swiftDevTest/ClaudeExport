@@ -4464,8 +4464,6 @@
   }
 
   // 复制纯文本
-  // popup 关闭后 content script 无用户手势，navigator.clipboard.writeText 可能失败；
-  // 依赖 clipboardWrite 权限走 document.execCommand("copy") 兜底。
   async function writeTextToClipboard(value) {
     const text = String(value || "");
 

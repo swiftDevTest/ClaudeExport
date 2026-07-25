@@ -26,9 +26,7 @@
     "downloads",
     "contextMenus",
     "identity",
-    "alarms",
-    "notifications",
-    "clipboardWrite"
+    "alarms"
   ],
   "background": {
     "service_worker": "src/background.js"
