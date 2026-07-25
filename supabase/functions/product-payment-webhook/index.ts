@@ -494,8 +494,8 @@ Deno.serve(async (request) => {
     const event = JSON.parse(rawBody) as Record<string, unknown>;
     const info = getPaddleEventInfo(event);
 
-    // 事件 ID 和时间戳格式校验
-    if (!/^evt_[a-z0-9]+$/i.test(info.eventId) || !info.occurredAt) {
+    // 事件 ID 和时间戳非空校验
+    if (!info.eventId || !info.occurredAt) {
       return errorResponseForRequest(request, "Invalid Paddle event identity or timestamp.", 400);
     }
 

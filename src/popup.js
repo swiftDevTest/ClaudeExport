@@ -1196,7 +1196,7 @@
 
     // 1. 初始化平台及链接监听
     document.getElementById("btn-open-chatgpt").addEventListener("click", function () {
-      chrome.tabs.create({ url: "https://chatgpt.com/" });
+      chrome.tabs.create({ url: "https://claude.ai/" });
       window.close();
     });
 
@@ -2657,7 +2657,16 @@
       open.className = "notion-save-btn";
       open.textContent = "打开 Notion";
       open.style.marginLeft = "5px";
-      open.onclick = () => chrome.tabs.create({ url: job.notionPageUrl });
+      open.onclick = () => {
+        try {
+          const url = new URL(job.notionPageUrl);
+          if (url.protocol === "https:" && (/\.notion\.so$/i.test(url.hostname) || /^notion\.so$/i.test(url.hostname))) {
+            chrome.tabs.create({ url: url.toString() });
+          }
+        } catch (_) {
+          // 忽略非法 URL，避免被注入任意页面
+        }
+      };
       actions.appendChild(open);
     }
     if (actions.childNodes.length) container.appendChild(actions);

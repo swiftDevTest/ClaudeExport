@@ -1,4 +1,4 @@
-import { emptyResponse, errorResponse, jsonResponse } from "../_shared/http.ts";
+import { emptyResponseForRequest, errorResponseForRequest, isAllowedBrowserOrigin, jsonResponseForRequest } from "../_shared/http.ts";
 import { PRODUCT_SLUG } from "../_shared/plans.ts";
 import { eventBelongsToProduct, getPaddleEventInfo, verifyPaddleSignature } from "../_shared/paddle.ts";
 import { getProfileByUserId, supabaseRest, updateProfile } from "../_shared/supabase.ts";

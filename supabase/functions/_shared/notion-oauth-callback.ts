@@ -129,6 +129,7 @@ export async function handleOAuthCallback(request: Request, productSlug: string)
     redirect.searchParams.set("result_code", resultCode);
     return Response.redirect(redirect.toString(), 302);
   } catch (_error) {
+    console.error("Notion OAuth callback failed.", _error);
     if (stateRow) {
       const redirect = new URL(stateRow.final_redirect_uri);
       redirect.searchParams.set("error", "oauth_failed");

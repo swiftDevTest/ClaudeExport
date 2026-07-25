@@ -412,6 +412,15 @@
       });
     }
 
+    // 监听权益状态更新，用户在 popup 完成订阅后自动刷新为 Pro 状态
+    if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.onMessage) {
+      chrome.runtime.onMessage.addListener((message) => {
+        if (message && message.type === "CHATVAULT_ENTITLEMENT_STATE_UPDATED") {
+          checkProStatus();
+        }
+      });
+    }
+
     // Bind subscribe buttons
     document.querySelectorAll(".cv-plan-btn").forEach((btn) => {
       btn.addEventListener("click", function () {

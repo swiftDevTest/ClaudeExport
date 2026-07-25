@@ -23,7 +23,7 @@ verify_jwt = true
 verify_jwt = false
 
 [functions.product-analytics-identify]
-verify_jwt = false
+verify_jwt = true
 
 [functions.product-payment-webhook]
 verify_jwt = false

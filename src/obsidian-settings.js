@@ -535,14 +535,21 @@
         }
       });
     }
-    document.getElementById("obsidian-choose-vault").addEventListener("click", chooseVault);
-    document.getElementById("obsidian-choose-notes").addEventListener("click", chooseNotesDirectory);
-    document.getElementById("obsidian-choose-assets").addEventListener("click", chooseAssetsDirectory);
-    elements.clearAssets.addEventListener("click", clearAssetsDirectory);
-    elements.save.addEventListener("click", verifyAndSave);
-    elements.disconnect.addEventListener("click", disconnect);
-    document.getElementById("obsidian-return-button").addEventListener("click", returnToConversation);
-    document.getElementById("obsidian-refresh-history").addEventListener("click", loadHistory);
+    function bindClickById(id, handler) {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener("click", handler);
+    }
+    function bindClick(el, handler) {
+      if (el) el.addEventListener("click", handler);
+    }
+    bindClickById("obsidian-choose-vault", chooseVault);
+    bindClickById("obsidian-choose-notes", chooseNotesDirectory);
+    bindClickById("obsidian-choose-assets", chooseAssetsDirectory);
+    bindClick(elements.clearAssets, clearAssetsDirectory);
+    bindClick(elements.save, verifyAndSave);
+    bindClick(elements.disconnect, disconnect);
+    bindClickById("obsidian-return-button", returnToConversation);
+    bindClickById("obsidian-refresh-history", loadHistory);
     hydrate().catch((error) => setResult(error.message || t("obsidian_settings_init_failed", "Could not initialize Obsidian settings."), "error"));
   });
 })();

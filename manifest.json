@@ -45,15 +45,10 @@
     {
       "resources": [
         "src/content.css",
-        "images/*.png",
         "src/offscreen.html",
         "src/obsidian-content.css",
         "src/obsidian-settings.html",
-        "images/*",
-        "src/modules/export/notion-sync-engine.js",
-        "src/modules/obsidian/coordinator.js",
-        "src/modules/obsidian/renderer.js",
-        "src/modules/obsidian/media.js"
+        "images/*"
       ],
       "matches": [
         "https://claude.ai/*"

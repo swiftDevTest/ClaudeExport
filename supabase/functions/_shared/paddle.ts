@@ -20,12 +20,16 @@ function bytesToHex(bytes: ArrayBuffer) {
 }
 
 function safeEqual(a: string, b: string) {
-  if (a.length !== b.length) {
-    return false;
-  }
-  let result = 0;
-  for (let index = 0; index < a.length; index += 1) {
-    result |= a.charCodeAt(index) ^ b.charCodeAt(index);
+  // 常量时间比较：避免在 length 不等时早退导致时序泄漏。
+  // 始终遍历至最长字符串的末尾，并在长度不等时让结果非零。
+  const aBytes = new TextEncoder().encode(a);
+  const bBytes = new TextEncoder().encode(b);
+  const maxLength = Math.max(aBytes.length, bBytes.length);
+  let result = aBytes.length ^ bBytes.length;
+  for (let index = 0; index < maxLength; index += 1) {
+    const aByte = index < aBytes.length ? aBytes[index] : 0;
+    const bByte = index < bBytes.length ? bBytes[index] : 0;
+    result |= aByte ^ bByte;
   }
   return result === 0;
 }

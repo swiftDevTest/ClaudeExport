@@ -327,7 +327,8 @@
     // SECURITY: Reject plaintext cache entries to prevent cache poisoning (C2).
     // Only accept properly encrypted structures with valid crypto metadata.
     if (!isEncryptedCachedEntitlementState(value)) {
-      return value;
+      // 检测到明文缓存，视为不可信，直接丢弃
+      return null;
     }
 
     const cryptoRef = getCacheCrypto();
@@ -426,15 +427,29 @@
     const rawStored = await storageGet(ENTITLEMENT_STATE_CACHE_KEY);
     if (!rawStored) return null;
 
-    const wasPlaintext = !isEncryptedCachedEntitlementState(rawStored);
+    // SECURITY: 明文缓存视为不可信，直接清除并返回 null
+    // 攻击者可在 DevTools 写入明文 {plan:"pro"} 进行投毒
+    if (!isEncryptedCachedEntitlementState(rawStored)) {
+      await storageRemove(ENTITLEMENT_STATE_CACHE_KEY);
+      return null;
+    }
+
     const snapshot = await decryptCachedEntitlementState(rawStored);
     const cachedState = normalizeCachedEntitlementState(snapshot);
     if (!cachedState) return null;
 
+    // SECURITY: 缓存 TTL 校验，避免离线状态下 Pro 权益无限期有效
+    // 离线超过 7 天的缓存视为过期，强制重新走服务器校验
+    const CACHE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+    if (Date.now() - cachedState.cachedAt > CACHE_MAX_AGE_MS) {
+      await storageRemove(ENTITLEMENT_STATE_CACHE_KEY);
+      return null;
+    }
+
     const today = getTodayString();
-    // 历史问题：旧版本 background.js 写入明文缓存，攻击者可在 DevTools 直接编辑。
-    // 修复：检测到明文格式时立即迁移到加密格式，避免明文缓存长期留存。
-    if (wasPlaintext || shouldMigrateLegacyDate(snapshot?.usage, today)) {
+    // 历史问题：旧版本 background.js 写入明文缓存。
+    // 修复：明文已在上文被丢弃；此处仅处理 legacy date 迁移
+    if (shouldMigrateLegacyDate(snapshot?.usage, today)) {
       const migratedSnapshot = {
         cachedAt: snapshot?.cachedAt || Date.now(),
         profile: snapshot?.profile || {},

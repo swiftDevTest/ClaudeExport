@@ -81,9 +81,9 @@ function safeEqual(a: string, b: string) {
 }
 
 export async function verifyPaddleSignature(rawBody: string, signatureHeader: string | null) {
-  const secret = Deno.env.get("PRODUCT_PADDLE_WEBHOOK_SECRET") || Deno.env.get("PADDLE_WEBHOOK_SECRET");
+  const secret = Deno.env.get("PRODUCT_PADDLE_WEBHOOK_SECRET");
   if (!secret) {
-    throw new Error("PRODUCT_PADDLE_WEBHOOK_SECRET or PADDLE_WEBHOOK_SECRET is not configured.");
+    throw new Error("PRODUCT_PADDLE_WEBHOOK_SECRET is not configured");
   }
   if (!signatureHeader) {
     return false;

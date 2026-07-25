@@ -950,6 +950,11 @@ try {
     }, openWelcomePage);
   });
 
+  // 浏览器重启后 Service Worker 重新加载，context menus 不会自动恢复，需重新创建
+  chrome.runtime.onStartup.addListener(() => {
+    createContextMenus();
+  });
+
   function sendContextExportMessage(tabId, format, allowRetry) {
     chrome.tabs.sendMessage(tabId, {
       type: "CHATVAULT_TRIGGER_EXPORT",
