@@ -31,7 +31,6 @@ const FILES_TO_SYNC = [
   { src: "src/modules/export.js", dest: "src/modules/export.js" },
   { src: "src/modules/export-message-adapter.js", dest: "src/modules/export-message-adapter.js" },
   { src: "src/modules/privacy-proof.js", dest: "src/modules/privacy-proof.js" },
-  { src: "src/modules/redaction.js", dest: "src/modules/redaction.js" },
   { src: "src/modules/share-cards.js", dest: "src/modules/share-cards.js" },
   { src: "src/modules/template-presets.js", dest: "src/modules/template-presets.js" },
   { src: "src/modules/developer-export.js", dest: "src/modules/developer-export.js" },
