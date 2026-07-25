@@ -64,12 +64,20 @@ async function getLatestPaidLifetimeTransactionForUser(userId: string, profile: 
     );
     const transaction = (customerRows || []).find(isPaidLifetimeTransaction) || null;
     if (transaction) {
+      // SECURITY: 仅当 customer 在 product_payment_customers 表中归属于本 userId 时才 PATCH。
+      // 避免 IDOR：攻击者仅凭 paddle_customer_id 即可把他人交易"领走"。
       if (!transaction.user_id) {
-        await supabaseRest(`product_payment_transactions?paddle_transaction_id=eq.${encodeURIComponent(String(transaction.paddle_transaction_id))}&product_slug=eq.${encodeURIComponent(productSlug)}`, {
-          method: "PATCH",
-          prefer: "return=minimal",
-          body: { user_id: userId }
-        });
+        const customerRows2 = await supabaseRest<Record<string, unknown>[]>(
+          `product_payment_customers?paddle_customer_id=eq.${encodeURIComponent(customerId)}&product_slug=eq.${encodeURIComponent(productSlug)}&select=user_id&limit=1`
+        );
+        const customerIdOwner = typeof customerRows2?.[0]?.user_id === "string" ? customerRows2[0].user_id : null;
+        if (customerIdOwner && customerIdOwner === userId) {
+          await supabaseRest(`product_payment_transactions?paddle_transaction_id=eq.${encodeURIComponent(String(transaction.paddle_transaction_id))}&product_slug=eq.${encodeURIComponent(productSlug)}`, {
+            method: "PATCH",
+            prefer: "return=minimal",
+            body: { user_id: userId }
+          });
+        }
       }
       return transaction;
     }

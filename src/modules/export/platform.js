@@ -137,28 +137,6 @@ function getParseStats() {
 }
 
 
-
-function parseChatGPTMessages(options) {
-  return withExportHtmlStyleCapture(shouldCaptureHtmlStyles(options), function () {
-    return parseChatGPTMessagesFromPlatform();
-  });
-}
-
-
-function parseClaudeMessages(options) {
-  return withExportHtmlStyleCapture(shouldCaptureHtmlStyles(options), function () {
-    return parseClaudeMessagesFromPlatform();
-  });
-}
-
-
-function parseGeminiMessages(options) {
-  return withExportHtmlStyleCapture(shouldCaptureHtmlStyles(options), function () {
-    return parseGeminiMessagesFromPlatform();
-  });
-}
-
-
 function parseMessages(options) {
   var platform = detectPlatform();
   // 解析前先统计 DOM 候选消息元素数，用于事后检测"静默丢内容"
@@ -496,9 +474,6 @@ function getImageEligibility(input) {
 export {
   compareElementsInDocument,
   pushDistinctDocumentElement,
-  parseChatGPTMessages,
-  parseClaudeMessages,
-  parseGeminiMessages,
   parseMessages,
   getParseStats,
   getBlockText,

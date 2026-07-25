@@ -12,7 +12,7 @@
   // 用户单次使用基本不触发刷新，跨会话使用也能无感续期。
   const REFRESH_MARGIN_SECONDS = 3600;
   let refreshSessionPromise = null;
-  let refreshSessionPromiseToken = "";
+  let refreshSessionPromiseKey = "";
   let sessionGeneration = 0;
 
   if (!api || !config) {
@@ -57,6 +57,10 @@
   }
 
   function storageSet(key, value) {
+    return storageSetValues({ [key]: value });
+  }
+
+  function storageSetValues(values) {
     return new Promise((resolve) => {
       const storage = getChromeLocalStorage();
 
@@ -66,7 +70,7 @@
       }
 
       try {
-        storage.set({ [key]: value }, resolve);
+        storage.set(values, resolve);
       } catch (error) {
         resolve();
       }
@@ -319,9 +323,12 @@
   async function clearSession() {
     sessionGeneration += 1;
     refreshSessionPromise = null;
-    refreshSessionPromiseToken = "";
-    await storageSet(SESSION_MUTATION_EPOCH_KEY, createSessionMutationEpoch());
-    await storageSet(SESSION_KEY, null);
+    refreshSessionPromiseKey = "";
+    // 原子写入 epoch + 清空 session，避免 signOut 与在飞 refresh 之间的竞态窗口
+    await storageSetValues({
+      [SESSION_MUTATION_EPOCH_KEY]: createSessionMutationEpoch(),
+      [SESSION_KEY]: null
+    });
   }
 
   function refreshSessionThroughBackground(refreshToken) {
@@ -378,6 +385,11 @@
       return null;
     }
 
+    const sessionOperation = options.sessionOperation || await createSessionOperation();
+    if (!await isSessionOperationCurrent(sessionOperation)) {
+      return null;
+    }
+
     const minTtlSeconds = Number.isFinite(Number(options.minTtlSeconds))
       ? Number(options.minTtlSeconds)
       : REFRESH_MARGIN_SECONDS;
@@ -387,22 +399,30 @@
     }
 
     const refreshToken = session.refresh_token;
-    if (!refreshSessionPromise || refreshSessionPromiseToken !== refreshToken) {
-      refreshSessionPromiseToken = refreshToken;
+    const promiseKey = `${sessionOperation.generation}:${sessionOperation.mutationEpoch}:${refreshToken}`;
+    if (!refreshSessionPromise || refreshSessionPromiseKey !== promiseKey) {
+      refreshSessionPromiseKey = promiseKey;
       refreshSessionPromise = (async () => {
-        const refreshed = await refreshSessionThroughBackground(refreshToken)
-          || await api.request("/auth/v1/token?grant_type=refresh_token", {
+        let refreshed = await refreshSessionThroughBackground(refreshToken);
+        if (!refreshed) {
+          // background 不可达时，短暂等待后重试一次，减少多上下文并发 fallback 导致的 refresh_token 旋转冲突
+          await new Promise((resolve) => setTimeout(resolve, 500));
+          refreshed = await refreshSessionThroughBackground(refreshToken);
+        }
+        if (!refreshed) {
+          refreshed = await api.request("/auth/v1/token?grant_type=refresh_token", {
             body: {
               refresh_token: refreshToken
             },
             method: "POST"
           });
+        }
 
-        return storeSession(normalizeSession(session, refreshed));
+        return storeSession(normalizeSession(session, refreshed), sessionOperation);
       })().finally(() => {
-        if (refreshSessionPromiseToken === refreshToken) {
+        if (refreshSessionPromiseKey === promiseKey) {
           refreshSessionPromise = null;
-          refreshSessionPromiseToken = "";
+          refreshSessionPromiseKey = "";
         }
       });
     }
@@ -423,7 +443,12 @@
     // validation enables session fixation attacks (C1).
     cleanAuthHash();
 
+    const sessionOperation = await createSessionOperation();
     let session = await getStoredSession();
+
+    if (!await isSessionOperationCurrent(sessionOperation)) {
+      return null;
+    }
 
     if (!session) {
       return null;
@@ -437,10 +462,14 @@
     try {
       session = await refreshSession(session, {
         forceRefresh: Boolean(options.forceRefresh),
-        minTtlSeconds: options.minTtlSeconds
+        minTtlSeconds: options.minTtlSeconds,
+        sessionOperation
       });
 
       if (!session) {
+        if (!await isSessionOperationCurrent(sessionOperation)) {
+          return null;
+        }
         if (canReturnStoredSession()) {
           return originalSession;
         }
@@ -448,7 +477,7 @@
       }
 
       if (options.skipUserRefresh && session.user?.id) {
-        return await storeSession(session);
+        return await storeSession(session, sessionOperation);
       }
 
       try {
@@ -457,7 +486,7 @@
           ...session,
           user
         };
-        return await storeSession(sessionWithUser);
+        return await storeSession(sessionWithUser, sessionOperation);
       } catch (userError) {
         if (!isLikelyAuthError(userError)) {
           throw userError;
@@ -465,16 +494,23 @@
 
         const refreshedSession = await refreshSession(session, {
           forceRefresh: true,
-          minTtlSeconds: 0
+          minTtlSeconds: 0,
+          sessionOperation
         });
+        if (!refreshedSession) {
+          return null;
+        }
         const user = await getUser(refreshedSession.access_token);
         const sessionWithUser = {
           ...refreshedSession,
           user
         };
-        return await storeSession(sessionWithUser);
+        return await storeSession(sessionWithUser, sessionOperation);
       }
     } catch (error) {
+      if (!await isSessionOperationCurrent(sessionOperation)) {
+        return null;
+      }
       if (isLikelyAuthError(error)) {
         await clearSession();
         try {
@@ -492,7 +528,7 @@
     }
   }
 
-  async function signInWithIdToken(idToken, accessToken, nonce) {
+  async function signInWithIdToken(idToken, accessToken, nonce, operation) {
     try {
       const refreshed = await api.request("/auth/v1/token?grant_type=id_token", {
         body: {
@@ -505,7 +541,7 @@
       });
 
       const session = normalizeSession(null, refreshed);
-      return await storeSession(session);
+      return await storeSession(session, operation);
     } catch (error) {
       throw error;
     }
@@ -556,9 +592,10 @@
 
         try {
           setAuthLoading(true, "Signing In To Claude Export...");
+          const sessionOperation = await createSessionOperation();
           let session = response.session
-            ? await storeSession(normalizeSession(null, response.session))
-            : await signInWithIdToken(response.idToken, response.accessToken, response.nonce);
+            ? await storeSession(normalizeSession(null, response.session), sessionOperation)
+            : await signInWithIdToken(response.idToken, response.accessToken, response.nonce, sessionOperation);
           if (!session) {
             setAuthLoading(false);
             resolve(null);

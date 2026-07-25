@@ -38,8 +38,6 @@ const FILES_TO_SYNC = [
   { src: "src/modules/export-health.js", dest: "src/modules/export-health.js" },
   { src: "src/modules/export-receipt.js", dest: "src/modules/export-receipt.js" },
   { src: "src/modules/i18n.js", dest: "src/modules/i18n.js" },
-  { src: "src/offscreen.js", dest: "src/offscreen.js" },
-  { src: "src/offscreen.html", dest: "src/offscreen.html" },
   { src: "src/obsidian-background.js", dest: "src/obsidian-background.js" },
   { src: "tests/export-fixtures.test.mjs", dest: "tests/export-fixtures.test.mjs" }
 ];

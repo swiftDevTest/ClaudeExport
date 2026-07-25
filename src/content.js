@@ -4442,27 +4442,10 @@
   }
 
   // 复制纯文本
+  // popup 关闭后 content script 无用户手势，navigator.clipboard.writeText 可能失败；
+  // 依赖 clipboardWrite 权限走 document.execCommand("copy") 兜底。
   async function writeTextToClipboard(value) {
     const text = String(value || "");
-    if (typeof chrome !== "undefined" && chrome.runtime && typeof chrome.runtime.sendMessage === "function") {
-      try {
-        const response = await chrome.runtime.sendMessage({
-          type: "CHATVAULT_COPY_TEXT",
-          text
-        });
-        if (response?.ok) {
-          return;
-        }
-        throw new Error(response?.error || "Extension clipboard write failed.");
-      } catch (err) {
-        console.warn("Extension clipboard copy failed:", err);
-        throw new Error(tx(
-          "content_copy_failed_refresh",
-          "Copy failed. Refresh the page and try again.",
-          "复制失败，请刷新页面后重试。"
-        ));
-      }
-    }
 
     try {
       if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {

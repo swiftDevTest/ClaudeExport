@@ -3,6 +3,42 @@ import { PRODUCT_SLUG } from "../_shared/plans.ts";
 import { eventBelongsToProduct, getPaddleEventInfo, verifyPaddleSignature } from "../_shared/paddle.ts";
 import { getProfileByUserId, supabaseRest, updateProfile } from "../_shared/supabase.ts";
 
+// 抢占式去重：在处理之前先尝试插入 event_id。
+// 冲突即说明重复事件，跳过处理避免重复发放权益。
+async function tryAcquireWebhookLock(event: Record<string, unknown>, info: ReturnType<typeof getPaddleEventInfo>): Promise<{ duplicate: boolean }> {
+  const response = await supabaseRest<{ event_id?: string }>("payment_webhook_events?on_conflict=event_id&select=event_id", {
+    method: "POST",
+    prefer: "resolution=ignore-duplicates,return=representation",
+    body: {
+      event_id: info.eventId,
+      event_type: info.eventType,
+      product_slug: PRODUCT_SLUG,
+      paddle_customer_id: info.customerId,
+      paddle_subscription_id: info.subscriptionId,
+      paddle_transaction_id: info.transactionId,
+      paddle_price_id: info.priceId,
+      user_id: info.userId,
+      processed: false,
+      ignored: false,
+      payload: event,
+      processed_at: null
+    }
+  });
+  const inserted = Array.isArray(response) && response.length > 0;
+  return { duplicate: !inserted };
+}
+
+async function markWebhookEventProcessed(info: ReturnType<typeof getPaddleEventInfo>, processed: boolean) {
+  await supabaseRest(`payment_webhook_events?event_id=eq.${encodeURIComponent(info.eventId)}`, {
+    method: "PATCH",
+    prefer: "return=minimal",
+    body: {
+      processed,
+      processed_at: new Date().toISOString()
+    }
+  });
+}
+
 function toTimestamp(value: unknown) {
   if (typeof value !== "string" || !value) {
     return null;
@@ -51,18 +87,6 @@ async function findUserIdBySubscription(subscriptionId: string | null) {
     `payment_subscriptions?paddle_subscription_id=eq.${encodeURIComponent(subscriptionId)}&product_slug=eq.${PRODUCT_SLUG}&select=user_id&limit=1`
   );
   return typeof rows?.[0]?.user_id === "string" ? rows[0].user_id : null;
-}
-
-async function findUserIdByEmail(email: unknown) {
-  const normalizedEmail = normalizeEmail(email);
-  if (!normalizedEmail || !normalizedEmail.includes("@")) {
-    return null;
-  }
-
-  const rows = await supabaseRest<Record<string, unknown>[]>(
-    `profiles?email=eq.${encodeURIComponent(normalizedEmail)}&product_slug=eq.${PRODUCT_SLUG}&select=id&limit=1`
-  );
-  return typeof rows?.[0]?.id === "string" ? rows[0].id : null;
 }
 
 async function insertWebhookEvent(event: Record<string, unknown>, info: ReturnType<typeof getPaddleEventInfo>, ignored: boolean, processed: boolean) {
@@ -139,11 +163,13 @@ async function getValidatedCustomUserId(info: ReturnType<typeof getPaddleEventIn
 }
 
 async function resolveUserIdFromWebhook(info: ReturnType<typeof getPaddleEventInfo>) {
+  // SECURITY: 不使用邮箱兜底匹配。
+  // 攻击者可在 Paddle 把账号邮箱改成受害者邮箱，导致 webhook 把订阅绑到自己头上。
+  // 仅通过已绑定的 transaction/subscription/customer 反查 user_id。
   return await getValidatedCustomUserId(info) ||
     await findUserIdByTransaction(info.transactionId) ||
     await findUserIdBySubscription(info.subscriptionId) ||
-    await findUserIdByCustomer(info.customerId) ||
-    await findUserIdByEmail(getPaymentEmail(info));
+    await findUserIdByCustomer(info.customerId);
 }
 
 async function upsertCustomer(userId: string, customerId: string | null, email: string | null) {
@@ -258,26 +284,57 @@ async function handleSubscription(info: ReturnType<typeof getPaddleEventInfo>) {
   return true;
 }
 
+// 退款/撤单/争议处理：撤销 lifetime_access（若原交易是 lifetime）。
+async function handleAdjustment(info: ReturnType<typeof getPaddleEventInfo>) {
+  if (!info.transactionId) return false;
+  const transactions = await supabaseRest<Record<string, unknown>[]>(
+    `payment_transactions?paddle_transaction_id=eq.${encodeURIComponent(info.transactionId)}&product_slug=eq.${PRODUCT_SLUG}&select=*&limit=1`
+  );
+  const transaction = transactions?.[0] || null;
+  const userId = typeof transaction?.user_id === "string" ? transaction.user_id : null;
+  if (!transaction || !userId) return false;
+
+  // 仅当原交易是 lifetime 时才撤销 lifetime_access；
+  // 普通 monthly/yearly 订阅的退款由 subscription.canceled 事件处理。
+  if (String(transaction.billing_interval || "").toLowerCase() === "lifetime") {
+    const profile = await getProfileByUserId(userId) || {};
+    if (profile.lifetime_access) {
+      await updateProfile(userId, {
+        plan: "free",
+        product_slug: PRODUCT_SLUG,
+        lifetime_access: false
+      });
+    }
+  }
+  return true;
+}
+
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") {
-    return emptyResponse();
+    return emptyResponseForRequest(request);
   }
   if (request.method !== "POST") {
-    return errorResponse("Method not allowed.", 405);
+    return errorResponseForRequest(request, "Method not allowed.", 405);
   }
 
   try {
     const rawBody = await request.text();
     const valid = await verifyPaddleSignature(rawBody, request.headers.get("paddle-signature"));
     if (!valid) {
-      return errorResponse("Invalid Paddle webhook signature.", 401);
+      return errorResponseForRequest(request, "Invalid Paddle webhook signature.", 401);
     }
 
     const event = JSON.parse(rawBody) as Record<string, unknown>;
     const info = getPaddleEventInfo(event);
     if (!eventBelongsToProduct(info)) {
       await insertWebhookEvent(event, info, true, false);
-      return jsonResponse({ ok: true, ignored: true });
+      return jsonResponseForRequest(request, { ok: true, ignored: true });
+    }
+
+    // 抢占式幂等：先尝试插入 event_id，冲突即重复事件，跳过处理。
+    const lock = await tryAcquireWebhookLock(event, info);
+    if (lock.duplicate) {
+      return jsonResponseForRequest(request, { ok: true, duplicate: true });
     }
 
     let processed = false;
@@ -285,11 +342,13 @@ Deno.serve(async (request) => {
       processed = await handleTransaction(info);
     } else if (info.eventType.startsWith("subscription.")) {
       processed = await handleSubscription(info);
+    } else if (info.eventType.startsWith("adjustment.")) {
+      processed = await handleAdjustment(info);
     }
 
-    await insertWebhookEvent(event, info, false, processed);
-    return jsonResponse({ ok: true, processed });
+    await markWebhookEventProcessed(info, processed);
+    return jsonResponseForRequest(request, { ok: true, processed });
   } catch (error) {
-    return errorResponse(error instanceof Error ? error.message : "Payment webhook failed.", 500);
+    return errorResponseForRequest(request, "Payment webhook failed.", 500);
   }
 });

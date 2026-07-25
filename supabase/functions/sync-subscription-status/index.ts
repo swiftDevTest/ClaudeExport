@@ -44,7 +44,7 @@ async function getStoredCustomerIds(userId: string, profile: Record<string, unkn
   return Array.from(ids);
 }
 
-async function getLatestPaidTransactionForUser(userId: string, profile: Record<string, unknown>) {
+async function getLatestPaidTransactionForUser(userId: string, profile: Record<string, unknown>, userEmail: string) {
   const rows = await supabaseRest<Record<string, unknown>[]>(
     `payment_transactions?user_id=eq.${encodeURIComponent(userId)}&product_slug=eq.${PRODUCT_SLUG}&status=in.(completed,paid,active)&select=*&order=updated_at.desc&limit=1`
   );
@@ -59,12 +59,21 @@ async function getLatestPaidTransactionForUser(userId: string, profile: Record<s
     );
     const transaction = customerRows?.[0] || null;
     if (isPaidTransaction(transaction)) {
+      // SECURITY: 仅当 transaction 尚未绑定 user_id 且能通过 customer 反查到本用户时才 PATCH。
+      // 不再用任意 customerId 直接 PATCH 当前 user_id（IDOR 风险）。
+      // payment_customers 表中的 user_id 已通过 webhook 安全流程绑定，可信。
       if (!transaction.user_id) {
-        await supabaseRest(`payment_transactions?paddle_transaction_id=eq.${encodeURIComponent(String(transaction.paddle_transaction_id))}`, {
-          method: "PATCH",
-          prefer: "return=minimal",
-          body: { user_id: userId }
-        });
+        const customerRows2 = await supabaseRest<Record<string, unknown>[]>(
+          `payment_customers?paddle_customer_id=eq.${encodeURIComponent(customerId)}&product_slug=eq.${PRODUCT_SLUG}&select=user_id&limit=1`
+        );
+        const customerIdOwner = typeof customerRows2?.[0]?.user_id === "string" ? customerRows2[0].user_id : null;
+        if (customerIdOwner && customerIdOwner === userId) {
+          await supabaseRest(`payment_transactions?paddle_transaction_id=eq.${encodeURIComponent(String(transaction.paddle_transaction_id))}`, {
+            method: "PATCH",
+            prefer: "return=minimal",
+            body: { user_id: userId }
+          });
+        }
       }
       return transaction;
     }
@@ -93,7 +102,7 @@ Deno.serve(async (request) => {
       `payment_subscriptions?user_id=eq.${encodeURIComponent(user.id)}&product_slug=eq.${PRODUCT_SLUG}&select=*&order=updated_at.desc`
     );
     const activeSubscription = (subscriptions || []).find(isActiveSubscription) || null;
-    const paidTransaction = activeSubscription ? null : await getLatestPaidTransactionForUser(user.id, profile);
+    const paidTransaction = activeSubscription ? null : await getLatestPaidTransactionForUser(user.id, profile, user.email || "");
     const lifetimeAccess = Boolean(profile.lifetime_access) || isLifetimeTransaction(paidTransaction);
     const nextPlan = lifetimeAccess || activeSubscription || paidTransaction ? "pro" : "free";
 

@@ -18,6 +18,7 @@
   const MAPPING_STORE = "mappings";
   const ALARM_NAME = "chatvault-notion-queue-pump";
   const RETRY_ALARM_NAME = "chatvault-notion-queue-retry";
+  const PUMP_ALARM_NAME = "chatvault-notion-queue-pump-immediate";
   const NOTIFICATION_LINKS_KEY = _storageKey("notion_notification_links.v1");
   const PROPERTY_MAPS_KEY = _storageKey("notion_property_maps.v1");
   const NOTION_SELECTED_CONNECTION_ID_KEY = _storageKey("notion_selected_connection_id");
@@ -30,7 +31,7 @@
   const TRUSTED_CONTENT_HOSTS = new Set(
     Array.isArray(productConfig.allowedHosts) && productConfig.allowedHosts.length
       ? productConfig.allowedHosts
-      : ["chatgpt.com", "chat.openai.com", "claude.ai", "gemini.google.com"]
+      : ["claude.ai"]
   );
   const ALLOWED_MEDIA_TYPES = new Set([
     "image/png", "image/jpeg", "image/gif", "image/webp", "image/svg+xml", "image/heic", "image/tiff", "image/bmp"
@@ -1559,8 +1560,19 @@
     }
   }
 
+  // 使用 chrome.alarms 而非 setTimeout，确保 Service Worker 被销毁后仍能触发 pump。
+  // alarms 最小有效延迟约 1 秒（Chrome 会将 <1s 的延迟向上取整）。
   function schedulePump(delayMs) {
-    setTimeout(() => { pump().catch(() => {}); }, Math.max(0, Number(delayMs || 0)));
+    if (!chrome.alarms) {
+      setTimeout(() => { pump().catch(() => {}); }, Math.max(0, Number(delayMs || 0)));
+      return;
+    }
+    const when = Math.max(Date.now() + 1000, Date.now() + Number(delayMs || 0));
+    chrome.alarms.get(PUMP_ALARM_NAME, (alarm) => {
+      if (!alarm || Number(alarm.scheduledTime || Infinity) > when) {
+        chrome.alarms.create(PUMP_ALARM_NAME, { when });
+      }
+    });
   }
 
   function schedulePumpAt(timestamp) {
@@ -1903,7 +1915,7 @@
 
   if (chrome.alarms) {
     chrome.alarms.onAlarm.addListener((alarm) => {
-      if (alarm && [ALARM_NAME, RETRY_ALARM_NAME].includes(alarm.name)) pump().catch(() => {});
+      if (alarm && [ALARM_NAME, RETRY_ALARM_NAME, PUMP_ALARM_NAME].includes(alarm.name)) pump().catch(() => {});
     });
     chrome.alarms.create(ALARM_NAME, { periodInMinutes: 1 });
   }

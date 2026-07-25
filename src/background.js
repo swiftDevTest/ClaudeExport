@@ -33,6 +33,7 @@ try {
   const ONBOARDING_STATE_KEY = storageKey("onboarding.v1");
   const OPEN_SUBSCRIBE_PANEL_REQUEST_KEY = storageKey("open_subscribe_panel_request.v1");
   const SESSION_KEY = storageKey("supabase_session.v1");
+  const SESSION_MUTATION_EPOCH_KEY = storageKey("supabase_session_epoch.v1");
   const ENTITLEMENT_STATE_CACHE_KEY = storageKey("entitlement_state.v1");
   const MAX_IMAGE_FETCH_BYTES = 8 * 1024 * 1024;
   const IMAGE_FETCH_TIMEOUT_MS = 8000;
@@ -391,7 +392,7 @@ try {
     return supabaseRefreshPromises.get(token);
   }
 
-  async function exchangeGoogleIdTokenForSupabaseSession(idToken, accessToken, nonce) {
+  async function exchangeGoogleIdTokenForSupabaseSession(idToken, accessToken, nonce, sessionEpoch) {
     const response = await fetch(SUPABASE_URL + "/auth/v1/token?grant_type=id_token", {
       method: "POST",
       headers: {
@@ -440,6 +441,14 @@ try {
         ...session,
         user: await fetchSupabaseUser(session.access_token)
       };
+    }
+
+    // 检查 epoch 是否在 OAuth 流程期间被改变（例如用户调用了 signOut）
+    if (sessionEpoch) {
+      const currentEpoch = await storageGet(SESSION_MUTATION_EPOCH_KEY);
+      if (currentEpoch && currentEpoch !== sessionEpoch) {
+        throw new Error("Session was cleared during OAuth flow. Aborting session storage.");
+      }
     }
 
     const storedSession = sanitizeSessionForStorage(session);
@@ -534,6 +543,9 @@ try {
         const state = createRandomHex(16);
         const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(normalizedClientId)}&response_type=${responseType}&redirect_uri=${redirectUri}&scope=${scope}&state=${state}&nonce=${hashedNonce}`;
 
+        // 捕获当前 session epoch，用于 OAuth 流程结束后检测是否发生了 signOut
+        const sessionEpoch = await storageGet(SESSION_MUTATION_EPOCH_KEY);
+
         chrome.identity.launchWebAuthFlow({
           url: authUrl,
           interactive: true
@@ -570,7 +582,7 @@ try {
               return;
             }
 
-            const session = await exchangeGoogleIdTokenForSupabaseSession(idToken, accessToken, rawNonce);
+            const session = await exchangeGoogleIdTokenForSupabaseSession(idToken, accessToken, rawNonce, sessionEpoch);
             syncSubscriptionStatusForSession(session).catch((syncError) => {
               console.warn("Failed to sync subscription status after sign-in:", syncError);
             });

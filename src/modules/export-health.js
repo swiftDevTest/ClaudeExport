@@ -32,7 +32,7 @@
     const messages = Array.isArray(input?.messages) ? input.messages : [];
     const format = String(input?.format || "pdf").toLowerCase();
     const mode = String(input?.mode || "conversation").toLowerCase();
-    const platform = String(input?.platform || "chatgpt").toLowerCase();
+    const platform = String(input?.platform || "claude").toLowerCase();
     const limits = input?.imageLimits || { maxChars: 12000, maxMessages: 40, maxCodeChars: 8000, maxRenderHeight: 6000 };
     const maxCodeChars = Number.isFinite(Number(limits.maxCodeChars)) ? Number(limits.maxCodeChars) : 8000;
 

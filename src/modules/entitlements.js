@@ -43,7 +43,7 @@
     const normalized = {
       id: profile?.id || profile?.user_id || "",
       email: profile?.email || "",
-      product_slug: profile?.product_slug || productConfig.productSlug || "ai-chat-export",
+      product_slug: profile?.product_slug || productConfig.productSlug || "claude-export",
       plan: profile?.plan === "pro" ? "pro" : "free",
       feature_flags: profile?.feature_flags && typeof profile.feature_flags === "object" ? profile.feature_flags : {},
       limits: profile?.limits && typeof profile.limits === "object" ? profile.limits : {},

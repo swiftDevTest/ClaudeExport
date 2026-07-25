@@ -1,5 +1,5 @@
 import { emptyResponseForRequest, errorResponseForRequest, isAllowedBrowserOrigin, jsonResponseForRequest, readJsonBody } from "../_shared/http.ts";
-import { PRODUCT_SLUG } from "../_shared/plans.ts";
+import { PRODUCT_SLUG, isProductSlugAllowed } from "../_shared/plans.ts";
 import { ensureProfile, getProfileByUserId, getUserFromRequest, publicProfile, supabaseRest } from "../_shared/supabase.ts";
 
 const DEFAULT_FREE_DAILY_EXPORTS = 3;
@@ -110,6 +110,11 @@ Deno.serve(async (request) => {
     await ensureProfile(user);
 
     const body = await readJsonBody<Record<string, unknown>>(request);
+    // 显式拒绝非 ai-chat-export 的 product_slug，防止新产品误调消费错误配额。
+    // 新产品应调用 product-verify-export-entitlement。
+    if (Object.prototype.hasOwnProperty.call(body, "product_slug") && !isProductSlugAllowed(body.product_slug)) {
+      return errorResponseForRequest(request, "Unsupported product for this endpoint.", 400);
+    }
     const requestedCount = normalizeRequestedCount(body.requested_count || body.count);
     const consume = body.consume === true;
     const usageDate = todayUtc();
