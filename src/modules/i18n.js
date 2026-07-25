@@ -1,7 +1,9 @@
 (function initChatVaultI18n() {
   "use strict";
 
-  var LANGUAGE_STORAGE_KEY = "chatvault_ui_language_v1";
+  var _productConfig = globalThis.CHATVAULT_PRODUCT_CONFIG || {};
+  var _storageKeyFn = typeof _productConfig.storageKey === "function" ? _productConfig.storageKey : function (n) { return "claude_export." + n; };
+  var LANGUAGE_STORAGE_KEY = _storageKeyFn("ui_language_v1");
   var SUPPORTED_LANGUAGES = Object.freeze([
     "en", "zh_CN", "zh_TW", "ja", "ko", "de", "fr", "es", "pt_BR"
   ]);

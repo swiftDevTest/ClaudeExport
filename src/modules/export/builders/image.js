@@ -1053,5 +1053,6 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
   } finally {
     // 释放主渲染 canvas 与测量 canvas 的位图内存，避免长对话导出后 GC 压力
     try { c.canvas.width = 1; c.canvas.height = 1; } catch (ignored) {}
+    try { measure.canvas.width = 1; measure.canvas.height = 1; } catch (ignored) {}
   }
 }

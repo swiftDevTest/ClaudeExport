@@ -6,7 +6,9 @@
   const VAULT_STORE = "vault";
   const JOB_STORE = "jobs";
   const HISTORY_STORE = "history";
-  const CONFIG_KEY = "chatvault_obsidian_config_v1";
+  const _productConfig = globalThis.CHATVAULT_PRODUCT_CONFIG || {};
+  const storageKey = typeof _productConfig.storageKey === "function" ? _productConfig.storageKey : (name) => `claude_export.${name}`;
+  const CONFIG_KEY = storageKey("obsidian_config.v1");
   const i18n = globalThis.CHATVAULT_I18N;
   let databasePromise = null;
   let selectedHandle = null;

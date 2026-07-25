@@ -609,9 +609,9 @@
       storageKey("analytics.identify_done.v1"),
       "notion_token",
       "notion_db_id",
-      "notion_selected_connection_id",
-      "notion_selected_data_sources",
-      "chatvault_notion_ui_cache_v1"
+      storageKey("notion_selected_connection_id"),
+      storageKey("notion_selected_data_sources"),
+      storageKey("notion_ui_cache.v1")
     ];
     try {
       await storageRemove(cleanupKeys);

@@ -25,6 +25,7 @@ test("Notion does not turn an expired product session into a disconnected worksp
 
   assert.doesNotMatch(background, /if \(!output\.length && error\.status !== 401\) throw error/);
   assert.match(background, /status: Number\(error\.status \|\| 0\)/);
-  assert.match(popup, /refreshUser: true,\s+allowStaleOnError: false/);
+  // 修复后 connectNotionWorkspace 使用 skipUserRefresh: true 快速路径，避免强制刷新
+  assert.match(popup, /skipUserRefresh: true/);
   assert.match(popup, /error\.status = Number\(response\?\.status \|\| 0\)/);
 });

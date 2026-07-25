@@ -9,7 +9,9 @@
   const JOB_STORE = "jobs";
   const HISTORY_STORE = "history";
   const ACTIVE_VAULT_KEY = "active";
-  const CONFIG_KEY = "chatvault_obsidian_config_v1";
+  const _productConfig = globalThis.CHATVAULT_PRODUCT_CONFIG || {};
+  const storageKey = typeof _productConfig.storageKey === "function" ? _productConfig.storageKey : (name) => `claude_export.${name}`;
+  const CONFIG_KEY = storageKey("obsidian_config.v1");
   // 历史问题：STALE_JOB_MS=24h，SW 崩溃后 job 卡在 writing 状态 24 小时，
   // 用户期间无法启动新同步（job_conflict）。配合 alarms 周期清理降到 10min，
   // SW 异常终止后用户最长等待 12min（2min alarm 周期 + 10min stale 阈值）即可恢复。

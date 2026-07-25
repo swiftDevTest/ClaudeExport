@@ -17,7 +17,7 @@
   var productConfig = globalThis.CHATVAULT_PRODUCT_CONFIG || {};
   var storageKey = typeof productConfig.storageKey === "function"
     ? productConfig.storageKey
-    : function (name) { return "chatvault_exporter." + name; };
+    : function (name) { return "claude_export." + name; };
   var productId = productConfig.productId || "chatvault_exporter";
   var productSlug = productConfig.productSlug || "chatvault-exporter";
   var productName = productConfig.productName || "AI Chat Export";
@@ -1583,7 +1583,7 @@
     if (!requireSupportedPage()) return;
     options = options || {};
     if (options.closeImmediately) {
-      window.close();
+      try { window.close(); } catch (e) {}
     }
     chrome.tabs.sendMessage(activeTabId, payload, function (response) {
       if (chrome.runtime.lastError) {
@@ -2287,7 +2287,9 @@
     databaseId: "",
     workspaceName: ""
   };
-  const NOTION_UI_CACHE_KEY = "chatvault_notion_ui_cache_v1";
+  const NOTION_UI_CACHE_KEY = storageKey("notion_ui_cache.v1");
+  const NOTION_SELECTED_CONNECTION_ID_KEY = storageKey("notion_selected_connection_id");
+  const NOTION_SELECTED_DATA_SOURCES_KEY = storageKey("notion_selected_data_sources");
   let notionUiInitialized = false;
 
   function notionCacheUserId(stored) {
@@ -2367,8 +2369,8 @@
   function getStoredNotionSelection() {
     return new Promise((resolve) => {
       chrome.storage.local.get([
-        "notion_selected_connection_id",
-        "notion_selected_data_sources",
+        NOTION_SELECTED_CONNECTION_ID_KEY,
+        NOTION_SELECTED_DATA_SOURCES_KEY,
         supabaseSessionStorageKey,
         NOTION_UI_CACHE_KEY,
         "notion_token",
@@ -2399,9 +2401,9 @@
       return false;
     }
 
-    const selectedConnection = connections.find((item) => item.id === stored.notion_selected_connection_id) ||
+    const selectedConnection = connections.find((item) => item.id === stored[NOTION_SELECTED_CONNECTION_ID_KEY]) ||
       connections[0] || null;
-    const selectedSources = stored.notion_selected_data_sources || {};
+    const selectedSources = stored[NOTION_SELECTED_DATA_SOURCES_KEY] || {};
     const availableConnectionIds = new Set(connections.map((item) => item.id));
     const cachedDataSources = (notionConfig.dataSources || []).filter((item) => availableConnectionIds.has(item.connectionId));
     notionConfig.connections = connections;
@@ -2420,13 +2422,13 @@
 
   async function saveNotionSelection(storedInput) {
     const stored = storedInput || await getStoredNotionSelection();
-    const sources = { ...(stored.notion_selected_data_sources || {}) };
+    const sources = { ...(stored[NOTION_SELECTED_DATA_SOURCES_KEY] || {}) };
     if (notionConfig.connectionId && notionConfig.dataSourceId) {
       sources[notionConfig.connectionId] = notionConfig.dataSourceId;
     }
     await new Promise((resolve) => chrome.storage.local.set({
-      notion_selected_connection_id: notionConfig.connectionId,
-      notion_selected_data_sources: sources,
+      [NOTION_SELECTED_CONNECTION_ID_KEY]: notionConfig.connectionId,
+      [NOTION_SELECTED_DATA_SOURCES_KEY]: sources,
       [NOTION_UI_CACHE_KEY]: buildNotionUiCache(stored)
     }, resolve));
   }
@@ -2746,17 +2748,18 @@
       document.getElementById("btn-connect-notion-settings")
     ].filter(Boolean);
     const auth = globalThis.CHATVAULT_SUPABASE_AUTH;
-    buttons.forEach((button) => { button.disabled = true; });
+    buttons.forEach((button) => {
+      button.disabled = true;
+      if (button.id === "btn-oauth-notion") {
+        button.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px;margin-right:6px;"></span>' + escapeHtml(t("notion_connecting", "Connecting...", "连接中..."));
+      }
+    });
     try {
-      let session = auth ? await auth.getSession({
-        skipUserRefresh: false,
-        refreshUser: true,
-        allowStaleOnError: false
-      }).catch(() => null) : null;
+      let session = auth ? await auth.getSession({ skipUserRefresh: true }).catch(() => null) : null;
       if (!hasActiveAuthSession(session)) {
         const confirmed = await showCustomConfirm(
           t("onboard_title_login", "Sign in to continue"),
-          t("notion_signin_required", "Sign in first. After sign-in, click Connect Notion again to authorize your workspace."),
+          t("notion_signin_required", "Sign in first. Notion workspace authorization will open automatically after sign-in."),
           {
             okText: t("popup_btn_login", "Sign In"),
             cancelText: t("btn_cancel", "Cancel"),
@@ -2769,18 +2772,21 @@
           showToast(t("popup_login_service_unavailable", "Sign-in is temporarily unavailable. Please refresh and try again."));
           return;
         }
-        session = await auth.signInWithGoogle();
-        if (!hasActiveAuthSession(session)) {
-          session = await auth.getSession?.({ skipUserRefresh: false, allowStaleOnError: false }).catch(() => null);
-        }
-        if (!hasActiveAuthSession(session)) {
-          showToast(t("popup_login_incomplete", "Sign-in was not completed. Please try again."));
+        try {
+          session = await auth.signInWithGoogle();
+          if (!hasActiveAuthSession(session)) {
+            session = await auth.getSession?.({ skipUserRefresh: false, allowStaleOnError: false }).catch(() => null);
+          }
+          if (!hasActiveAuthSession(session)) {
+            showToast(t("popup_login_incomplete", "Sign-in was not completed. Please try again."));
+            return;
+          }
+          await showStoredAuthStateImmediately();
+          refreshPopupState(true);
+        } catch (loginError) {
+          showToast(t("popup_login_failed", "Sign-in failed: $1", loginError?.message || "Sign-in failed."));
           return;
         }
-        await showStoredAuthStateImmediately();
-        refreshPopupState(true);
-        showToast(t("notion_signin_again", "Signed in. Click Connect Notion again to continue."));
-        return;
       }
       showToast(t("notion_oauth_opening", "Opening Notion authorization..."));
       await notionBackgroundMessage({ type: "CHATVAULT_NOTION_START_OAUTH" });
