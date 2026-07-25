@@ -1489,5 +1489,23 @@
   },
   "content_export_success_title": {
     "message": "エクスポート成功！別の形式でエクスポートしますか？"
+  },
+  "obsidian_settings_vault_name_label": {
+    "message": "Obsidian Vault 名（ノートを開くため）"
+  },
+  "obsidian_settings_vault_name_help": {
+    "message": "Obsidian の vault スイッチャーに表示される名前と一致する必要があります。既定ではフォルダー名が使用されます。Obsidian 内で vault 名を変更した場合のみ上書きしてください。"
+  },
+  "obsidian_settings_vault_root_hint_title": {
+    "message": "重要：Vaultのルートフォルダーを選択してください"
+  },
+  "obsidian_settings_vault_root_hint": {
+    "message": ".obsidian ディレクトリを含むフォルダー（Vaultのルート）を選択してください。内部のサブフォルダーは選択しないでください — ファイルは保存されますが、ノートを開く obsidian:// リンクは「Vault not found」で失敗します。"
+  },
+  "obsidian_settings_choose_root": {
+    "message": ".obsidian を含むフォルダーを選択してください：これがVaultのルートであり、内部のサブフォルダーではありません。"
+  },
+  "obsidian_settings_choose_vault_step_desc": {
+    "message": "Vaultのルートフォルダー（.obsidian を含むもの）を選択してください。内部のサブフォルダーではありません。"
   }
 }

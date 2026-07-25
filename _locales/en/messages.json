@@ -1534,5 +1534,23 @@
   },
   "content_export_success_title": {
     "message": "Export successful! Export as another format?"
+  },
+  "obsidian_settings_vault_name_label": {
+    "message": "Obsidian Vault name (for opening notes)"
+  },
+  "obsidian_settings_vault_name_help": {
+    "message": "Must match the name shown in Obsidian's vault switcher. The folder name is used by default; override only if you renamed the vault inside Obsidian."
+  },
+  "obsidian_settings_vault_root_hint_title": {
+    "message": "Important: pick the Vault ROOT folder"
+  },
+  "obsidian_settings_vault_root_hint": {
+    "message": "Choose the folder that contains the .obsidian directory (your Vault root). Do NOT pick a subfolder inside it — files will still save, but obsidian:// links to open notes will fail with \"Vault not found\"."
+  },
+  "obsidian_settings_choose_root": {
+    "message": "Pick the folder that contains .obsidian — this is your Vault root, NOT a subfolder inside it."
+  },
+  "obsidian_settings_choose_vault_step_desc": {
+    "message": "Pick the Vault root folder (the one containing .obsidian), not a subfolder inside it."
   }
 }

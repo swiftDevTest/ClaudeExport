@@ -1489,5 +1489,23 @@
   },
   "content_export_success_title": {
     "message": "Exportation réussie ! Exporter dans un autre format ?"
+  },
+  "obsidian_settings_vault_name_label": {
+    "message": "Nom du Vault Obsidian (pour ouvrir les notes)"
+  },
+  "obsidian_settings_vault_name_help": {
+    "message": "Doit correspondre au nom affiché dans le sélecteur de vaults Obsidian. Le nom du dossier est utilisé par défaut ; ne le remplacer que si vous avez renommé le vault dans Obsidian."
+  },
+  "obsidian_settings_vault_root_hint_title": {
+    "message": "Important : choisissez le dossier RACINE du Vault"
+  },
+  "obsidian_settings_vault_root_hint": {
+    "message": "Choisissez le dossier qui contient le répertoire .obsidian (la racine de votre Vault). NE choisissez PAS un sous-dossier à l'intérieur : les fichiers seront enregistrés, mais les liens obsidian:// pour ouvrir les notes échoueront avec « Vault not found »."
+  },
+  "obsidian_settings_choose_root": {
+    "message": "Choisissez le dossier qui contient .obsidian : c'est la racine de votre Vault, PAS un sous-dossier à l'intérieur."
+  },
+  "obsidian_settings_choose_vault_step_desc": {
+    "message": "Choisissez le dossier racine du Vault (celui qui contient .obsidian), pas un sous-dossier à l'intérieur."
   }
 }

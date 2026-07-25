@@ -1489,5 +1489,23 @@
   },
   "content_export_success_title": {
     "message": "匯出成功！是否匯出為其他格式？"
+  },
+  "obsidian_settings_vault_name_label": {
+    "message": "Obsidian Vault 名稱（用於開啟筆記）"
+  },
+  "obsidian_settings_vault_name_help": {
+    "message": "必須與 Obsidian vault switcher 中顯示的名稱一致。預設使用資料夾名，只有在 Obsidian 內改過 vault 名時才需要覆蓋。"
+  },
+  "obsidian_settings_vault_root_hint_title": {
+    "message": "重要：請選擇 Vault 根目錄"
+  },
+  "obsidian_settings_vault_root_hint": {
+    "message": "請選擇包含 .obsidian 目錄的資料夾（Vault 根目錄）。不要選它內部的子資料夾——雖然檔案能寫入，但 obsidian:// 連結會以「Vault not found」失敗，無法在 Obsidian 中開啟筆記。"
+  },
+  "obsidian_settings_choose_root": {
+    "message": "請選擇包含 .obsidian 目錄的 Vault 根目錄，而不是它內部的某個子資料夾。"
+  },
+  "obsidian_settings_choose_vault_step_desc": {
+    "message": "選擇包含 .obsidian 的 Vault 根目錄，不要選它內部的子資料夾。"
   }
 }

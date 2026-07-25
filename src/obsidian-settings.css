@@ -231,6 +231,58 @@ button { cursor: pointer; }
   line-height: 1.5;
 }
 
+/* Persistent emphasized hint above the vault picker — prevents the common pitfall
+   of selecting a vault subfolder instead of the root that contains .obsidian. */
+.obsidian-settings-callout {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-left: 4px solid var(--obsidian-accent);
+  color: var(--obsidian-text);
+  background: var(--obsidian-accent-soft);
+  border-radius: var(--obsidian-radius-control);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.obsidian-settings-callout-title {
+  color: var(--obsidian-accent-strong);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+.obsidian-settings-callout-body { color: var(--obsidian-text); }
+.obsidian-settings-callout-body code {
+  padding: 1px 4px;
+  font-size: 11px;
+  color: var(--obsidian-accent-strong);
+  background: rgba(105, 87, 200, 0.12);
+  border-radius: 4px;
+}
+
+/* Optional override for the Obsidian-registered vault name (used in obsidian:// URLs).
+   Only shown after a vault folder is picked. */
+.obsidian-settings-vault-name-field {
+  display: grid;
+  gap: 7px;
+  margin-top: 14px;
+}
+.obsidian-settings-vault-name-field > label { font-size: 12px; font-weight: 750; }
+.obsidian-settings-vault-name-field > input {
+  width: 100%;
+  height: 42px;
+  padding: 0 12px;
+  color: var(--obsidian-text);
+  background: var(--obsidian-surface-soft);
+  border: 1px solid var(--obsidian-border);
+  border-radius: var(--obsidian-radius-control);
+}
+.obsidian-settings-vault-name-field > input:focus-visible {
+  outline: 3px solid rgba(105, 87, 200, 0.22);
+  outline-offset: 2px;
+}
+.obsidian-settings-vault-name-field > small { color: var(--obsidian-muted); font-size: 11px; line-height: 1.45; }
+
 .obsidian-settings-stage[hidden],
 .obsidian-settings-step[hidden],
 .obsidian-settings-history[hidden] {
@@ -315,6 +367,8 @@ button { cursor: pointer; }
   }
   .obsidian-settings-privacy { color: #7ce0bd; background: #19372e; border-color: #275c4c; }
   .obsidian-settings-warning { color: #f1c36c; background: #382d1c; border-color: #69502a; }
+  .obsidian-settings-callout { background: #2a2440; }
+  .obsidian-settings-callout-body code { background: rgba(155, 138, 240, 0.18); }
   .obsidian-settings-card { box-shadow: 0 18px 46px rgba(0, 0, 0, 0.2); }
 }
 

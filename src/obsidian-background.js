@@ -206,6 +206,15 @@
     return record && record.handle ? record : null;
   }
 
+  // 用户可在设置页显式指定 Obsidian 内部注册的 vault 名（与文件夹名可能不同，
+  // 例如用户在 Obsidian vault switcher 中改过名）。优先使用此覆盖值，否则回退到
+  // handle.name。这是构造 obsidian://open?vault=<name> URL 的唯一来源。
+  function effectiveVaultName(record) {
+    if (!record || !record.handle) return "";
+    const override = String(record.vaultName || "").trim();
+    return (override || String(record.handle.name || "")).slice(0, 200);
+  }
+
   async function getPermissionState(handle, options = {}) {
     if (!handle || typeof handle.queryPermission !== "function") return "unsupported";
     const timeoutMs = Number.isFinite(options.timeoutMs) ? options.timeoutMs : 1000;
@@ -569,7 +578,7 @@
       title: job.title,
       scope: job.scope,
       noteRelativePath: job.noteRelativePath,
-      vaultName: String(vault.handle.name || "Obsidian Vault").slice(0, 200),
+      vaultName: effectiveVaultName(vault) || "Obsidian Vault",
       canOpenInObsidian: await detectObsidianVault(vault.handle),
       savedImages: Math.max(0, Number(stats.savedImages || Object.keys(job.completedAssets).length)),
       compressedImages: Math.max(0, Number(stats.compressedImages || 0)),
@@ -631,7 +640,7 @@
       directoriesValid,
       directoriesConfigured,
       vaultDetected,
-      vaultName: String(record.handle.name || "Obsidian Vault").slice(0, 200),
+      vaultName: effectiveVaultName(record) || "Obsidian Vault",
       config,
       activeJob: jobs.length ? safeJob(jobs.sort((a, b) => b.updatedAt - a.updatedAt)[0]) : null
     };
@@ -691,12 +700,13 @@
         case "CHATVAULT_OBSIDIAN_OPEN_NOTE": {
           const vault = await getVaultRecord();
           if (!vault?.handle) throw new Error("Connect an Obsidian Vault first.");
-          const vaultName = String(vault.handle.name || "").slice(0, 200);
+          // 使用 effectiveVaultName：优先用户在设置页显式指定的 vault 名（与文件夹名
+          // 可能不同，例如用户在 Obsidian vault switcher 中改过名）。同步已成功说明
+          // vault handle 可写，但 obsidian://open?vault=<name> 需要的是 Obsidian 注册
+          // 名，因此使用覆盖值。如果 Obsidian 仍找不到对应 vault，会显示自己的错误提示。
+          const vaultName = effectiveVaultName(vault);
           const notePath = normalizeRelativePath(message.noteRelativePath, { extension: ".md" }).replace(/\.md$/i, "");
           if (!vaultName) throw new Error("Obsidian Vault name is missing.");
-          // 不再阻断式检查 .obsidian 目录：同步已成功说明 vault handle 可写，
-          // 用户可能选择了 vault 子文件夹而非根目录。直接用 vaultName 构造 URL，
-          // 如果 Obsidian 找不到对应 vault，会显示自己的错误提示，体验优于我们阻断。
           const url = `obsidian://open?vault=${encodeURIComponent(vaultName)}&file=${encodeURIComponent(notePath)}`;
           await chrome.tabs.create({ url });
           return { opened: true };

@@ -67,6 +67,10 @@
 
     <section class="obsidian-settings-card">
       <div class="obsidian-settings-stage" id="obsidian-vault-stage">
+        <div class="obsidian-settings-callout" id="obsidian-vault-callout">
+          <strong class="obsidian-settings-callout-title" data-i18n="obsidian_settings_vault_root_hint_title">Important: pick the Vault ROOT folder</strong>
+          <span class="obsidian-settings-callout-body" data-i18n="obsidian_settings_vault_root_hint">Choose the folder that contains the .obsidian directory (your Vault root). Do NOT pick a subfolder inside it — files will still save, but obsidian:// links to open notes will fail with "Vault not found".</span>
+        </div>
         <div class="obsidian-settings-vault-row">
           <div>
             <span class="obsidian-settings-label" data-i18n="obsidian_settings_current_vault">Current Vault</span>
@@ -74,6 +78,11 @@
             <p id="obsidian-vault-status" data-i18n="obsidian_settings_choose_root">Choose the folder you use as your Obsidian Vault.</p>
           </div>
           <button type="button" class="obsidian-settings-primary" id="obsidian-choose-vault" data-i18n="obsidian_settings_choose_vault">Choose Vault</button>
+        </div>
+        <div class="obsidian-settings-vault-name-field" id="obsidian-vault-name-field" hidden>
+          <label for="obsidian-vault-name-input" data-i18n="obsidian_settings_vault_name_label">Obsidian Vault name (for opening notes)</label>
+          <input type="text" id="obsidian-vault-name-input" autocomplete="off" spellcheck="false" maxlength="200">
+          <small data-i18n="obsidian_settings_vault_name_help">Must match the name shown in Obsidian's vault switcher. Folder name is used by default; override only if you renamed the vault inside Obsidian.</small>
         </div>
         <div class="obsidian-settings-warning" id="obsidian-vault-warning" hidden></div>
       </div>

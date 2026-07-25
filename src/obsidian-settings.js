@@ -12,6 +12,7 @@
   let selectedHandle = null;
   let vaultPermissionGranted = false;
   let currentVaultName = "";
+  let vaultNameOverride = "";
   let currentVaultDetected = false;
   let notesRoot = "";
   let assetsRoot = "";
@@ -65,11 +66,17 @@
     });
   }
 
-  async function saveVaultHandle(handle) {
+  async function saveVaultHandle(handle, vaultNameOverride) {
     const db = await openDatabase();
     return new Promise((resolve, reject) => {
       const tx = db.transaction(VAULT_STORE, "readwrite");
-      tx.objectStore(VAULT_STORE).put({ key: "active", handle, updatedAt: Date.now() });
+      // 同时持久化 vaultName 覆盖值（可为空字符串表示使用文件夹名）。
+      // 这是构造 obsidian://open?vault=<name> URL 时使用的实际 vault 名，
+      // 因为文件夹名可能与 Obsidian 内部注册名不同（例如用户在 vault switcher 改过名）。
+      const record = { key: "active", handle, updatedAt: Date.now() };
+      const trimmed = String(vaultNameOverride || "").trim();
+      if (trimmed) record.vaultName = trimmed.slice(0, 200);
+      tx.objectStore(VAULT_STORE).put(record);
       tx.oncomplete = resolve;
       tx.onerror = () => reject(tx.error || new Error(t("obsidian_settings_save_permission_failed", "Could not save Vault permission.")));
     });
@@ -244,7 +251,9 @@
     try {
       selectedHandle = await window.showDirectoryPicker({ id: "chatvault-obsidian-vault", mode: "readwrite", startIn: "documents" });
       vaultPermissionGranted = true;
-      await saveVaultHandle(selectedHandle);
+      // 选择新 vault 时重置名称覆盖，默认用文件夹名（也是 Obsidian 默认的 vault 名）。
+      vaultNameOverride = "";
+      await saveVaultHandle(selectedHandle, vaultNameOverride);
       await new Promise((resolve, reject) => chrome.storage.local.set({
         [CONFIG_KEY]: { version: 2, configured: false, notesRoot: "", assetsRoot: "", assetsRootCustom: false, updatedAt: Date.now() }
       }, () => chrome.runtime.lastError ? reject(new Error(chrome.runtime.lastError.message)) : resolve()));
@@ -254,6 +263,8 @@
       notesDirectorySelected = false;
       assetsRootCustom = false;
       elements.vaultName.textContent = selectedHandle.name || "Obsidian Vault";
+      if (elements.vaultNameInput) elements.vaultNameInput.value = currentVaultName;
+      if (elements.vaultNameField) elements.vaultNameField.hidden = false;
       elements.vaultStatus.textContent = t("obsidian_settings_vault_authorized", "Vault access is ready. Choose a notes folder next.");
       const isObsidian = await detectObsidianDirectory(selectedHandle);
       currentVaultDetected = isObsidian;
@@ -333,7 +344,9 @@
       await testDirectory.removeEntry(testName);
       testName = "";
       await getDirectory(handle, normalizedAssetsRoot, false);
-      await saveVaultHandle(handle);
+      // 保存时同步持久化用户在 UI 中编辑过的 vault 名覆盖值。
+      // 验证写入权限与目录仍使用 handle，仅 obsidian:// URL 使用覆盖值。
+      await saveVaultHandle(handle, vaultNameOverride);
       await new Promise((resolve, reject) => chrome.storage.local.set({
         [CONFIG_KEY]: {
           version: 2,
@@ -348,6 +361,8 @@
       selectedHandle = handle;
       currentVaultName = handle.name || "Obsidian Vault";
       elements.vaultName.textContent = handle.name || "Obsidian Vault";
+      if (elements.vaultNameInput) elements.vaultNameInput.value = vaultNameOverride || currentVaultName;
+      if (elements.vaultNameField) elements.vaultNameField.hidden = false;
       elements.vaultStatus.textContent = t("obsidian_settings_ready", "Connection and folders are ready for single or batch sync.");
       currentVaultDetected = await detectObsidianDirectory(handle);
       elements.warning.hidden = true;
@@ -376,12 +391,15 @@
       selectedHandle = null;
       vaultPermissionGranted = false;
       currentVaultName = "";
+      vaultNameOverride = "";
       currentVaultDetected = false;
       notesRoot = "";
       assetsRoot = "";
       notesDirectorySelected = false;
       assetsRootCustom = false;
       elements.vaultName.textContent = t("obsidian_settings_not_selected", "Not selected");
+      if (elements.vaultNameInput) elements.vaultNameInput.value = "";
+      if (elements.vaultNameField) elements.vaultNameField.hidden = true;
       elements.vaultStatus.textContent = t("obsidian_settings_choose_root", "Choose the folder you use as your Obsidian Vault.");
       elements.disconnect.hidden = true;
       elements.save.disabled = true;
@@ -434,7 +452,7 @@
         open.textContent = t("content_open", "Open");
         open.addEventListener("click", () => runtimeMessage({
           type: "CHATVAULT_OBSIDIAN_OPEN_NOTE",
-          vaultName: currentVaultName || selectedHandle?.name || "",
+          vaultName: vaultNameOverride || currentVaultName || selectedHandle?.name || "",
           noteRelativePath: entry.noteRelativePath
         }).catch((error) => setResult(error.message, "error")));
         if ((entry.status === "succeeded" || entry.status === "partial") && currentVaultDetected) row.append(info, open);
@@ -470,7 +488,11 @@
     if (record && record.handle) {
       selectedHandle = record.handle;
       currentVaultName = record.handle.name || "Obsidian Vault";
+      // 加载持久化的 vault 名覆盖值（如果用户曾显式设置）。
+      vaultNameOverride = String(record.vaultName || "").trim();
       elements.vaultName.textContent = record.handle.name || "Obsidian Vault";
+      if (elements.vaultNameInput) elements.vaultNameInput.value = vaultNameOverride || currentVaultName;
+      if (elements.vaultNameField) elements.vaultNameField.hidden = false;
       const permission = await queryVaultPermission(record.handle);
       vaultPermissionGranted = permission === "granted";
       elements.vaultStatus.textContent = permission === "granted"
@@ -507,6 +529,8 @@
     if (i18n && typeof i18n.ready === "function") await i18n.ready();
     applyStaticI18n();
     elements.vaultName = document.getElementById("obsidian-vault-name");
+    elements.vaultNameInput = document.getElementById("obsidian-vault-name-input");
+    elements.vaultNameField = document.getElementById("obsidian-vault-name-field");
     elements.vaultStatus = document.getElementById("obsidian-vault-status");
     elements.warning = document.getElementById("obsidian-vault-warning");
     elements.vaultStage = document.getElementById("obsidian-vault-stage");
@@ -550,6 +574,13 @@
     bindClick(elements.disconnect, disconnect);
     bindClickById("obsidian-return-button", returnToConversation);
     bindClickById("obsidian-refresh-history", loadHistory);
+    // 编辑 vault 名覆盖值：仅在本地状态更新，verifyAndSave 时持久化到 IndexedDB。
+    // 输入为空时表示回退到 handle.name（Obsidian 默认行为）。
+    if (elements.vaultNameInput) {
+      elements.vaultNameInput.addEventListener("input", () => {
+        vaultNameOverride = String(elements.vaultNameInput.value || "").trim();
+      });
+    }
     hydrate().catch((error) => setResult(error.message || t("obsidian_settings_init_failed", "Could not initialize Obsidian settings."), "error"));
   });
 })();

@@ -1534,5 +1534,23 @@
   },
   "content_export_success_title": {
     "message": "导出成功！是否导出为其他格式？"
+  },
+  "obsidian_settings_vault_name_label": {
+    "message": "Obsidian Vault 名称（用于打开笔记）"
+  },
+  "obsidian_settings_vault_name_help": {
+    "message": "必须与 Obsidian vault switcher 中显示的名称一致。默认使用文件夹名，只有在 Obsidian 内改过 vault 名时才需要覆盖。"
+  },
+  "obsidian_settings_vault_root_hint_title": {
+    "message": "重要：请选择 Vault 根目录"
+  },
+  "obsidian_settings_vault_root_hint": {
+    "message": "请选择包含 .obsidian 目录的文件夹（Vault 根目录）。不要选它内部的子文件夹——虽然文件能写入，但 obsidian:// 链接会以\"Vault not found\"失败，无法在 Obsidian 中打开笔记。"
+  },
+  "obsidian_settings_choose_root": {
+    "message": "请选择包含 .obsidian 目录的 Vault 根目录，而不是它内部的某个子文件夹。"
+  },
+  "obsidian_settings_choose_vault_step_desc": {
+    "message": "选择包含 .obsidian 的 Vault 根目录，不要选它内部的子文件夹。"
   }
 }

@@ -1489,5 +1489,23 @@
   },
   "content_export_success_title": {
     "message": "Export erfolgreich! In einem anderen Format exportieren?"
+  },
+  "obsidian_settings_vault_name_label": {
+    "message": "Obsidian Vault-Name (zum Öffnen von Notizen)"
+  },
+  "obsidian_settings_vault_name_help": {
+    "message": "Muss mit dem im Obsidian-Vault-Switcher angezeigten Namen übereinstimmen. Standardmäßig wird der Ordnername verwendet; nur überschreiben, wenn du den Vault in Obsidian umbenannt hast."
+  },
+  "obsidian_settings_vault_root_hint_title": {
+    "message": "Wichtig: Wähle den Vault-ROOT-Ordner"
+  },
+  "obsidian_settings_vault_root_hint": {
+    "message": "Wähle den Ordner, der das .obsidian-Verzeichnis enthält (dein Vault-Root). Wähle KEINEN Unterordner darin — Dateien werden zwar gespeichert, aber obsidian://-Links zum Öffnen von Notizen schlagen mit \"Vault not found\" fehl."
+  },
+  "obsidian_settings_choose_root": {
+    "message": "Wähle den Ordner, der .obsidian enthält: Dies ist dein Vault-Root, KEIN Unterordner darin."
+  },
+  "obsidian_settings_choose_vault_step_desc": {
+    "message": "Wähle den Vault-Root-Ordner (denjenigen mit .obsidian), nicht einen Unterordner darin."
   }
 }

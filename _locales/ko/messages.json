@@ -1489,5 +1489,23 @@
   },
   "content_export_success_title": {
     "message": "내보내기 성공! 다른 형식으로 내보낼까요?"
+  },
+  "obsidian_settings_vault_name_label": {
+    "message": "Obsidian Vault 이름(노트 열기용)"
+  },
+  "obsidian_settings_vault_name_help": {
+    "message": "Obsidian vault 스위처에 표시된 이름과 일치해야 합니다. 기본적으로 폴더 이름이 사용되며, Obsidian 내에서 vault 이름을 변경한 경우에만 재정의하세요."
+  },
+  "obsidian_settings_vault_root_hint_title": {
+    "message": "중요: Vault 루트 폴더를 선택하세요"
+  },
+  "obsidian_settings_vault_root_hint": {
+    "message": ".obsidian 디렉토리가 포함된 폴더(Vault 루트)를 선택하세요. 내부의 하위 폴더를 선택하지 마세요 — 파일은 저장되지만 노트를 여는 obsidian:// 링크가 \"Vault not found\"로 실패합니다."
+  },
+  "obsidian_settings_choose_root": {
+    "message": ".obsidian이 포함된 폴더를 선택하세요: 이것이 Vault 루트이며, 내부의 하위 폴더가 아닙니다."
+  },
+  "obsidian_settings_choose_vault_step_desc": {
+    "message": "Vault 루트 폴더(.obsidian이 포함된 폴더)를 선택하세요. 내부의 하위 폴더가 아닙니다."
   }
 }

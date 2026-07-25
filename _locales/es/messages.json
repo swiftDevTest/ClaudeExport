@@ -1489,5 +1489,23 @@
   },
   "content_export_success_title": {
     "message": "¡Exportación exitosa! ¿Exportar en otro formato?"
+  },
+  "obsidian_settings_vault_name_label": {
+    "message": "Nombre del Vault de Obsidian (para abrir notas)"
+  },
+  "obsidian_settings_vault_name_help": {
+    "message": "Debe coincidir con el nombre mostrado en el selector de vaults de Obsidian. Se usa el nombre de la carpeta por defecto; sobrescríbelo solo si renombraste el vault dentro de Obsidian."
+  },
+  "obsidian_settings_vault_root_hint_title": {
+    "message": "Importante: elige la carpeta RAÍZ del Vault"
+  },
+  "obsidian_settings_vault_root_hint": {
+    "message": "Elige la carpeta que contiene el directorio .obsidian (la raíz de tu Vault). NO elijas una subcarpeta dentro de ella: los archivos se guardarán, pero los enlaces obsidian:// para abrir notas fallarán con \"Vault not found\"."
+  },
+  "obsidian_settings_choose_root": {
+    "message": "Elige la carpeta que contiene .obsidian: esta es la raíz de tu Vault, NO una subcarpeta dentro de ella."
+  },
+  "obsidian_settings_choose_vault_step_desc": {
+    "message": "Elige la carpeta raíz del Vault (la que contiene .obsidian), no una subcarpeta dentro de ella."
   }
 }

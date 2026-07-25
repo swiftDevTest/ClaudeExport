@@ -1789,9 +1789,13 @@
     shadowRoot.getElementById("cv-batch-notion-connect")?.addEventListener("click", connectBatchNotionWorkspace);
 
     shadowRoot.getElementById("cv-batch-obsidian-configure")?.addEventListener("click", () => {
-      chrome.runtime.sendMessage({ type: "CHATVAULT_OBSIDIAN_OPEN_SETTINGS", background: true }, (response) => {
+      // 关闭批量导出弹窗，并在前台新标签打开 Obsidian 设置页，
+      // 设置页通过 returnTabId 可返回当前标签完成配置。
+      chrome.runtime.sendMessage({ type: "CHATVAULT_OBSIDIAN_OPEN_SETTINGS" }, (response) => {
         if (chrome.runtime.lastError || !response?.ok) {
           showPageToast(response?.error || tx("obsidian_settings_failed", "Could not open Obsidian settings.", "无法打开 Obsidian 设置。"));
+        } else {
+          closeBatchModal();
         }
       });
     });
@@ -4127,6 +4131,13 @@
       return;
     }
     if (batchMode === "obsidian") {
+      // 预检：未连接 / 未授权 / 目录需要修复时直接打开 Obsidian 设置页，不弹 toast。
+      // 仅 activeJob 这种运行时冲突仍走 toast 提示。
+      const s = batchObsidianStatus || {};
+      if (!s.connected || s.permission !== "granted" || s.directoriesValid === false) {
+        shadowRoot?.getElementById("cv-batch-obsidian-configure")?.click();
+        return;
+      }
       runInPageBatchObsidianSync(selectedItems);
       return;
     }
