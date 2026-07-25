@@ -5007,6 +5007,7 @@
     const open = shadowRoot.getElementById("cv-obsidian-result-open");
     const documentTitle = shadowRoot.getElementById("cv-obsidian-result-document-title");
     const mark = shadowRoot.getElementById("cv-obsidian-result-mark");
+    const confetti = shadowRoot.getElementById("cv-obsidian-result-confetti");
     if (!overlay || !open) return;
 
     const failed = result.status === "failed";
