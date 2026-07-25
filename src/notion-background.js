@@ -3,6 +3,7 @@
 
   if (globalThis.CHATVAULT_NOTION_BACKGROUND) return;
 
+  const productConfig = globalThis.CHATVAULT_PRODUCT_CONFIG || {};
   const API_VERSION = "2026-03-11";
   const SUPABASE_URL = "https://acgehhqcgreatcjcefub.supabase.co";
   const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_GH05KXWPIo42YrorR0OGyQ_XdEWzY8Q";
@@ -26,7 +27,11 @@
   const MAX_MEDIA_BYTES = 8 * 1024 * 1024;
   const REQUEST_TIMEOUT_MS = 25000;
   const CONNECTION_SERVICE_TIMEOUT_MS = 15000;
-  const TRUSTED_CONTENT_HOSTS = new Set(["chatgpt.com", "chat.openai.com", "claude.ai", "gemini.google.com"]);
+  const TRUSTED_CONTENT_HOSTS = new Set(
+    Array.isArray(productConfig.allowedHosts) && productConfig.allowedHosts.length
+      ? productConfig.allowedHosts
+      : ["chatgpt.com", "chat.openai.com", "claude.ai", "gemini.google.com"]
+  );
   const ALLOWED_MEDIA_TYPES = new Set([
     "image/png", "image/jpeg", "image/gif", "image/webp", "image/svg+xml", "image/heic", "image/tiff", "image/bmp"
   ]);

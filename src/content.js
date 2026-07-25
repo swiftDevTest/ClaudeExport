@@ -3847,7 +3847,7 @@
         showPageToast(tx("content_batch_partial_failure", "Some chats failed to export: $1", "部分会话导出失败：$1", failures.length));
       }
       globalThis.CHATVAULT_ANALYTICS?.track("export_success", {
-        platform: getCurrentPlatformId() || "chatgpt",
+        platform: getCurrentPlatformId() || "claude",
         properties: { format, source: "batch_export", count: preparedFiles.length }
       });
     } catch (error) {
@@ -3856,7 +3856,7 @@
       } else {
         showPageToast(tx("content_export_failed_message", "Export failed: $1", "导出失败：$1", error.message || "Export failed."));
         globalThis.CHATVAULT_ANALYTICS?.track("export_failed", {
-          platform: getCurrentPlatformId() || "chatgpt",
+          platform: getCurrentPlatformId() || "claude",
           properties: { format, source: "batch_export", error_category: "export_build" }
         });
       }
@@ -4142,7 +4142,7 @@
       finishObsidianBatch();
       const totals = getObsidianBatchTotals();
       globalThis.CHATVAULT_ANALYTICS?.track("export_success", {
-        platform: getCurrentPlatformId() || "chatgpt",
+        platform: getCurrentPlatformId() || "claude",
         properties: { format: "obsidian", source: "batch_sync", count: totals.successCount, failures: totals.failureCount }
       });
     } catch (error) {

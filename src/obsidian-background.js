@@ -23,7 +23,11 @@
   const MAX_ASSET_BYTES = 8 * 1024 * 1024;
   const MAX_ASSETS = 50;
   const MAX_MARKDOWN_BYTES = 10 * 1024 * 1024;
-  const TRUSTED_CONTENT_HOSTS = new Set(["chatgpt.com", "chat.openai.com", "claude.ai", "gemini.google.com"]);
+  const TRUSTED_CONTENT_HOSTS = new Set(
+    Array.isArray(_productConfig.allowedHosts) && _productConfig.allowedHosts.length
+      ? _productConfig.allowedHosts
+      : ["chatgpt.com", "chat.openai.com", "claude.ai", "gemini.google.com"]
+  );
   const ALLOWED_MEDIA_TYPES = new Set([
     "image/png", "image/jpeg", "image/gif", "image/webp", "image/avif", "image/svg+xml", "image/bmp", "image/tiff"
   ]);

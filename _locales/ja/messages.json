@@ -1194,7 +1194,7 @@
     "message": "この拡張機能は次のAIチャットページで使用してください:"
   },
   "popup_open_chatgpt": {
-    "message": "ChatGPTを開く"
+    "message": "Claudeを開く"
   },
   "popup_contact_desc": {
     "message": "ご質問がありますか？お気軽にお問い合わせください。"

@@ -25,11 +25,6 @@
   var supportedPlatforms = Array.isArray(productConfig.supportedPlatforms) && productConfig.supportedPlatforms.length
     ? productConfig.supportedPlatforms
     : ["chatgpt", "claude", "gemini"];
-  var platformUrls = {
-    chatgpt: "https://chatgpt.com/",
-    claude: "https://claude.ai/",
-    gemini: "https://gemini.google.com/"
-  };
   var supabaseSessionStorageKey = storageKey("supabase_session.v1");
   var entitlementStateCacheKey = storageKey("entitlement_state.v1");
   var exportSettingsStorageKey = storageKey("export_settings.v1");
