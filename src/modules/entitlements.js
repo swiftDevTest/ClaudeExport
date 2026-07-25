@@ -7,11 +7,11 @@
   const productConfig = globalThis.CHATVAULT_PRODUCT_CONFIG || {};
   const storageKey = typeof productConfig.storageKey === "function"
     ? productConfig.storageKey
-    : (name) => `chatvault_exporter.${name}`;
+    : (name) => `claude_export.${name}`;
   const ENTITLEMENT_STATE_CACHE_KEY = storageKey("entitlement_state.v1");
   const ENTITLEMENT_STATE_CACHE_CRYPTO_VERSION = 1;
   const ENTITLEMENT_STATE_CACHE_CRYPTO_ALG = "AES-GCM";
-  const ENTITLEMENT_STATE_CACHE_KEY_ID = `${productConfig.storageNamespace || "chatvault_exporter"}-entitlement-cache-v1`;
+  const ENTITLEMENT_STATE_CACHE_KEY_ID = `${productConfig.storageNamespace || "claude_export"}-entitlement-cache-v1`;
   const UTC_DATE_BASIS = "utc";
   let entitlementCacheCryptoKeyPromise = null;
 

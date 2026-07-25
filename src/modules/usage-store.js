@@ -2,7 +2,7 @@
   const productConfig = globalThis.CHATVAULT_PRODUCT_CONFIG || {};
   const storageKey = typeof productConfig.storageKey === "function"
     ? productConfig.storageKey
-    : (name) => `chatvault_exporter.${name}`;
+    : (name) => `claude_export.${name}`;
   const USAGE_KEY = storageKey("daily_usage.v1");
   const MAX_EXPORT_EVENTS = 50;
   const USAGE_LOCK_NAME = "chatvault-usage-store-lock";

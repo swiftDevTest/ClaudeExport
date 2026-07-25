@@ -1942,6 +1942,10 @@ function createMissingDependencyError(name) {
 
         while (index < lines.length) {
           const itemLine = lines[index].trim();
+          if (!itemLine) {
+            index += 1;
+            continue;
+          }
           const itemMatch = ordered
             ? itemLine.match(/^\d+[.)]\s+(.+)$/)
             : itemLine.match(/^[-*+]\s+(.+)$/);

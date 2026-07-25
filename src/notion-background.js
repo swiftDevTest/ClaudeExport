@@ -8,6 +8,7 @@
   const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_GH05KXWPIo42YrorR0OGyQ_XdEWzY8Q";
   const SESSION_KEY = (globalThis.CHATVAULT_PRODUCT_CONFIG?.storageKey || ((name) => `claude_export.${name}`))("supabase_session.v1");
   const _storageKey = globalThis.CHATVAULT_PRODUCT_CONFIG?.storageKey || ((name) => `claude_export.${name}`);
+  const productName = globalThis.CHATVAULT_PRODUCT_CONFIG?.productName || "Claude Export";
   const MANUAL_CONFIG_KEY = _storageKey("notion_manual_session.v1");
   const DATABASE_NAME = "chatvault-notion-sync-v2";
   const DATABASE_VERSION = 1;
@@ -389,7 +390,7 @@
   async function getFreshSupabaseSession(signal) {
     const session = await storageGet("local", SESSION_KEY);
     if (!session || !session.access_token) {
-      throw createNotionError("ChatVault sign-in is required.", 401, "chatvault_auth_required");
+      throw createNotionError(`${productName} sign-in is required.`, 401, "chatvault_auth_required");
     }
     const expiresAt = Number(session.expires_at || 0);
     const needsRefresh = expiresAt && expiresAt - Math.floor(Date.now() / 1000) < 180 && session.refresh_token;
@@ -417,7 +418,7 @@
               return;
             }
             if (!response || !response.ok) {
-              const error = new Error((response && response.error) || "ChatVault session refresh failed.");
+              const error = new Error((response && response.error) || `${productName} session refresh failed.`);
               error.status = (response && response.status) || 0;
               error.code = (response && response.code) || "chatvault_auth_refresh_failed";
               reject(error);
@@ -1586,7 +1587,7 @@
     if (!chrome.notifications) return;
     const notificationId = `chatvault-notion-${job.id}`;
     const message = job.status === "failed"
-      ? `Notion sync failed (${job.errorCode || "sync_error"}). Open ChatVault for details.`
+      ? `Notion sync failed (${job.errorCode || "sync_error"}). Open ${productName} for details.`
       : job.status === "partial"
         ? "Notion sync completed with warnings."
         : "Notion sync completed.";
@@ -1600,7 +1601,7 @@
       await chrome.notifications.create(notificationId, {
         type: "basic",
         iconUrl: chrome.runtime.getURL("images/store-icon-128.png"),
-        title: "ChatVault → Notion",
+        title: `${productName} → Notion`,
         message
       });
     } catch (error) {
@@ -1685,7 +1686,7 @@
 
   async function createChatVaultDatabase(connectionId, parentPageId, title) {
     const normalizedParent = String(parentPageId || "").trim();
-    const normalizedTitle = String(title || "ChatVault Conversations").trim().slice(0, 120) || "ChatVault Conversations";
+    const normalizedTitle = String(title || `${productName} Conversations`).trim().slice(0, 120) || `${productName} Conversations`;
     if (!/^(?:[0-9a-f]{32}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i.test(normalizedParent)) {
       throw createNotionError("Select a valid Notion parent page.", 400, "invalid_parent_page");
     }

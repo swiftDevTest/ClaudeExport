@@ -4,7 +4,7 @@
   function generateProof(input) {
     const format = String(input?.format || "pdf").toLowerCase();
     const mode = String(input?.mode || "conversation").toLowerCase();
-    const platform = String(input?.platform || "chatgpt").toLowerCase();
+    const platform = String(input?.platform || "claude").toLowerCase();
     const hasImages = Boolean(input?.imageSummary?.total && input.imageSummary.total > 0);
     
     // Detect UI language if available

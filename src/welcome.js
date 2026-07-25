@@ -5,7 +5,7 @@
   const productConfig = globalThis.CHATVAULT_PRODUCT_CONFIG || {};
   const storageKey = typeof productConfig.storageKey === "function"
     ? productConfig.storageKey
-    : (name) => `chatvault_exporter.${name}`;
+    : (name) => `claude_export.${name}`;
   const ONBOARDING_STATE_KEY = storageKey("onboarding.v1");
   const PLATFORM_URLS = {
     chatgpt: "https://chatgpt.com/",
@@ -141,8 +141,8 @@
       button.textContent = typeof CHATVAULT_I18N !== "undefined" ? CHATVAULT_I18N.t("welcome_btn_pinned", "Pinned") : "Pinned";
       setPinStatus(
         typeof CHATVAULT_I18N !== "undefined"
-          ? CHATVAULT_I18N.t("welcome_pin_success", "Nice. AI Chat Export is visible in your Chrome toolbar.")
-          : "Nice. AI Chat Export is visible in your Chrome toolbar.",
+          ? CHATVAULT_I18N.t("welcome_pin_success", "Nice. Claude Export is visible in your Chrome toolbar.")
+          : "Nice. Claude Export is visible in your Chrome toolbar.",
         "success"
       );
 
@@ -156,8 +156,8 @@
     button.textContent = typeof CHATVAULT_I18N !== "undefined" ? CHATVAULT_I18N.t("welcome_btn_check_again", "Check again") : "Check again";
     setPinStatus(
       typeof CHATVAULT_I18N !== "undefined"
-        ? CHATVAULT_I18N.t("welcome_pin_failed", "Not pinned yet. Use Chrome's puzzle icon in the toolbar, then click the pin next to AI Chat Export.")
-        : "Not pinned yet. Use Chrome's puzzle icon in the toolbar, then click the pin next to AI Chat Export.",
+        ? CHATVAULT_I18N.t("welcome_pin_failed", "Not pinned yet. Use Chrome's puzzle icon in the toolbar, then click the pin next to Claude Export.")
+        : "Not pinned yet. Use Chrome's puzzle icon in the toolbar, then click the pin next to Claude Export.",
       "attention"
     );
 

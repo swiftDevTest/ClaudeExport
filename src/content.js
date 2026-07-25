@@ -21,7 +21,7 @@
   const _productConfig = globalThis.CHATVAULT_PRODUCT_CONFIG || {};
   const _storageKey = typeof _productConfig.storageKey === "function"
     ? _productConfig.storageKey
-    : (name) => `chatvault_exporter.${name}`;
+    : (name) => `claude_export.${name}`;
   const SUPABASE_SESSION_STORAGE_KEY = _storageKey("supabase_session.v1");
   const ENTITLEMENT_STATE_CACHE_KEY = _storageKey("entitlement_state.v1");
   // 必须与 popup.js 的 exportSettingsStorageKey 保持一致，
@@ -31,7 +31,7 @@
   const FREE_QUOTA_EXHAUSTED_MESSAGE = "You have used today's 3 free exports.";
 
   if (!exporter) {
-    console.error("[AI Chat Export] Shared export core is missing. Refresh the page.");
+    console.error("[Claude Export] Shared export core is missing. Refresh the page.");
     return;
   }
 
@@ -3666,7 +3666,7 @@
     const codeIndex = developerExport.extractCodeBlocks(processedMessages);
     const metadata = {
       platform,
-      title: item.title || "AI Chat Export",
+      title: item.title || "Claude Export",
       sourceUrl,
       messageCount: processedMessages.length,
       redaction: redactionSummary,
@@ -3933,7 +3933,7 @@
           const platform = getChatPlatform(item) || getCurrentPlatformId();
           const sourceUrl = sanitizeSourceUrl(item.url || getBatchPlatformChatUrl(platform, getChatConversationId(item)));
           const snapshot = await globalThis.CHATVAULT_EXPORT.prepareNotionJob({
-            title: item.title || "AI Chat Export",
+            title: item.title || "Claude Export",
             sourceUrl,
             messages,
             platform,
@@ -4101,7 +4101,7 @@
           const platform = getChatPlatform(item) || getCurrentPlatformId();
           const sourceUrl = sanitizeSourceUrl(item.url || getBatchPlatformChatUrl(platform, getChatConversationId(item)));
           const result = await coordinator.syncConversationToObsidian({
-            title: item.title || "AI Chat Export",
+            title: item.title || "Claude Export",
             sourceUrl,
             messages,
             platform,
@@ -4590,7 +4590,7 @@
       id: conversationId,
       conversationId,
       platform,
-      title: exporter.getConversationTitle ? exporter.getConversationTitle() : "AI Chat Export",
+      title: exporter.getConversationTitle ? exporter.getConversationTitle() : "Claude Export",
       url: window.location.href
     };
   }
@@ -4724,7 +4724,7 @@
       pad(date.getMinutes()),
       pad(date.getSeconds())
     ].join("-");
-    return sanitizeBatchPathSegment("AI Chat Export " + stamp, "AI Chat Export");
+    return sanitizeBatchPathSegment("Claude Export " + stamp, "Claude Export");
   }
 
   function splitBatchFilename(filename) {
@@ -4737,7 +4737,7 @@
 
   function getAvailableBatchDownloadPath(usedPaths, rootName, preferredName) {
     const parts = splitBatchFilename(preferredName);
-    const root = sanitizeBatchPathSegment(rootName, "AI Chat Export");
+    const root = sanitizeBatchPathSegment(rootName, "Claude Export");
     for (let index = 0; index < 1000; index += 1) {
       const candidateName = index
         ? parts.base + "-" + (index + 1) + parts.ext
@@ -4856,7 +4856,7 @@
 
   // 购买跳转流程
   async function triggerCheckout() {
-    showPageToast(tx("content_open_subscribe_panel", "Opening AI Chat Export Pro plans...", "正在打开 AI Chat Export Pro 订阅方案..."));
+    showPageToast(tx("content_open_subscribe_panel", "Opening Claude Export Pro plans...", "正在打开 Claude Export Pro 订阅方案..."));
     openSubscribePanelFromPage();
   }
 
@@ -4877,9 +4877,9 @@
       return tx("content_upgrade_appendix", "Prompt Appendix requires Pro.", "附带 Prompt 提问附录功能需要 Pro 权限。");
     }
     if (message === "Hiding watermark requires Pro.") {
-      return tx("content_upgrade_watermark", "Hiding the AI Chat Export watermark requires Pro.", "隐藏 AI Chat Export 水印签名需要 Pro 权限。");
+      return tx("content_upgrade_watermark", "Hiding the Claude Export watermark requires Pro.", "隐藏 Claude Export 水印签名需要 Pro 权限。");
     }
-    return String(message || tx("content_upgrade_desc", "Upgrade to AI Chat Export Pro to remove quota limits.", "升级到 Pro 可解除额度限制。"));
+    return String(message || tx("content_upgrade_desc", "Upgrade to Claude Export Pro to remove quota limits.", "升级到 Pro 可解除额度限制。"));
   }
 
   function openSubscribePanelFromPage() {
@@ -4894,7 +4894,7 @@
     subscribePanelRequestAt = now;
     chrome.runtime.sendMessage({ type: "CHATVAULT_OPEN_SUBSCRIBE", source: "extension_vip_modal_limit", planId: "yearly" }, (response) => {
       if (chrome.runtime.lastError || !response || response.ok === false) {
-        showPageToast(tx("content_open_subscribe_panel_failed", "Open the AI Chat Export toolbar popup to subscribe.", "请打开浏览器工具栏中的 AI Chat Export 弹窗完成订阅。"));
+        showPageToast(tx("content_open_subscribe_panel_failed", "Open the Claude Export toolbar popup to subscribe.", "请打开浏览器工具栏中的 Claude Export 弹窗完成订阅。"));
       }
     });
   }

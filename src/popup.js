@@ -18,9 +18,9 @@
   var storageKey = typeof productConfig.storageKey === "function"
     ? productConfig.storageKey
     : function (name) { return "claude_export." + name; };
-  var productId = productConfig.productId || "chatvault_exporter";
-  var productSlug = productConfig.productSlug || "chatvault-exporter";
-  var productName = productConfig.productName || "AI Chat Export";
+  var productId = productConfig.productId || "claude_export";
+  var productSlug = productConfig.productSlug || "claude-export";
+  var productName = productConfig.productName || "Claude Export";
   var productPlatformLabels = productConfig.platformLabels || {};
   var supportedPlatforms = Array.isArray(productConfig.supportedPlatforms) && productConfig.supportedPlatforms.length
     ? productConfig.supportedPlatforms
@@ -123,7 +123,7 @@
 
   function applyPopupI18n() {
     document.documentElement.lang = getUILanguage().replace("_", "-");
-    document.title = t("extensionShortName", "AI Chat Export");
+    document.title = t("extensionShortName", "Claude Export");
     if (globalThis.CHATVAULT_I18N && typeof globalThis.CHATVAULT_I18N.translateDOM === "function") {
       globalThis.CHATVAULT_I18N.translateDOM();
     }
@@ -133,7 +133,7 @@
 
     setText("#unsupported-overlay h3", "popup_unsupported_title", "Unsupported Page");
     setText("#unsupported-overlay p", "popup_unsupported_desc", "Use this extension on one of these AI chat pages:");
-    setText("#btn-open-chatgpt", "popup_open_chatgpt", "Open ChatGPT");
+    setText("#btn-open-chatgpt", "popup_open_chatgpt", "Open Claude");
 
     setText(".platform-row-title span", "popup_current_session", "Current session");
     setText(".platform-row-title strong", "popup_auto_detect_platform", "Auto-detect platform");
@@ -186,7 +186,7 @@
     setSettingTexts("toggle-title", "export_opt_title", "Conversation Title", "popup_title_desc", "Show the conversation title at the top of the document");
     setSettingTexts("toggle-time", "export_opt_time", "Export Time", "popup_time_desc", "Insert an export timestamp in the document header");
     setSettingTexts("toggle-ai-only", "export_opt_ai_only", "AI Replies Only", "popup_ai_only_desc", "Filter user prompts and keep only AI replies");
-    setSettingTexts("toggle-watermark", "popup_watermark_title", "Hide AI Chat Export Watermark", "popup_watermark_desc", "Remove the AI Chat Export signature from the document end (Pro)");
+    setSettingTexts("toggle-watermark", "popup_watermark_title", "Hide Claude Export Watermark", "popup_watermark_desc", "Remove the Claude Export signature from the document end (Pro)");
     setSettingTexts("toggle-source-url", "export_opt_url", "Source URL", "popup_source_url_desc", "Append the original conversation URL to the exported document");
     setSettingTexts("toggle-platform-name", "export_opt_platform", "Platform Name", "popup_platform_name_desc", "Show the source platform in the document header");
     setSettingTexts("toggle-role-labels", "export_opt_role", "Role Labels", "popup_role_labels_desc", "Show User / Assistant labels before chat content");
@@ -213,7 +213,7 @@
     setTitle('.footer-tab[data-tab-id="settings"]', "popup_export_settings_title", "Export settings");
     setText('.footer-tab[data-tab-id="settings"] span', "tab_settings", "Settings");
 
-    setText(".subscribe-header h2", "billing_title", "Upgrade To AI Chat Export Pro");
+    setText(".subscribe-header h2", "billing_title", "Upgrade To Claude Export Pro");
     setAriaLabel("#btn-close-subscribe", "btn_cancel", "Cancel");
     setText(".subscribe-subtitle", "billing_desc", "Unlock higher local export limits, polished themes, batch workflows, and PDF, Docs, MD and More output.");
     updateSubscribeLoginWarningText();
@@ -228,7 +228,7 @@
       subscribeSubmit.textContent = getCheckoutButtonLabel("yearly");
     }
     setText("#btn-subscribe-restore", "billing_btn_restore", "Restore purchase");
-    setText(".subscribe-footnote", "billing_footnote", "Exports are generated locally from the page you choose. Checkout opens on the AI Chat Export pricing page and is processed by a secure payment processor. AI Chat Export stores settings, sign-in email, and membership status only. Chat content is never saved.");
+    setText(".subscribe-footnote", "billing_footnote", "Exports are generated locally from the page you choose. Checkout opens on the Claude Export pricing page and is processed by a secure payment processor. Claude Export stores settings, sign-in email, and membership status only. Chat content is never saved.");
 
     setText(".confirm-modal-header h3", "popup_confirm_logout_title", "Log out");
     setText(".confirm-modal-message", "popup_confirm_logout_message", "Log out of the current account?");
@@ -978,8 +978,8 @@
     try {
       await new Promise((resolve) => chrome.storage.local.remove([
         NOTION_UI_CACHE_KEY,
-        "notion_selected_connection_id",
-        "notion_selected_data_sources"
+        NOTION_SELECTED_CONNECTION_ID_KEY,
+        NOTION_SELECTED_DATA_SOURCES_KEY
       ], resolve));
     } catch (err) {}
     updateNotionUI();
@@ -1658,7 +1658,7 @@
 
   function getCheckoutErrorMessage(error) {
     if (isBackendSchemaCacheError(error)) {
-      return t("popup_checkout_service_syncing", "Checkout service is updating. Please reopen AI Chat Export and try again in a moment.");
+      return t("popup_checkout_service_syncing", "Checkout service is updating. Please reopen Claude Export and try again in a moment.");
     }
     if (isCheckoutRateLimitedError(error)) {
       return t("popup_checkout_rate_limited", "Checkout is already being prepared. Please wait a moment and try again.");

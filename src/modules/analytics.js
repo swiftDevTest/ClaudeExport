@@ -4,7 +4,7 @@
   const productConfig = globalThis.CHATVAULT_PRODUCT_CONFIG || {};
   const storageKey = typeof productConfig.storageKey === "function"
     ? productConfig.storageKey
-    : (name) => `chatvault_exporter.${name}`;
+    : (name) => `claude_export.${name}`;
   const QUEUE_KEY = storageKey("analytics.queue.v1");
   const GUEST_ID_KEY = storageKey("analytics.guest_id.v1");
   const IDENTIFY_DONE_KEY = storageKey("analytics.identify_done.v1");

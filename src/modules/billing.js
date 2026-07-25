@@ -2,7 +2,7 @@
   const productConfig = globalThis.CHATVAULT_PRODUCT_CONFIG || {};
   const storageKey = typeof productConfig.storageKey === "function"
     ? productConfig.storageKey
-    : (name) => `chatvault_exporter.${name}`;
+    : (name) => `claude_export.${name}`;
   const checkoutUrl = productConfig.checkoutUrl || "https://tabpilotpro.com/claude/checkout.html";
   const productId = productConfig.productId || "claude_export";
   const productSlug = productConfig.productSlug || "claude-export";

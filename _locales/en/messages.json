@@ -1239,7 +1239,7 @@
     "message": "Use this extension on one of these AI chat pages:"
   },
   "popup_open_chatgpt": {
-    "message": "Open ChatGPT"
+    "message": "Open Claude"
   },
   "popup_contact_desc": {
     "message": "Have any questions? Feel free to reach out to us."
