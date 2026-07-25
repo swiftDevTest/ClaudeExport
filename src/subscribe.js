@@ -11,7 +11,6 @@
   
   let currentSession = null;
   let checkoutLoading = false;
-  let isAlreadyPro = false;
 
   function applyProductTheme(target) {
     if (productConfig && typeof productConfig.applyThemeVars === "function") {
@@ -159,7 +158,6 @@
 
       const profile = result?.profile || result?.data?.profile;
       if (profile && profile.plan === "pro") {
-        isAlreadyPro = true;
         showAlreadyProState();
       }
     } catch (e) {
@@ -168,15 +166,13 @@
   }
 
   function showAlreadyProState() {
-    document.querySelectorAll(".cv-plan-btn").forEach((btn) => {
-      btn.disabled = true;
-      btn.textContent = "已是 Pro 会员";
-    });
+    // 不禁用支付按钮、不拦截支付流程，仅展示信息性提示横幅，
+    // 让已是 Pro 的会员也能继续进入 VIP 界面并完成支付（如续费/升级）。
     const header = document.querySelector(".cv-header");
     if (header) {
       const banner = document.createElement("div");
       banner.style.cssText = "margin-top:10px;padding:10px 16px;border-radius:8px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);color:#22c55e;font-size:14px;";
-      banner.textContent = "您已是 Pro 会员，无需再次订阅。";
+      banner.textContent = "您已是 Pro 会员，如需续费或升级可继续操作。";
       header.appendChild(banner);
     }
   }
@@ -308,11 +304,6 @@
     // session refresh or the checkout network request, which is the main cause
     // of "clicking the pay button has no response" for already-signed-in users.
     if (checkoutLoading) {
-      return;
-    }
-
-    if (isAlreadyPro) {
-      alert("您已是 Pro 会员，无需再次订阅。");
       return;
     }
 

@@ -987,7 +987,7 @@ try {
         ["notion_notification_links.v1", "chatvault_notion_notification_links_v1"],
         ["notion_property_maps.v1", "chatvault_notion_property_maps_v1"],
         ["notion_ui_cache.v1", "chatvault_notion_ui_cache_v1"],
-        ["ui_language.v1", "chatvault_ui_language_v1"],
+        ["ui_language_v1", "chatvault_ui_language_v1"],
         ["onboarding.v1", "chatvault.exporter.onboarding.v1"],
         ["notion_selected_data_sources", "notion_selected_data_sources"],
         ["notion_selected_connection_id", "notion_selected_connection_id"]
