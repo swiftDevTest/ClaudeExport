@@ -1552,5 +1552,8 @@
   },
   "obsidian_settings_choose_vault_step_desc": {
     "message": "Pick the Vault root folder (the one containing .obsidian), not a subfolder inside it."
+  },
+  "notion_share_database_hint": {
+    "message": "Share a Notion Database with the ChatVault connection (open a Database → ⋯ → Connections → add ChatVault), then reopen this popup."
   }
 }

@@ -225,11 +225,12 @@ function renderTable(block) {
   return lines.join("\n");
 }
 
-function renderListItems(items, ordered, depth, sourceUrl) {
+function renderListItems(items, ordered, depth, sourceUrl, startNumber) {
   const source = Array.isArray(items) ? items : [];
   const lines = [];
+  const baseNumber = startNumber || 1;
   source.forEach((item, index) => {
-    const prefix = ordered ? `${index + 1}.` : "-";
+    const prefix = ordered ? `${baseNumber + index}.` : "-";
     const text = item && Array.isArray(item.segments) ? renderSegments(item, sourceUrl) : renderMarkdownSource(item && item.text || item || "");
     const taskMarker = item && typeof item.checked === "boolean" ? `[${item.checked ? "x" : " "}] ` : "";
     lines.push(`${"  ".repeat(depth)}${prefix} ${taskMarker}${text || " "}`);
@@ -264,7 +265,7 @@ function renderBlock(block, context) {
       return expression ? `$$\n${expression}\n$$` : "";
     }
     case "code": return renderCode(block);
-    case "list": return renderListItems(block.items, Boolean(block.ordered || block.style === "ordered" || block.listType === "ordered"), 0, context.metadata.sourceUrl);
+    case "list": return renderListItems(block.items, Boolean(block.ordered || block.style === "ordered" || block.listType === "ordered"), 0, context.metadata.sourceUrl, block.start);
     case "table": return renderTable(block);
     case "blockquote":
     case "quote": return renderSegments(block, context.metadata.sourceUrl).split("\n").map((line) => `> ${line}`).join("\n");

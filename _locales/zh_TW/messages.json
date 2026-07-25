@@ -1507,5 +1507,8 @@
   },
   "obsidian_settings_choose_vault_step_desc": {
     "message": "選擇包含 .obsidian 的 Vault 根目錄，不要選它內部的子資料夾。"
+  },
+  "notion_share_database_hint": {
+    "message": "請在 Notion 中向 ChatVault 連接授權一個 Database（打開 Database → ⋯ → 連接 → 添加 ChatVault），然後重新打開此彈窗。"
   }
 }

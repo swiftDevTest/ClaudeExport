@@ -38,8 +38,27 @@ function getCenteredTextBaseline(ctx, top, height) {
   return top + height / 2 + 4;
 }
 
+// 判断颜色字符串是否为透明（"transparent" 或 alpha=0 的 rgba），用于占位框等场景回退到可见色
+function isTransparentPdfColor(value) {
+  if (!value || typeof value !== "string") return false;
+  var v = value.trim().toLowerCase();
+  if (v === "transparent") return true;
+  var m = v.match(/^rgba?\(([^)]+)\)$/);
+  if (m) {
+    var parts = m[1].split(",").map(function (s) { return s.trim(); });
+    var alpha = parts.length === 4 ? parseFloat(parts[3]) : 1;
+    return alpha === 0;
+  }
+  return false;
+}
+
 export async function buildPdfBlob(messages, metadata, settingsInput, options) {
   options = options || {};
+  if (options.signal && options.signal.aborted) {
+    var abortErr = new Error("aborted");
+    abortErr.name = "AbortError";
+    throw abortErr;
+  }
   var imageCache = await preloadCanvasImages(messages, options);
   notifyProgress(options, t("export_progress_paginating_doc", "Paginating export"), 0.04);
   var pages = await renderPdfPages(messages, metadata, settingsInput, {
@@ -137,6 +156,9 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
             noiseCtx.fillRect(rx, ry, rw, rh);
           }
           newsprintNoisePattern = ctx.createPattern(noiseCanvas, "no-repeat");
+          // createPattern 在创建时已快照画布像素，释放原画布位图以降低长 PDF 内存占用
+          noiseCanvas.width = 1;
+          noiseCanvas.height = 1;
         }
         if (newsprintNoisePattern) {
           ctx.fillStyle = newsprintNoisePattern;
@@ -790,21 +812,27 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
 
     try {
       ctx.save();
-      roundedPdfImagePath(x, y, size, size, 10);
-      ctx.clip();
-      var srcW = cached.width;
-      var srcH = cached.height;
-      var side = Math.min(srcW, srcH);
-      var sx = Math.max(0, (srcW - side) / 2);
-      var sy = Math.max(0, (srcH - side) / 2);
-      ctx.drawImage(cached.element, sx, sy, side, side, x, y, size, size);
-      ctx.restore();
+      try {
+        roundedPdfImagePath(x, y, size, size, 10);
+        ctx.clip();
+        var srcW = cached.width;
+        var srcH = cached.height;
+        var side = Math.min(srcW, srcH);
+        var sx = Math.max(0, (srcW - side) / 2);
+        var sy = Math.max(0, (srcH - side) / 2);
+        ctx.drawImage(cached.element, sx, sy, side, side, x, y, size, size);
+      } finally {
+        ctx.restore();
+      }
       ctx.save();
-      roundedPdfImagePath(x, y, size, size, 10);
-      ctx.strokeStyle = "rgba(15, 23, 42, 0.10)";
-      ctx.lineWidth = 1;
-      ctx.stroke();
-      ctx.restore();
+      try {
+        roundedPdfImagePath(x, y, size, size, 10);
+        ctx.strokeStyle = "rgba(15, 23, 42, 0.10)";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      } finally {
+        ctx.restore();
+      }
     } catch (error) {
       ctx.restore();
       var failedBlock = Object.assign({}, block, {
@@ -1189,7 +1217,10 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
     var h = block.originalHeight || 120;
     var px = x + Math.max(0, (width - w) / 2);
     var py = cursor + 8;
-    drawRoundRect(ctx, px, py, w, h, 8, DESIGN.color.cardBgAssistant, DESIGN.color.cardBorderAssistant);
+    // 透明色（如 natural 主题）下占位框不可见，回退到浅色以保证视觉反馈
+    var placeholderBg = isTransparentPdfColor(DESIGN.color.cardBgAssistant) ? "#F1F5F9" : DESIGN.color.cardBgAssistant;
+    var placeholderBorder = isTransparentPdfColor(DESIGN.color.cardBorderAssistant) ? "#E2E8F0" : DESIGN.color.cardBorderAssistant;
+    drawRoundRect(ctx, px, py, w, h, 8, placeholderBg, placeholderBorder);
     ctx.font = "italic 13px " + DESIGN.font.body;
     ctx.fillStyle = DESIGN.color.muted;
     var loadFailedText = t("export_pdf_image_load_failed", "Image - Load Failed");
@@ -1592,9 +1623,8 @@ export function dataUrlToBytes(dataUrl) {
   var base64 = dataUrl.split(",")[1] || "";
   var binary = atob(base64);
   var len = binary.length;
-  var bytes = new Uint8Array(len);
-  for (var i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
-  return bytes;
+  // Uint8Array.from + charCodeAt 比 for 循环赋值在长字符串上更高效（V8 内部优化路径）
+  return Uint8Array.from(binary, function (ch) { return ch.charCodeAt(0); });
 }
 
 export function createPdfFromJpegs(jpegPages, canvasScale) {

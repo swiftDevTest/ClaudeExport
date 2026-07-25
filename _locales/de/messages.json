@@ -1507,5 +1507,8 @@
   },
   "obsidian_settings_choose_vault_step_desc": {
     "message": "Wähle den Vault-Root-Ordner (denjenigen mit .obsidian), nicht einen Unterordner darin."
+  },
+  "notion_share_database_hint": {
+    "message": "Teilen Sie eine Notion-Datenbank mit der ChatVault-Verbindung (Datenbank öffnen → ⋯ → Verbindungen → ChatVault hinzufügen), und öffnen Sie dieses Popup erneut."
   }
 }

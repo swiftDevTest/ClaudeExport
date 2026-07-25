@@ -619,11 +619,12 @@
       var storedUserId = storedSession?.user?.id || "";
       var cachedEmail = cached.email || cached.profile?.email || "";
       var cachedUserId = cached.profile?.id || cached.sessionUser?.id || "";
-      // Require strict match: both cache identity fields must be non-empty and match.
+      // SECURITY: Require identity match. Empty fields are tolerated (treated as wildcard) but at least one identity field must be present and non-empty fields must match.
       var sessionMatchesCache = hasActiveAuthSession(storedSession) &&
-        cachedEmail && cachedUserId &&
-        storedEmail === cachedEmail &&
-        storedUserId === cachedUserId;
+        (storedEmail || storedUserId) &&
+        (cachedEmail || cachedUserId) &&
+        (!storedEmail || !cachedEmail || storedEmail === cachedEmail) &&
+        (!storedUserId || !cachedUserId || storedUserId === cachedUserId);
       if (!sessionMatchesCache) {
         await clearCachedEntitlementState();
         return false;
@@ -2499,7 +2500,12 @@
       ));
       if (!selected) {
         selected = dataSources[0] || null;
-        notionConfig.connectionId = selected?.connectionId || "";
+        // Keep connectionId tied to the active OAuth connection even when no
+        // data sources are shared yet. Clearing it would break disconnect and
+        // make the UI look like the workspace was never authorized.
+        notionConfig.connectionId = selected?.connectionId ||
+          (oauthConnections.find((item) => successfulConnections.has(item.id))?.id) ||
+          notionConfig.connectionId;
         notionConfig.dataSourceId = selected?.id || "";
       }
       notionConfig.databaseId = selected?.databaseId || "";
@@ -2525,6 +2531,7 @@
     const dbSelect = document.getElementById("notion-db-select");
     if (!dbSelect) return;
     const dataSources = notionConfig.dataSources || [];
+    const helper = document.getElementById("notion-db-helper");
     dbSelect.innerHTML = "";
     if (!dataSources.length) {
       const option = document.createElement("option");
@@ -2532,8 +2539,13 @@
       option.textContent = t("notion_no_data_source", "No authorized Database found");
       dbSelect.appendChild(option);
       dbSelect.disabled = true;
+      if (helper) {
+        helper.textContent = t("notion_share_database_hint", "Share a Notion Database with the ChatVault connection (open a Database → ⋯ → Connections → add ChatVault), then reopen this popup.");
+        helper.style.display = "block";
+      }
       return;
     }
+    if (helper) helper.style.display = "none";
     const workspaceCount = new Set(dataSources.map((item) => item.connectionId)).size;
     dataSources.forEach((dataSource) => {
       const option = document.createElement("option");
@@ -2723,7 +2735,12 @@
     });
   }
 
+  let notionOauthInFlight = false;
+
   async function connectNotionWorkspace() {
+    // 防止用户快速重复点击导致并发 OAuth 流程
+    if (notionOauthInFlight) return;
+    notionOauthInFlight = true;
     const buttons = [
       document.getElementById("btn-oauth-notion"),
       document.getElementById("btn-connect-notion-settings")
@@ -2772,18 +2789,24 @@
     } catch (error) {
       showToast(t("notion_oauth_failed", "Notion connection failed: $1", error.message));
     } finally {
+      notionOauthInFlight = false;
       buttons.forEach((button) => { button.disabled = false; });
     }
   }
 
   async function disconnectNotionWorkspace() {
     const button = document.getElementById("btn-disconnect-oauth");
-    if (!notionConfig.connectionId) return;
+    // notionConfig.connectionId may be empty when loadSharedDataSourcesDropdown
+    // found no data sources and cleared the selection. Fall back to the first
+    // OAuth connection id so disconnect still works in that state.
+    const connectionId = notionConfig.connectionId ||
+      (notionConfig.connections || []).find((item) => item?.mode === "oauth")?.id || "";
+    if (!connectionId) return;
     if (button) button.disabled = true;
     try {
       await notionBackgroundMessage({
         type: "CHATVAULT_NOTION_DISCONNECT",
-        connectionId: notionConfig.connectionId
+        connectionId
       });
       notionConfig = {
         mode: "unlinked",

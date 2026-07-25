@@ -24,7 +24,10 @@
     : (name) => `chatvault_exporter.${name}`;
   const SUPABASE_SESSION_STORAGE_KEY = _storageKey("supabase_session.v1");
   const ENTITLEMENT_STATE_CACHE_KEY = _storageKey("entitlement_state.v1");
-  const EXPORT_SETTINGS_STORAGE_KEY = "chatvault_export_settings";
+  // 必须与 popup.js 的 exportSettingsStorageKey 保持一致，
+  // 否则右键菜单/独立导出走 content.js 自己加载的设置时会读不到 popup 保存的最新值
+  // （例如 Hide Watermark 开关失效）。
+  const EXPORT_SETTINGS_STORAGE_KEY = _storageKeyFn("export_settings.v1");
   const FREE_QUOTA_EXHAUSTED_MESSAGE = "You have used today's 3 free exports.";
 
   if (!exporter) {
@@ -4920,6 +4923,8 @@
     if (!overlay) return;
     overlay.classList.remove("active");
     overlay.setAttribute("aria-hidden", "true");
+    // 重置去重ID，允许下次相同结果的弹窗正常显示
+    lastBatchSyncResultDialogId = "";
   }
 
   function showBatchSyncResultDialog(result) {
@@ -5239,7 +5244,10 @@
       ? exporter.getSelectedMessages(pageParseOptions)
       : parseCurrentChatMessages(pageParseOptions);
     let rawMessagesForExport = pageMessagesForExport;
-    if (!isSelectedExport && platformForExport && pageMessagesForExport.length > 0) {
+    // 放宽条件：即使 DOM 解析返回 0 条消息，也尝试通过 API 抓取完整会话。
+    // API 使用 URL 中的 conversationId 和用户 cookie，不依赖 DOM 选择器，
+    // 可覆盖 DOM 虚拟化/懒加载导致 DOM 解析为空但会话实际存在的场景。
+    if (!isSelectedExport && platformForExport) {
       if (!globalThis.CHATVAULT_IS_BATCH_EXPORT) {
         renderExportProgress(formatForExport, {
           mode: "single",
@@ -5258,6 +5266,18 @@
       } catch (error) {
         console.warn("Full conversation fetch failed before export, using parsed page messages:", error);
         rawMessagesForExport = pageMessagesForExport;
+      }
+      // API 抓取后仍无消息时，尝试滚动加载并重新解析 DOM（仅单次导出，批量导出已有滚动逻辑）
+      if (!rawMessagesForExport.length && !globalThis.CHATVAULT_IS_BATCH_EXPORT) {
+        try {
+          await scrollAndLoadAllMessages();
+          pageMessagesForExport = parseCurrentChatMessages(pageParseOptions);
+          if (pageMessagesForExport.length > 0) {
+            rawMessagesForExport = pageMessagesForExport;
+          }
+        } catch (err) {
+          console.warn("Failed to scroll and reload messages before export:", err);
+        }
       }
     }
     if (!platformForExport || rawMessagesForExport.length === 0) {
@@ -5868,19 +5888,42 @@
         (async () => {
           let started = false;
           try {
-            await waitForContextExportReady();
-            const preflight = await prepareSingleObsidianSync();
+            // 立即回复 popup 并展示进度 UI，避免点击同步后出现停顿。
+            // prepareSingleObsidianSync 可能耗时 ~2s，移到响应之后再执行。
             if (message.config?.settings && typeof message.config.settings === "object") {
               exportSettings = { ...exportSettings, ...message.config.settings };
               persistExportSettings();
             }
             started = true;
             sendResponse({ ok: true, syncStarted: true });
+            renderExportProgress("obsidian", {
+              mode: "single",
+              title: tx("obsidian_sync_progress_title", "Syncing to Obsidian", "正在同步到 Obsidian"),
+              message: tx("obsidian_checking_vault", "Checking Vault access...", "正在检查 Vault..."),
+              progress: 0.04,
+              overallProgress: 0.04
+            }, cancelExport);
+            const preflight = await prepareSingleObsidianSync();
+            try {
+              await waitForContextExportReady();
+            } catch (error) {
+              hideExportProgress();
+              showPageToast(error?.message || tx("obsidian_sync_failed", "Obsidian sync could not start.", "无法开始 Obsidian 同步。"));
+              return;
+            }
             await runSingleObsidianSync({ ...message.config, settings: { ...exportSettings, ...(message.config?.settings || {}) } }, preflight);
           } catch (error) {
             if (!started) {
               if (error?.message === FREE_QUOTA_EXHAUSTED_MESSAGE) showUpgradePrompt(FREE_QUOTA_EXHAUSTED_MESSAGE);
               sendResponse({ ok: false, error: error?.message || tx("obsidian_sync_failed", "Obsidian sync could not start.", "无法开始 Obsidian 同步。") });
+            } else {
+              // popup 已关闭，错误通过页面 toast 呈现。
+              hideExportProgress();
+              if (error?.message === FREE_QUOTA_EXHAUSTED_MESSAGE) {
+                showUpgradePrompt(FREE_QUOTA_EXHAUSTED_MESSAGE);
+              } else {
+                showPageToast(error?.message || tx("obsidian_sync_failed", "Obsidian sync could not start.", "无法开始 Obsidian 同步。"));
+              }
             }
           }
         })();

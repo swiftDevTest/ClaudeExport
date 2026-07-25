@@ -411,7 +411,8 @@ function renderListItem(item, lines, prefix, indent) {
 
 function renderListRun(blocks, startIndex, lines) {
   var index = startIndex;
-  var orderedNumber = 1;
+  var firstListBlock = blocks[startIndex];
+  var orderedNumber = (firstListBlock && firstListBlock.start) || 1;
   var previousOrderedItemCount = 0;
   var previousOrderedChildIndent = "";
 

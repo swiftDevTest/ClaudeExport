@@ -39,6 +39,20 @@ var IMAGE_META_LINE_HEIGHT = 24;
 var IMAGE_HEADER_RULE_TOP_GAP = 26;
 var IMAGE_HEADER_RULE_BOTTOM_GAP = 34;
 
+// 判断颜色字符串是否为透明（"transparent" 或 alpha=0 的 rgba），用于在占位框等场景下回退到可见色
+function isTransparentColor(value) {
+  if (!value || typeof value !== "string") return false;
+  var v = value.trim().toLowerCase();
+  if (v === "transparent") return true;
+  var m = v.match(/^rgba?\(([^)]+)\)$/);
+  if (m) {
+    var parts = m[1].split(",").map(function (s) { return s.trim(); });
+    var alpha = parts.length === 4 ? parseFloat(parts[3]) : 1;
+    return alpha === 0;
+  }
+  return false;
+}
+
 export async function buildImageBlob(messages, metadata, settingsInput, options) {
   options = options || {};
   function throwIfAborted() {
@@ -382,10 +396,11 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
 
     if (block.type === "image") {
       var cached = imageCache && imageCache[block.src];
-      if (cached) {
+      if (cached && cached.width > 0 && cached.height >= 0) {
         var targetW = Math.min(width, cached.width);
         if (targetW > 450) targetW = 450;
         var targetH = (cached.height / cached.width) * targetW;
+        if (!Number.isFinite(targetH) || targetH < 0) targetH = 120;
         return { type: "image", src: block.src, width: targetW, height: targetH + 18, originalHeight: targetH };
       }
       var placeholderW = Math.min(width, 450);
@@ -482,6 +497,7 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
   }
   var c = createCanvas(width, height, scale);
   var ctx = c.ctx;
+  try {
   throwIfAborted();
   y = IMAGE_HEADER_TOP;
   notifyProgress(options, t("export_progress_rendering", "Rendering image"), 0.36);
@@ -528,9 +544,16 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
   ctx.fillRect(0, 0, width, 7);
 
   function imageLabelBaseline(top, height) {
-    var metrics = ctx.measureText("Hg");
-    if (metrics && Number.isFinite(metrics.actualBoundingBoxAscent) && Number.isFinite(metrics.actualBoundingBoxDescent)) {
-      return top + height / 2 + (metrics.actualBoundingBoxAscent - metrics.actualBoundingBoxDescent) / 2;
+    // 显式指定测量字体，避免依赖调用方先前设置的 ctx.font 状态
+    var prevFont = ctx.font;
+    try {
+      ctx.font = "13px " + theme.font.body;
+      var metrics = ctx.measureText("Hg");
+      if (metrics && Number.isFinite(metrics.actualBoundingBoxAscent) && Number.isFinite(metrics.actualBoundingBoxDescent)) {
+        return top + height / 2 + (metrics.actualBoundingBoxAscent - metrics.actualBoundingBoxDescent) / 2;
+      }
+    } finally {
+      ctx.font = prevFont;
     }
     return top + height / 2 + 4;
   }
@@ -540,7 +563,10 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
     var h = block.originalHeight || 120;
     var px = x + Math.max(0, (width - w) / 2);
     var py = cursor + 6;
-    drawRoundRect(ctx, px, py, w, h, 8, theme.color.cardBgAssistant, theme.color.cardBorderAssistant);
+    // 透明色（如 natural 主题）下占位框不可见，回退到浅色以保证视觉反馈
+    var placeholderBg = isTransparentColor(theme.color.cardBgAssistant) ? "#F1F5F9" : theme.color.cardBgAssistant;
+    var placeholderBorder = isTransparentColor(theme.color.cardBorderAssistant) ? "#E2E8F0" : theme.color.cardBorderAssistant;
+    drawRoundRect(ctx, px, py, w, h, 8, placeholderBg, placeholderBorder);
     ctx.font = "italic 15px " + theme.font.body;
     ctx.fillStyle = theme.color.muted;
     var label = "📷 [" + sanitizeImageAlt(block.alt) + " - Load Failed]";
@@ -805,21 +831,27 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
 
     try {
       ctx.save();
-      roundedImagePath(x, y, size, size, 18);
-      ctx.clip();
-      var srcW = cached.width;
-      var srcH = cached.height;
-      var side = Math.min(srcW, srcH);
-      var sx = Math.max(0, (srcW - side) / 2);
-      var sy = Math.max(0, (srcH - side) / 2);
-      ctx.drawImage(cached.element, sx, sy, side, side, x, y, size, size);
-      ctx.restore();
+      try {
+        roundedImagePath(x, y, size, size, 18);
+        ctx.clip();
+        var srcW = cached.width;
+        var srcH = cached.height;
+        var side = Math.min(srcW, srcH);
+        var sx = Math.max(0, (srcW - side) / 2);
+        var sy = Math.max(0, (srcH - side) / 2);
+        ctx.drawImage(cached.element, sx, sy, side, side, x, y, size, size);
+      } finally {
+        ctx.restore();
+      }
       ctx.save();
-      roundedImagePath(x, y, size, size, 18);
-      ctx.strokeStyle = "rgba(15, 23, 42, 0.10)";
-      ctx.lineWidth = 1;
-      ctx.stroke();
-      ctx.restore();
+      try {
+        roundedImagePath(x, y, size, size, 18);
+        ctx.strokeStyle = "rgba(15, 23, 42, 0.10)";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      } finally {
+        ctx.restore();
+      }
     } catch (error) {
       ctx.restore();
       var failedBlock = Object.assign({}, block, {
@@ -1018,4 +1050,8 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
   throwIfAborted();
   notifyProgress(options, t("export_progress_ready", "Image ready"), 1);
   return imageBlob;
+  } finally {
+    // 释放主渲染 canvas 与测量 canvas 的位图内存，避免长对话导出后 GC 压力
+    try { c.canvas.width = 1; c.canvas.height = 1; } catch (ignored) {}
+  }
 }

@@ -1507,5 +1507,8 @@
   },
   "obsidian_settings_choose_vault_step_desc": {
     "message": "Choisissez le dossier racine du Vault (celui qui contient .obsidian), pas un sous-dossier à l'intérieur."
+  },
+  "notion_share_database_hint": {
+    "message": "Partagez une base de données Notion avec la connexion ChatVault (ouvrez une base de données → ⋯ → Connexions → ajouter ChatVault), puis rouvrez ce popup."
   }
 }

@@ -900,6 +900,13 @@ button:focus-visible,
 
 #notion-db-select:focus-visible { outline: 2px solid rgba(6, 95, 70, 0.28); outline-offset: 1px; }
 
+.notion-db-helper {
+  margin: 6px 0 0;
+  font-size: 10px;
+  line-height: 1.5;
+  color: var(--text-muted, #667085);
+}
+
 .notion-save-btn,
 .action-btn {
   min-height: 42px;
