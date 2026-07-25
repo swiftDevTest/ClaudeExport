@@ -1575,8 +1575,8 @@ input:checked + .slider::before {
 }
 
 .export-footer-status {
-  margin-top: 0;
-  padding: 0;
+  margin-top: 6px;
+  padding: 6px 0 0;
   text-align: left;
 }
 
