@@ -2871,11 +2871,15 @@
     }
   }
 
-  function obsidianBackgroundMessage(payload) {
+  function obsidianBackgroundMessageOnce(payload) {
     return new Promise((resolve, reject) => {
       chrome.runtime.sendMessage(payload, (response) => {
         const lastError = chrome.runtime.lastError;
-        if (lastError) return reject(new Error(lastError.message || "Obsidian background request failed."));
+        if (lastError) {
+          const error = new Error(lastError.message || "Obsidian background request failed.");
+          error._transient = /could not establish connection|receiving end does not exist|message port closed|extension context invalidated/i.test(lastError.message || "");
+          return reject(error);
+        }
         if (!response || !response.ok) {
           const error = new Error(response?.error || "Obsidian background request failed.");
           error.code = response?.code || "obsidian_error";
@@ -2884,6 +2888,18 @@
         resolve(response);
       });
     });
+  }
+
+  async function obsidianBackgroundMessage(payload) {
+    const maxRetries = 3;
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        return await obsidianBackgroundMessageOnce(payload);
+      } catch (error) {
+        if (!error._transient || attempt >= maxRetries) throw error;
+        await new Promise((r) => setTimeout(r, 300 * Math.pow(2, attempt)));
+      }
+    }
   }
 
   function obsidianPageMessage(payload) {

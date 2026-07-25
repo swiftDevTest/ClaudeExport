@@ -1,4 +1,13 @@
 
+// 注意：product-config.js 必须在 notion-background.js / obsidian-background.js 之前加载，
+// 因为它们需要通过 globalThis.CHATVAULT_PRODUCT_CONFIG.storageKey() 计算与 supabase-auth.js
+// 一致的 storage key（否则 session/entitlement 变更监听会因 key 不一致而失效）。
+try {
+  importScripts("product-config.js");
+} catch (error) {}
+try {
+  importScripts("supabase-config.js");
+} catch (error) {}
 try {
   importScripts("notion-background.js");
 } catch (e) {
@@ -9,10 +18,6 @@ try {
 } catch (e) {
   console.warn("[Background] Failed to import obsidian-background.js:", e);
 }
-
-try {
-  importScripts("product-config.js");
-} catch (error) {}
 
 (function initChatVaultBackground() {
   "use strict";

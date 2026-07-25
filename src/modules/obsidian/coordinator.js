@@ -14,8 +14,8 @@ import {
 // 会让整个同步失败。修复：对这类瞬时错误做 1-2 次指数退避重试，避免长同步因
 // 短暂通信中断前功尽弃。注意：只对通信类错误重试，业务错误（response.ok=false）
 // 不重试。
-const RUNTIME_MESSAGE_MAX_RETRIES = 2;
-const RUNTIME_MESSAGE_BASE_DELAY_MS = 200;
+const RUNTIME_MESSAGE_MAX_RETRIES = 3;
+const RUNTIME_MESSAGE_BASE_DELAY_MS = 300;
 
 function isTransientRuntimeError(lastError, attempt) {
   if (!lastError) return false;

@@ -27,7 +27,7 @@
   // 必须与 popup.js 的 exportSettingsStorageKey 保持一致，
   // 否则右键菜单/独立导出走 content.js 自己加载的设置时会读不到 popup 保存的最新值
   // （例如 Hide Watermark 开关失效）。
-  const EXPORT_SETTINGS_STORAGE_KEY = _storageKeyFn("export_settings.v1");
+  const EXPORT_SETTINGS_STORAGE_KEY = _storageKey("export_settings.v1");
   const FREE_QUOTA_EXHAUSTED_MESSAGE = "You have used today's 3 free exports.";
 
   if (!exporter) {
@@ -2891,15 +2891,31 @@
     }
   }
 
-  function obsidianBatchMessage(payload) {
+  function obsidianBatchMessageOnce(payload) {
     return new Promise((resolve, reject) => {
       chrome.runtime.sendMessage(payload, (response) => {
         const lastError = chrome.runtime.lastError;
-        if (lastError) return reject(new Error(lastError.message));
+        if (lastError) {
+          const error = new Error(lastError.message);
+          error._transient = /could not establish connection|receiving end does not exist|message port closed|extension context invalidated/i.test(lastError.message || "");
+          return reject(error);
+        }
         if (!response || response.ok === false) return reject(new Error(response?.error || "Obsidian request failed."));
         resolve(response);
       });
     });
+  }
+
+  async function obsidianBatchMessage(payload) {
+    const maxRetries = 3;
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        return await obsidianBatchMessageOnce(payload);
+      } catch (error) {
+        if (!error._transient || attempt >= maxRetries) throw error;
+        await new Promise((r) => setTimeout(r, 300 * Math.pow(2, attempt)));
+      }
+    }
   }
 
   function formatTruncatedVaultPath(vaultName, notesDestination) {
