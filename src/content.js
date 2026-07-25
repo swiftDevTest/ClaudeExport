@@ -614,16 +614,16 @@
         accessToken: session.access_token,
         method: "POST",
         body: {
-          product_id: (globalThis.CHATVAULT_PRODUCT_CONFIG && globalThis.CHATVAULT_PRODUCT_CONFIG.productId) || "claude_export",
-          product_slug: (globalThis.CHATVAULT_PRODUCT_CONFIG && globalThis.CHATVAULT_PRODUCT_CONFIG.productSlug) || "claude-export",
-          product_name: (globalThis.CHATVAULT_PRODUCT_CONFIG && globalThis.CHATVAULT_PRODUCT_CONFIG.productName) || "Claude Export"
+          product_id: _productConfig.productId,
+          product_slug: _productConfig.productSlug,
+          product_name: _productConfig.productName
         }
       });
       const syncedProfile = normalizeProfileResponse(result);
       if (syncedProfile) return syncedProfile;
     } catch (err) {
       if (globalThis.CHATVAULT_DEBUG) {
-        console.debug("sync-subscription-status Edge Function failed, trying profiles fallback:", err);
+        console.debug("product-sync-subscription-status Edge Function failed, trying profiles fallback:", err);
       }
     }
     try {
@@ -706,17 +706,18 @@
   }
 
   function getLocalExportAccessResult(count) {
-    const requested = Math.max(1, Number(count) || 1);
+    const requestedCount = Math.max(1, Number(count) || 1);
     const profile = currentUserProfile || entitlements.normalizeProfile({ plan: "free" });
-    const remaining = entitlements.getRemainingFreeExports(profile, dailyUsage);
-    const allowed = isProUser || entitlements.isPro(profile) || remaining >= requested;
+    const allowed = isProUser
+      || entitlements?.isPro?.(profile)
+      || entitlements.canUseExport(profile, dailyUsage, requestedCount);
     return {
       ok: true,
-      allowed,
+      allowed: Boolean(allowed),
       serverVerified: false,
-      profile,
+      profile: profile,
       usage: dailyUsage,
-      remaining
+      remaining: entitlements.getRemainingFreeExports(profile, dailyUsage)
     };
   }
 
@@ -819,12 +820,13 @@
     }
 
     try {
-      const productSlug = (globalThis.CHATVAULT_PRODUCT_CONFIG && globalThis.CHATVAULT_PRODUCT_CONFIG.productSlug) || "claude-export";
       const result = await globalThis.CHATVAULT_SUPABASE_API.request("/functions/v1/product-verify-export-entitlement", {
         accessToken: session.access_token,
         method: "POST",
         body: {
-          product_slug: productSlug,
+          product_id: _productConfig.productId,
+          product_slug: _productConfig.productSlug,
+          product_name: _productConfig.productName,
           requested_count: count,
           consume
         }

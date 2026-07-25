@@ -1272,7 +1272,7 @@
     "message": "Cargando cuota de uso..."
   },
   "popup_quota_remaining": {
-    "message": "Cuota restante de hoy: $1 / 3 exportaciones"
+    "message": "Cuota restante de hoy: $1 / $2 exportaciones"
   },
   "popup_pro_quota_status": {
     "message": "Exportaciones ilimitadas disponibles"

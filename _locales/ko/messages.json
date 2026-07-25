@@ -1272,7 +1272,7 @@
     "message": "사용량 한도 로드 중..."
   },
   "popup_quota_remaining": {
-    "message": "오늘 남은 한도: $1 / 3회 내보내기"
+    "message": "오늘 남은 한도: $1 / $2회 내보내기"
   },
   "popup_pro_quota_status": {
     "message": "무제한 내보내기 사용 가능"

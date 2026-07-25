@@ -1272,7 +1272,7 @@
     "message": "Nutzungskontingent wird geladen..."
   },
   "popup_quota_remaining": {
-    "message": "Heutiges Restkontingent: $1 / 3 Exporte"
+    "message": "Heutiges Restkontingent: $1 / $2 Exporte"
   },
   "popup_pro_quota_status": {
     "message": "Unbegrenzte Exporte verfügbar"

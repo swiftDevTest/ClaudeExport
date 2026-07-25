@@ -22,8 +22,7 @@ function getDailyLimit(profile: Record<string, unknown>) {
   const limits = asRecord(profile.limits);
   const candidates = [
     limits.maxExportsPerDay,
-    limits.daily_exports,
-    limits.maxExports
+    limits.daily_exports
   ];
   for (const value of candidates) {
     const number = Number(value);

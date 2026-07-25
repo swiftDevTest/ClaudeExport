@@ -1317,7 +1317,7 @@
     "message": "Loading usage quota..."
   },
   "popup_quota_remaining": {
-    "message": "Today's remaining quota: $1 / 3 exports"
+    "message": "Today's remaining quota: $1 / $2 exports"
   },
   "popup_pro_quota_status": {
     "message": "Unlimited exports available"

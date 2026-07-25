@@ -475,17 +475,19 @@
         return await storeSession(sessionWithUser);
       }
     } catch (error) {
+      if (isLikelyAuthError(error)) {
+        await clearSession();
+        try {
+          await globalThis.CHATVAULT_ENTITLEMENTS?.clearCachedState?.();
+        } catch (cleanupError) {
+          // best-effort
+        }
+        throw error;
+      }
       const storedSession = await getStoredSession();
-
-      // Only return stale session on transient network errors, not auth errors.
-      // If refresh_token is revoked/expired (auth error), returning stale gives a
-      // false "logged in" state while all API calls fail with 401 (H8).
-      const isAuthError = isLikelyAuthError(error);
-      const staleAllowed = options.allowStaleOnError !== false && !isAuthError;
-      if (staleAllowed && storedSession?.access_token && storedSession?.user?.id) {
+      if (options.allowStaleOnError !== false && storedSession?.access_token && storedSession?.user?.id) {
         return storedSession;
       }
-
       throw error;
     }
   }

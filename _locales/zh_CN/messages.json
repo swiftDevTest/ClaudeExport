@@ -1317,7 +1317,7 @@
     "message": "正在加载使用额度状态..."
   },
   "popup_quota_remaining": {
-    "message": "今日剩余额度：$1 / 3 次"
+    "message": "今日剩余额度：$1 / $2 次"
   },
   "popup_pro_quota_status": {
     "message": "无限导出额度可用"

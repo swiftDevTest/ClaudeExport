@@ -1488,7 +1488,12 @@
           if (api && session.access_token) {
             await api.request("/functions/v1/product-sync-subscription-status", {
               accessToken: session.access_token,
-              method: "POST"
+              method: "POST",
+              body: {
+                product_id: productConfig.productId,
+                product_slug: productConfig.productSlug,
+                product_name: productConfig.productName
+              }
             });
             showToast(t("popup_restore_submitted", "Restore request submitted. Close and reopen the popup to see the latest status."));
             if (isSupportedPage && activeTabId) {
@@ -1957,12 +1962,13 @@
     }
 
     try {
-      var productSlug = (globalThis.CHATVAULT_PRODUCT_CONFIG && globalThis.CHATVAULT_PRODUCT_CONFIG.productSlug) || "claude-export";
       var result = await api.request("/functions/v1/product-verify-export-entitlement", {
         accessToken: session.access_token,
         method: "POST",
         body: {
-          product_slug: productSlug,
+          product_id: productConfig.productId,
+          product_slug: productConfig.productSlug,
+          product_name: productConfig.productName,
           requested_count: 1,
           consume: false
         }
