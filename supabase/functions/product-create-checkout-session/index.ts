@@ -189,9 +189,11 @@ async function persistPaddleCustomer(user: AuthUser, paddleCustomerId: string, e
   });
 }
 
-async function getOrCreatePaddleCustomerId(user: AuthUser, requestedEmail: unknown, product: ProductBillingConfig) {
+async function getOrCreatePaddleCustomerId(user: AuthUser, requestedEmail: unknown, product: ProductBillingConfig, knownProfileCustomerId?: string) {
   const email = normalizeEmail(user.email || requestedEmail);
-  let paddleCustomerId = await findStoredPaddleCustomerId(user.id, product.productSlug);
+  let paddleCustomerId = typeof knownProfileCustomerId === "string" && knownProfileCustomerId
+    ? knownProfileCustomerId
+    : await findStoredPaddleCustomerId(user.id, product.productSlug);
 
   if (!paddleCustomerId && email) {
     try {
@@ -349,7 +351,9 @@ Deno.serve(async (request) => {
       return errorResponseForRequest(request, `${product.productName} Paddle price id is not configured.`, 503);
     }
 
-    await ensureProfile(user, {}, product.productSlug);
+    // ensureProfile 返回完整 profile，复用其 paddle_customer_id 可跳过 findStoredPaddleCustomerId
+    // 中对 product_profiles 的重复 SELECT。
+    const profile = await ensureProfile(user, {}, product.productSlug);
 
     const reusableCheckout = await findReusableCheckoutSession(user.id, plan.id, product.productSlug);
     if (reusableCheckout) {
@@ -384,7 +388,7 @@ Deno.serve(async (request) => {
     const cancelUrl = getConfiguredReturnUrl("CHECKOUT_CANCEL_URL", product);
     const idempotencyWindow = Math.floor(Date.now() / getRecentCheckoutReuseMs());
     const idempotencyKey = `${product.productSlug}:${user.id}:${plan.id}:${source}:${idempotencyWindow}`;
-    const customer = await getOrCreatePaddleCustomerId(user, body.customer_email, product);
+    const customer = await getOrCreatePaddleCustomerId(user, body.customer_email, product, getString(profile?.paddle_customer_id));
     const checkoutUrl = buildCheckoutUrl(rawCheckoutUrl, plan.id, source, customer, product);
 
     const transactionPayload = {

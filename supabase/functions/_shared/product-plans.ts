@@ -193,6 +193,22 @@ export function getProductConfig(productSlugInput?: unknown): ProductBillingConf
   };
 }
 
+export function resolveNewProductSlugFromPriceId(priceId: unknown): string {
+  const normalized = String(priceId || "").trim();
+  if (!normalized) {
+    return "";
+  }
+
+  for (const productSlug of NEW_PRODUCT_SLUGS) {
+    const product = getProductConfig(productSlug);
+    if (product.billingPlans.some((plan) => plan.priceId === normalized)) {
+      return product.productSlug;
+    }
+  }
+
+  return "";
+}
+
 export function getProductFromInput(input: Record<string, unknown> = {}): ProductBillingConfig {
   return getProductConfig(
     input.product_slug ||

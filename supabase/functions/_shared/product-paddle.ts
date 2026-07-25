@@ -1,8 +1,9 @@
-import { BillingPlan, findPlan, resolveNewProductSlug } from "./product-plans.ts";
+import { BillingPlan, findPlan, resolveNewProductSlug, resolveNewProductSlugFromPriceId } from "./product-plans.ts";
 
 export type PaddleEventInfo = {
   eventId: string;
   eventType: string;
+  occurredAt: string | null;
   data: Record<string, unknown>;
   customData: Record<string, unknown>;
   priceId: string | null;
@@ -65,12 +66,16 @@ function bytesToHex(bytes: ArrayBuffer) {
 }
 
 function safeEqual(a: string, b: string) {
-  if (a.length !== b.length) {
-    return false;
-  }
-  let result = 0;
-  for (let index = 0; index < a.length; index += 1) {
-    result |= a.charCodeAt(index) ^ b.charCodeAt(index);
+  // 常量时间比较：避免在 length 不等时早退导致时序泄漏。
+  // 始终遍历至最长字符串的末尾，并在长度不等时让结果非零。
+  const aBytes = new TextEncoder().encode(a);
+  const bBytes = new TextEncoder().encode(b);
+  const maxLength = Math.max(aBytes.length, bBytes.length);
+  let result = aBytes.length ^ bBytes.length;
+  for (let index = 0; index < maxLength; index += 1) {
+    const aByte = index < aBytes.length ? aBytes[index] : 0;
+    const bByte = index < bBytes.length ? bBytes[index] : 0;
+    result |= aByte ^ bByte;
   }
   return result === 0;
 }
@@ -91,9 +96,9 @@ export async function verifyPaddleSignature(rawBody: string, signatureHeader: st
     return false;
   }
 
-  const toleranceSeconds = Number(Deno.env.get("PADDLE_WEBHOOK_TOLERANCE_SECONDS") || 300);
+  const toleranceSeconds = Math.max(60, Number(Deno.env.get("PADDLE_WEBHOOK_TOLERANCE_SECONDS") || 300));
   const timestampSeconds = Number(timestamp);
-  if (Number.isFinite(timestampSeconds) && toleranceSeconds > 0) {
+  if (Number.isFinite(timestampSeconds)) {
     const age = Math.abs(Math.floor(Date.now() / 1000) - timestampSeconds);
     if (age > toleranceSeconds) {
       return false;
@@ -163,23 +168,29 @@ export function getPaddleEventInfo(event: Record<string, unknown>): PaddleEventI
   const items = Array.isArray(data.items) ? data.items.map(asRecord) : [];
   const firstItem = items[0] || {};
   const firstPrice = asRecord(firstItem.price);
+  const firstItemProduct = asRecord(firstItem.product);
   const firstLineItem = lineItems[0] || {};
+  const firstLinePrice = asRecord(firstLineItem.price);
   const firstLineProduct = asRecord(firstLineItem.product);
+  const firstLinePriceProduct = asRecord(firstLinePrice.product);
   const customer = asRecord(data.customer);
 
   const priceId = firstString([
     data.price_id,
     firstPrice.id,
     firstItem.price_id,
-    firstLineItem.price_id
+    firstLineItem.price_id,
+    firstLinePrice.id
   ]);
   const productSlug = firstString([
     customData.product_slug,
     customData.product,
     customData.product_id,
-    firstLineProduct.custom_data && asRecord(firstLineProduct.custom_data).product_slug
+    firstItemProduct.custom_data && asRecord(firstItemProduct.custom_data).product_slug,
+    firstLineProduct.custom_data && asRecord(firstLineProduct.custom_data).product_slug,
+    firstLinePriceProduct.custom_data && asRecord(firstLinePriceProduct.custom_data).product_slug
   ]);
-  const resolvedProductSlug = resolveNewProductSlug(productSlug);
+  const resolvedProductSlug = resolveNewProductSlug(productSlug) || resolveNewProductSlugFromPriceId(priceId);
   const plan = resolvedProductSlug
     ? findPlan({
       priceId,
@@ -189,9 +200,13 @@ export function getPaddleEventInfo(event: Record<string, unknown>): PaddleEventI
     }, resolvedProductSlug)
     : null;
 
+  const occurredAt = firstString([event.occurred_at]);
+  const occurredAtDate = occurredAt ? new Date(occurredAt) : null;
+
   return {
     eventId: firstString([event.event_id, event.id]) || `${event.event_type || "unknown"}:${crypto.randomUUID()}`,
     eventType: String(event.event_type || "unknown"),
+    occurredAt: occurredAtDate && !Number.isNaN(occurredAtDate.getTime()) ? occurredAtDate.toISOString() : null,
     data,
     customData,
     priceId,
