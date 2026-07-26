@@ -8,9 +8,9 @@
   const SESSION_KEY = storageKey("supabase_session.v1");
   const SESSION_MUTATION_EPOCH_KEY = storageKey("supabase_session_epoch.v1");
   const ENTITLEMENT_STATE_CACHE_KEY = storageKey("entitlement_state.v1");
-  // access_token 默认有效期 1 小时，提前 1 小时刷新：
-  // 用户单次使用基本不触发刷新，跨会话使用也能无感续期。
-  const REFRESH_MARGIN_SECONDS = 3600;
+  // Supabase access_token 默认有效期约 1 小时。仅在到期前 5 分钟刷新，
+  // 避免新 session 刚写入就立刻轮换 refresh_token。
+  const REFRESH_MARGIN_SECONDS = 300;
   let refreshSessionPromise = null;
   let refreshSessionPromiseKey = "";
   let sessionGeneration = 0;
@@ -316,6 +316,32 @@
     return session;
   }
 
+  async function storeSessionIfCurrent(session, expectedRefreshToken, operation) {
+    if (!session || !await isSessionOperationCurrent(operation)) {
+      return null;
+    }
+
+    const storedSession = await getStoredSession();
+    if (!await isSessionOperationCurrent(operation)) {
+      return null;
+    }
+    if (!storedSession) {
+      return null;
+    }
+
+    const storedRefreshToken = storedSession.refresh_token || "";
+    const candidateRefreshToken = session.refresh_token || "";
+    if (
+      storedRefreshToken &&
+      storedRefreshToken !== expectedRefreshToken &&
+      storedRefreshToken !== candidateRefreshToken
+    ) {
+      return storedSession;
+    }
+
+    return storeSession(session, operation);
+  }
+
   async function getStoredSession() {
     return storageGet(SESSION_KEY);
   }
@@ -339,7 +365,9 @@
           !chrome.runtime ||
           typeof chrome.runtime.sendMessage !== "function"
         ) {
-          resolve(null);
+          const unavailableError = new Error("Supabase refresh service is unavailable.");
+          unavailableError.code = "auth_refresh_unavailable";
+          reject(unavailableError);
           return;
         }
 
@@ -403,22 +431,27 @@
     if (!refreshSessionPromise || refreshSessionPromiseKey !== promiseKey) {
       refreshSessionPromiseKey = promiseKey;
       refreshSessionPromise = (async () => {
-        let refreshed = await refreshSessionThroughBackground(refreshToken);
-        if (!refreshed) {
-          // background 不可达时，短暂等待后重试一次，减少多上下文并发 fallback 导致的 refresh_token 旋转冲突
-          await new Promise((resolve) => setTimeout(resolve, 500));
-          refreshed = await refreshSessionThroughBackground(refreshToken);
+        try {
+          const refreshed = await refreshSessionThroughBackground(refreshToken);
+          if (!refreshed) {
+            throw new Error("Supabase refresh service returned no session.");
+          }
+          return storeSessionIfCurrent(
+            normalizeSession(session, refreshed),
+            refreshToken,
+            sessionOperation
+          );
+        } catch (error) {
+          const storedSession = await getStoredSession();
+          if (
+            await isSessionOperationCurrent(sessionOperation) &&
+            storedSession?.refresh_token &&
+            storedSession.refresh_token !== refreshToken
+          ) {
+            return storedSession;
+          }
+          throw error;
         }
-        if (!refreshed) {
-          refreshed = await api.request("/auth/v1/token?grant_type=refresh_token", {
-            body: {
-              refresh_token: refreshToken
-            },
-            method: "POST"
-          });
-        }
-
-        return storeSession(normalizeSession(session, refreshed), sessionOperation);
       })().finally(() => {
         if (refreshSessionPromiseKey === promiseKey) {
           refreshSessionPromise = null;
@@ -477,7 +510,7 @@
       }
 
       if (options.skipUserRefresh && session.user?.id) {
-        return await storeSession(session, sessionOperation);
+        return await storeSessionIfCurrent(session, session.refresh_token || originalSession.refresh_token, sessionOperation);
       }
 
       try {
@@ -486,7 +519,7 @@
           ...session,
           user
         };
-        return await storeSession(sessionWithUser, sessionOperation);
+        return await storeSessionIfCurrent(sessionWithUser, session.refresh_token, sessionOperation);
       } catch (userError) {
         if (!isLikelyAuthError(userError)) {
           throw userError;
@@ -505,13 +538,22 @@
           ...refreshedSession,
           user
         };
-        return await storeSession(sessionWithUser, sessionOperation);
+        return await storeSessionIfCurrent(sessionWithUser, refreshedSession.refresh_token, sessionOperation);
       }
     } catch (error) {
       if (!await isSessionOperationCurrent(sessionOperation)) {
         return null;
       }
       if (isLikelyAuthError(error)) {
+        const storedSession = await getStoredSession();
+        const failedRefreshToken = session?.refresh_token || originalSession?.refresh_token || "";
+        if (
+          storedSession?.refresh_token &&
+          failedRefreshToken &&
+          storedSession.refresh_token !== failedRefreshToken
+        ) {
+          return storedSession;
+        }
         await clearSession();
         try {
           await globalThis.CHATVAULT_ENTITLEMENTS?.clearCachedState?.();
@@ -659,7 +701,7 @@
     // 最后才发起网络 logout
     if (session && session.access_token) {
       try {
-        await api.request("/auth/v1/logout", {
+        await api.request("/auth/v1/logout?scope=local", {
           accessToken: session.access_token,
           method: "POST"
         });
