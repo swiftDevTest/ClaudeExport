@@ -60,6 +60,8 @@ try {
   const ANALYTICS_ALLOWED_PLATFORMS = new Set(["chatgpt", "claude", "gemini", "unknown"]);
   const supabaseRefreshPromises = new Map();
   const supabaseRefreshResults = new Map();
+  let sessionMutationQueue = Promise.resolve();
+  let googleOAuthInFlightCount = 0;
   const backgroundImageFetchControllers = new Map();
   let analyticsMutationQueue = Promise.resolve();
   let analyticsFlushTimer = null;
@@ -536,7 +538,7 @@ try {
     return clientId;
   }
 
-  function startGoogleOAuthSession(clientId) {
+  function startGoogleOAuthSessionInternal(clientId) {
     return new Promise(async (resolve, reject) => {
       try {
         const identityRedirectUri = getIdentityRedirectUri();
@@ -606,6 +608,17 @@ try {
         reject(error);
       }
     });
+  }
+
+  // 包装 OAuth 流程以跟踪在飞数量，clearInvalidSupabaseSession 在有 OAuth 进行时
+  // 不清理 session，避免误清刚登录成功的新 session。
+  async function startGoogleOAuthSession(clientId) {
+    googleOAuthInFlightCount += 1;
+    try {
+      return await startGoogleOAuthSessionInternal(clientId);
+    } finally {
+      googleOAuthInFlightCount = Math.max(0, googleOAuthInFlightCount - 1);
+    }
   }
 
   function pruneSupabaseRefreshResults() {
@@ -785,6 +798,53 @@ try {
       ((parseInt(hex.slice(16, 17), 16) & 0x3) | 0x8).toString(16) + hex.slice(17, 20),
       hex.slice(20, 32)
     ].join("-");
+  }
+
+  function runSessionMutation(task) {
+    const nextMutation = sessionMutationQueue.then(task, task);
+    sessionMutationQueue = nextMutation.catch(() => {});
+    return nextMutation;
+  }
+
+  function createSessionMutationEpoch() {
+    const randomPart = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2);
+    return `${Date.now()}:${randomPart}`;
+  }
+
+  // refresh_token 被服务端判定为不可恢复（refresh_token_not_found / refresh_token_already_used）
+  // 时，content script 通过 CHATVAULT_SUPABASE_CLEAR_INVALID_SESSION 请求 background 原子清理
+  // session + epoch + entitlement 缓存。仅在存储中的 refresh_token 仍与失败 token 一致时才清理，
+  // 避免误清并发登录产生的新 session。
+  async function clearInvalidSupabaseSession(refreshToken) {
+    const token = String(refreshToken || "");
+    if (!token) {
+      return { cleared: false, reason: "missing_refresh_token" };
+    }
+
+    return runSessionMutation(async () => {
+      if (googleOAuthInFlightCount > 0) {
+        return { cleared: false, reason: "sign_in_in_progress" };
+      }
+
+      const storedSession = await storageGet(SESSION_KEY);
+      if (!storedSession?.refresh_token || storedSession.refresh_token !== token) {
+        return { cleared: false, reason: "session_changed" };
+      }
+
+      await storageSet({
+        [SESSION_MUTATION_EPOCH_KEY]: createSessionMutationEpoch(),
+        [SESSION_KEY]: null
+      });
+      supabaseRefreshResults.delete(token);
+      try {
+        await globalThis.CHATVAULT_ENTITLEMENTS?.clearCachedState?.();
+      } catch (error) {
+        // The affected auth session is already cleared.
+      }
+      return { cleared: true, reason: "refresh_token_invalid" };
+    });
   }
 
   async function getOrCreateAnalyticsGuestId() {
@@ -1118,6 +1178,20 @@ try {
             status: error.status || 0,
             code: error.code || null
           });
+        });
+
+      return true;
+    }
+
+    if (message && message.type === "CHATVAULT_SUPABASE_CLEAR_INVALID_SESSION") {
+      if (rejectUntrustedSender(sender, sendResponse)) return false;
+
+      clearInvalidSupabaseSession(message.refreshToken)
+        .then((result) => {
+          sendResponse({ ok: true, ...result });
+        })
+        .catch((error) => {
+          sendResponse({ ok: false, error: error.message || "Supabase session cleanup failed." });
         });
 
       return true;

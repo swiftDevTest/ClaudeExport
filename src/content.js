@@ -117,6 +117,21 @@
     return false;
   }
 
+  function isReauthenticationRequiredError(error) {
+    if (auth && typeof auth.isReauthenticationRequiredError === "function") {
+      return auth.isReauthenticationRequiredError(error);
+    }
+    return String(error?.code || "") === "chatvault_reauthentication_required";
+  }
+
+  function getReauthenticationRequiredMessage() {
+    return tx(
+      "content_auth_session_expired",
+      "Your sign-in session expired and you were signed out. Open the extension and sign in again.",
+      "登录状态已失效，已为您安全退出。请打开扩展并重新登录。"
+    );
+  }
+
   function localQuotaAllows(count) {
     const requested = Math.max(1, Number(count) || 1);
     if (entitlements?.canUseExport && currentUserProfile) {
@@ -864,6 +879,19 @@
     try {
       session = await auth.getSession({ skipUserRefresh: false, allowStaleOnError: false });
     } catch (error) {
+      // refresh_token 不可恢复（已被服务端吊销）：supabase-auth.js 已主动清 session +
+      // entitlement 缓存，并抛出 reauthenticationRequired。这里立即同步本地登出态，
+      // 返回明确的重新登录提示，不再走匿名配额降级。
+      if (isReauthenticationRequiredError(error)) {
+        await applySignedOutStateImmediately();
+        return {
+          ok: false,
+          allowed: false,
+          serverVerified: false,
+          reauthenticationRequired: true,
+          error: getReauthenticationRequiredMessage()
+        };
+      }
       if (!consume && isBackendSchemaCacheError(error)) {
         console.warn("Server entitlement verification schema is stale; using local quota fallback:", error);
         const localAllowed = localQuotaAllows(count);
@@ -5176,7 +5204,7 @@
     if (title) {
       title.textContent = partial
         ? tx("notion_sync_partial_title", "Synced to Notion with warnings", "已同步到 Notion，但有部分内容降级")
-        : tx("content_export_success_title", "Export successful! Export as another format?", "Export successful!");
+        : tx("notion_sync_success_title", "Synced to Notion", "已成功同步到 Notion");
     }
     if (description) {
       description.textContent = partial
@@ -5570,7 +5598,9 @@
         ? service === "obsidian"
           ? tx("obsidian_sync_partial_title", "Obsidian sync completed with warnings", "Obsidian 同步完成，但有部分警告")
           : tx("notion_sync_partial_title", "Synced to Notion with warnings", "已同步到 Notion，但有部分警告")
-        : tx("content_export_success_title", "Export successful! Export as another format?", "Export successful!");
+        : service === "obsidian"
+          ? tx("obsidian_batch_complete", "Obsidian batch sync complete", "Obsidian 批量同步完成")
+          : tx("notion_sync_success_title", "Synced to Notion", "已成功同步到 Notion");
     description.textContent = failed
       ? tx("obsidian_batch_all_failed", "No conversations could be synced.", "没有会话同步成功。")
       : `${tx("content_batch_success_failure", "Success: $1, failed: $2", "成功：$1，失败：$2", successCount, failureCount)}. ${service === "obsidian"
@@ -5644,8 +5674,8 @@
         : partial
           ? tx("obsidian_sync_partial_title", "Obsidian sync completed with warnings", "Obsidian 同步完成，但有部分警告")
           : isBatch
-            ? tx("content_export_success_title", "Export successful! Export as another format?", "Export successful!")
-            : tx("content_export_success_title", "Export successful! Export as another format?", "Export successful!");
+            ? tx("obsidian_batch_complete", "Obsidian batch sync complete", "Obsidian 批量同步完成")
+            : tx("obsidian_sync_complete", "Synced to Obsidian", "已成功同步到 Obsidian");
     }
     if (description) {
       description.hidden = false;

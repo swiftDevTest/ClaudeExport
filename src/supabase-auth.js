@@ -8,6 +8,7 @@
   const SESSION_KEY = storageKey("supabase_session.v1");
   const SESSION_MUTATION_EPOCH_KEY = storageKey("supabase_session_epoch.v1");
   const ENTITLEMENT_STATE_CACHE_KEY = storageKey("entitlement_state.v1");
+  const REAUTHENTICATION_REQUIRED_CODE = "chatvault_reauthentication_required";
   // Supabase access_token 默认有效期约 1 小时。仅在到期前 5 分钟刷新，
   // 避免新 session 刚写入就立刻轮换 refresh_token。
   const REFRESH_MARGIN_SECONDS = 300;
@@ -229,12 +230,32 @@
 
   function isLikelyAuthError(error) {
     const message = String(error?.message || error || "");
-    const code = String(error?.code || error?.payload?.code || "");
+    const code = String(error?.code || error?.payload?.code || "").toLowerCase();
 
     return error?.status === 401 ||
       error?.status === 403 ||
-      code === "PGRST303" ||
+      code === "pgrst303" ||
+      isUnrecoverableSessionError(error) ||
       /jwt|token|session/i.test(message) && /expired|invalid|missing|refresh|revoked/i.test(message);
+  }
+
+  function isUnrecoverableSessionError(error) {
+    const code = String(error?.code || error?.payload?.code || "").toLowerCase();
+    return code === "refresh_token_not_found" ||
+      code === "refresh_token_already_used";
+  }
+
+  function createReauthenticationRequiredError(cause) {
+    const error = new Error("Your sign-in session has expired. Please sign in again.");
+    error.name = "ChatVaultReauthenticationRequiredError";
+    error.code = REAUTHENTICATION_REQUIRED_CODE;
+    error.status = Number(cause?.status || 401);
+    error.reason = String(cause?.code || cause?.payload?.code || "");
+    return error;
+  }
+
+  function isReauthenticationRequiredError(error) {
+    return String(error?.code || "") === REAUTHENTICATION_REQUIRED_CODE;
   }
 
   function sanitizeTokenLikeFields(value) {
@@ -346,14 +367,57 @@
     return storageGet(SESSION_KEY);
   }
 
-  async function clearSession() {
+  function invalidateLocalSessionOperations() {
     sessionGeneration += 1;
     refreshSessionPromise = null;
     refreshSessionPromiseKey = "";
+  }
+
+  async function clearSession() {
+    invalidateLocalSessionOperations();
     // 原子写入 epoch + 清空 session，避免 signOut 与在飞 refresh 之间的竞态窗口
     await storageSetValues({
       [SESSION_MUTATION_EPOCH_KEY]: createSessionMutationEpoch(),
       [SESSION_KEY]: null
+    });
+  }
+
+  function clearInvalidSessionThroughBackground(refreshToken) {
+    return new Promise((resolve, reject) => {
+      try {
+        if (
+          typeof chrome === "undefined" ||
+          !chrome.runtime ||
+          typeof chrome.runtime.sendMessage !== "function"
+        ) {
+          reject(new Error("Supabase session cleanup service is unavailable."));
+          return;
+        }
+
+        chrome.runtime.sendMessage({
+          type: "CHATVAULT_SUPABASE_CLEAR_INVALID_SESSION",
+          refreshToken
+        }, (reply) => {
+          let lastError = null;
+          try {
+            lastError = chrome.runtime.lastError;
+          } catch (error) {
+            lastError = null;
+          }
+
+          if (lastError) {
+            reject(new Error(lastError.message || "Supabase session cleanup service is unavailable."));
+            return;
+          }
+          if (!reply || !reply.ok) {
+            reject(new Error(reply?.error || "Supabase session cleanup failed."));
+            return;
+          }
+          resolve(reply);
+        });
+      } catch (error) {
+        reject(error);
+      }
     });
   }
 
@@ -544,9 +608,40 @@
       if (!await isSessionOperationCurrent(sessionOperation)) {
         return null;
       }
+      const storedSession = await getStoredSession();
+      const failedRefreshToken = session?.refresh_token || originalSession?.refresh_token || "";
+
+      if (
+        storedSession?.refresh_token &&
+        failedRefreshToken &&
+        storedSession.refresh_token !== failedRefreshToken
+      ) {
+        return storedSession;
+      }
+
+      // refresh_token 已被服务端吊销/失效（refresh_token_not_found / refresh_token_already_used）
+      // 不可恢复：主动清 session + entitlement 缓存，抛出 reauthenticationRequired，
+      // 由 content.js 触发 applySignedOutStateImmediately 并提示用户重新登录。
+      if (isUnrecoverableSessionError(error)) {
+        const cleanup = await clearInvalidSessionThroughBackground(failedRefreshToken);
+        const currentSession = await getStoredSession();
+        if (!cleanup.cleared && currentSession?.refresh_token) {
+          if (currentSession.refresh_token !== failedRefreshToken) {
+            return currentSession;
+          }
+          throw error;
+        }
+        invalidateLocalSessionOperations();
+        await storageRemove(ENTITLEMENT_STATE_CACHE_KEY);
+        try {
+          await globalThis.CHATVAULT_ENTITLEMENTS?.clearCachedState?.();
+        } catch (cleanupError) {
+          // Local auth state is already cleared; cache cleanup is best-effort.
+        }
+        throw createReauthenticationRequiredError(error);
+      }
+
       if (isLikelyAuthError(error)) {
-        const storedSession = await getStoredSession();
-        const failedRefreshToken = session?.refresh_token || originalSession?.refresh_token || "";
         if (
           storedSession?.refresh_token &&
           failedRefreshToken &&
@@ -562,7 +657,6 @@
         }
         throw error;
       }
-      const storedSession = await getStoredSession();
       if (options.allowStaleOnError !== false && storedSession?.access_token && storedSession?.user?.id) {
         return storedSession;
       }
@@ -717,6 +811,7 @@
     getStoredSession,
     getSession,
     isLikelyAuthError,
+    isReauthenticationRequiredError,
     refreshSession,
     signInWithGoogle,
     signOut,
