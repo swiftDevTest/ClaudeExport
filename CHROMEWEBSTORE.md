@@ -1,6 +1,6 @@
 # Chrome Web Store 上架清单 — Claude Exporter
 
-> 最后更新日期：2026-07-26
+> 最后更新日期：2026-07-27
 
 该文档是 Claude Exporter 上架 Chrome Web Store（CWS）的元数据与配置指南，开发者可直接复制相应内容填入 Chrome 开发者控制台（Chrome Developer Dashboard）。
 
@@ -75,9 +75,9 @@ English (United States) / Chinese (Simplified)
 | :--- | :--- | :--- |
 | `storage` | permissions | 用于在本地存储用户的导出选项（如隐藏水印、显示时间等参数）、每日免费额度计数和临时会话状态（如 Supabase 登录 session 缓存）。 |
 | `downloads` | permissions | 用于在浏览器本地生成导出文件后，调用 Chrome 下载管理器将其保存到用户的本地磁盘。 |
-| `clipboardWrite` | permissions | 用于执行用户主动触发的“复制原文”或“复制 JSON”。JSON 需要先异步生成，弹窗可能在写入前关闭，因此需要该权限保证延迟写入剪贴板仍可完成。 |
 | `contextMenus` | permissions | 用于在 Claude 网页右键菜单中添加快捷导出入口（如右键“导出到 PDF”），提升用户在聊天页面时的操作便捷性。 |
 | `identity` | permissions | 用于发起 Google 登录流程（LaunchWebAuthFlow），从而让已购买主产品 Pro 订阅的用户激活并恢复其 Pro 会员权益。 |
+| `alarms` | permissions | The extension uses scheduled alarms to keep user-initiated Notion sync jobs reliable when Chrome suspends the background service worker, retry interrupted sync work, and periodically clear stale Notion or Obsidian job state. Alarms do not collect data, track browsing activity, or trigger exports without user action. |
 | `https://acgehhqcgreatcjcefub.supabase.co/*` | host_permissions | 用于与后端 Supabase 数据库和 Edge Functions 进行安全通信，以验证登录状态、同步 Pro 会员订阅 and 查询服务器验证的每日免费导出次数。 |
 | `https://claude.ai/*` | host_permissions | 允许内容脚本在 Claude 聊天页面运行，用于捕获聊天 DOM 树进行本地转换；允许背景脚本检测活动标签页以确定导出是否可用。 |
 | `https://images.anthropic.com/*`<br>`https://media.anthropic.com/*` | host_permissions | 允许背景脚本从 Claude 受信任的图片 CDN 安全抓取聊天对话中嵌入的用户上传图片或附件字节，以使本地生成的文件（如 PDF、Docs、Image）包含完整插图，避免因跨域导致图裂或缺失。 |

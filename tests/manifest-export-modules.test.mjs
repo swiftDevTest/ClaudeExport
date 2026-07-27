@@ -84,13 +84,14 @@ test("manifest exposes only the registered platform extractor", () => {
   assert.deepEqual(getExposedExtractorResources(manifest), registryExtractors);
 });
 
-test("manifest grants clipboard access required by delayed JSON copy", () => {
+test("manifest keeps clipboard copy page-scoped without clipboardWrite permission", () => {
   const manifest = readJson("../manifest.json");
   const contentSource = readText("../src/content.js");
 
   assert.match(contentSource, /await writeTextToClipboard\(jsonText\)/);
-  assert.ok(
+  assert.equal(
     manifest.permissions.includes("clipboardWrite"),
-    "copying generated JSON after asynchronous export work requires clipboardWrite"
+    false,
+    "clipboard copy uses the page Clipboard API and execCommand fallback"
   );
 });
