@@ -541,7 +541,7 @@ button:focus-visible,
 }
 
 .custom-export-banner:hover {
-  transform: translateY(-1px);
+  transform: none;
   border-color: rgba(18, 184, 134, 0.44);
   box-shadow:
     0 20px 42px rgba(6, 78, 59, 0.25),
@@ -854,6 +854,14 @@ button:focus-visible,
   justify-content: space-between;
   gap: 8px;
   margin: 0 1px 7px;
+  position: relative;
+}
+
+.notion-sync-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
 }
 
 .notion-sync-heading h3 { margin: 0; color: var(--text-dark); font-size: 12.5px; line-height: 1.2; }
@@ -2861,6 +2869,18 @@ input:checked + .slider::before {
 .cv-help-tooltip:focus-visible .cv-tooltip-text {
   visibility: visible;
   opacity: 1;
+}
+
+.notion-help-tooltip {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+}
+
+.notion-help-tooltip .cv-help-icon {
+  width: 14px;
+  height: 14px;
+  font-size: 10px;
 }
 
 

@@ -1553,6 +1553,9 @@
   "obsidian_settings_choose_vault_step_desc": {
     "message": "Pick the Vault root folder (the one containing .obsidian), not a subfolder inside it."
   },
+  "notion_data_disclosure": {
+    "message": "When you sync, the selected conversation and included images are sent directly to your connected Notion workspace. $1 does not receive or store this content."
+  },
   "notion_share_database_hint": {
     "message": "Share a Notion Database with the ChatVault connection (open a Database → ⋯ → Connections → add ChatVault), then reopen this popup."
   }

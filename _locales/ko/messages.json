@@ -1508,6 +1508,9 @@
   "obsidian_settings_choose_vault_step_desc": {
     "message": "Vault 루트 폴더(.obsidian이 포함된 폴더)를 선택하세요. 내부의 하위 폴더가 아닙니다."
   },
+  "notion_data_disclosure": {
+    "message": "동기화하면 선택한 대화와 포함된 이미지가 연결된 Notion 워크스페이스로 직접 전송됩니다. $1는 이 콘텐츠를 수신하거나 저장하지 않습니다."
+  },
   "notion_share_database_hint": {
     "message": "ChatVault 연결에 Notion Database를 공유하세요(Database 열기 → ⋯ → 연결 → ChatVault 추가). 그런 다음 이 팝업을 다시 여세요."
   }

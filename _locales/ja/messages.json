@@ -1508,6 +1508,9 @@
   "obsidian_settings_choose_vault_step_desc": {
     "message": "Vaultのルートフォルダー（.obsidian を含むもの）を選択してください。内部のサブフォルダーではありません。"
   },
+  "notion_data_disclosure": {
+    "message": "同期すると、選択した会話と含まれる画像が接続済みの Notion ワークスペースへ直接送信されます。$1 はこの内容を受信・保存しません。"
+  },
   "notion_share_database_hint": {
     "message": "Notion で ChatVault 接続に Database を共有してください（Database を開く → ⋯ → 接続 → ChatVault を追加）。その後、このポップアップを再度開いてください。"
   }

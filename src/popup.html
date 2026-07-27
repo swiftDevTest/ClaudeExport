@@ -177,7 +177,13 @@
           <div class="notion-sync-card" id="notion-sync-section" style="display: none;">
             <div class="notion-section">
               <div class="notion-sync-heading">
-                <h3>Save to Notion</h3>
+                <div class="notion-sync-title">
+                  <h3>Save to Notion</h3>
+                  <button type="button" class="cv-help-tooltip notion-help-tooltip" id="notion-help-tooltip" aria-label="Notion sync data disclosure">
+                    <span class="cv-help-icon">?</span>
+                    <span class="cv-tooltip-text" id="notion-tooltip-text">When you sync, the selected conversation and included images are sent directly to your connected Notion workspace. Claude Export does not receive or store this content.</span>
+                  </button>
+                </div>
                 <p id="notion-connection-status">正在检查连接</p>
               </div>
               <!-- 未绑定状态 -->

@@ -1553,6 +1553,9 @@
   "obsidian_settings_choose_vault_step_desc": {
     "message": "选择包含 .obsidian 的 Vault 根目录，不要选它内部的子文件夹。"
   },
+  "notion_data_disclosure": {
+    "message": "同步时，所选对话及包含的图片会直接发送至您连接的 Notion 工作区；$1 不会接收或存储这些内容。"
+  },
   "notion_share_database_hint": {
     "message": "请在 Notion 中向 ChatVault 连接授权一个 Database（打开 Database → ⋯ → 连接 → 添加 ChatVault），然后重新打开此弹窗。"
   }

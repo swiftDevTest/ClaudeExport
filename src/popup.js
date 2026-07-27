@@ -192,6 +192,15 @@
     setText('#ui-language-select option[value="system"]', "popup_language_system", "System Default");
     var notionHeading = document.querySelector(".notion-sync-heading h3");
     if (notionHeading) notionHeading.textContent = obsidianText("Save to Notion", "保存到 Notion");
+    var notionDisclosure = t(
+      "notion_data_disclosure",
+      "When you sync, the selected conversation and included images are sent directly to your connected Notion workspace. $1 does not receive or store this content.",
+      productName
+    );
+    var notionTooltipText = document.getElementById("notion-tooltip-text");
+    if (notionTooltipText) notionTooltipText.textContent = notionDisclosure;
+    var notionHelpTooltip = document.getElementById("notion-help-tooltip");
+    if (notionHelpTooltip) notionHelpTooltip.setAttribute("aria-label", notionDisclosure);
     setText("#btn-oauth-notion", "notion_connect", obsidianText("Connect Notion", "连接 Notion"));
     setText("#btn-connect-notion-settings", "notion_connect", obsidianText("Connect Notion", "连接 Notion"));
     var notionSave = document.getElementById("btn-sync-notion-oauth");

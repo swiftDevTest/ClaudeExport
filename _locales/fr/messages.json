@@ -1508,6 +1508,9 @@
   "obsidian_settings_choose_vault_step_desc": {
     "message": "Choisissez le dossier racine du Vault (celui qui contient .obsidian), pas un sous-dossier à l'intérieur."
   },
+  "notion_data_disclosure": {
+    "message": "Lors de la synchronisation, la conversation sélectionnée et les images incluses sont envoyées directement à votre espace Notion connecté. $1 ne reçoit ni ne stocke ce contenu."
+  },
   "notion_share_database_hint": {
     "message": "Partagez une base de données Notion avec la connexion ChatVault (ouvrez une base de données → ⋯ → Connexions → ajouter ChatVault), puis rouvrez ce popup."
   }
