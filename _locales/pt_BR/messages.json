@@ -1513,5 +1513,95 @@
   },
   "notion_share_database_hint": {
     "message": "Compartilhe um Database do Notion com a conexão do ChatVault (abra um Database → ⋯ → Conexões → adicionar ChatVault), depois reabra este popup."
+  },
+  "notion_sync_capturing_media": {
+    "message": "Capturando mídia de conversação..."
+  },
+  "notion_sync_writing": {
+    "message": "Escrevendo conversa para Notion..."
+  },
+  "obsidian_processing_media": {
+    "message": "Proprocessando imagens"
+  },
+  "obsidian_rendering": {
+    "message": "Edifício Markdown"
+  },
+  "content_export_fail_image_limit_reason": {
+    "message": "A exportação de imagem excede o limite de canvas do navegador."
+  },
+  "content_export_fail_image_limit_fix": {
+    "message": "Tente a exportação em PDF — ele pagina conteúdo longo automaticamente."
+  },
+  "content_export_fail_save_reason": {
+    "message": "O navegador bloqueou a caixa de diálogo de salvar arquivo."
+  },
+  "content_export_fail_save_fix": {
+    "message": "Verifique as permissões de download do navegador para este site e tente novamente."
+  },
+  "content_export_fail_blob_reason": {
+    "message": "O documento não pôde ser construído localmente."
+  },
+  "content_export_fail_blob_fix": {
+    "message": "Tente novamente ou use um formato de exportação diferente."
+  },
+  "content_export_fail_network_reason": {
+    "message": "Ocorreu um erro de rede ou de origem cruzada ao buscar dados."
+  },
+  "content_export_fail_network_fix": {
+    "message": "Atualize a página e tente novamente. Para exportação de imagens, PDF é mais resiliente."
+  },
+  "content_export_fail_memory_reason": {
+    "message": "O navegador ficou sem memória durante a exportação."
+  },
+  "content_export_fail_memory_fix": {
+    "message": "Tente o formato PDF ou Markdown, que usam menos memória."
+  },
+  "content_export_fail_timeout_reason": {
+    "message": "A exportação atingiu o tempo limite."
+  },
+  "content_export_fail_timeout_fix": {
+    "message": "Tente novamente ou reduza o número de mensagens a exportar."
+  },
+  "content_export_fail_unknown_reason": {
+    "message": "Ocorreu um erro inesperado durante a exportação."
+  },
+  "content_export_fail_unknown_fix": {
+    "message": "Atualize a página e tente novamente. Se o problema persistir, tente outro formato."
+  },
+  "content_export_fix_retry": {
+    "message": "Repetir"
+  },
+  "content_export_fix_refresh": {
+    "message": "Atualizar e Repetir"
+  },
+  "content_export_fix_change_md": {
+    "message": "Exportar como Markdown"
+  },
+  "content_export_result_failed": {
+    "message": "Falha na exportação"
+  },
+  "content_batch_partial_title": {
+    "message": "Exportação em lote concluída com avisos"
+  },
+  "content_batch_export_complete": {
+    "message": "Exportação em lote concluída"
+  },
+  "content_export_complete_title": {
+    "message": "Exportação concluída"
+  },
+  "content_export_message_count": {
+    "message": "$1 mensagens"
+  },
+  "content_batch_success_failure": {
+    "message": "Sucesso: $1, falha: $2"
+  },
+  "content_batch_item_failed": {
+    "message": "Falha"
+  },
+  "content_batch_item_saved": {
+    "message": "Salvo"
+  },
+  "content_export_re_export_as": {
+    "message": "Exportar novamente como"
   }
 }

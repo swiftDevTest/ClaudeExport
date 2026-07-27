@@ -1558,5 +1558,119 @@
   },
   "notion_share_database_hint": {
     "message": "请在 Notion 中向 ChatVault 连接授权一个 Database（打开 Database → ⋯ → 连接 → 添加 ChatVault），然后重新打开此弹窗。"
+  },
+  "notion_sync_capturing_media": {
+    "message": "正在采集会话图片..."
+  },
+  "notion_sync_capturing_media_many": {
+    "message": "正在采集 $1 张图片（$2/$3），可能需要一点时间..."
+  },
+  "notion_sync_capturing_media_progress": {
+    "message": "正在采集图片（$1/$2）..."
+  },
+  "notion_sync_writing": {
+    "message": "正在将会话写入 Notion..."
+  },
+  "notion_sync_writing_large": {
+    "message": "正在将 $1 条消息写入 Notion（内容较多，请稍候）..."
+  },
+  "notion_sync_writing_count": {
+    "message": "正在将 $1 条消息写入 Notion..."
+  },
+  "obsidian_processing_media": {
+    "message": "处理图片"
+  },
+  "obsidian_processing_media_many": {
+    "message": "正在处理 $1 张图片（$2/$3），请稍候..."
+  },
+  "obsidian_processing_media_progress": {
+    "message": "正在处理图片（$1/$2）..."
+  },
+  "obsidian_rendering": {
+    "message": "生成 Markdown"
+  },
+  "obsidian_rendering_large": {
+    "message": "正在为 $1 条消息生成 Markdown（内容较多，请稍候）..."
+  },
+  "obsidian_rendering_count": {
+    "message": "正在为 $1 条消息生成 Markdown..."
+  },
+  "content_export_fail_image_limit_reason": {
+    "message": "图片导出超出浏览器画布限制。"
+  },
+  "content_export_fail_image_limit_fix": {
+    "message": "建议改用 PDF 导出，可自动分页处理长内容。"
+  },
+  "content_export_fail_save_reason": {
+    "message": "浏览器拦截了文件保存对话框。"
+  },
+  "content_export_fail_save_fix": {
+    "message": "请检查浏览器对此站点的下载权限，然后重试。"
+  },
+  "content_export_fail_blob_reason": {
+    "message": "无法在本地构建文档。"
+  },
+  "content_export_fail_blob_fix": {
+    "message": "请重试，或尝试其他导出格式。"
+  },
+  "content_export_fail_network_reason": {
+    "message": "获取数据时发生网络或跨域错误。"
+  },
+  "content_export_fail_network_fix": {
+    "message": "请刷新页面后重试。图片导出建议改用 PDF，兼容性更好。"
+  },
+  "content_export_fail_memory_reason": {
+    "message": "导出过程中浏览器内存不足。"
+  },
+  "content_export_fail_memory_fix": {
+    "message": "建议改用 PDF 或 Markdown 格式以减少内存占用。"
+  },
+  "content_export_fail_timeout_reason": {
+    "message": "导出已超时。"
+  },
+  "content_export_fail_timeout_fix": {
+    "message": "请重试，或减少导出的消息数量。"
+  },
+  "content_export_fail_unknown_reason": {
+    "message": "导出过程中发生未知错误。"
+  },
+  "content_export_fail_unknown_fix": {
+    "message": "请刷新页面后重试。若问题持续，请尝试其他导出格式。"
+  },
+  "content_export_fix_retry": {
+    "message": "重试"
+  },
+  "content_export_fix_refresh": {
+    "message": "刷新并重试"
+  },
+  "content_export_fix_change_md": {
+    "message": "改用 Markdown"
+  },
+  "content_export_result_failed": {
+    "message": "导出失败"
+  },
+  "content_batch_partial_title": {
+    "message": "批量导出完成，但有部分失败"
+  },
+  "content_batch_export_complete": {
+    "message": "批量导出完成"
+  },
+  "content_export_complete_title": {
+    "message": "导出完成"
+  },
+  "content_export_message_count": {
+    "message": "$1 条消息"
+  },
+  "content_batch_success_failure": {
+    "message": "成功：$1，失败：$2"
+  },
+  "content_batch_item_failed": {
+    "message": "失败"
+  },
+  "content_batch_item_saved": {
+    "message": "已保存"
+  },
+  "content_export_re_export_as": {
+    "message": "快速再导出为"
   }
 }

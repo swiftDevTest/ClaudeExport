@@ -525,6 +525,17 @@ try {
     return payload;
   }
 
+  function getInternalGoogleClientId() {
+    // 安全策略：clientId 必须来自扩展内置的 supabase-config.js，
+    // 拒绝任何来自消息 payload 的 clientId，避免被恶意页面篡改指向攻击者的 Google 应用。
+    const config = (globalThis.CHATVAULT_SUPABASE_CONFIG) || {};
+    const clientId = String(config.googleClientId || "").trim();
+    if (!clientId || clientId === "YOUR_GOOGLE_CLIENT_ID") {
+      return "";
+    }
+    return clientId;
+  }
+
   function startGoogleOAuthSession(clientId) {
     return new Promise(async (resolve, reject) => {
       try {
@@ -1082,7 +1093,8 @@ try {
       if (rejectUntrustedSender(sender, sendResponse)) return false;
       (async () => {
         try {
-          const result = await startGoogleOAuthSession(message.clientId);
+          const normalizedClientId = getInternalGoogleClientId();
+          const result = await startGoogleOAuthSession(normalizedClientId);
           sendResponse({ ok: true, session: result.session, redirectUri: result.redirectUri });
         } catch (err) {
           sendResponse({ ok: false, error: err.message });

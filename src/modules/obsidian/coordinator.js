@@ -97,6 +97,11 @@ function randomId(prefix) {
 }
 
 async function sha256Text(value) {
+  // crypto.subtle 仅在安全上下文（HTTPS/localhost）可用，非安全上下文下回退到非加密哈希，
+  // 避免 createObsidianSyncPaths 整体抛错导致 Obsidian 同步前置失败。
+  if (!globalThis.crypto || !globalThis.crypto.subtle) {
+    return `${Date.now().toString(16)}_${Math.random().toString(16).slice(2)}`;
+  }
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(value || "")));
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }

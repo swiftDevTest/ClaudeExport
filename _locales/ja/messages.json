@@ -1513,5 +1513,95 @@
   },
   "notion_share_database_hint": {
     "message": "Notion で ChatVault 接続に Database を共有してください（Database を開く → ⋯ → 接続 → ChatVault を追加）。その後、このポップアップを再度開いてください。"
+  },
+  "notion_sync_capturing_media": {
+    "message": "会話メディアをキャプチャしています..."
+  },
+  "notion_sync_writing": {
+    "message": "会話を Notion に書き込んでいます..."
+  },
+  "obsidian_processing_media": {
+    "message": "Pro画像を処理しています"
+  },
+  "obsidian_rendering": {
+    "message": "建物 Markdown"
+  },
+  "content_export_fail_image_limit_reason": {
+    "message": "画像エクスポートがブラウザのキャンバス制限を超えています。"
+  },
+  "content_export_fail_image_limit_fix": {
+    "message": "PDF エクスポートをお試しください — 長いコンテンツを自動的にページ分割します。"
+  },
+  "content_export_fail_save_reason": {
+    "message": "ブラウザがファイル保存ダイアログをブロックしました。"
+  },
+  "content_export_fail_save_fix": {
+    "message": "このサイトのブラウザダウンロード権限を確認してから再試行してください。"
+  },
+  "content_export_fail_blob_reason": {
+    "message": "ドキュメントをローカルで構築できませんでした。"
+  },
+  "content_export_fail_blob_fix": {
+    "message": "再試行するか、別のエクスポート形式をお試しください。"
+  },
+  "content_export_fail_network_reason": {
+    "message": "データの取得中にネットワークまたはクロスオリジンエラーが発生しました。"
+  },
+  "content_export_fail_network_fix": {
+    "message": "ページを更新して再試行してください。画像エクスポートの場合、PDF の方が耐性があります。"
+  },
+  "content_export_fail_memory_reason": {
+    "message": "エクスポート中にブラウザのメモリが不足しました。"
+  },
+  "content_export_fail_memory_fix": {
+    "message": "メモリ使用量の少ない PDF または Markdown 形式をお試しください。"
+  },
+  "content_export_fail_timeout_reason": {
+    "message": "エクスポートがタイムアウトしました。"
+  },
+  "content_export_fail_timeout_fix": {
+    "message": "再試行するか、エクスポートするメッセージ数を減らしてください。"
+  },
+  "content_export_fail_unknown_reason": {
+    "message": "エクスポート中に予期しないエラーが発生しました。"
+  },
+  "content_export_fail_unknown_fix": {
+    "message": "ページを更新して再試行してください。問題が続く場合は、別の形式をお試しください。"
+  },
+  "content_export_fix_retry": {
+    "message": "再試行"
+  },
+  "content_export_fix_refresh": {
+    "message": "更新して再試行"
+  },
+  "content_export_fix_change_md": {
+    "message": "Markdown でエクスポート"
+  },
+  "content_export_result_failed": {
+    "message": "エクスポートに失敗しました"
+  },
+  "content_batch_partial_title": {
+    "message": "一括エクスポートは警告付きで完了しました"
+  },
+  "content_batch_export_complete": {
+    "message": "一括エクスポート完了"
+  },
+  "content_export_complete_title": {
+    "message": "エクスポート完了"
+  },
+  "content_export_message_count": {
+    "message": "$1 件のメッセージ"
+  },
+  "content_batch_success_failure": {
+    "message": "成功: $1、失敗: $2"
+  },
+  "content_batch_item_failed": {
+    "message": "失敗"
+  },
+  "content_batch_item_saved": {
+    "message": "保存済み"
+  },
+  "content_export_re_export_as": {
+    "message": "別形式で再エクスポート"
   }
 }

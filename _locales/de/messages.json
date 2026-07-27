@@ -1513,5 +1513,95 @@
   },
   "notion_share_database_hint": {
     "message": "Teilen Sie eine Notion-Datenbank mit der ChatVault-Verbindung (Datenbank öffnen → ⋯ → Verbindungen → ChatVault hinzufügen), und öffnen Sie dieses Popup erneut."
+  },
+  "notion_sync_capturing_media": {
+    "message": "Konversationsmedien werden erfasst..."
+  },
+  "notion_sync_writing": {
+    "message": "Schreibkonversation an Notion..."
+  },
+  "obsidian_processing_media": {
+    "message": "ProBilder werden verarbeitet"
+  },
+  "obsidian_rendering": {
+    "message": "Gebäude Markdown"
+  },
+  "content_export_fail_image_limit_reason": {
+    "message": "Der Bildexport überschreitet das Browser-Canvas-Limit."
+  },
+  "content_export_fail_image_limit_fix": {
+    "message": "PDF-Export versuchen — er paginiert lange Inhalte automatisch."
+  },
+  "content_export_fail_save_reason": {
+    "message": "Der Browser hat den Datei-Speichern-Dialog blockiert."
+  },
+  "content_export_fail_save_fix": {
+    "message": "Download-Berechtigungen des Browsers für diese Seite prüfen und wiederholen."
+  },
+  "content_export_fail_blob_reason": {
+    "message": "Das Dokument konnte lokal nicht erstellt werden."
+  },
+  "content_export_fail_blob_fix": {
+    "message": "Wiederholen oder ein anderes Exportformat versuchen."
+  },
+  "content_export_fail_network_reason": {
+    "message": "Beim Abrufen der Daten ist ein Netzwerk- oder Cross-Origin-Fehler aufgetreten."
+  },
+  "content_export_fail_network_fix": {
+    "message": "Seite aktualisieren und wiederholen. Für Bildexporte ist PDF robuster."
+  },
+  "content_export_fail_memory_reason": {
+    "message": "Dem Browser ging beim Export der Speicher aus."
+  },
+  "content_export_fail_memory_fix": {
+    "message": "PDF- oder Markdown-Format versuchen, das weniger Speicher verwendet."
+  },
+  "content_export_fail_timeout_reason": {
+    "message": "Der Export hat ein Zeitlimit überschritten."
+  },
+  "content_export_fail_timeout_fix": {
+    "message": "Wiederholen oder Anzahl der zu exportierenden Nachrichten reduzieren."
+  },
+  "content_export_fail_unknown_reason": {
+    "message": "Beim Export ist ein unerwarteter Fehler aufgetreten."
+  },
+  "content_export_fail_unknown_fix": {
+    "message": "Seite aktualisieren und erneut versuchen. Bei anhaltendem Problem anderes Format versuchen."
+  },
+  "content_export_fix_retry": {
+    "message": "Wiederholen"
+  },
+  "content_export_fix_refresh": {
+    "message": "Aktualisieren & Wiederholen"
+  },
+  "content_export_fix_change_md": {
+    "message": "Als Markdown exportieren"
+  },
+  "content_export_result_failed": {
+    "message": "Export fehlgeschlagen"
+  },
+  "content_batch_partial_title": {
+    "message": "Batch-Export mit Warnungen abgeschlossen"
+  },
+  "content_batch_export_complete": {
+    "message": "Batch-Export abgeschlossen"
+  },
+  "content_export_complete_title": {
+    "message": "Export abgeschlossen"
+  },
+  "content_export_message_count": {
+    "message": "$1 Nachrichten"
+  },
+  "content_batch_success_failure": {
+    "message": "Erfolgreich: $1, fehlgeschlagen: $2"
+  },
+  "content_batch_item_failed": {
+    "message": "Fehlgeschlagen"
+  },
+  "content_batch_item_saved": {
+    "message": "Gespeichert"
+  },
+  "content_export_re_export_as": {
+    "message": "Erneut exportieren als"
   }
 }

@@ -1513,5 +1513,119 @@
   },
   "notion_share_database_hint": {
     "message": "請在 Notion 中向 ChatVault 連接授權一個 Database（打開 Database → ⋯ → 連接 → 添加 ChatVault），然後重新打開此彈窗。"
+  },
+  "notion_sync_capturing_media": {
+    "message": "正在採集會話圖片..."
+  },
+  "notion_sync_capturing_media_many": {
+    "message": "正在擷取 $1 張圖片（$2/$3），可能需要一點時間..."
+  },
+  "notion_sync_capturing_media_progress": {
+    "message": "正在擷取圖片（$1/$2）..."
+  },
+  "notion_sync_writing": {
+    "message": "正在將會話寫入 Notion..."
+  },
+  "notion_sync_writing_large": {
+    "message": "正在將 $1 條訊息寫入 Notion（內容較多，請稍候）..."
+  },
+  "notion_sync_writing_count": {
+    "message": "正在將 $1 條訊息寫入 Notion..."
+  },
+  "obsidian_processing_media": {
+    "message": "處理圖片"
+  },
+  "obsidian_processing_media_many": {
+    "message": "正在處理 $1 張圖片（$2/$3），請稍候..."
+  },
+  "obsidian_processing_media_progress": {
+    "message": "正在處理圖片（$1/$2）..."
+  },
+  "obsidian_rendering": {
+    "message": "生成 Markdown"
+  },
+  "obsidian_rendering_large": {
+    "message": "正在為 $1 條訊息生成 Markdown（內容較多，請稍候）..."
+  },
+  "obsidian_rendering_count": {
+    "message": "正在為 $1 條訊息生成 Markdown..."
+  },
+  "content_export_fail_image_limit_reason": {
+    "message": "圖片匯出超出瀏覽器畫布限制。"
+  },
+  "content_export_fail_image_limit_fix": {
+    "message": "建議改用 PDF 匯出，可自動分頁處理長內容。"
+  },
+  "content_export_fail_save_reason": {
+    "message": "瀏覽器封鎖了檔案儲存對話框。"
+  },
+  "content_export_fail_save_fix": {
+    "message": "請檢查瀏覽器對此網站的下載權限，然後重試。"
+  },
+  "content_export_fail_blob_reason": {
+    "message": "無法在本機建構文件。"
+  },
+  "content_export_fail_blob_fix": {
+    "message": "請重試，或嘗試其他匯出格式。"
+  },
+  "content_export_fail_network_reason": {
+    "message": "取得資料時發生網路或跨域錯誤。"
+  },
+  "content_export_fail_network_fix": {
+    "message": "請重新整理頁面後重試。圖片匯出建議改用 PDF，相容性更好。"
+  },
+  "content_export_fail_memory_reason": {
+    "message": "匯出過程中瀏覽器記憶體不足。"
+  },
+  "content_export_fail_memory_fix": {
+    "message": "建議改用 PDF 或 Markdown 格式以減少記憶體佔用。"
+  },
+  "content_export_fail_timeout_reason": {
+    "message": "匯出已逾時。"
+  },
+  "content_export_fail_timeout_fix": {
+    "message": "請重試，或減少匯出的訊息數量。"
+  },
+  "content_export_fail_unknown_reason": {
+    "message": "匯出過程中發生未知錯誤。"
+  },
+  "content_export_fail_unknown_fix": {
+    "message": "請重新整理頁面後重試。若問題持續，請嘗試其他匯出格式。"
+  },
+  "content_export_fix_retry": {
+    "message": "重試"
+  },
+  "content_export_fix_refresh": {
+    "message": "重新整理並重試"
+  },
+  "content_export_fix_change_md": {
+    "message": "改用 Markdown"
+  },
+  "content_export_result_failed": {
+    "message": "匯出失敗"
+  },
+  "content_batch_partial_title": {
+    "message": "批量匯出完成，但有部分失敗"
+  },
+  "content_batch_export_complete": {
+    "message": "批量匯出完成"
+  },
+  "content_export_complete_title": {
+    "message": "匯出完成"
+  },
+  "content_export_message_count": {
+    "message": "$1 則訊息"
+  },
+  "content_batch_success_failure": {
+    "message": "成功：$1，失敗：$2"
+  },
+  "content_batch_item_failed": {
+    "message": "失敗"
+  },
+  "content_batch_item_saved": {
+    "message": "已儲存"
+  },
+  "content_export_re_export_as": {
+    "message": "快速再匯出為"
   }
 }

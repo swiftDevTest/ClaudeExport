@@ -1558,5 +1558,119 @@
   },
   "notion_share_database_hint": {
     "message": "Share a Notion Database with the ChatVault connection (open a Database → ⋯ → Connections → add ChatVault), then reopen this popup."
+  },
+  "notion_sync_capturing_media": {
+    "message": "Capturing conversation media..."
+  },
+  "notion_sync_capturing_media_many": {
+    "message": "Capturing $1 images ($2/$3), this may take a moment..."
+  },
+  "notion_sync_capturing_media_progress": {
+    "message": "Capturing images ($1/$2)..."
+  },
+  "notion_sync_writing": {
+    "message": "Writing conversation to Notion..."
+  },
+  "notion_sync_writing_large": {
+    "message": "Writing $1 messages to Notion (large conversation, please wait)..."
+  },
+  "notion_sync_writing_count": {
+    "message": "Writing $1 messages to Notion..."
+  },
+  "obsidian_processing_media": {
+    "message": "Processing images"
+  },
+  "obsidian_processing_media_many": {
+    "message": "Processing $1 images ($2/$3), this may take a moment..."
+  },
+  "obsidian_processing_media_progress": {
+    "message": "Processing images ($1/$2)..."
+  },
+  "obsidian_rendering": {
+    "message": "Building Markdown"
+  },
+  "obsidian_rendering_large": {
+    "message": "Building Markdown for $1 messages (large conversation, please wait)..."
+  },
+  "obsidian_rendering_count": {
+    "message": "Building Markdown for $1 messages..."
+  },
+  "content_export_fail_image_limit_reason": {
+    "message": "The image export exceeds the browser canvas limit."
+  },
+  "content_export_fail_image_limit_fix": {
+    "message": "Try PDF export — it paginates long content automatically."
+  },
+  "content_export_fail_save_reason": {
+    "message": "The browser blocked the file save dialog."
+  },
+  "content_export_fail_save_fix": {
+    "message": "Check your browser's download permissions for this site, then retry."
+  },
+  "content_export_fail_blob_reason": {
+    "message": "The document could not be built locally."
+  },
+  "content_export_fail_blob_fix": {
+    "message": "Retry, or try a different export format."
+  },
+  "content_export_fail_network_reason": {
+    "message": "A network or cross-origin error occurred while fetching data."
+  },
+  "content_export_fail_network_fix": {
+    "message": "Refresh the page and retry. For image exports, PDF is more resilient."
+  },
+  "content_export_fail_memory_reason": {
+    "message": "The browser ran out of memory during export."
+  },
+  "content_export_fail_memory_fix": {
+    "message": "Try PDF or Markdown format, which use less memory."
+  },
+  "content_export_fail_timeout_reason": {
+    "message": "The export timed out."
+  },
+  "content_export_fail_timeout_fix": {
+    "message": "Retry, or reduce the number of messages to export."
+  },
+  "content_export_fail_unknown_reason": {
+    "message": "An unexpected error occurred during export."
+  },
+  "content_export_fail_unknown_fix": {
+    "message": "Refresh the page and try again. If the issue persists, try a different format."
+  },
+  "content_export_fix_retry": {
+    "message": "Retry"
+  },
+  "content_export_fix_refresh": {
+    "message": "Refresh & Retry"
+  },
+  "content_export_fix_change_md": {
+    "message": "Export as Markdown"
+  },
+  "content_export_result_failed": {
+    "message": "Export failed"
+  },
+  "content_batch_partial_title": {
+    "message": "Batch export completed with warnings"
+  },
+  "content_batch_export_complete": {
+    "message": "Batch export complete"
+  },
+  "content_export_complete_title": {
+    "message": "Export complete"
+  },
+  "content_export_message_count": {
+    "message": "$1 messages"
+  },
+  "content_batch_success_failure": {
+    "message": "Success: $1, failed: $2"
+  },
+  "content_batch_item_failed": {
+    "message": "Failed"
+  },
+  "content_batch_item_saved": {
+    "message": "Saved"
+  },
+  "content_export_re_export_as": {
+    "message": "Re-export as"
   }
 }

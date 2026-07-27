@@ -65,6 +65,8 @@
   let activeNotionJobId = "";
   let lastObsidianSuccessDialogId = "";
   let lastBatchSyncResultDialogId = "";
+  let activeNotionJobMessageCount = 0;
+  let currentFailureFixHandler = null;
   let obsidianCoordinatorPromise = null;
   let activeObsidianSingleSync = false;
   let subscribePanelRequestAt = 0;
@@ -148,6 +150,81 @@
 
   function tx(key, englishText, chineseText, ...args) {
     return t(key, isChineseUi() ? chineseText : englishText, ...args);
+  }
+
+  // 根据内容动态生成同步进度文案，提升导出体验（不改动核心同步逻辑）
+  function buildNotionMediaProgressMessage(completed, total) {
+    const safeTotal = Math.max(0, Math.floor(Number(total) || 0));
+    const safeCompleted = Math.max(0, Math.floor(Number(completed) || 0));
+    if (safeTotal === 0) {
+      return tx("notion_sync_capturing_media", "Capturing conversation media...", "正在采集会话图片...");
+    }
+    if (safeTotal > 5) {
+      return tx("notion_sync_capturing_media_many",
+        "Capturing $1 images ($2/$3), this may take a moment...",
+        "正在采集 $1 张图片（$2/$3），可能需要一点时间...",
+        safeTotal, safeCompleted, safeTotal);
+    }
+    return tx("notion_sync_capturing_media_progress",
+      "Capturing images ($1/$2)...",
+      "正在采集图片（$1/$2）...",
+      safeCompleted, safeTotal);
+  }
+
+  function buildNotionWritingMessage(messageCount) {
+    const count = Math.max(0, Math.floor(Number(messageCount) || 0));
+    if (count === 0) {
+      return tx("notion_sync_writing", "Writing conversation to Notion...", "正在将会话写入 Notion...");
+    }
+    if (count > 30) {
+      return tx("notion_sync_writing_large",
+        "Writing $1 messages to Notion (large conversation, please wait)...",
+        "正在将 $1 条消息写入 Notion（内容较多，请稍候）...",
+        count);
+    }
+    return tx("notion_sync_writing_count",
+      "Writing $1 messages to Notion...",
+      "正在将 $1 条消息写入 Notion...",
+      count);
+  }
+
+  function buildObsidianMediaProgressMessage(detail) {
+    const match = String(detail || "").match(/(\d+)\s*\/\s*(\d+)/);
+    if (!match) {
+      return tx("obsidian_processing_media", "Processing images...", "正在处理图片...");
+    }
+    const completed = Math.max(0, Number(match[1] || 0));
+    const total = Math.max(0, Number(match[2] || 0));
+    if (total === 0) {
+      return tx("obsidian_processing_media", "Processing images...", "正在处理图片...");
+    }
+    if (total > 5) {
+      return tx("obsidian_processing_media_many",
+        "Processing $1 images ($2/$3), this may take a moment...",
+        "正在处理 $1 张图片（$2/$3），请稍候...",
+        total, completed, total);
+    }
+    return tx("obsidian_processing_media_progress",
+      "Processing images ($1/$2)...",
+      "正在处理图片（$1/$2）...",
+      completed, total);
+  }
+
+  function buildObsidianRenderMessage(messageCount) {
+    const count = Math.max(0, Math.floor(Number(messageCount) || 0));
+    if (count === 0) {
+      return tx("obsidian_rendering", "Building Obsidian Markdown...", "正在生成 Obsidian Markdown...");
+    }
+    if (count > 30) {
+      return tx("obsidian_rendering_large",
+        "Building Markdown for $1 messages (large conversation, please wait)...",
+        "正在为 $1 条消息生成 Markdown（内容较多，请稍候）...",
+        count);
+    }
+    return tx("obsidian_rendering_count",
+      "Building Markdown for $1 messages...",
+      "正在为 $1 条消息生成 Markdown...",
+      count);
   }
 
   function getBatchClearLabel() {
@@ -995,9 +1072,80 @@
   let batchNotionJobs = new Map();
   let batchNotionResults = new Map();
   let batchNotionBatchId = "";
+  const NOTION_BATCH_MEDIA_THROTTLE_MS = 120;
+  const notionBatchMediaThrottle = {
+    _lastFlushAt: new Map(),
+    _pendingTimer: new Map(),
+    shouldDefer() {
+      const now = Date.now();
+      const last = Math.max(0, ...Array.from(this._lastFlushAt.values()));
+      return now - last < NOTION_BATCH_MEDIA_THROTTLE_MS;
+    },
+    markFlushed(rowIndex) {
+      this._lastFlushAt.set(rowIndex, Date.now());
+    },
+    schedule(rowIndex, fn) {
+      const oldTimer = this._pendingTimer.get(rowIndex);
+      if (oldTimer) window.clearTimeout(oldTimer);
+      const timer = window.setTimeout(() => {
+        this._pendingTimer.delete(rowIndex);
+        this._lastFlushAt.set(rowIndex, Date.now());
+        try { fn(); } catch (e) { /* 节流回调失败不影响同步流程 */ }
+      }, NOTION_BATCH_MEDIA_THROTTLE_MS);
+      this._pendingTimer.set(rowIndex, timer);
+    },
+    clearRow(rowIndex) {
+      const oldTimer = this._pendingTimer.get(rowIndex);
+      if (oldTimer) {
+        window.clearTimeout(oldTimer);
+        this._pendingTimer.delete(rowIndex);
+      }
+      this._lastFlushAt.delete(rowIndex);
+    },
+    reset() {
+      this._lastFlushAt.clear();
+      this._pendingTimer.forEach((t) => window.clearTimeout(t));
+      this._pendingTimer.clear();
+    }
+  };
   let batchObsidianResults = new Map();
   let batchObsidianBatchId = "";
   let batchObsidianStatus = { connected: false, permission: "missing", activeJob: null };
+  const obsidianBatchMediaThrottle = {
+    _lastFlushAt: new Map(),
+    _pendingTimer: new Map(),
+    shouldDefer() {
+      const now = Date.now();
+      const last = Math.max(0, ...Array.from(this._lastFlushAt.values()));
+      return now - last < NOTION_BATCH_MEDIA_THROTTLE_MS;
+    },
+    markFlushed(rowIndex) {
+      this._lastFlushAt.set(rowIndex, Date.now());
+    },
+    schedule(rowIndex, fn) {
+      const oldTimer = this._pendingTimer.get(rowIndex);
+      if (oldTimer) window.clearTimeout(oldTimer);
+      const timer = window.setTimeout(() => {
+        this._pendingTimer.delete(rowIndex);
+        this._lastFlushAt.set(rowIndex, Date.now());
+        try { fn(); } catch (e) { /* 节流回调失败不影响同步流程 */ }
+      }, NOTION_BATCH_MEDIA_THROTTLE_MS);
+      this._pendingTimer.set(rowIndex, timer);
+    },
+    clearRow(rowIndex) {
+      const oldTimer = this._pendingTimer.get(rowIndex);
+      if (oldTimer) {
+        window.clearTimeout(oldTimer);
+        this._pendingTimer.delete(rowIndex);
+      }
+      this._lastFlushAt.delete(rowIndex);
+    },
+    reset() {
+      this._lastFlushAt.clear();
+      this._pendingTimer.forEach((t) => window.clearTimeout(t));
+      this._pendingTimer.clear();
+    }
+  };
   let displayedConversationsCount = 0;
   const batchPageSize = 20;
   const historyPageSize = 20;
@@ -1645,11 +1793,20 @@
       <div class="cv-batch-result-overlay" id="cv-batch-result-overlay" aria-hidden="true">
         <div class="cv-batch-result-card" role="dialog" aria-modal="true" aria-labelledby="cv-batch-result-title">
           <button class="cv-batch-result-close" id="cv-batch-result-close" type="button" aria-label="${getBatchCloseLabel()}">×</button>
+          <div class="cv-batch-result-confetti" id="cv-batch-result-confetti" aria-hidden="true" hidden>
+            <span>✦</span><span>●</span><strong>🎉</strong><span>●</span><span>✦</span>
+          </div>
           <div class="cv-batch-result-mark" id="cv-batch-result-mark" aria-hidden="true">✓</div>
           <h2 id="cv-batch-result-title">${t("batch_export_success", isChineseUi() ? "批量同步完成" : "Batch sync complete")}</h2>
           <p id="cv-batch-result-description"></p>
+          <div class="cv-export-result-meta" id="cv-export-result-meta" hidden></div>
+          <div class="cv-export-failure-info" id="cv-export-failure-info" hidden>
+            <p class="cv-export-failure-reason" id="cv-export-failure-reason"></p>
+            <p class="cv-export-failure-suggestion" id="cv-export-failure-suggestion"></p>
+          </div>
           <div class="cv-batch-result-items" id="cv-batch-result-items"></div>
           <div class="cv-batch-result-actions">
+            <button type="button" id="cv-export-failure-fix" hidden></button>
             <button type="button" id="cv-batch-result-done">${tx("content_btn_done", "Done", "完成")}</button>
           </div>
         </div>
@@ -3868,6 +4025,19 @@
       if (failures.length) {
         showPageToast(tx("content_batch_partial_failure", "Some chats failed to export: $1", "部分会话导出失败：$1", failures.length));
       }
+      // 统一导出完成 UI：批量本地导出展示结果对话框（与批量同步、单次导出风格一致）
+      const batchResultStatus = failures.length > 0 && savedCount > 0 ? "partial" : (savedCount > 0 ? "succeeded" : "failed");
+      const batchResultItems = [
+        ...preparedFiles.map((f) => ({ title: f.title || f.filename, status: "saved" })),
+        ...failures.map((f) => ({ title: f.title || f.filename || "", status: "failed" }))
+      ];
+      showExportResultDialog({
+        kind: "batch_local",
+        status: batchResultStatus,
+        successCount: savedCount,
+        failureCount: failures.length,
+        items: batchResultItems
+      });
       globalThis.CHATVAULT_ANALYTICS?.track("export_success", {
         platform: getCurrentPlatformId() || "claude",
         properties: { format, source: "batch_export", count: preparedFiles.length }
@@ -3902,6 +4072,7 @@
     batchNotionResults = new Map();
     batchNotionBatchId = `notion_batch_${Date.now()}_${Math.random().toString(16).slice(2)}`;
     batchActiveItems = selectedItems.slice();
+    notionBatchMediaThrottle.reset();
     globalThis.CHATVAULT_IS_BATCH_EXPORT = true;
     setBatchExportingUi(true);
     closeBatchModal();
@@ -3934,6 +4105,7 @@
         let itemJobId = "";
         let itemJobReleased = false;
         if (signal.aborted) throw new DOMException("Sync cancelled.", "AbortError");
+        notionBatchMediaThrottle.clearRow(rowIndex);
         updateNotionBatchRow(rowIndex, "preparing", { progress: 0.05 });
         batchNotionResults.set(rowIndex, { index: rowIndex, item, status: "preparing", progress: 0.05 });
         updateNotionBatchSummary();
@@ -3969,10 +4141,23 @@
             signal,
             onMediaProgress: (info) => {
               const total = Math.max(1, Number(info?.total || 0));
-              const progress = 0.08 + Math.min(0.17, Number(info?.completed || 0) / total * 0.17);
-              batchNotionResults.set(rowIndex, { index: rowIndex, item, status: "preparing", progress });
-              updateNotionBatchRow(rowIndex, "preparing", { progress });
-              updateNotionBatchSummary();
+              const completedNum = Number(info?.completed || 0);
+              const progress = 0.08 + Math.min(0.17, completedNum / total * 0.17);
+              const detail = buildNotionMediaProgressMessage(completedNum, total);
+              batchNotionResults.set(rowIndex, { index: rowIndex, item, status: "preparing", progress, detail });
+              const isLast = completedNum >= total;
+              if (isLast || !notionBatchMediaThrottle.shouldDefer()) {
+                updateNotionBatchRow(rowIndex, "preparing", { progress, detail });
+                updateNotionBatchSummary();
+                notionBatchMediaThrottle.markFlushed(rowIndex);
+              } else {
+                notionBatchMediaThrottle.schedule(rowIndex, () => {
+                  const latest = batchNotionResults.get(rowIndex);
+                  if (!latest || latest.status !== "preparing") return;
+                  updateNotionBatchRow(rowIndex, "preparing", { progress: latest.progress, detail: latest.detail });
+                  updateNotionBatchSummary();
+                });
+              }
             }
           });
           snapshot.batchId = batchNotionBatchId;
@@ -4045,6 +4230,7 @@
       updateNotionBatchSummary();
       finishNotionBatchIfComplete();
     } finally {
+      notionBatchMediaThrottle.reset();
       if (batchExportAbortController === controller) batchExportAbortController = null;
       if (abortController === controller) abortController = null;
     }
@@ -4058,6 +4244,7 @@
     batchObsidianResults = new Map();
     batchObsidianBatchId = `obsidian_batch_${Date.now()}_${Math.random().toString(16).slice(2)}`;
     batchActiveItems = selectedItems.slice();
+    obsidianBatchMediaThrottle.reset();
     globalThis.CHATVAULT_IS_BATCH_EXPORT = true;
     setBatchExportingUi(true);
     closeBatchModal();
@@ -4085,6 +4272,15 @@
       if (status.activeJob) throw new Error(tx("obsidian_job_running", "Another Obsidian sync is already running.", "已有 Obsidian 同步任务正在运行。"));
       await exporter.preload();
 
+      const preCheck = await verifySignedInExportAccess(selectedItems.length);
+      if (!preCheck.allowed) {
+        throw new Error(preCheck.error || tx(
+          "content_batch_quota_exceeded",
+          "Daily export limit reached. Upgrade to Pro for unlimited exports.",
+          "已达每日导出上限，升级 Pro 可无限导出。"
+        ));
+      }
+
       const settings = {
         ...exportSettings,
         include_source_url: Boolean(shadowRoot?.getElementById("cv-toggle-source-url")?.checked),
@@ -4095,6 +4291,7 @@
         const item = selectedItems[index];
         const rowIndex = item._batchIndex;
         if (signal.aborted) throw new DOMException("Sync cancelled.", "AbortError");
+        obsidianBatchMediaThrottle.clearRow(rowIndex);
         const fetching = { index: rowIndex, item, status: "fetching", progress: 0.04 };
         batchObsidianResults.set(rowIndex, fetching);
         updateObsidianBatchRow(rowIndex, "fetching", fetching);
@@ -4134,18 +4331,43 @@
             warnings: captureWarnings,
             batchId: batchObsidianBatchId,
             signal,
+            beforeFinalize: !isProUser && currentSession?.access_token ? async () => {
+              const entitlement = await syncVerifiedExportEntitlement(1, { consume: true });
+              if (!entitlement.ok || !entitlement.allowed) {
+                const quotaError = new Error(FREE_QUOTA_EXHAUSTED_MESSAGE);
+                quotaError.code = "quota_exhausted";
+                throw quotaError;
+              }
+            } : null,
             onProgress: (info) => {
               const phase = ["preflight", "media", "render", "write"].includes(info?.phase) ? info.phase : "preparing";
+              let detail = info?.detail || "";
+              if (phase === "media") {
+                detail = buildObsidianMediaProgressMessage(info?.detail);
+              } else if (phase === "render") {
+                detail = buildObsidianRenderMessage(messages.length);
+              }
               const updated = {
                 index: rowIndex,
                 item,
                 status: phase === "preflight" ? "preparing" : phase,
                 progress: Number(info?.progress || 0),
-                detail: info?.detail || ""
+                detail
               };
               batchObsidianResults.set(rowIndex, updated);
-              updateObsidianBatchRow(rowIndex, updated.status, updated);
-              updateObsidianBatchSummary();
+              const isLast = Number(info?.progress || 0) >= 1;
+              if (isLast || !obsidianBatchMediaThrottle.shouldDefer()) {
+                updateObsidianBatchRow(rowIndex, updated.status, updated);
+                updateObsidianBatchSummary();
+                obsidianBatchMediaThrottle.markFlushed(rowIndex);
+              } else {
+                obsidianBatchMediaThrottle.schedule(rowIndex, () => {
+                  const latest = batchObsidianResults.get(rowIndex);
+                  if (!latest || !["preparing", "media", "render", "write"].includes(latest.status)) return;
+                  updateObsidianBatchRow(rowIndex, latest.status, latest);
+                  updateObsidianBatchSummary();
+                });
+              }
             }
           });
           const completed = { index: rowIndex, item, ...result, status: result.status === "partial" ? "partial" : "succeeded", progress: 1 };
@@ -4183,6 +4405,7 @@
       updateObsidianBatchSummary();
       finishObsidianBatch({ cancelled });
     } finally {
+      obsidianBatchMediaThrottle.reset();
       if (batchExportAbortController === controller) batchExportAbortController = null;
       if (abortController === controller) abortController = null;
       refreshBatchObsidianDestination().catch(() => {});
@@ -4992,11 +5215,328 @@
     if (mark) mark.style.display = "";
   }
 
+  // 导出失败分类：将底层错误映射为用户可读的「原因 + 修复建议 + 一键修复动作」。
+  // 返回 { category, reason, suggestion, fixAction, fixLabel }。
+  function classifyExportFailure(error, context) {
+    const message = String(error && error.message ? error.message : error || "");
+    const code = String(error && error.code ? error.code : "");
+    const format = String(context && context.format ? context.format : "").toLowerCase();
+
+    // 1. 图片超限（兜底分类，上层通常已用 showImageLimitModal 处理）
+    if (code === "IMAGE_CANVAS_LIMIT_EXCEEDED") {
+      return {
+        category: "image_limit",
+        reason: tx("content_export_fail_image_limit_reason", "The image export exceeds the browser canvas limit.", "图片导出超出浏览器画布限制。"),
+        suggestion: tx("content_export_fail_image_limit_fix", "Try PDF export — it paginates long content automatically.", "建议改用 PDF 导出，可自动分页处理长内容。"),
+        fixAction: "change_format_pdf",
+        fixLabel: tx("image_limit_modal_export_pdf", "Export as PDF", "导出为 PDF")
+      };
+    }
+
+    // 2. 保存对话框失败
+    if (/save dialog|saveAs|save.*not available|download.*not allowed|Save dialog/i.test(message)) {
+      return {
+        category: "save_failed",
+        reason: tx("content_export_fail_save_reason", "The browser blocked the file save dialog.", "浏览器拦截了文件保存对话框。"),
+        suggestion: tx("content_export_fail_save_fix", "Check your browser's download permissions for this site, then retry.", "请检查浏览器对此站点的下载权限，然后重试。"),
+        fixAction: "retry",
+        fixLabel: tx("content_export_fix_retry", "Retry", "重试")
+      };
+    }
+
+    // 3. Blob 构建失败
+    if (/blob creation|blob.*fail|Failed to execute.*createObjectURL/i.test(message)) {
+      return {
+        category: "blob_failed",
+        reason: tx("content_export_fail_blob_reason", "The document could not be built locally.", "无法在本地构建文档。"),
+        suggestion: tx("content_export_fail_blob_fix", "Retry, or try a different export format.", "请重试，或尝试其他导出格式。"),
+        fixAction: "retry",
+        fixLabel: tx("content_export_fix_retry", "Retry", "重试")
+      };
+    }
+
+    // 4. 网络/跨域错误
+    if (/cors|cross-origin|network|Failed to fetch|download.*fail|tainted|security|Image.*load/i.test(message)) {
+      if (format === "image") {
+        return {
+          category: "network",
+          reason: tx("content_export_fail_network_reason", "A network or cross-origin error occurred while fetching data.", "获取数据时发生网络或跨域错误。"),
+          suggestion: tx("content_export_fail_network_fix", "Refresh the page and retry. For image exports, PDF is more resilient.", "请刷新页面后重试。图片导出建议改用 PDF，兼容性更好。"),
+          fixAction: "change_format_pdf",
+          fixLabel: tx("image_limit_modal_export_pdf", "Export as PDF", "导出为 PDF")
+        };
+      }
+      return {
+        category: "network",
+        reason: tx("content_export_fail_network_reason", "A network or cross-origin error occurred while fetching data.", "获取数据时发生网络或跨域错误。"),
+        suggestion: tx("content_export_fail_network_fix", "Refresh the page and retry. For image exports, PDF is more resilient.", "请刷新页面后重试。图片导出建议改用 PDF，兼容性更好。"),
+        fixAction: "refresh_page",
+        fixLabel: tx("content_export_fix_refresh", "Refresh & Retry", "刷新并重试")
+      };
+    }
+
+    // 5. 内存不足
+    if (/memory|out of memory|maximum call stack|allocation.*fail/i.test(message)) {
+      if (format === "image") {
+        return {
+          category: "memory",
+          reason: tx("content_export_fail_memory_reason", "The browser ran out of memory during export.", "导出过程中浏览器内存不足。"),
+          suggestion: tx("content_export_fail_memory_fix", "Try PDF or Markdown format, which use less memory.", "建议改用 PDF 或 Markdown 格式以减少内存占用。"),
+          fixAction: "change_format_pdf",
+          fixLabel: tx("image_limit_modal_export_pdf", "Export as PDF", "导出为 PDF")
+        };
+      }
+      return {
+        category: "memory",
+        reason: tx("content_export_fail_memory_reason", "The browser ran out of memory during export.", "导出过程中浏览器内存不足。"),
+        suggestion: tx("content_export_fail_memory_fix", "Try PDF or Markdown format, which use less memory.", "建议改用 PDF 或 Markdown 格式以减少内存占用。"),
+        fixAction: "change_format_markdown",
+        fixLabel: tx("content_export_fix_change_md", "Export as Markdown", "改用 Markdown")
+      };
+    }
+
+    // 6. 超时
+    if (/timeout|timed out/i.test(message)) {
+      return {
+        category: "timeout",
+        reason: tx("content_export_fail_timeout_reason", "The export timed out.", "导出已超时。"),
+        suggestion: tx("content_export_fail_timeout_fix", "Retry, or reduce the number of messages to export.", "请重试，或减少导出的消息数量。"),
+        fixAction: "retry",
+        fixLabel: tx("content_export_fix_retry", "Retry", "重试")
+      };
+    }
+
+    // 7. 默认/未知错误
+    return {
+      category: "unknown",
+      reason: tx("content_export_fail_unknown_reason", "An unexpected error occurred during export.", "导出过程中发生未知错误。"),
+      suggestion: tx("content_export_fail_unknown_fix", "Refresh the page and try again. If the issue persists, try a different format.", "请刷新页面后重试。若问题持续，请尝试其他导出格式。"),
+      fixAction: "refresh_page",
+      fixLabel: tx("content_export_fix_refresh", "Refresh & Retry", "刷新并重试")
+    };
+  }
+
+  // 根据分类构建一键修复回调。回调会关闭结果对话框并触发对应的修复动作。
+  function buildFailureFixHandler(failure, context) {
+    const action = failure && failure.fixAction ? failure.fixAction : "retry";
+    const settings = context && context.settingsForExport ? context.settingsForExport : {};
+    const item = context && context.item ? context.item : null;
+    const formatForExport = context && context.formatForExport ? context.formatForExport : null;
+    if (action === "change_format_pdf") {
+      return () => {
+        activeFormat = "pdf";
+        if (item && typeof exportSingleSidebarConversation === "function") {
+          exportSingleSidebarConversation(item, "pdf", settings);
+        } else {
+          performExport({ settings });
+        }
+      };
+    }
+    if (action === "change_format_markdown") {
+      return () => {
+        activeFormat = "markdown";
+        if (item && typeof exportSingleSidebarConversation === "function") {
+          exportSingleSidebarConversation(item, "markdown", settings);
+        } else {
+          performExport({ settings });
+        }
+      };
+    }
+    if (action === "refresh_page") {
+      return () => {
+        window.location.reload();
+      };
+    }
+    // retry / 默认
+    return () => {
+      if (item && formatForExport && typeof exportSingleSidebarConversation === "function") {
+        exportSingleSidebarConversation(item, formatForExport, settings);
+      } else {
+        performExport({ settings });
+      }
+    };
+  }
+
+  // 统一导出结果对话框：服务于单次导出（single）与批量本地导出（batch_local）。
+  // 复用 cv-batch-result-overlay 的 DOM 与样式，与批量同步结果对话框视觉一致。
+  // 与 showBatchSyncResultDialog 共享同一个 overlay 和 lastBatchSyncResultDialogId 去重变量。
+  function showExportResultDialog(result) {
+    if (!shadowRoot || !result) return;
+    const resultId = String(result.id || `export_result:${result.kind || "single"}:${result.status || "succeeded"}:${result.filename || result.successCount || ""}:${Date.now()}`);
+    if (resultId && resultId === lastBatchSyncResultDialogId) return;
+
+    const overlay = shadowRoot.getElementById("cv-batch-result-overlay");
+    const title = shadowRoot.getElementById("cv-batch-result-title");
+    const description = shadowRoot.getElementById("cv-batch-result-description");
+    const itemsContainer = shadowRoot.getElementById("cv-batch-result-items");
+    const mark = shadowRoot.getElementById("cv-batch-result-mark");
+    const confetti = shadowRoot.getElementById("cv-batch-result-confetti");
+    const meta = shadowRoot.getElementById("cv-export-result-meta");
+    const failureInfo = shadowRoot.getElementById("cv-export-failure-info");
+    const fixBtn = shadowRoot.getElementById("cv-export-failure-fix");
+    if (!overlay || !itemsContainer) return;
+
+    // 清理上一次的修复按钮回调，避免残留监听器触发旧动作
+    if (fixBtn && currentFailureFixHandler) {
+      fixBtn.removeEventListener("click", currentFailureFixHandler);
+      currentFailureFixHandler = null;
+    }
+    if (failureInfo) failureInfo.hidden = true;
+    if (fixBtn) fixBtn.hidden = true;
+
+    const kind = result.kind || "single";
+    const status = result.status || "succeeded";
+    const isSingleSuccess = kind === "single" && status === "succeeded";
+
+    // 撒花icon：仅在单次导出成功时显示，隐藏默认的勾选标记
+    if (confetti) confetti.hidden = !isSingleSuccess;
+    if (mark) mark.style.display = isSingleSuccess ? "none" : "";
+
+    // 状态图标
+    if (mark) {
+      mark.textContent = status === "failed" ? "×" : status === "partial" ? "!" : "✓";
+      mark.dataset.status = status;
+    }
+
+    // 标题
+    if (title) {
+      if (status === "failed") {
+        title.textContent = tx("content_export_result_failed", "Export failed", "导出失败");
+      } else if (isSingleSuccess) {
+        title.textContent = tx("content_export_success_title", "Export successful! Export as another format?", "导出成功！是否导出为其他格式？");
+      } else if (kind === "batch_local") {
+        title.textContent = status === "partial"
+          ? tx("content_batch_partial_title", "Batch export completed with warnings", "批量导出完成，但有部分失败")
+          : tx("content_batch_export_complete", "Batch export complete", "批量导出完成");
+      } else {
+        title.textContent = tx("content_export_complete_title", "Export complete", "导出完成");
+      }
+    }
+
+    // 描述与元信息
+    if (meta) meta.hidden = true;
+    if (description) {
+      if (kind === "single") {
+        const formatLabel = getExportFormatLabel(result.format);
+        description.textContent = result.filename
+          ? `${formatLabel} · ${result.filename}`
+          : formatLabel;
+        if (meta && result.messageCount) {
+          meta.hidden = false;
+          meta.textContent = tx("content_export_message_count", "$1 messages", "$1 条消息", result.messageCount);
+        }
+      } else {
+        // batch_local
+        const successCount = Math.max(0, Number(result.successCount || 0));
+        const failureCount = Math.max(0, Number(result.failureCount || 0));
+        description.textContent = tx("content_batch_success_failure", "Success: $1, failed: $2", "成功：$1，失败：$2", successCount, failureCount);
+      }
+    }
+
+    // 失败详情块：仅在 single + failed 时展示具体原因 + 修复建议 + 一键修复按钮
+    if (status === "failed" && kind === "single" && result.failure) {
+      const failure = result.failure;
+      if (failureInfo) {
+        failureInfo.hidden = false;
+        const reasonEl = shadowRoot.getElementById("cv-export-failure-reason");
+        const suggestionEl = shadowRoot.getElementById("cv-export-failure-suggestion");
+        if (reasonEl) {
+          reasonEl.textContent = failure.reason || tx("content_export_fail_unknown_reason", "An unexpected error occurred during export.", "导出过程中发生未知错误。");
+        }
+        if (suggestionEl) {
+          suggestionEl.textContent = failure.suggestion || "";
+        }
+      }
+      if (fixBtn && typeof failure.onFix === "function") {
+        fixBtn.hidden = false;
+        fixBtn.textContent = failure.fixLabel || tx("content_export_fix_retry", "Retry", "重试");
+        currentFailureFixHandler = () => {
+          hideBatchSyncResultDialog();
+          try {
+            failure.onFix();
+          } catch (fixError) {
+            console.warn("Failure fix handler error:", fixError);
+          }
+        };
+        fixBtn.addEventListener("click", currentFailureFixHandler);
+      }
+    }
+
+    // 文件列表（batch_local）：本地文件无法从浏览器直接打开，显示为不可点击
+    itemsContainer.replaceChildren();
+    if (kind === "batch_local" && Array.isArray(result.items)) {
+      result.items.forEach((item) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "cv-batch-result-item";
+        button.disabled = true;
+        const statusLabel = document.createElement("span");
+        statusLabel.textContent = item.status === "failed"
+          ? tx("content_batch_item_failed", "Failed", "失败")
+          : tx("content_batch_item_saved", "Saved", "已保存");
+        const itemTitle = document.createElement("strong");
+        itemTitle.textContent = String(item.title || item.filename || tx("notion_untitled_conversation", "Untitled conversation", "未命名会话"));
+        button.append(statusLabel, itemTitle);
+        itemsContainer.appendChild(button);
+      });
+    } else if (kind === "single" && status === "succeeded" && result.settings) {
+      // 快速再导出：单次导出成功后展示所有格式按钮，点击即以该格式重新导出
+      const reExportLabel = document.createElement("p");
+      reExportLabel.className = "cv-re-export-label";
+      reExportLabel.textContent = tx("content_export_re_export_as", "Re-export as", "快速再导出为");
+      itemsContainer.appendChild(reExportLabel);
+
+      const reExportFormats = ["pdf", "word", "markdown", "html", "image", "txt"];
+      reExportFormats.forEach((fmt) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "cv-batch-result-item cv-re-export-item";
+        button.dataset.format = fmt;
+        const labelEl = document.createElement("strong");
+        labelEl.textContent = getExportFormatLabel(fmt);
+        button.append(labelEl);
+        button.addEventListener("click", () => {
+          // 立即禁用所有格式按钮，防止快速重复点击触发并发导出
+          itemsContainer.querySelectorAll(".cv-re-export-item").forEach((btn) => {
+            btn.disabled = true;
+          });
+          hideBatchSyncResultDialog();
+          // 侧边栏右键导出路径（result.item 存在）：针对原会话重新导出，避免落到主视图会话
+          if (result.item && typeof exportSingleSidebarConversation === "function") {
+            exportSingleSidebarConversation(result.item, fmt, result.settings);
+          } else {
+            activeFormat = fmt;
+            performExport({ settings: result.settings });
+          }
+        });
+        itemsContainer.appendChild(button);
+      });
+    }
+
+    overlay.classList.add("active");
+    overlay.setAttribute("aria-hidden", "false");
+    lastBatchSyncResultDialogId = resultId;
+    shadowRoot.getElementById("cv-batch-result-close")?.focus();
+  }
+
   function hideBatchSyncResultDialog() {
     const overlay = shadowRoot?.getElementById("cv-batch-result-overlay");
     if (!overlay) return;
     overlay.classList.remove("active");
     overlay.setAttribute("aria-hidden", "true");
+    // Cleanup failure fix handler
+    const fixBtn = shadowRoot.getElementById("cv-export-failure-fix");
+    if (fixBtn && currentFailureFixHandler) {
+      fixBtn.removeEventListener("click", currentFailureFixHandler);
+      currentFailureFixHandler = null;
+    }
+    const failureInfo = shadowRoot.getElementById("cv-export-failure-info");
+    if (failureInfo) failureInfo.hidden = true;
+    if (fixBtn) fixBtn.hidden = true;
+    const confetti = shadowRoot.getElementById("cv-batch-result-confetti");
+    if (confetti) confetti.hidden = true;
+    const mark = shadowRoot.getElementById("cv-batch-result-mark");
+    if (mark) mark.style.display = "";
     // 重置去重ID，允许下次相同结果的弹窗正常显示
     lastBatchSyncResultDialogId = "";
   }
@@ -5624,11 +6164,38 @@
       if (!globalThis.CHATVAULT_IS_BATCH_EXPORT && !suppressSingleProgressAfterSaveDialog) {
         window.setTimeout(hideExportProgress, 900);
       }
+      // 统一导出完成 UI：单次导出成功后展示结果对话框（与批量导出风格一致）。
+      // 注意：suppressSingleProgressAfterSaveDialog 控制进度条，不控制结果对话框。
+      // 剪贴板复制（copyToClipboard）只显示 Toast，不显示结果对话框。
+      if (!globalThis.CHATVAULT_IS_BATCH_EXPORT && !copyToClipboard) {
+        hideExportProgress();
+        showExportResultDialog({
+          kind: "single",
+          status: "succeeded",
+          format: formatForExport,
+          filename: saveResult?.filename || blobResult?.filename || "",
+          messageCount: metadata?.messageCount,
+          settings: settingsForExport
+        });
+      }
 
     } catch (e) {
       if (e.message !== "Export cancelled.") {
         hideExportProgress();
-        showPageToast(tx("content_export_failed_message", "Export failed: $1", "导出失败：$1", e.message || t("toast_export_failed", isChineseUi() ? "导出失败。" : "Export failed.")));
+        if (!globalThis.CHATVAULT_IS_BATCH_EXPORT) {
+          // 单次导出失败：展示具体原因 + 一键修复对话框（替代原来的通用 toast）
+          const failure = classifyExportFailure(e, { format: formatForExport });
+          const onFix = buildFailureFixHandler(failure, { formatForExport, settingsForExport });
+          showExportResultDialog({
+            kind: "single",
+            status: "failed",
+            format: formatForExport,
+            failure: Object.assign({}, failure, { onFix })
+          });
+        } else {
+          // 批量导出失败：保持简单 toast（批量有自己的失败聚合 UI，且 catch 会 re-throw）
+          showPageToast(tx("content_export_failed_message", "Export failed: $1", "导出失败：$1", e.message || t("toast_export_failed", isChineseUi() ? "导出失败。" : "Export failed.")));
+        }
 
         globalThis.CHATVAULT_ANALYTICS?.track("export_failed", {
           platform: exporter.detectPlatform(),
@@ -5655,6 +6222,7 @@
     if (activeNotionJobId) {
       const jobId = activeNotionJobId;
       activeNotionJobId = "";
+      activeNotionJobMessageCount = 0;
       chrome.runtime.sendMessage({ type: "CHATVAULT_NOTION_CANCEL_JOB", jobId }, () => void chrome.runtime.lastError);
     }
     // 同步重置 Obsidian 单次同步标志，避免 abort 信号未被及时检测时下次同步被误判为"已有任务运行"
@@ -6026,7 +6594,7 @@
             title: tx("notion_sync_progress_title", "Syncing to Notion", "正在同步到 Notion"),
             message: job.status === "retry_wait"
               ? tx("notion_sync_retrying", "Notion is busy. Retrying safely...", "Notion 当前繁忙，正在安全重试...")
-              : tx("notion_sync_writing", "Writing conversation to Notion...", "正在将会话写入 Notion..."),
+              : buildNotionWritingMessage(activeNotionJobMessageCount),
             progress,
             overallProgress: progress
           }, cancelExport);
@@ -6034,17 +6602,20 @@
         if (job.status === "succeeded" || job.status === "partial") {
           if (isActiveSingleJob) {
             activeNotionJobId = "";
+            activeNotionJobMessageCount = 0;
             hideExportProgress();
           }
           showNotionSuccessDialog(job);
         } else if (job.status === "failed") {
           if (isActiveSingleJob) {
             activeNotionJobId = "";
+            activeNotionJobMessageCount = 0;
             hideExportProgress();
           }
           showPageToast(tx("notion_sync_failed", "Notion sync failed: $1", "Notion 同步失败：$1", job.errorMessage || job.errorCode));
         } else if (job.status === "cancelled" && isActiveSingleJob) {
           activeNotionJobId = "";
+          activeNotionJobMessageCount = 0;
           hideExportProgress();
           showPageToast(tx("notion_sync_cancelled", "Sync cancelled.", "同步已取消。"));
         }
@@ -6148,6 +6719,7 @@
               });
             });
             activeNotionJobId = String(enqueueResult.job?.id || "");
+            activeNotionJobMessageCount = Math.max(0, Math.floor(Number(rawMessagesForSync?.length || 0)));
 
             const shouldConsumeUsage = !enqueueResult.job?.deduplicated;
             let serverConsumedNotionUsage = false;
@@ -6184,7 +6756,7 @@
             renderExportProgress("notion", {
               mode: "single",
               title: tx("notion_sync_progress_title", "Syncing to Notion", "正在同步到 Notion"),
-              message: tx("notion_sync_writing", "Writing conversation to Notion...", "正在将会话写入 Notion..."),
+              message: buildNotionWritingMessage(rawMessagesForSync?.length),
               progress: 0.35,
               overallProgress: 0.35
             }, cancelExport);
@@ -6213,6 +6785,7 @@
             }
             hideExportProgress();
             activeNotionJobId = "";
+            activeNotionJobMessageCount = 0;
             if (error.message !== "Sync cancelled.") {
               console.error("Notion sync failed:", error);
               showPageToast(tx("notion_sync_failed", "Notion sync failed: $1", "同步至 Notion 失败：$1", error.message));

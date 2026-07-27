@@ -1513,5 +1513,95 @@
   },
   "notion_share_database_hint": {
     "message": "ChatVault 연결에 Notion Database를 공유하세요(Database 열기 → ⋯ → 연결 → ChatVault 추가). 그런 다음 이 팝업을 다시 여세요."
+  },
+  "notion_sync_capturing_media": {
+    "message": "대화 미디어를 캡처하는 중..."
+  },
+  "notion_sync_writing": {
+    "message": "Notion에 대화를 작성하는 중..."
+  },
+  "obsidian_processing_media": {
+    "message": "Pro이미지 제거 중"
+  },
+  "obsidian_rendering": {
+    "message": "건물 Markdown"
+  },
+  "content_export_fail_image_limit_reason": {
+    "message": "이미지 내보내기가 브라우저 캔버스 제한을 초과합니다."
+  },
+  "content_export_fail_image_limit_fix": {
+    "message": "PDF 내보내기를 시도해 보세요 — 긴 콘텐츠를 자동으로 분할합니다."
+  },
+  "content_export_fail_save_reason": {
+    "message": "브라우저가 파일 저장 대화상자를 차단했습니다."
+  },
+  "content_export_fail_save_fix": {
+    "message": "이 사이트에 대한 브라우저 다운로드 권한을 확인한 후 다시 시도하세요."
+  },
+  "content_export_fail_blob_reason": {
+    "message": "로컬에서 문서를 작성할 수 없습니다."
+  },
+  "content_export_fail_blob_fix": {
+    "message": "다시 시도하거나 다른 내보내기 형식을 사용해 보세요."
+  },
+  "content_export_fail_network_reason": {
+    "message": "데이터를 가져오는 중 네트워크 또는 교차 출처 오류가 발생했습니다."
+  },
+  "content_export_fail_network_fix": {
+    "message": "페이지를 새로고침하고 다시 시도하세요. 이미지 내보내기는 PDF가 더 안정적입니다."
+  },
+  "content_export_fail_memory_reason": {
+    "message": "내보내기 중 브라우저 메모리가 부족합니다."
+  },
+  "content_export_fail_memory_fix": {
+    "message": "메모리 사용량이 적은 PDF 또는 Markdown 형식을 사용해 보세요."
+  },
+  "content_export_fail_timeout_reason": {
+    "message": "내보내기 시간이 초과되었습니다."
+  },
+  "content_export_fail_timeout_fix": {
+    "message": "다시 시도하거나 내보낼 메시지 수를 줄이세요."
+  },
+  "content_export_fail_unknown_reason": {
+    "message": "내보내기 중 예기치 않은 오류가 발생했습니다."
+  },
+  "content_export_fail_unknown_fix": {
+    "message": "페이지를 새로고침하고 다시 시도하세요. 문제가 지속되면 다른 형식을 시도해 보세요."
+  },
+  "content_export_fix_retry": {
+    "message": "재시도"
+  },
+  "content_export_fix_refresh": {
+    "message": "새로고침 후 재시도"
+  },
+  "content_export_fix_change_md": {
+    "message": "Markdown으로 내보내기"
+  },
+  "content_export_result_failed": {
+    "message": "내보내기 실패"
+  },
+  "content_batch_partial_title": {
+    "message": "일괄 내보내기가 경고와 함께 완료됨"
+  },
+  "content_batch_export_complete": {
+    "message": "일괄 내보내기 완료"
+  },
+  "content_export_complete_title": {
+    "message": "내보내기 완료"
+  },
+  "content_export_message_count": {
+    "message": "$1개 메시지"
+  },
+  "content_batch_success_failure": {
+    "message": "성공: $1, 실패: $2"
+  },
+  "content_batch_item_failed": {
+    "message": "실패"
+  },
+  "content_batch_item_saved": {
+    "message": "저장됨"
+  },
+  "content_export_re_export_as": {
+    "message": "다른 형식으로 다시 내보내기"
   }
 }
