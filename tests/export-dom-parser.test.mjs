@@ -214,3 +214,34 @@ test("Claude DOM export does not inherit a previous uploaded image into later te
     restoreDom();
   }
 });
+
+test("Claude DOM export excludes structurally marked internal reasoning without phrase matching", () => {
+  var internalText = "The user is asking a general question about Claude, so I should look up the relevant documentation.";
+  var restoreDom = setGlobalDom(`
+    <main>
+      <div data-testid="assistant-message">
+        <div data-is-thinking="true"><p>${internalText}</p></div>
+        <div data-testid="message-content"><p>Here's a practical rundown of how to use Claude:</p></div>
+      </div>
+      <div data-testid="human-message">
+        <div data-testid="message-content"><p>${internalText}</p></div>
+      </div>
+    </main>
+  `, "https://claude.ai/chat/test");
+
+  try {
+    var messages = parseClaudeMessages();
+    var assistantText = JSON.stringify(messages.filter(function (message) {
+      return message.role === "assistant";
+    }));
+    var userText = JSON.stringify(messages.filter(function (message) {
+      return message.role === "user";
+    }));
+
+    assert.equal(assistantText.includes(internalText), false);
+    assert.equal(assistantText.includes("Here's a practical rundown"), true);
+    assert.equal(userText.includes(internalText), true);
+  } finally {
+    restoreDom();
+  }
+});

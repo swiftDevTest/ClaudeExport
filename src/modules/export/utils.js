@@ -1493,13 +1493,76 @@ export function stripThoughtText(value) {
     .trim();
 }
 
+function isEnabledInternalFlag(value) {
+  if (value === true || value === 1) return true;
+  return /^(?:true|1|yes|on)$/i.test(String(value || "").trim());
+}
+
+export function hasInternalVisibilityMarker(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return false;
+  }
+
+  var metadata = value.metadata && typeof value.metadata === "object" && !Array.isArray(value.metadata)
+    ? value.metadata
+    : {};
+  var containers = [value, metadata];
+  var flagNames = [
+    "is_thinking",
+    "is_reasoning",
+    "is_analysis",
+    "is_internal",
+    "internal",
+    "is_hidden",
+    "hidden",
+    "is_visually_hidden",
+    "is_visually_hidden_from_conversation",
+    "is_thinking_preamble_message"
+  ];
+
+  if (containers.some(function (container) {
+    return flagNames.some(function (name) {
+      return isEnabledInternalFlag(container[name]);
+    });
+  })) {
+    return true;
+  }
+
+  var hasInternalVisibility = containers.some(function (container) {
+    var visibility = container.visibility || container.display_visibility || container.audience;
+    return typeof visibility === "string" &&
+      /^(?:hidden|invisible|internal|model[-_ ]?only|assistant[-_ ]?only|private)$/i.test(visibility.trim());
+  });
+  if (hasInternalVisibility) {
+    return true;
+  }
+
+  return containers.some(function (container) {
+    return /^(?:assistant|model|tool|internal)$/i.test(String(container.recipient || "").trim());
+  });
+}
+
 export function isThoughtLikeContentValue(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     return false;
   }
 
-  var type = String(value.type || value.content_type || value.kind || value.name || value.role || "").trim();
-  if (/^(analysis|reasoning|thinking|thought|chain_of_thought|model_thought)$/i.test(type)) {
+  var metadata = value.metadata && typeof value.metadata === "object" && !Array.isArray(value.metadata)
+    ? value.metadata
+    : {};
+  var type = [
+    value.type,
+    value.content_type,
+    value.kind,
+    value.name,
+    value.role,
+    metadata.type,
+    metadata.content_type,
+    metadata.kind
+  ].map(function (item) {
+    return String(item || "").trim().toLowerCase().replace(/[\s.-]+/g, "_");
+  }).filter(Boolean).join(" ");
+  if (/(?:^|\s)(?:analysis|reasoning|thinking|thought|chain_of_thought|model_thought|redacted_thinking|thinking_summary|reasoning_summary|analysis_summary|internal_reasoning|internal_monologue|scratchpad)(?:\s|$)/i.test(type)) {
     return true;
   }
 
@@ -1508,14 +1571,47 @@ export function isThoughtLikeContentValue(value) {
     value.label,
     value.summary,
     value.status,
-    value.display_name
+    value.display_name,
+    metadata.title,
+    metadata.label,
+    metadata.status,
+    metadata.display_name
   ].map(function (item) { return String(item || ""); }).join(" ");
 
-  return THOUGHT_ATTR_PATTERN.test(label) || isThoughtStatusLine(label);
+  return hasInternalVisibilityMarker(value) ||
+    (typeof value.thinking === "string" && Boolean(value.thinking.trim())) ||
+    THOUGHT_ATTR_PATTERN.test(label) ||
+    isThoughtStatusLine(label);
 }
 
 export function isThoughtLikeElement(element) {
   if (!element || !element.getAttribute) return false;
+  var explicitThoughtFlags = [
+    "data-is-thinking",
+    "data-thinking",
+    "data-is-reasoning",
+    "data-reasoning",
+    "data-is-analysis",
+    "data-analysis",
+    "data-is-internal"
+  ];
+  if (explicitThoughtFlags.some(function (name) {
+    if (!element.hasAttribute || !element.hasAttribute(name)) return false;
+    var value = String(element.getAttribute(name) || "").trim();
+    return !/^(?:false|0|off|no)$/i.test(value);
+  })) {
+    return true;
+  }
+
+  var visibility = String(
+    element.getAttribute("data-visibility") ||
+    element.getAttribute("data-display-visibility") ||
+    ""
+  ).trim();
+  if (/^(?:hidden|invisible|internal|model[-_ ]?only|assistant[-_ ]?only|private)$/i.test(visibility)) {
+    return true;
+  }
+
   var label = [
     element.getAttribute("data-testid"),
     element.getAttribute("aria-label"),

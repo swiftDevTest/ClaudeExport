@@ -1672,5 +1672,17 @@
   },
   "content_export_re_export_as": {
     "message": "Re-export as"
+  },
+  "obsidian_choose_folders": {
+    "message": "Choose a notes folder to start syncing."
+  },
+  "obsidian_not_configured": {
+    "message": "Not configured"
+  },
+  "obsidian_repair_folders": {
+    "message": "Repair Vault folders"
+  },
+  "obsidian_status_failed": {
+    "message": "Could not check Vault status."
   }
 }

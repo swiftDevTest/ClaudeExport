@@ -1672,5 +1672,17 @@
   },
   "content_export_re_export_as": {
     "message": "快速再导出为"
+  },
+  "obsidian_choose_folders": {
+    "message": "请选择一个笔记目录以开始同步。"
+  },
+  "obsidian_not_configured": {
+    "message": "未配置"
+  },
+  "obsidian_repair_folders": {
+    "message": "修复 Vault 目录"
+  },
+  "obsidian_status_failed": {
+    "message": "无法检查 Vault 状态。"
   }
 }

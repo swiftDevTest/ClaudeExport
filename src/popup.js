@@ -2959,6 +2959,16 @@
       if (disconnect) disconnect.hidden = true;
       if (settingsStatus) settingsStatus.textContent = ot("obsidian_not_connected", "Vault not connected", "Vault 尚未连接");
       state.classList.add("is-warning");
+    } else if (status.permission === "prompt") {
+      // queryPermission timed out (common on Service Worker cold-start).
+      // This is temporary — do not tell the user to reauthorize.
+      title.textContent = status.vaultName || ot("obsidian_vault", "Obsidian Vault", "Obsidian Vault");
+      detail.textContent = ot("obsidian_permission_checking", "Checking Vault permission...", "正在检查 Vault 权限...");
+      current.textContent = ot("obsidian_retry_check", "Retry", "重试");
+      current.disabled = false;
+      if (disconnect) disconnect.hidden = false;
+      if (settingsStatus) settingsStatus.textContent = `${status.vaultName || ot("obsidian_vault", "Obsidian Vault", "Obsidian Vault")} | ${ot("obsidian_permission_checking", "Checking permission", "检查权限中")}`;
+      state.classList.add("is-warning");
     } else if (status.permission !== "granted") {
       title.textContent = status.vaultName || ot("obsidian_vault", "Obsidian Vault", "Obsidian Vault");
       detail.textContent = ot("obsidian_permission_required", "Vault permission must be granted again.", "Vault 权限已失效，需要重新授权。");
@@ -2969,11 +2979,16 @@
       state.classList.add("is-warning");
     } else if (status.directoriesValid === false) {
       title.textContent = status.vaultName || ot("obsidian_vault", "Obsidian Vault", "Obsidian Vault");
-      detail.textContent = ot("obsidian_directories_missing", "A configured folder is missing. Repair it before syncing.", "配置目录已丢失，请修复后再同步。");
-      current.textContent = ot("obsidian_repair_folders", "Repair Vault folders", "修复 Vault 目录");
+      const isUnconfigured = status.directoriesConfigured === false;
+      detail.textContent = isUnconfigured
+        ? ot("obsidian_choose_folders", "Choose a notes folder to start syncing.", "请选择一个笔记目录以开始同步。")
+        : ot("obsidian_directories_missing", "A configured folder is missing. Repair it before syncing.", "配置目录已丢失，请修复后再同步。");
+      current.textContent = isUnconfigured
+        ? ot("obsidian_configure", "Config Obsidian", "配置 Obsidian")
+        : ot("obsidian_repair_folders", "Repair Vault folders", "修复 Vault 目录");
       current.disabled = false;
       if (disconnect) disconnect.hidden = false;
-      if (settingsStatus) settingsStatus.textContent = `${status.vaultName || ot("obsidian_vault", "Obsidian Vault", "Obsidian Vault")} | ${ot("obsidian_directories_missing", "Folders need repair", "目录需要修复")}`;
+      if (settingsStatus) settingsStatus.textContent = `${status.vaultName || ot("obsidian_vault", "Obsidian Vault", "Obsidian Vault")} | ${isUnconfigured ? ot("obsidian_not_configured", "Not configured", "未配置") : ot("obsidian_directories_missing", "Folders need repair", "目录需要修复")}`;
       state.classList.add("is-warning");
     } else if (status.activeJob || selection?.syncRunning) {
       title.textContent = status.vaultName || ot("obsidian_vault", "Obsidian Vault", "Obsidian Vault");
@@ -2991,7 +3006,7 @@
         : selectionMode
           ? ot("obsidian_select_message_first_short", "Select messages", "请选择消息")
           : ot("obsidian_sync_current_short", "Sync", "同步");
-      current.disabled = !isSupportedPage || (selectionMode && selectedCount < 1);
+      current.disabled = selectionMode && selectedCount < 1;
       if (disconnect) disconnect.hidden = false;
       if (settingsStatus) settingsStatus.textContent = `${status.vaultName || ot("obsidian_vault", "Obsidian Vault", "Obsidian Vault")} | ${notesDestination}`;
     }
@@ -3003,8 +3018,8 @@
 
   async function refreshObsidianStatus() {
     let timeout = null;
-    const timeoutPromise = new Promise((resolve) => {
-      timeout = setTimeout(() => resolve({ status: { connected: false }, selection: { selectedCount: 0, selectionMode: false } }), 3000);
+    const timeoutPromise = new Promise((_, reject) => {
+      timeout = setTimeout(() => reject(new Error(ot("obsidian_status_failed", "Could not check Vault status.", "无法检查 Vault 状态。"))), 5000);
     });
     const checkPromise = (async () => {
       const [status, selection] = await Promise.all([
@@ -3019,16 +3034,25 @@
       renderObsidianStatus(obsidianStatus, selection);
       return obsidianStatus;
     } catch (error) {
-      console.warn("[Obsidian Sync] refreshObsidianStatus fallback to unconfigured:", error);
-      obsidianStatus = { connected: false };
-      renderObsidianStatus(obsidianStatus, { selectedCount: 0, selectionMode: false });
-      return obsidianStatus;
+      console.warn("[Obsidian Sync] refreshObsidianStatus failed or timed out:", error);
+      throw error;
     } finally {
       clearTimeout(timeout);
     }
   }
 
   async function triggerObsidianSync() {
+    // When permission query timed out (prompt), retry the status check first
+    // instead of forcing the user back to the settings page.
+    if (obsidianStatus?.permission === "prompt") {
+      try {
+        await refreshObsidianStatus();
+      } catch (error) { /* ignore, fall through */ }
+      if (obsidianStatus?.permission === "prompt") {
+        openObsidianSettings();
+        return;
+      }
+    }
     if (!obsidianStatus?.connected || obsidianStatus.permission !== "granted" || obsidianStatus.directoriesValid === false) {
       openObsidianSettings();
       return;

@@ -1,4 +1,8 @@
-import { sanitizeStructuredLinkText as sanitizeSharedStructuredLinkText } from "./utils.js";
+import {
+  hasInternalVisibilityMarker as hasSharedInternalVisibilityMarker,
+  isThoughtLikeContentValue as isSharedThoughtLikeContentValue,
+  sanitizeStructuredLinkText as sanitizeSharedStructuredLinkText
+} from "./utils.js";
 
 "use strict";
 
@@ -1101,24 +1105,7 @@ function createMissingDependencyError(name) {
   }
 
   function isThoughtContentValue(value) {
-    if (!value || typeof value !== "object" || Array.isArray(value)) {
-      return false;
-    }
-
-    const type = String(value.type || value.content_type || value.kind || value.name || value.role || "").trim();
-    if (/^(analysis|reasoning|thinking|thought|chain_of_thought|model_thought)$/i.test(type)) {
-      return true;
-    }
-
-    const label = [
-      value.title,
-      value.label,
-      value.summary,
-      value.status,
-      value.display_name
-    ].map((item) => String(item || "")).join(" ");
-
-    return THOUGHT_ATTR_PATTERN.test(label) || THOUGHT_LINE_PATTERN.test(label.trim());
+    return isSharedThoughtLikeContentValue(value);
   }
 
   function stripInvisibleTextControls(value) {
@@ -3069,6 +3056,10 @@ function createMissingDependencyError(name) {
     return orderedBlocks;
   }
 
+  function isClaudeMessageHiddenFromConversation(message) {
+    return hasSharedInternalVisibilityMarker(message);
+  }
+
   async function tryFetchClaudeAttachment(organizationId, conversationId, attachmentId) {
     const origin = window.location.origin;
     const orgEnc = encodeURIComponent(organizationId);
@@ -3230,6 +3221,9 @@ function createMissingDependencyError(name) {
     const rawMessages = getClaudeMessagesFromPayload(payload);
     const messages = rawMessages
       .map((message) => {
+        if (isClaudeMessageHiddenFromConversation(message)) {
+          return null;
+        }
         const role = message?.sender || message?.role || message?.author || message?.type;
         const normalizedRole = normalizeExportRole(role);
         const contentBlocks = orderUserImageBlocksFirst(normalizedRole, claudeMessageToExportBlocks(message, organizationId, rawConversationId));
@@ -4262,6 +4256,7 @@ function createMissingDependencyError(name) {
 
       var conversationId = encodeURIComponent(rawConversationId);
       var endpoints = [
+        "/api/organizations/" + encodeURIComponent(organizationId) + "/chat_conversations/" + conversationId + "?tree=true&rendering_mode=messages",
         "/api/organizations/" + encodeURIComponent(organizationId) + "/chat_conversations/" + conversationId,
         "/api/organizations/" + encodeURIComponent(organizationId) + "/chat_conversations/" + conversationId + "?tree=true"
       ];
