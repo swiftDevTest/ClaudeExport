@@ -23,6 +23,10 @@ export function t(key, defaultText, ...args) {
   return defaultText;
 }
 
+export function untitledChatTitle() {
+  return t("untitled_chat", "Untitled Chat");
+}
+
 export var PLATFORM_CHATGPT = "chatgpt";
 export var PLATFORM_CLAUDE = "claude";
 export var PLATFORM_GEMINI = "gemini";
@@ -79,7 +83,7 @@ export function normalizeBooleanSetting(value, defaultValue) {
 
 var CHINESE_THOUGHT_STATUS_PATTERN = /^\s*(?:已\s*)?(?:思考|推理)(?:了|中)?\s*(?:(?:约|大约|若干|几|数|多)?(?:\d+(?:\.\d+)?|[一二三四五六七八九十百千万半两]+)?\s*(?:毫秒|秒钟|秒|分钟|分|小时|时))?\s*[。.,，:：-]?\s*$/i;
 var ENGLISH_THOUGHT_STATUS_PATTERN = /^\s*(?:(?:Thought|Reasoned|Worked)\s+(?:for|about)|Thinking|Reasoning|Working)(?:\b|[\s:：,，。.·-]|$)[\s\S]{0,160}$/i;
-export var THOUGHT_ATTR_PATTERN = /\b(?:reasoning|thought|thinking|chain[-_ ]?of[-_ ]?thought|model[-_ ]?thought|oai[-_ ]?reasoning)\b/i;
+export var THOUGHT_ATTR_PATTERN = /\b(?:reasoning|thought|thinking|chain[-_ ]?of[-_ ]?thought|model[-_ ]?thought|oai[-_ ]?reasoning|recap|thinking[-_ ]?summary|reasoning[-_ ]?summary|internal[-_ ]?monologue|scratch[-_ ]?pad)\b/i;
 
 export function isThoughtStatusLine(value) {
   var text = String(value || "").trim();
@@ -141,7 +145,7 @@ export function collapseRepeatedConversationTitle(value) {
 
 export function getConversationTitle() {
   if (typeof window === "undefined" || typeof document === "undefined" || !document.querySelector) {
-    return "Untitled Chat";
+    return untitledChatTitle();
   }
   var platform = detectPlatform();
   var pathname = window.location.pathname || "";
@@ -172,7 +176,7 @@ export function getConversationTitle() {
       .replace(/\s*-\s*ChatGPT\s*$/i, "")
       .replace(/^ChatGPT$/i, "")
       .trim();
-    return title || "Untitled Chat";
+    return title || untitledChatTitle();
   }
 
   if (platform === PLATFORM_CLAUDE) {
@@ -201,7 +205,7 @@ export function getConversationTitle() {
       .replace(/\s*[-|]\s*Claude\s*$/i, "")
       .replace(/^Claude$/i, "")
       .trim();
-    return title || "Untitled Chat";
+    return title || untitledChatTitle();
   }
 
   if (platform === PLATFORM_GEMINI) {
@@ -241,10 +245,10 @@ export function getConversationTitle() {
       .replace(/\s*[-|]\s*(?:Google\s+)?Gemini\s*$/i, "")
       .replace(/^(?:Google\s+)?Gemini\s*$/i, "")
       .trim();
-    return title || "Untitled Chat";
+    return title || untitledChatTitle();
   }
 
-  return "Untitled Chat";
+  return untitledChatTitle();
 }
 
 export function isInsideUserQuery(element) {
@@ -324,11 +328,11 @@ export async function ensureAllGeminiMessagesLoaded(options) {
 }
 
 export function sanitizeFilename(name) {
-  return String(name || "Untitled Chat")
+  return String(name || untitledChatTitle())
     .replace(/[<>:"/\\|?*\x00-\x1f]/g, "")
     .replace(/\s+/g, " ")
     .trim()
-    .substring(0, 80) || "Untitled Chat";
+    .substring(0, 80) || untitledChatTitle();
 }
 
 export function formatDateDisplay(date) {
@@ -1562,7 +1566,7 @@ export function isThoughtLikeContentValue(value) {
   ].map(function (item) {
     return String(item || "").trim().toLowerCase().replace(/[\s.-]+/g, "_");
   }).filter(Boolean).join(" ");
-  if (/(?:^|\s)(?:analysis|reasoning|thinking|thought|chain_of_thought|model_thought|redacted_thinking|thinking_summary|reasoning_summary|analysis_summary|internal_reasoning|internal_monologue|scratchpad)(?:\s|$)/i.test(type)) {
+  if (/(?:^|\s)(?:analysis|reasoning|thinking|thought|chain_of_thought|model_thought|redacted_thinking|thinking_summary|reasoning_summary|analysis_summary|internal_reasoning|internal_monologue|scratchpad|recap|thought_summary|plan|internal_note)(?:\s|$)/i.test(type)) {
     return true;
   }
 
@@ -1584,7 +1588,7 @@ export function isThoughtLikeContentValue(value) {
     isThoughtStatusLine(label);
 }
 
-export function isThoughtLikeElement(element) {
+function isThoughtLikeElementSelf(element) {
   if (!element || !element.getAttribute) return false;
   var explicitThoughtFlags = [
     "data-is-thinking",
@@ -1593,7 +1597,10 @@ export function isThoughtLikeElement(element) {
     "data-reasoning",
     "data-is-analysis",
     "data-analysis",
-    "data-is-internal"
+    "data-is-internal",
+    "data-thought",
+    "data-recap",
+    "data-thinking-summary"
   ];
   if (explicitThoughtFlags.some(function (name) {
     if (!element.hasAttribute || !element.hasAttribute(name)) return false;
@@ -1614,6 +1621,7 @@ export function isThoughtLikeElement(element) {
 
   var label = [
     element.getAttribute("data-testid"),
+    element.getAttribute("data-test-id"),
     element.getAttribute("aria-label"),
     element.getAttribute("data-message-type"),
     element.getAttribute("data-content-type"),
@@ -1630,6 +1638,22 @@ export function isThoughtLikeElement(element) {
     .trim();
 
   return isThoughtStatusLine(text);
+}
+
+export function isThoughtLikeElement(element) {
+  if (isThoughtLikeElementSelf(element)) return true;
+
+  // Walk up ancestors (up to 5 levels) to detect thought containers.
+  // Claude.ai may render thinking prose inside child elements whose own
+  // attributes don't carry thought markers, but whose parent wrapper does.
+  var ancestor = element && element.parentElement ? element.parentElement : null;
+  var depth = 0;
+  while (ancestor && depth < 5) {
+    if (isThoughtLikeElementSelf(ancestor)) return true;
+    ancestor = ancestor.parentElement;
+    depth++;
+  }
+  return false;
 }
 
 var TOOL_CALL_CONTAINER_RE = /\b(?:tool[-_ ]?(?:call|use|input|output|result)|action[-_ ]?card|web[-_ ]?(?:search|browse)|code[-_ ]?interpreter)\b/i;
@@ -2052,7 +2076,10 @@ export function isIgnoredContentNode(element) {
   var testId = String(element.getAttribute("data-testid") || "");
   var label = String(element.getAttribute("aria-label") || "");
   var className = String(element.className || "");
-  if (THOUGHT_ATTR_PATTERN.test(testId + " " + label + " " + className)) {
+  var messageType = String(element.getAttribute("data-message-type") || "");
+  var contentType = String(element.getAttribute("data-content-type") || "");
+  var dataState = String(element.getAttribute("data-state") || "");
+  if (THOUGHT_ATTR_PATTERN.test(testId + " " + label + " " + className + " " + messageType + " " + contentType + " " + dataState)) {
     return true;
   }
 

@@ -143,19 +143,21 @@
 
     // Pro 功能：如果启用了附录 (Prompt Appendix)，将原始 Prompt 作为附录追加在最后
     if (settings.include_prompt_appendix && prompts.length > 0) {
-      let isZh = false;
-      try {
-        if (typeof chrome !== "undefined" && chrome.i18n && typeof chrome.i18n.getUILanguage === "function") {
-          const lang = chrome.i18n.getUILanguage() || "";
-          isZh = lang.startsWith("zh");
-        }
-      } catch (e) {}
+      function tAppendix(key, defaultText) {
+        try {
+          if (typeof chrome !== "undefined" && chrome.i18n && typeof chrome.i18n.getMessage === "function") {
+            const msg = chrome.i18n.getMessage(key);
+            if (msg) return msg;
+          }
+        } catch (e) {}
+        return defaultText;
+      }
 
       const appendixBlocks = [
         {
           type: "heading",
           level: 2,
-          text: isZh ? "附录：原始提问清单" : "Appendix: Original Prompts"
+          text: tAppendix("template_appendix_original_prompts", "Appendix: Original Prompts")
         }
       ];
 

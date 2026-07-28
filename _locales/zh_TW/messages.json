@@ -1627,5 +1627,230 @@
   },
   "content_export_re_export_as": {
     "message": "快速再匯出為"
+  },
+  "popup_copy_json": {
+    "message": "複製 JSON"
+  },
+  "export_theme_tooltip": {
+    "message": "主題僅對 PDF 和圖片匯出生效，其他格式不受影響。"
+  },
+  "popup_show_obsidian_sync": {
+    "message": "顯示 Obsidian 同步"
+  },
+  "popup_show_obsidian_sync_desc": {
+    "message": "在匯出面板顯示單個與批次 Obsidian 同步"
+  },
+  "popup_language_system": {
+    "message": "跟隨系統"
+  },
+  "notion_connect": {
+    "message": "連接 Notion"
+  },
+  "notion_disconnect": {
+    "message": "中斷連接"
+  },
+  "obsidian_sync_subtitle": {
+    "message": "本地 Markdown 與資源"
+  },
+  "obsidian_configure": {
+    "message": "配置 Obsidian"
+  },
+  "obsidian_disconnect": {
+    "message": "中斷連接"
+  },
+  "popup_benefit_notion_obsidian": {
+    "message": "Notion 和 Obsidian 同步"
+  },
+  "btn_confirm": {
+    "message": "確認"
+  },
+  "notion_status_checking": {
+    "message": "正在檢查連接"
+  },
+  "obsidian_status_checking": {
+    "message": "檢查中"
+  },
+  "obsidian_status_checking_vault": {
+    "message": "正在檢查 Vault"
+  },
+  "obsidian_choose_folders": {
+    "message": "請選擇一個筆記目錄以開始同步。"
+  },
+  "obsidian_not_configured": {
+    "message": "未配置"
+  },
+  "obsidian_repair_folders": {
+    "message": "修復 Vault 目錄"
+  },
+  "obsidian_status_failed": {
+    "message": "無法檢查 Vault 狀態。"
+  },
+  "content_batch_status_waiting": {
+    "message": "等待中"
+  },
+  "content_batch_status_loading": {
+    "message": "正在載入頁面"
+  },
+  "content_batch_status_completed": {
+    "message": "已完成"
+  },
+  "export_health_empty_conversation": {
+    "message": "目前對話沒有偵測到有效的聊天訊息，請等待頁面載入。"
+  },
+  "export_health_empty_ai_only": {
+    "message": "在[僅匯出AI回覆]模式下未偵測到AI的訊息。"
+  },
+  "export_health_lazy_load_hint": {
+    "message": "提示：如果聊天記錄很長，請捲動頁面以確保所有訊息都已被載入到網頁中。"
+  },
+  "export_health_embedded_too_large": {
+    "message": "本對話內嵌圖片體積過大。請減少圖片或拆分匯出，以避免瀏覽器記憶體不足。"
+  },
+  "export_health_embedded_large": {
+    "message": "本對話包含較大的內嵌圖片，匯出可能佔用較多記憶體。"
+  },
+  "export_health_high_image_count": {
+    "message": "本對話包含大量圖片 ($1 張)，可能需要較長時間擷取並建立文件。"
+  },
+  "export_health_png_scale_reduced": {
+    "message": "對話內容較長，長圖匯出會自動降低像素倍率以配適瀏覽器畫布限制；如需保持分頁清晰度，請改用 PDF。"
+  },
+  "export_health_ultra_long_code": {
+    "message": "偵測到超長程式碼區塊，建議使用 Word/PDF 匯出以保證最佳排版效果。"
+  },
+  "export_health_dom_parse_drop": {
+    "message": "偵測到 $1/$2 個候選訊息未被解析，可能是頁面結構變化導致部分內容遺失。請捲動載入完整或更新擴充功能。"
+  },
+  "export_health_dom_parse_empty": {
+    "message": "頁面偵測到訊息元素但解析結果為空，擴充功能可能已過時。請更新擴充功能後再試。"
+  },
+  "privacy_proof_local_generation": {
+    "message": "文件格式為 [$1]，完全在您瀏覽器的本地生成。"
+  },
+  "privacy_proof_no_upload": {
+    "message": "聊天文字正文絕對不會上傳到 ChatVault 遠端伺服器進行轉檔。"
+  },
+  "privacy_proof_image_fetch": {
+    "message": "由於對話包含圖片，擴充功能僅會透過瀏覽器背景從原 AI 平台的可信 CDN 拉取圖片位元組用於排版。"
+  },
+  "privacy_proof_usage_local": {
+    "message": "扣額計數儲存在本地；VIP 狀態僅透過帳號服務校驗，不會上傳聊天正文或掃描歷史聊天清單。"
+  },
+  "template_appendix_original_prompts": {
+    "message": "附錄：原始提問清單"
+  },
+  "connections_title": {
+    "message": "連結管理"
+  },
+  "language_label": {
+    "message": "語言"
+  },
+  "save_to_notion": {
+    "message": "儲存到 Notion"
+  },
+  "save_to_obsidian": {
+    "message": "儲存到 Obsidian"
+  },
+  "notion_disconnect_success": {
+    "message": "已斷開 Notion。"
+  },
+  "notion_disconnect_failed": {
+    "message": "無法斷開 Notion：$1"
+  },
+  "notion_status_held": {
+    "message": "準備同步"
+  },
+  "notion_status_pending": {
+    "message": "等待同步"
+  },
+  "notion_status_running": {
+    "message": "正在同步"
+  },
+  "notion_status_retry_wait": {
+    "message": "等待重試"
+  },
+  "notion_status_succeeded": {
+    "message": "同步成功"
+  },
+  "notion_status_partial": {
+    "message": "完成但有降級"
+  },
+  "notion_status_failed": {
+    "message": "同步失敗"
+  },
+  "notion_status_cancelled": {
+    "message": "已取消"
+  },
+  "notion_datasource_fetch_failed": {
+    "message": "擷取失敗 ($1)"
+  },
+  "notion_job_warnings_count": {
+    "message": "$1 個警告"
+  },
+  "notion_cancel_job": {
+    "message": "取消任務"
+  },
+  "notion_retry_job": {
+    "message": "重試"
+  },
+  "notion_open_page": {
+    "message": "開啟 Notion"
+  },
+  "notion_select_database_first": {
+    "message": "請先選擇一個 Notion Database。"
+  },
+  "notion_sync_request_failed": {
+    "message": "同步請求傳送失敗，請確認頁面已重新整理並且就緒。"
+  },
+  "notion_err_update_conflict": {
+    "message": "該會話不是附加模式。請選擇「取代」後重新同步。"
+  },
+  "notion_err_replace_required": {
+    "message": "Notion 頁面已變更。請確認「取代」後重新同步。"
+  },
+  "notion_err_ambiguous_append": {
+    "message": "上一次附加結果不明確。請選擇「取代」以避免重複內容區塊。"
+  },
+  "notion_err_image_upload": {
+    "message": "會話中的圖片無法上傳到 Notion。"
+  },
+  "notion_err_schema": {
+    "message": "所選的資料來源或內容與此同步操作不相容。"
+  },
+  "notion_err_reconnect": {
+    "message": "請重新連結 Notion 工作區後再試。"
+  },
+  "notion_err_permission": {
+    "message": "Notion 連結沒有此頁面或資料來源的存取權限。"
+  },
+  "notion_err_missing": {
+    "message": "對應的 Notion 頁面或資料來源不可用、已移至垃圾桶或已取消共享。"
+  },
+  "notion_err_rate_limited": {
+    "message": "Notion 已限流或過載。請稍後重試。"
+  },
+  "notion_err_temporary": {
+    "message": "臨時的網路或 Notion 服務錯誤中斷了同步。"
+  },
+  "notion_err_unknown": {
+    "message": "Notion 同步無法完成。"
+  },
+  "format_json": {
+    "message": "JSON"
+  },
+  "content_exporting_format": {
+    "message": "正在匯出 $1"
+  },
+  "selected_label_suffix": {
+    "message": "已選"
+  },
+  "obsidian_opening_folder_picker": {
+    "message": "正在開啟資料夾選擇器..."
+  },
+  "obsidian_default_vault_name": {
+    "message": "Obsidian Vault"
+  },
+  "obsidian_default_note_name": {
+    "message": "Obsidian 筆記"
   }
 }

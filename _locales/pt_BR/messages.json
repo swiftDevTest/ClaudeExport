@@ -1603,5 +1603,254 @@
   },
   "content_export_re_export_as": {
     "message": "Exportar novamente como"
+  },
+  "popup_copy_json": {
+    "message": "Copiar JSON"
+  },
+  "export_theme_tooltip": {
+    "message": "Os temas se aplicam apenas a exportações em PDF e imagem. Outros formatos não são afetados."
+  },
+  "popup_show_obsidian_sync": {
+    "message": "Mostrar sincronização com Obsidian"
+  },
+  "popup_show_obsidian_sync_desc": {
+    "message": "Mostrar sincronização individual e em lote com Obsidian no painel de exportação"
+  },
+  "popup_language_system": {
+    "message": "Padrão do sistema"
+  },
+  "notion_connect": {
+    "message": "Conectar Notion"
+  },
+  "notion_disconnect": {
+    "message": "Desconectar"
+  },
+  "obsidian_sync_subtitle": {
+    "message": "Markdown e recursos locais"
+  },
+  "obsidian_configure": {
+    "message": "Configurar Obsidian"
+  },
+  "obsidian_disconnect": {
+    "message": "Desconectar"
+  },
+  "popup_benefit_notion_obsidian": {
+    "message": "Sincronização com Notion e Obsidian"
+  },
+  "btn_confirm": {
+    "message": "Confirmar"
+  },
+  "notion_status_checking": {
+    "message": "Verificando conexão"
+  },
+  "obsidian_status_checking": {
+    "message": "Verificando"
+  },
+  "obsidian_status_checking_vault": {
+    "message": "Verificando Vault"
+  },
+  "notion_sync_capturing_media_many": {
+    "message": "Capturando $1 imagens ($2/$3), isso pode levar um momento..."
+  },
+  "notion_sync_capturing_media_progress": {
+    "message": "Capturando imagens ($1/$2)..."
+  },
+  "notion_sync_writing_large": {
+    "message": "Gravando $1 mensagens no Notion (conversa grande, aguarde)..."
+  },
+  "notion_sync_writing_count": {
+    "message": "Gravando $1 mensagens no Notion..."
+  },
+  "obsidian_processing_media_many": {
+    "message": "Processando $1 imagens ($2/$3), aguarde um momento..."
+  },
+  "obsidian_processing_media_progress": {
+    "message": "Processando imagens ($1/$2)..."
+  },
+  "obsidian_rendering_large": {
+    "message": "Criando Markdown para $1 mensagens (conversa grande, aguarde)..."
+  },
+  "obsidian_rendering_count": {
+    "message": "Criando Markdown para $1 mensagens..."
+  },
+  "obsidian_choose_folders": {
+    "message": "Escolha uma pasta de notas para iniciar a sincronização."
+  },
+  "obsidian_not_configured": {
+    "message": "Não configurado"
+  },
+  "obsidian_repair_folders": {
+    "message": "Reparar pastas do Vault"
+  },
+  "obsidian_status_failed": {
+    "message": "Não foi possível verificar o status do Vault."
+  },
+  "content_batch_status_waiting": {
+    "message": "Aguardando"
+  },
+  "content_batch_status_loading": {
+    "message": "Carregando página"
+  },
+  "content_batch_status_completed": {
+    "message": "Concluído"
+  },
+  "export_health_empty_conversation": {
+    "message": "Nenhuma mensagem detectada nesta conversa. Aguarde a página carregar."
+  },
+  "export_health_empty_ai_only": {
+    "message": "Nenhuma resposta do assistente encontrada no modo somente IA."
+  },
+  "export_health_lazy_load_hint": {
+    "message": "Dica: Se o chat for longo, role a página para garantir que todas as mensagens sejam totalmente carregadas no navegador."
+  },
+  "export_health_embedded_too_large": {
+    "message": "As imagens incorporadas são grandes demais para uma exportação segura. Reduza as imagens ou divida a exportação para evitar falta de memória do navegador."
+  },
+  "export_health_embedded_large": {
+    "message": "Este chat contém grandes imagens incorporadas e pode usar muita memória durante a exportação."
+  },
+  "export_health_high_image_count": {
+    "message": "Este chat contém muitas imagens ($1), o que pode levar mais tempo para baixar e criar."
+  },
+  "export_health_png_scale_reduced": {
+    "message": "O chat é longo. A exportação de imagem reduzirá sua escala de pixels para se ajustar aos limites de canvas do navegador; use PDF para preservar a fidelidade paginada completa."
+  },
+  "export_health_ultra_long_code": {
+    "message": "Blocos de código grandes detectados. A exportação para Word ou PDF é recomendada para melhor formatação."
+  },
+  "export_health_dom_parse_drop": {
+    "message": "$1 de $2 mensagens candidatas não foram analisadas. O layout da página pode ter mudado; role para carregar totalmente ou atualize a extensão."
+  },
+  "export_health_dom_parse_empty": {
+    "message": "Elementos de mensagem foram detectados na página, mas a análise não retornou nada. A extensão pode estar desatualizada; por favor, atualize."
+  },
+  "privacy_proof_local_generation": {
+    "message": "O formato de documento [$1] é gerado 100% localmente em seu navegador."
+  },
+  "privacy_proof_no_upload": {
+    "message": "O conteúdo do chat nunca é carregado para os servidores ChatVault para conversão."
+  },
+  "privacy_proof_image_fetch": {
+    "message": "Como a conversa contém imagens, a extensão buscará com segurança os bytes da imagem do CDN da plataforma original localmente."
+  },
+  "privacy_proof_usage_local": {
+    "message": "O contador de uso é armazenado localmente; o status VIP é verificado através do serviço de conta sem carregar conteúdo do chat ou escanear seu histórico de chat."
+  },
+  "template_appendix_original_prompts": {
+    "message": "Apêndice: Prompts originais"
+  },
+  "connections_title": {
+    "message": "Connections"
+  },
+  "language_label": {
+    "message": "Language"
+  },
+  "save_to_notion": {
+    "message": "Save to Notion"
+  },
+  "save_to_obsidian": {
+    "message": "Save to Obsidian"
+  },
+  "notion_disconnect_success": {
+    "message": "Notion disconnected."
+  },
+  "notion_disconnect_failed": {
+    "message": "Could not disconnect Notion: $1"
+  },
+  "notion_status_held": {
+    "message": "Queued"
+  },
+  "notion_status_pending": {
+    "message": "Pending"
+  },
+  "notion_status_running": {
+    "message": "Syncing"
+  },
+  "notion_status_retry_wait": {
+    "message": "Waiting to retry"
+  },
+  "notion_status_succeeded": {
+    "message": "Sync succeeded"
+  },
+  "notion_status_partial": {
+    "message": "Completed with warnings"
+  },
+  "notion_status_failed": {
+    "message": "Sync failed"
+  },
+  "notion_status_cancelled": {
+    "message": "Cancelled"
+  },
+  "notion_datasource_fetch_failed": {
+    "message": "Fetch failed ($1)"
+  },
+  "notion_job_warnings_count": {
+    "message": "$1 warnings"
+  },
+  "notion_cancel_job": {
+    "message": "Cancel task"
+  },
+  "notion_retry_job": {
+    "message": "Retry"
+  },
+  "notion_open_page": {
+    "message": "Open Notion"
+  },
+  "notion_select_database_first": {
+    "message": "Please select a Notion Database first."
+  },
+  "notion_sync_request_failed": {
+    "message": "Sync request failed. Make sure the page is refreshed and ready."
+  },
+  "notion_err_update_conflict": {
+    "message": "The conversation is not append-only. Choose Replace and sync again."
+  },
+  "notion_err_replace_required": {
+    "message": "The Notion page changed. Confirm Replace and sync again."
+  },
+  "notion_err_ambiguous_append": {
+    "message": "A previous append result was ambiguous. Choose Replace to avoid duplicate blocks."
+  },
+  "notion_err_image_upload": {
+    "message": "A conversation image could not be uploaded to Notion."
+  },
+  "notion_err_schema": {
+    "message": "The selected Data Source or content is not compatible with this sync operation."
+  },
+  "notion_err_reconnect": {
+    "message": "Reconnect the Notion workspace and try again."
+  },
+  "notion_err_permission": {
+    "message": "The Notion connection does not have permission for this page or Data Source."
+  },
+  "notion_err_missing": {
+    "message": "The mapped Notion page or Data Source is unavailable, moved to trash, or no longer shared."
+  },
+  "notion_err_rate_limited": {
+    "message": "Notion is rate-limited or overloaded. Retry later."
+  },
+  "notion_err_temporary": {
+    "message": "A temporary network or Notion service error interrupted the sync."
+  },
+  "notion_err_unknown": {
+    "message": "Notion sync could not be completed."
+  },
+  "format_json": {
+    "message": "JSON"
+  },
+  "content_exporting_format": {
+    "message": "Exporting $1"
+  },
+  "selected_label_suffix": {
+    "message": "Selected"
+  },
+  "obsidian_opening_folder_picker": {
+    "message": "Opening the folder chooser..."
+  },
+  "obsidian_default_vault_name": {
+    "message": "Obsidian Vault"
+  },
+  "obsidian_default_note_name": {
+    "message": "Obsidian note"
   }
 }

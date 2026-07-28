@@ -109,7 +109,10 @@
   }
 
   function obsidianText(english, chinese) {
-    return /^zh(?:_|-|$)/i.test(getUILanguage()) ? chinese : english;
+    // Match only Simplified Chinese; zh-TW has its own catalog and falls back to English here.
+    const lang = getUILanguage() || "";
+    const isSimplifiedZh = /^zh[-_](?:CN|Hans|SG|MO)$/i.test(lang) || (/^zh(?:_|-|$)/i.test(lang) && !/^zh[-_](?:TW|HK|Hant)$/i.test(lang));
+    return isSimplifiedZh ? chinese : english;
   }
 
   function ot(key, english, chinese, ...args) {
@@ -163,7 +166,7 @@
     setText("#quota-status-info", "popup_quota_loading", "Loading usage quota...");
 
     var connectionsTitle = document.querySelector("#connection-settings-card h3");
-    if (connectionsTitle) connectionsTitle.textContent = obsidianText("Connections", "连接管理");
+    if (connectionsTitle) connectionsTitle.textContent = t("connections_title", obsidianText("Connections", "连接管理"));
     setText("#theme-settings-title", "export_theme_label", "Export Theme & Styling");
     setText("#theme-tooltip-text", "export_theme_tooltip", "Themes apply only to PDF and Image exports. Other formats are not affected.");
     setAriaLabel("#theme-help-tooltip", "export_theme_tooltip", "Themes apply only to PDF and Image exports. Other formats are not affected.");
@@ -188,10 +191,10 @@
     setSettingTexts("toggle-align-right", "export_opt_align_right", "Align My Questions Right", "popup_align_right_desc", "Right-align your questions in PDF and image exports");
     setSettingTexts("toggle-obsidian-sync", "popup_show_obsidian_sync", obsidianText("Show Obsidian Sync", "显示 Obsidian 同步"), "popup_show_obsidian_sync_desc", obsidianText("Show single and batch Obsidian sync in the export panel", "在导出面板显示单个与批量 Obsidian 同步"));
     var languageTitle = document.querySelector(".language-settings-copy .toggle-title");
-    if (languageTitle) languageTitle.textContent = "Language";
+    if (languageTitle) languageTitle.textContent = t("language_label", "Language");
     setText('#ui-language-select option[value="system"]', "popup_language_system", "System Default");
     var notionHeading = document.querySelector(".notion-sync-heading h3");
-    if (notionHeading) notionHeading.textContent = obsidianText("Save to Notion", "保存到 Notion");
+    if (notionHeading) notionHeading.textContent = t("save_to_notion", obsidianText("Save to Notion", "保存到 Notion"));
     var notionDisclosure = t(
       "notion_data_disclosure",
       "When you sync, the selected conversation and included images are sent directly to your connected Notion workspace. $1 does not receive or store this content.",
@@ -204,10 +207,10 @@
     setText("#btn-oauth-notion", "notion_connect", obsidianText("Connect Notion", "连接 Notion"));
     setText("#btn-connect-notion-settings", "notion_connect", obsidianText("Connect Notion", "连接 Notion"));
     var notionSave = document.getElementById("btn-sync-notion-oauth");
-    if (notionSave) notionSave.textContent = obsidianText("Save", "保存");
+    if (notionSave) notionSave.textContent = t("btn_save", obsidianText("Save", "保存"));
     setText("#btn-disconnect-oauth", "notion_disconnect", obsidianText("Disconnect", "断开连接"));
     var obsidianHeading = document.querySelector(".obsidian-sync-heading h3");
-    if (obsidianHeading) obsidianHeading.textContent = obsidianText("Save to Obsidian", "保存到 Obsidian");
+    if (obsidianHeading) obsidianHeading.textContent = t("save_to_obsidian", obsidianText("Save to Obsidian", "保存到 Obsidian"));
     setText("#obsidian-connection-status", "obsidian_sync_subtitle", obsidianText("Local Markdown and assets", "本地 Markdown 与资源"));
     setText("#obsidian-settings-configure", "obsidian_configure", obsidianText("Config Obsidian", "配置 Obsidian"));
     setText("#obsidian-sync-disconnect", "obsidian_disconnect", obsidianText("Disconnect", "断开连接"));
@@ -2507,7 +2510,7 @@
       } else {
         const option = document.createElement("option");
         option.value = "";
-        option.textContent = `拉取失败 (${error && error.message ? error.message : "unknown error"})`;
+        option.textContent = t("notion_datasource_fetch_failed", obsidianText(`Fetch failed ($1)`, `拉取失败 ($1)`), error && error.message ? error.message : obsidianText("unknown error", "未知错误"));
         dbSelect.replaceChildren(option);
       }
       return false;
@@ -2577,16 +2580,17 @@
   }
 
   function notionStatusLabel(status) {
-    return {
-      held: "准备同步",
-      pending: "等待同步",
-      running: "正在同步",
-      retry_wait: "等待重试",
-      succeeded: "同步成功",
-      partial: "完成但有降级",
-      failed: "同步失败",
-      cancelled: "已取消"
-    }[status] || status;
+    var map = {
+      held: t("notion_status_held", obsidianText("Queued", "准备同步")),
+      pending: t("notion_status_pending", obsidianText("Pending", "等待同步")),
+      running: t("notion_status_running", obsidianText("Syncing", "正在同步")),
+      retry_wait: t("notion_status_retry_wait", obsidianText("Waiting to retry", "等待重试")),
+      succeeded: t("notion_status_succeeded", obsidianText("Sync succeeded", "同步成功")),
+      partial: t("notion_status_partial", obsidianText("Completed with warnings", "完成但有降级")),
+      failed: t("notion_status_failed", obsidianText("Sync failed", "同步失败")),
+      cancelled: t("notion_status_cancelled", obsidianText("Cancelled", "已取消"))
+    };
+    return map[status] || status;
   }
 
   function renderNotionJob(job) {
@@ -2599,12 +2603,12 @@
     container.style.display = "block";
     container.innerHTML = "";
     const summary = document.createElement("div");
-    summary.textContent = `${notionStatusLabel(job.status)} · ${job.progress || 0}%${job.warningCount ? ` · ${job.warningCount} warnings` : ""}`;
+    summary.textContent = `${notionStatusLabel(job.status)} · ${job.progress || 0}%${job.warningCount ? ` · ${t("notion_job_warnings_count", obsidianText("$1 warnings", "$1 个警告"), job.warningCount)}` : ""}`;
     container.appendChild(summary);
     if (job.errorMessage) {
       const error = document.createElement("div");
       error.style.color = "#ef4444";
-      error.textContent = job.errorMessage;
+      error.textContent = job.errorCode ? t(job.errorCode, job.errorMessage) : job.errorMessage;
       container.appendChild(error);
     }
     if (Array.isArray(job.warnings) && job.warnings.length) {
@@ -2623,7 +2627,7 @@
     if (["held", "pending", "running", "retry_wait"].includes(job.status)) {
       const cancel = document.createElement("button");
       cancel.className = "notion-save-btn";
-      cancel.textContent = "取消任务";
+      cancel.textContent = t("notion_cancel_job", obsidianText("Cancel task", "取消任务"));
       cancel.onclick = async () => {
         const response = await notionBackgroundMessage({ type: "CHATVAULT_NOTION_CANCEL_JOB", jobId: job.id });
         renderNotionJob(response.job);
@@ -2633,7 +2637,7 @@
     if (job.status === "failed") {
       const retry = document.createElement("button");
       retry.className = "notion-save-btn";
-      retry.textContent = "重试";
+      retry.textContent = t("notion_retry_job", obsidianText("Retry", "重试"));
       retry.onclick = async () => {
         const response = await notionBackgroundMessage({ type: "CHATVAULT_NOTION_RETRY_JOB", jobId: job.id });
         renderNotionJob(response.job);
@@ -2654,7 +2658,7 @@
     if (job.notionPageUrl) {
       const open = document.createElement("button");
       open.className = "notion-save-btn";
-      open.textContent = "打开 Notion";
+      open.textContent = t("notion_open_page", obsidianText("Open Notion", "打开 Notion"));
       open.style.marginLeft = "5px";
       open.onclick = () => {
         try {
@@ -2685,7 +2689,7 @@
     if (await blockExportIfFreeQuotaExhausted()) return;
 
     if (!notionConfig.connectionId || !notionConfig.dataSourceId) {
-      showToast("请先选择一个 Notion Database。");
+      showToast(t("notion_select_database_first", obsidianText("Please select a Notion Database first.", "请先选择一个 Notion Database。")));
       return;
     }
 
@@ -2717,7 +2721,7 @@
       if (response && response.ok) {
         window.close();
       } else {
-        showToast("同步请求发送失败，请确认页面已刷新并且就绪。");
+        showToast(t("notion_sync_request_failed", obsidianText("Sync request failed. Make sure the page is refreshed and ready.", "同步请求发送失败，请确认页面已刷新并且就绪。")));
       }
     });
   }
@@ -2809,9 +2813,9 @@
         workspaceName: ""
       };
       await refreshNotionUi();
-      showToast(obsidianText("Notion disconnected.", "已断开 Notion。"));
+      showToast(t("notion_disconnect_success", obsidianText("Notion disconnected.", "已断开 Notion。")));
     } catch (error) {
-      showToast(obsidianText(`Could not disconnect Notion: ${error.message}`, `无法断开 Notion：${error.message}`));
+      showToast(t("notion_disconnect_failed", obsidianText(`Could not disconnect Notion: $1`, `无法断开 Notion：$1`), error && error.message ? error.message : ""));
     } finally {
       if (button) button.disabled = false;
     }

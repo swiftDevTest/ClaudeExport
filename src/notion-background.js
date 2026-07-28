@@ -643,17 +643,17 @@
   function userFacingJobError(error) {
     const code = String(error && error.code || "");
     const status = Number(error && error.status || 0);
-    if (code === "update_conflict_requires_replace") return "The conversation is not append-only. Choose Replace and sync again.";
-    if (code === "replace_confirmation_required") return "The Notion page changed. Confirm Replace and sync again.";
-    if (code === "ambiguous_append_result") return "A previous append result was ambiguous. Choose Replace to avoid duplicate blocks.";
-    if (/image|file_upload|media/.test(code)) return "A conversation image could not be uploaded to Notion.";
-    if (/schema|property|validation/.test(code) || status === 400) return "The selected Data Source or content is not compatible with this sync operation.";
-    if (status === 401 || /reconnect|auth|token/.test(code)) return "Reconnect the Notion workspace and try again.";
-    if (status === 403 || code === "restricted_resource") return "The Notion connection does not have permission for this page or Data Source.";
-    if (status === 404) return "The mapped Notion page or Data Source is unavailable, moved to trash, or no longer shared.";
-    if (status === 429 || status === 529) return "Notion is rate-limited or overloaded. Retry later.";
-    if (status >= 500 || status === 0) return "A temporary network or Notion service error interrupted the sync.";
-    return "Notion sync could not be completed.";
+    if (code === "update_conflict_requires_replace") return { code: "notion_err_update_conflict", message: "The conversation is not append-only. Choose Replace and sync again." };
+    if (code === "replace_confirmation_required") return { code: "notion_err_replace_required", message: "The Notion page changed. Confirm Replace and sync again." };
+    if (code === "ambiguous_append_result") return { code: "notion_err_ambiguous_append", message: "A previous append result was ambiguous. Choose Replace to avoid duplicate blocks." };
+    if (/image|file_upload|media/.test(code)) return { code: "notion_err_image_upload", message: "A conversation image could not be uploaded to Notion." };
+    if (/schema|property|validation/.test(code) || status === 400) return { code: "notion_err_schema", message: "The selected Data Source or content is not compatible with this sync operation." };
+    if (status === 401 || /reconnect|auth|token/.test(code)) return { code: "notion_err_reconnect", message: "Reconnect the Notion workspace and try again." };
+    if (status === 403 || code === "restricted_resource") return { code: "notion_err_permission", message: "The Notion connection does not have permission for this page or Data Source." };
+    if (status === 404) return { code: "notion_err_missing", message: "The mapped Notion page or Data Source is unavailable, moved to trash, or no longer shared." };
+    if (status === 429 || status === 529) return { code: "notion_err_rate_limited", message: "Notion is rate-limited or overloaded. Retry later." };
+    if (status >= 500 || status === 0) return { code: "notion_err_temporary", message: "A temporary network or Notion service error interrupted the sync." };
+    return { code: "notion_err_unknown", message: "Notion sync could not be completed." };
   }
 
   async function notionRequest(connectionId, token, path, options) {
@@ -1498,14 +1498,16 @@
       if (retryable && job.attempt < 5 && job.totalRetryWaitMs <= 30 * 60 * 1000) {
         job.status = "retry_wait";
         job.nextAttemptAt = Date.now() + retryDelay;
-        job.errorCode = error.code || "retryable_error";
-        job.errorMessage = userFacingJobError(error);
+        const facing = userFacingJobError(error);
+        job.errorCode = facing.code;
+        job.errorMessage = facing.message;
         job.errorRequestId = String(error && error.requestId || "").slice(0, 120);
         schedulePumpAt(job.nextAttemptAt);
       } else {
         job.status = "failed";
-        job.errorCode = error.code || "notion_sync_failed";
-        job.errorMessage = userFacingJobError(error);
+        const facing = userFacingJobError(error);
+        job.errorCode = facing.code;
+        job.errorMessage = facing.message;
         job.errorRequestId = String(error && error.requestId || "").slice(0, 120);
       }
       job.updatedAt = Date.now();

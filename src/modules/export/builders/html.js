@@ -12,6 +12,7 @@ import {
   shouldCoalesceInlineSegments,
   getCoalescedInlineSegmentsText,
   t,
+  untitledChatTitle,
   yieldToBrowser
 } from '../utils.js';
 import { fetchImageBytes } from '../media.js';
@@ -411,7 +412,7 @@ export async function buildHtmlBlob(messages, metadata, settings, options) {
   }
   var meta = [];
   if (settings.show_export_time && metadata && metadata.exportedAt) meta.push(escapeHtml(formatDateDisplay(metadata.exportedAt)));
-  var title = metadata && metadata.title || "Untitled Chat";
+  var title = metadata && metadata.title || untitledChatTitle();
   var header = settings.show_conversation_title || meta.length
     ? "<header>" + (settings.show_conversation_title ? "<h1>" + escapeHtml(title) + "</h1>" : "") + (meta.length ? '<div class="meta"><span>' + meta.join("</span><span>") + "</span></div>" : "") + "</header>"
     : "";

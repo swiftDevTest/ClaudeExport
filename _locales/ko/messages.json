@@ -1603,5 +1603,254 @@
   },
   "content_export_re_export_as": {
     "message": "다른 형식으로 다시 내보내기"
+  },
+  "popup_copy_json": {
+    "message": "JSON 복사"
+  },
+  "export_theme_tooltip": {
+    "message": "테마는 PDF 및 이미지 내보내기에만 적용됩니다. 다른 형식에는 영향을 주지 않습니다."
+  },
+  "popup_show_obsidian_sync": {
+    "message": "Obsidian 동기화 표시"
+  },
+  "popup_show_obsidian_sync_desc": {
+    "message": "내보내기 패널에 단일 및 일괄 Obsidian 동기화 표시"
+  },
+  "popup_language_system": {
+    "message": "시스템 기본값"
+  },
+  "notion_connect": {
+    "message": "Notion 연결"
+  },
+  "notion_disconnect": {
+    "message": "연결 해제"
+  },
+  "obsidian_sync_subtitle": {
+    "message": "로컬 Markdown 및 자산"
+  },
+  "obsidian_configure": {
+    "message": "Obsidian 구성"
+  },
+  "obsidian_disconnect": {
+    "message": "연결 해제"
+  },
+  "popup_benefit_notion_obsidian": {
+    "message": "Notion 및 Obsidian 동기화"
+  },
+  "btn_confirm": {
+    "message": "확인"
+  },
+  "notion_status_checking": {
+    "message": "연결 확인 중"
+  },
+  "obsidian_status_checking": {
+    "message": "확인 중"
+  },
+  "obsidian_status_checking_vault": {
+    "message": "Vault 확인 중"
+  },
+  "notion_sync_capturing_media_many": {
+    "message": "$1개 이미지 캡처 중 ($2/$3), 잠시만 기다려 주세요..."
+  },
+  "notion_sync_capturing_media_progress": {
+    "message": "이미지 캡처 중 ($1/$2)..."
+  },
+  "notion_sync_writing_large": {
+    "message": "Notion에 $1개 메시지 쓰는 중 (큰 대화입니다. 잠시만 기다려 주세요)..."
+  },
+  "notion_sync_writing_count": {
+    "message": "Notion에 $1개 메시지 쓰는 중..."
+  },
+  "obsidian_processing_media_many": {
+    "message": "$1개 이미지 처리 중 ($2/$3), 잠시만 기다려 주세요..."
+  },
+  "obsidian_processing_media_progress": {
+    "message": "이미지 처리 중 ($1/$2)..."
+  },
+  "obsidian_rendering_large": {
+    "message": "$1개 메시지의 Markdown 생성 중 (큰 대화입니다. 잠시만 기다려 주세요)..."
+  },
+  "obsidian_rendering_count": {
+    "message": "$1개 메시지의 Markdown 생성 중..."
+  },
+  "obsidian_choose_folders": {
+    "message": "동기화를 시작하려면 노트 폴더를 선택하세요."
+  },
+  "obsidian_not_configured": {
+    "message": "구성되지 않음"
+  },
+  "obsidian_repair_folders": {
+    "message": "Vault 폴더 복구"
+  },
+  "obsidian_status_failed": {
+    "message": "Vault 상태를 확인할 수 없습니다."
+  },
+  "content_batch_status_waiting": {
+    "message": "대기 중"
+  },
+  "content_batch_status_loading": {
+    "message": "페이지 로딩 중"
+  },
+  "content_batch_status_completed": {
+    "message": "완료됨"
+  },
+  "export_health_empty_conversation": {
+    "message": "이 대화에서 메시지가 감지되지 않았습니다. 페이지가 로드될 때까지 기다려 주세요."
+  },
+  "export_health_empty_ai_only": {
+    "message": "AI 전용 모드에서 어시스턴트 응답을 찾을 수 없습니다."
+  },
+  "export_health_lazy_load_hint": {
+    "message": "팁: 채팅이 긴 경우 페이지를 스크롤하여 모든 메시지가 브라우저에 완전히 로드되었는지 확인하세요."
+  },
+  "export_health_embedded_too_large": {
+    "message": "포함된 이미지가 너무 커서 안전하게 내보낼 수 없습니다. 브라우저 메모리 부족을 방지하려면 이미지를 줄이거나 내보내기를 분할하세요."
+  },
+  "export_health_embedded_large": {
+    "message": "이 채팅에는 큰 포함된 이미지가 있어 내보내기 중 상당한 메모리를 사용할 수 있습니다."
+  },
+  "export_health_high_image_count": {
+    "message": "이 채팅에는 많은 이미지($1)가 포함되어 있어 다운로드 및 작성에 시간이 더 걸릴 수 있습니다."
+  },
+  "export_health_png_scale_reduced": {
+    "message": "채팅이 깁니다. 이미지 내보내기는 브라우저 캔버스 한계에 맞추기 위해 픽셀 배율을 낮춥니다. 페이지가 매겨진 충실도를 유지하려면 PDF를 사용하세요."
+  },
+  "export_health_ultra_long_code": {
+    "message": "큰 코드 블록이 감지되었습니다. 더 나은 서식을 위해 Word 또는 PDF 내보내기를 권장합니다."
+  },
+  "export_health_dom_parse_drop": {
+    "message": "후보 메시지 $2개 중 $1개가 파싱되지 않았습니다. 페이지 레이아웃이 변경되었을 수 있습니다. 스크롤하여 완전히 로드하거나 확장 프로그램을 업데이트하세요."
+  },
+  "export_health_dom_parse_empty": {
+    "message": "페이지에서 메시지 요소가 감지되었지만 파싱이 아무것도 반환하지 않았습니다. 확장 프로그램이 오래되었을 수 있습니다. 업데이트해 주세요."
+  },
+  "privacy_proof_local_generation": {
+    "message": "문서 형식 [$1]은(는) 브라우저에서 100% 로컬로 생성됩니다."
+  },
+  "privacy_proof_no_upload": {
+    "message": "채팅 콘텐츠는 변환을 위해 ChatVault 서버로 업로드되지 않습니다."
+  },
+  "privacy_proof_image_fetch": {
+    "message": "대화에 이미지가 포함되어 있으므로 확장 프로그램은 원래 플랫폼 CDN에서 이미지 바이트를 로컬로 안전하게 가져옵니다."
+  },
+  "privacy_proof_usage_local": {
+    "message": "사용 횟수는 로컬에 저장됩니다. VIP 상태는 채팅 콘텐츠를 업로드하거나 채팅 기록을 스캔하지 않고 계정 서비스를 통해 확인됩니다."
+  },
+  "template_appendix_original_prompts": {
+    "message": "부록: 원래 프롬프트"
+  },
+  "connections_title": {
+    "message": "Connections"
+  },
+  "language_label": {
+    "message": "Language"
+  },
+  "save_to_notion": {
+    "message": "Save to Notion"
+  },
+  "save_to_obsidian": {
+    "message": "Save to Obsidian"
+  },
+  "notion_disconnect_success": {
+    "message": "Notion disconnected."
+  },
+  "notion_disconnect_failed": {
+    "message": "Could not disconnect Notion: $1"
+  },
+  "notion_status_held": {
+    "message": "Queued"
+  },
+  "notion_status_pending": {
+    "message": "Pending"
+  },
+  "notion_status_running": {
+    "message": "Syncing"
+  },
+  "notion_status_retry_wait": {
+    "message": "Waiting to retry"
+  },
+  "notion_status_succeeded": {
+    "message": "Sync succeeded"
+  },
+  "notion_status_partial": {
+    "message": "Completed with warnings"
+  },
+  "notion_status_failed": {
+    "message": "Sync failed"
+  },
+  "notion_status_cancelled": {
+    "message": "Cancelled"
+  },
+  "notion_datasource_fetch_failed": {
+    "message": "Fetch failed ($1)"
+  },
+  "notion_job_warnings_count": {
+    "message": "$1 warnings"
+  },
+  "notion_cancel_job": {
+    "message": "Cancel task"
+  },
+  "notion_retry_job": {
+    "message": "Retry"
+  },
+  "notion_open_page": {
+    "message": "Open Notion"
+  },
+  "notion_select_database_first": {
+    "message": "Please select a Notion Database first."
+  },
+  "notion_sync_request_failed": {
+    "message": "Sync request failed. Make sure the page is refreshed and ready."
+  },
+  "notion_err_update_conflict": {
+    "message": "The conversation is not append-only. Choose Replace and sync again."
+  },
+  "notion_err_replace_required": {
+    "message": "The Notion page changed. Confirm Replace and sync again."
+  },
+  "notion_err_ambiguous_append": {
+    "message": "A previous append result was ambiguous. Choose Replace to avoid duplicate blocks."
+  },
+  "notion_err_image_upload": {
+    "message": "A conversation image could not be uploaded to Notion."
+  },
+  "notion_err_schema": {
+    "message": "The selected Data Source or content is not compatible with this sync operation."
+  },
+  "notion_err_reconnect": {
+    "message": "Reconnect the Notion workspace and try again."
+  },
+  "notion_err_permission": {
+    "message": "The Notion connection does not have permission for this page or Data Source."
+  },
+  "notion_err_missing": {
+    "message": "The mapped Notion page or Data Source is unavailable, moved to trash, or no longer shared."
+  },
+  "notion_err_rate_limited": {
+    "message": "Notion is rate-limited or overloaded. Retry later."
+  },
+  "notion_err_temporary": {
+    "message": "A temporary network or Notion service error interrupted the sync."
+  },
+  "notion_err_unknown": {
+    "message": "Notion sync could not be completed."
+  },
+  "format_json": {
+    "message": "JSON"
+  },
+  "content_exporting_format": {
+    "message": "Exporting $1"
+  },
+  "selected_label_suffix": {
+    "message": "Selected"
+  },
+  "obsidian_opening_folder_picker": {
+    "message": "Opening the folder chooser..."
+  },
+  "obsidian_default_vault_name": {
+    "message": "Obsidian Vault"
+  },
+  "obsidian_default_note_name": {
+    "message": "Obsidian note"
   }
 }

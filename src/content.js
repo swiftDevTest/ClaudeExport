@@ -106,7 +106,13 @@
   }
 
   function isChineseUi() {
-    return /^zh(?:_|-|$)/i.test(getUiLanguage());
+    // Match only Simplified Chinese (zh-CN / zh-Hans). Traditional Chinese (zh-TW / zh-Hant)
+    // has its own _locales/zh_TW catalog and should fall back to English when a key is missing.
+    const lang = getUiLanguage() || "";
+    if (/^zh[-_](?:CN|Hans|SG|MO)$/i.test(lang)) return true;
+    if (/^zh[-_](?:TW|HK|Hant)$/i.test(lang)) return false;
+    // Bare "zh" without region: treat as Simplified (Chrome defaults to zh-CN for zh).
+    return /^zh(?:_|-|$)/i.test(lang);
   }
 
   function isBackendSchemaCacheError(error) {
@@ -1616,7 +1622,7 @@
             <select id="cv-batch-notion-select">
               <option value="">${tx("content_notion_destination_unavailable", "Connect Notion from the extension popup", "请先在插件弹窗中连接 Notion")}</option>
             </select>
-            <button type="button" class="cv-batch-notion-connect" id="cv-batch-notion-connect" hidden>${isChineseUi() ? "连接 Notion" : "Connect Notion"}</button>
+            <button type="button" class="cv-batch-notion-connect" id="cv-batch-notion-connect" hidden>${tx("notion_connect", "Connect Notion", "连接 Notion")}</button>
             <p id="cv-batch-notion-helper"></p>
           </div>
 
@@ -2205,7 +2211,7 @@
             ids.add(id);
             let text = el.textContent || "";
             const lines = text.split("\n").map(s => s.trim()).filter(Boolean);
-            let title = collapseRepeatedBatchTitle(lines[0] || "Untitled Chat");
+            let title = collapseRepeatedBatchTitle(lines[0] || tx("untitled_chat", "Untitled Chat", "未命名会话"));
             if (title.length > 100) title = title.substring(0, 100) + "...";
             list.push({ id, title, url: resolveSidebarHref(href, "/c/" + id), platform });
           }
@@ -2223,7 +2229,7 @@
               ids.add(id);
               let text = el.textContent || "";
               const lines = text.split("\n").map(s => s.trim()).filter(Boolean);
-              let title = collapseRepeatedBatchTitle(lines[0] || "Untitled Chat");
+              let title = collapseRepeatedBatchTitle(lines[0] || tx("untitled_chat", "Untitled Chat", "未命名会话"));
               list.push({ id, title, url: resolveSidebarHref(href, "/chat/" + id), platform });
             }
           }
@@ -2240,7 +2246,7 @@
             ids.add(id);
             let text = el.textContent || "";
             const lines = text.split("\n").map(s => s.trim()).filter(Boolean);
-            let title = collapseRepeatedBatchTitle(lines[0] || "Untitled Chat");
+            let title = collapseRepeatedBatchTitle(lines[0] || tx("untitled_chat", "Untitled Chat", "未命名会话"));
             list.push({ id, title, url: resolveSidebarHref(href, "/app/" + id), platform });
           }
         }
@@ -2417,7 +2423,7 @@
     if (!item || typeof item !== "object") return null;
     const id = item.id || item.conversation_id || item.conversationId || item.uuid;
     if (!id) return null;
-    const title = String(item.title || item.name || item.summary || "Untitled Chat").trim() || "Untitled Chat";
+    const title = String(item.title || item.name || item.summary || tx("untitled_chat", "Untitled Chat", "未命名会话")).trim() || tx("untitled_chat", "Untitled Chat", "未命名会话");
     return {
       id: String(id),
       title: title.length > 100 ? title.substring(0, 100) + "..." : title,
@@ -3200,7 +3206,7 @@
       batchObsidianBatchId = "";
       shadowRoot?.querySelectorAll(".cv-batch-badge").forEach((badge) => {
         badge.className = "cv-batch-badge waiting";
-        badge.textContent = "Waiting";
+        badge.textContent = t("content_batch_status_waiting", "Waiting");
       });
       shadowRoot?.querySelectorAll(".cv-batch-row-open").forEach((button) => {
         button.hidden = true;
@@ -4615,7 +4621,7 @@
         const badge = row.querySelector(".cv-batch-badge");
         if (badge) {
           badge.className = "cv-batch-badge loading";
-          badge.textContent = "Loading page";
+          badge.textContent = t("content_batch_status_loading", "Loading page");
         }
       }
     }
@@ -4650,7 +4656,7 @@
         const badge = row.querySelector(".cv-batch-badge");
         if (badge) {
           badge.className = "cv-batch-badge completed";
-          badge.textContent = "Completed";
+          badge.textContent = t("content_batch_status_completed", "Completed");
         }
       }
     }
@@ -4667,7 +4673,7 @@
         const badge = row.querySelector(".cv-batch-badge");
         if (badge) {
           badge.className = "cv-batch-badge failed";
-          badge.textContent = "Failed";
+          badge.textContent = t("content_batch_item_failed", "Failed");
           badge.setAttribute("title", message.error || "Export failed");
         }
       }
@@ -6264,7 +6270,7 @@
     }
     const cancelBtn = shadowRoot.getElementById("cancel-export-btn");
     if (cancelBtn) {
-      cancelBtn.textContent = "Cancel";
+      cancelBtn.textContent = t("btn_cancel", "Cancel");
     }
   }
 

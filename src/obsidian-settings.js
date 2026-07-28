@@ -181,7 +181,9 @@
     const root = selectedHandle;
     if (!root) throw new Error(t("obsidian_settings_choose_root_first", "Choose your Obsidian Vault folder first."));
     const language = i18n?.getLanguage?.() || "en";
-    setResult(/^zh(?:_|-|$)/i.test(language) ? "正在打开文件夹选择器..." : "Opening the folder chooser...", "");
+    // Simplified Chinese only; zh-TW has its own catalog.
+    const isSimplifiedZh = /^zh[-_](?:CN|Hans|SG|MO)$/i.test(language) || (/^zh(?:_|-|$)/i.test(language) && !/^zh[-_](?:TW|HK|Hant)$/i.test(language));
+    setResult(t("obsidian_opening_folder_picker", isSimplifiedZh ? "正在打开文件夹选择器..." : "Opening the folder chooser..."), "");
     const pickerPromise = window.showDirectoryPicker({ id: pickerId, mode: "readwrite", startIn: root });
     const picked = await pickerPromise;
     if (typeof root.resolve !== "function") throw new Error(t("obsidian_settings_resolve_unsupported", "This Chrome version cannot confirm whether the selected folder is inside the Vault."));
@@ -361,8 +363,8 @@
         }
       }, () => chrome.runtime.lastError ? reject(new Error(chrome.runtime.lastError.message)) : resolve()));
       selectedHandle = handle;
-      currentVaultName = handle.name || "Obsidian Vault";
-      elements.vaultName.textContent = handle.name || "Obsidian Vault";
+      currentVaultName = handle.name || t("obsidian_default_vault_name", "Obsidian Vault");
+      elements.vaultName.textContent = handle.name || t("obsidian_default_vault_name", "Obsidian Vault");
       if (elements.vaultNameInput) elements.vaultNameInput.value = vaultNameOverride || currentVaultName;
       if (elements.vaultNameField) elements.vaultNameField.hidden = false;
       elements.vaultStatus.textContent = t("obsidian_settings_ready", "Connection and folders are ready for single or batch sync.");
@@ -437,7 +439,7 @@
         row.className = "obsidian-settings-history-item";
         const info = document.createElement("div");
         const title = document.createElement("strong");
-        title.textContent = entry.noteRelativePath || entry.title || "Obsidian note";
+        title.textContent = entry.noteRelativePath || entry.title || t("obsidian_default_note_name", "Obsidian note");
         const meta = document.createElement("span");
         const statusLabel = entry.status === "partial"
           ? t("obsidian_status_partial", "Warnings")
@@ -489,10 +491,10 @@
     }
     if (record && record.handle) {
       selectedHandle = record.handle;
-      currentVaultName = record.handle.name || "Obsidian Vault";
+      currentVaultName = record.handle.name || t("obsidian_default_vault_name", "Obsidian Vault");
       // 加载持久化的 vault 名覆盖值（如果用户曾显式设置）。
       vaultNameOverride = String(record.vaultName || "").trim();
-      elements.vaultName.textContent = record.handle.name || "Obsidian Vault";
+      elements.vaultName.textContent = record.handle.name || t("obsidian_default_vault_name", "Obsidian Vault");
       if (elements.vaultNameInput) elements.vaultNameInput.value = vaultNameOverride || currentVaultName;
       if (elements.vaultNameField) elements.vaultNameField.hidden = false;
       const permission = await queryVaultPermission(record.handle);

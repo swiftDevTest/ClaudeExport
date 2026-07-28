@@ -1,4 +1,4 @@
-import { getPlatformLabel, t, formatDateDisplay, sanitizeFilename, notifyProgress, yieldToBrowser, sanitizeExportText, sanitizeInlineSegmentText, sanitizeImageAlt, normalizeExportLinkHref, mapLimit, formatLatexUnicode, ensureImageBlockMetadata, getImageDedupKey, parseInlineMarkdown, getPrefixedInlineSegments } from '../utils.js';
+import { getPlatformLabel, t, untitledChatTitle, formatDateDisplay, sanitizeFilename, notifyProgress, yieldToBrowser, sanitizeExportText, sanitizeInlineSegmentText, sanitizeImageAlt, normalizeExportLinkHref, mapLimit, formatLatexUnicode, ensureImageBlockMetadata, getImageDedupKey, parseInlineMarkdown, getPrefixedInlineSegments } from '../utils.js';
 import { preloadImageForDocx, calculateWordImageDimensions } from '../media.js';
 import { createZip } from '../zip.js';
 import { getWordTheme } from '../themes/word.js';
@@ -431,7 +431,7 @@ export async function buildDocxBlob(messages, metadata, settingsInput, options) 
   var signal = options.signal;
   var themeConfig = getWordTheme(settingsInput);
   var settings = themeConfig.settings;
-  var title = metadata.title || "Untitled Chat";
+  var title = metadata.title || untitledChatTitle();
   var platform = getPlatformLabel(metadata.platform);
   var date = formatDateDisplay(metadata.exportedAt);
   var themeWord = themeConfig.word;

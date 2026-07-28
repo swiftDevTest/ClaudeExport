@@ -1684,5 +1684,173 @@
   },
   "obsidian_status_failed": {
     "message": "Could not check Vault status."
+  },
+  "content_batch_status_waiting": {
+    "message": "Waiting"
+  },
+  "content_batch_status_loading": {
+    "message": "Loading page"
+  },
+  "content_batch_status_completed": {
+    "message": "Completed"
+  },
+  "export_health_empty_conversation": {
+    "message": "No messages detected in this conversation. Please wait for the page to load."
+  },
+  "export_health_empty_ai_only": {
+    "message": "No assistant replies found in AI-only mode."
+  },
+  "export_health_lazy_load_hint": {
+    "message": "Tip: If the chat is long, scroll the page to ensure all messages are fully loaded in the browser."
+  },
+  "export_health_embedded_too_large": {
+    "message": "Embedded images are too large for a safe export. Reduce images or split the export to avoid running out of browser memory."
+  },
+  "export_health_embedded_large": {
+    "message": "This chat contains large embedded images and may use significant memory during export."
+  },
+  "export_health_high_image_count": {
+    "message": "This chat contains many images ($1), which might take longer to download and build."
+  },
+  "export_health_png_scale_reduced": {
+    "message": "The chat is long. Image export will reduce its pixel scale to fit browser canvas limits; use PDF to preserve full paginated fidelity."
+  },
+  "export_health_ultra_long_code": {
+    "message": "Large code blocks detected. Word or PDF export is recommended for better formatting."
+  },
+  "export_health_dom_parse_drop": {
+    "message": "$1 of $2 candidate messages were not parsed. The page layout may have changed; scroll to load fully or update the extension."
+  },
+  "export_health_dom_parse_empty": {
+    "message": "Message elements were detected on the page but parsing returned nothing. The extension may be out of date; please update."
+  },
+  "privacy_proof_local_generation": {
+    "message": "Document format [$1] is generated 100% locally in your browser."
+  },
+  "privacy_proof_no_upload": {
+    "message": "Chat content text is never uploaded to ChatVault servers for conversion."
+  },
+  "privacy_proof_image_fetch": {
+    "message": "As the conversation contains images, the extension will securely fetch image bytes from the original platform CDN locally."
+  },
+  "privacy_proof_usage_local": {
+    "message": "Usage count is stored locally; VIP status is checked through the account service without uploading chat content or scanning your chat history list."
+  },
+  "template_appendix_original_prompts": {
+    "message": "Appendix: Original Prompts"
+  },
+  "connections_title": {
+    "message": "Connections"
+  },
+  "language_label": {
+    "message": "Language"
+  },
+  "save_to_notion": {
+    "message": "Save to Notion"
+  },
+  "save_to_obsidian": {
+    "message": "Save to Obsidian"
+  },
+  "notion_disconnect_success": {
+    "message": "Notion disconnected."
+  },
+  "notion_disconnect_failed": {
+    "message": "Could not disconnect Notion: $1"
+  },
+  "notion_status_held": {
+    "message": "Queued"
+  },
+  "notion_status_pending": {
+    "message": "Pending"
+  },
+  "notion_status_running": {
+    "message": "Syncing"
+  },
+  "notion_status_retry_wait": {
+    "message": "Waiting to retry"
+  },
+  "notion_status_succeeded": {
+    "message": "Sync succeeded"
+  },
+  "notion_status_partial": {
+    "message": "Completed with warnings"
+  },
+  "notion_status_failed": {
+    "message": "Sync failed"
+  },
+  "notion_status_cancelled": {
+    "message": "Cancelled"
+  },
+  "notion_datasource_fetch_failed": {
+    "message": "Fetch failed ($1)"
+  },
+  "notion_job_warnings_count": {
+    "message": "$1 warnings"
+  },
+  "notion_cancel_job": {
+    "message": "Cancel task"
+  },
+  "notion_retry_job": {
+    "message": "Retry"
+  },
+  "notion_open_page": {
+    "message": "Open Notion"
+  },
+  "notion_select_database_first": {
+    "message": "Please select a Notion Database first."
+  },
+  "notion_sync_request_failed": {
+    "message": "Sync request failed. Make sure the page is refreshed and ready."
+  },
+  "notion_err_update_conflict": {
+    "message": "The conversation is not append-only. Choose Replace and sync again."
+  },
+  "notion_err_replace_required": {
+    "message": "The Notion page changed. Confirm Replace and sync again."
+  },
+  "notion_err_ambiguous_append": {
+    "message": "A previous append result was ambiguous. Choose Replace to avoid duplicate blocks."
+  },
+  "notion_err_image_upload": {
+    "message": "A conversation image could not be uploaded to Notion."
+  },
+  "notion_err_schema": {
+    "message": "The selected Data Source or content is not compatible with this sync operation."
+  },
+  "notion_err_reconnect": {
+    "message": "Reconnect the Notion workspace and try again."
+  },
+  "notion_err_permission": {
+    "message": "The Notion connection does not have permission for this page or Data Source."
+  },
+  "notion_err_missing": {
+    "message": "The mapped Notion page or Data Source is unavailable, moved to trash, or no longer shared."
+  },
+  "notion_err_rate_limited": {
+    "message": "Notion is rate-limited or overloaded. Retry later."
+  },
+  "notion_err_temporary": {
+    "message": "A temporary network or Notion service error interrupted the sync."
+  },
+  "notion_err_unknown": {
+    "message": "Notion sync could not be completed."
+  },
+  "format_json": {
+    "message": "JSON"
+  },
+  "content_exporting_format": {
+    "message": "Exporting $1"
+  },
+  "selected_label_suffix": {
+    "message": "Selected"
+  },
+  "obsidian_opening_folder_picker": {
+    "message": "Opening the folder chooser..."
+  },
+  "obsidian_default_vault_name": {
+    "message": "Obsidian Vault"
+  },
+  "obsidian_default_note_name": {
+    "message": "Obsidian note"
   }
 }

@@ -26,7 +26,7 @@ function createMissingDependencyError(name) {
   const CLAUDE_ATTACHMENT_MAX_BYTES = 12 * 1024 * 1024;
   const CLAUDE_ATTACHMENT_CONCURRENCY = 4;
   const THOUGHT_LINE_PATTERN = /^\s*(?:已\s*(?:思考|推理)|思考中|推理中|思考(?:了)?|推理(?:了)?|(?:Thought|Reasoned|Worked)\s+(?:for|about)|Thinking|Reasoning|Working)(?:\b|[\s:：,，。.·-]|$)[\s\S]{0,160}$/i;
-  const THOUGHT_ATTR_PATTERN = /\b(?:reasoning|thought|thinking|chain[-_ ]?of[-_ ]?thought|model[-_ ]?thought|oai[-_ ]?reasoning)\b/i;
+  const THOUGHT_ATTR_PATTERN = /\b(?:reasoning|thought|thinking|chain[-_ ]?of[-_ ]?thought|model[-_ ]?thought|oai[-_ ]?reasoning|recap|thinking[-_ ]?summary|reasoning[-_ ]?summary|internal[-_ ]?monologue|scratch[-_ ]?pad)\b/i;
 
   async function mapLimit(array, limit, fn) {
     var results = [];
@@ -3057,7 +3057,27 @@ function createMissingDependencyError(name) {
   }
 
   function isClaudeMessageHiddenFromConversation(message) {
-    return hasSharedInternalVisibilityMarker(message);
+    if (hasSharedInternalVisibilityMarker(message)) return true;
+    // If the message content is an array and ALL non-image items are
+    // thought-like, treat the entire message as hidden thinking.
+    const content = message?.content;
+    if (Array.isArray(content) && content.length > 0) {
+      let hasThought = false;
+      let hasNonThought = false;
+      content.forEach((item) => {
+        if (item && typeof item === "object") {
+          if (isSharedThoughtLikeContentValue(item)) {
+            hasThought = true;
+          } else if (item.type === "image" || item.type === "image_url" || item.images) {
+            // images don't count
+          } else if (item.text || item.content || item.value || item.markdown) {
+            hasNonThought = true;
+          }
+        }
+      });
+      if (hasThought && !hasNonThought) return true;
+    }
+    return false;
   }
 
   async function tryFetchClaudeAttachment(organizationId, conversationId, attachmentId) {

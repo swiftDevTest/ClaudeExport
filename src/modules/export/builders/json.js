@@ -1,4 +1,4 @@
-import { getPlainText, notifyProgress, t, yieldToBrowser } from '../utils.js';
+import { getPlainText, notifyProgress, t, untitledChatTitle, yieldToBrowser } from '../utils.js';
 
 function stripHtmlPresentationFromSegment(segment) {
   if (!segment || typeof segment !== "object") return segment;
@@ -33,7 +33,7 @@ export async function buildJsonBlob(messages, metadata, settings, options) {
   var opts = options || {};
   var signal = opts.signal;
   var data = {
-    title: (metadata && metadata.title) || "Untitled Chat",
+    title: (metadata && metadata.title) || untitledChatTitle(),
     platform: (metadata && metadata.platform) || "",
     sourceUrl: (metadata && (metadata.sourceUrl || metadata.url || metadata.source)) || "",
     exportedAt: (metadata && metadata.exportedAt) || new Date().toISOString(),

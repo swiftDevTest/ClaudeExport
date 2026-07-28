@@ -24,7 +24,7 @@
                 <path d="M5 18h14"></path>
               </svg>
             </button>
-            <button class="upgrade-vip-btn-pill-header" id="btn-upgrade-vip" style="display: none;">升级到 Pro</button>
+            <button class="upgrade-vip-btn-pill-header" id="btn-upgrade-vip" style="display: none;">Upgrade to Pro</button>
           </div>
         </div>
       </div>
@@ -48,18 +48,18 @@
                 <line x1="12" y1="16" x2="12.01" y2="16"></line>
               </svg>
             </div>
-            <h3>请在 Claude 页面使用</h3>
-            <p>此扩展仅支持 Claude，请在以下页面中使用：</p>
+            <h3>Please use on a Claude page</h3>
+            <p>This extension only supports Claude. Please use it on:</p>
             <ul>
               <li>Claude (claude.ai)</li>
             </ul>
-            <button class="action-btn" id="btn-open-chatgpt">打开 Claude</button>
+            <button class="action-btn" id="btn-open-chatgpt">Open Claude</button>
           </div>
         </div>
         <!-- 导出模式 Banner 行 -->
         <div class="banners-row">
           <!-- 批量导出 Banner -->
-          <div class="custom-export-banner batch-export-banner" id="banner-batch-export" title="批量导出当前平台的会话">
+          <div class="custom-export-banner batch-export-banner" id="banner-batch-export" title="Batch export conversations from the current platform">
             <div class="banner-left">
               <div class="banner-icon-badge batch-badge">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2">
@@ -70,15 +70,15 @@
                 </svg>
               </div>
               <div class="banner-text">
-                <h3>批量导出</h3>
-                <p>一键导出多个聊天</p>
+                <h3>Batch Export</h3>
+                <p>Export multiple chats at once</p>
               </div>
             </div>
             <span class="banner-badge batch-vip-tag">Pro</span>
           </div>
 
           <!-- 自定义选择性导出 Banner -->
-          <div class="custom-export-banner" id="banner-custom-export" title="进入对话选择模式">
+          <div class="custom-export-banner" id="banner-custom-export" title="Enter conversation selection mode">
             <div class="banner-left">
               <div class="banner-icon-badge">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2">
@@ -90,8 +90,8 @@
                 </svg>
               </div>
               <div class="banner-text">
-                <h3>自定义导出</h3>
-                <p>勾选对话轮次导出</p>
+                <h3>Custom Export</h3>
+                <p>Select specific turns to export</p>
               </div>
             </div>
           </div>
@@ -184,12 +184,12 @@
                     <span class="cv-tooltip-text" id="notion-tooltip-text">When you sync, the selected conversation and included images are sent directly to your connected Notion workspace. Claude Export does not receive or store this content.</span>
                   </button>
                 </div>
-                <p id="notion-connection-status">正在检查连接</p>
+                <p id="notion-connection-status">Checking connection</p>
               </div>
               <!-- 未绑定状态 -->
               <div id="notion-unlinked-view" style="display: none;">
                 <button class="notion-save-btn notion-connect-btn" id="btn-oauth-notion">
-                  连接 Notion
+                  Connect Notion
                 </button>
               </div>
 
@@ -209,14 +209,14 @@
           <div class="obsidian-sync-section" id="obsidian-sync-section" style="display: none;">
             <div class="obsidian-sync-heading">
               <h3>Save to Obsidian</h3>
-              <p id="obsidian-connection-status">本地 Markdown 与资源</p>
+              <p id="obsidian-connection-status">Local Markdown & assets</p>
             </div>
             <div class="obsidian-sync-main">
               <button type="button" class="obsidian-sync-state" id="obsidian-sync-state" aria-label="Change Obsidian folders">
                 <div class="obsidian-sync-skeleton"></div>
                 <div class="obsidian-sync-skeleton is-short"></div>
               </button>
-              <button type="button" class="obsidian-sync-primary" id="obsidian-sync-current" disabled>检查中</button>
+              <button type="button" class="obsidian-sync-primary" id="obsidian-sync-current" disabled>Checking</button>
             </div>
           </div>
         </div>
@@ -241,7 +241,7 @@
                 </span>
                 <div class="connection-settings-copy">
                   <strong>Notion</strong>
-                  <span id="notion-settings-status">正在检查连接</span>
+                  <span id="notion-settings-status">Checking connection</span>
                 </div>
               </div>
               <div class="connection-settings-actions">
@@ -256,12 +256,12 @@
                 </span>
                 <div class="connection-settings-copy">
                   <strong>Obsidian</strong>
-                  <span id="obsidian-settings-status">正在检查 Vault</span>
+                  <span id="obsidian-settings-status">Checking Vault</span>
                 </div>
               </div>
               <div class="connection-settings-actions">
                 <button type="button" class="connection-primary-action" id="obsidian-settings-configure" hidden>Config Obsidian</button>
-                <button type="button" class="connection-danger-action" id="obsidian-sync-disconnect" hidden>断开连接</button>
+                <button type="button" class="connection-danger-action" id="obsidian-sync-disconnect" hidden>Disconnect</button>
               </div>
             </div>
           </div>
@@ -269,7 +269,7 @@
 
         <div class="section-card" id="theme-settings-card">
           <h3 class="section-title-with-help">
-            <span id="theme-settings-title">排版风格主题 / Theme</span>
+            <span id="theme-settings-title">Layout Theme</span>
             <button type="button" class="cv-help-tooltip" id="theme-help-tooltip" aria-label="Theme export support">
               <span class="cv-help-icon">?</span>
               <span class="cv-tooltip-text" id="theme-tooltip-text">Themes apply only to PDF and Image exports. Other formats are not affected.</span>
@@ -278,57 +278,57 @@
           <div class="settings-theme-grid is-initializing" aria-busy="true">
             <div class="theme-option active" data-theme="default">
               <span class="theme-circle theme-circle--default"></span>
-              <span class="theme-name">极简纯白</span>
+              <span class="theme-name">Minimal White</span>
             </div>
             <div class="theme-option" data-theme="natural">
               <span class="theme-circle theme-circle--natural"></span>
-              <span class="theme-name">自然原生</span>
+              <span class="theme-name">Natural</span>
             </div>
             <div class="theme-option theme-option--pro" data-theme="midnight">
               <span class="theme-circle theme-circle--midnight"></span>
-              <span class="theme-name">暗黑深邃</span>
+              <span class="theme-name">Midnight</span>
               <span class="theme-pro-badge">PRO</span>
             </div>
             <div class="theme-option theme-option--pro" data-theme="editorial">
               <span class="theme-circle theme-circle--editorial"></span>
-              <span class="theme-name">学术社评</span>
+              <span class="theme-name">Editorial</span>
               <span class="theme-pro-badge">PRO</span>
             </div>
             <div class="theme-option theme-option--pro" data-theme="terminal">
               <span class="theme-circle theme-circle--terminal"></span>
-              <span class="theme-name">赛博终端</span>
+              <span class="theme-name">Terminal</span>
               <span class="theme-pro-badge">PRO</span>
             </div>
             <div class="theme-option theme-option--pro" data-theme="newsprint">
               <span class="theme-circle theme-circle--newsprint"></span>
-              <span class="theme-name">复古印报</span>
+              <span class="theme-name">Newsprint</span>
               <span class="theme-pro-badge">PRO</span>
             </div>
             <div class="theme-option theme-option--pro" data-theme="aurora">
               <span class="theme-circle theme-circle--aurora"></span>
-              <span class="theme-name">流光极光</span>
+              <span class="theme-name">Aurora</span>
               <span class="theme-pro-badge">PRO</span>
             </div>
             <div class="theme-option theme-option--pro" data-theme="mckinsey">
               <span class="theme-circle theme-circle--mckinsey"></span>
-              <span class="theme-name">麦肯锡商务</span>
+              <span class="theme-name">McKinsey</span>
               <span class="theme-pro-badge">PRO</span>
             </div>
             <div class="theme-option theme-option--pro" data-theme="oxford">
               <span class="theme-circle theme-circle--oxford"></span>
-              <span class="theme-name">学术深青</span>
+              <span class="theme-name">Oxford</span>
               <span class="theme-pro-badge">PRO</span>
             </div>
           </div>
         </div>
 
         <div class="section-card" id="content-export-settings-card">
-          <h3>内容导出设置 / Settings</h3>
+          <h3>Content Export Settings</h3>
 
           <div class="settings-toggle-row" data-sortable-setting>
             <div>
-              <div class="toggle-title">包含对话大标题</div>
-              <div class="toggle-desc">在文档顶部显示对话标题</div>
+              <div class="toggle-title">Include conversation title</div>
+              <div class="toggle-desc">Show the conversation title at the top of the document</div>
             </div>
             <label class="switch">
               <input type="checkbox" id="toggle-title" checked>
@@ -338,8 +338,8 @@
 
           <div class="settings-toggle-row" data-sortable-setting>
             <div>
-              <div class="toggle-title">显示导出时间</div>
-              <div class="toggle-desc">在文档头部插入导出时间戳</div>
+              <div class="toggle-title">Show export time</div>
+              <div class="toggle-desc">Insert an export timestamp in the document header</div>
             </div>
             <label class="switch">
               <input type="checkbox" id="toggle-time" checked>
@@ -349,8 +349,8 @@
 
           <div class="settings-toggle-row" data-sortable-setting>
             <div>
-              <div class="toggle-title">仅导出 AI 回答</div>
-              <div class="toggle-desc">过滤用户 Prompt，只保留 AI 报告正文</div>
+              <div class="toggle-title">AI-only export</div>
+              <div class="toggle-desc">Filter user prompts, keep only AI report content</div>
             </div>
             <label class="switch">
               <input type="checkbox" id="toggle-ai-only">
@@ -360,8 +360,8 @@
 
           <div class="settings-toggle-row" data-sortable-setting>
             <div>
-              <div class="toggle-title">隐藏 Claude Export 水印</div>
-              <div class="toggle-desc">移除文档末尾的 Claude Export 签名 (Pro)</div>
+              <div class="toggle-title">Hide Claude Export watermark</div>
+              <div class="toggle-desc">Remove the Claude Export signature from the document footer (Pro)</div>
             </div>
             <label class="switch">
               <input type="checkbox" id="toggle-watermark">
@@ -371,8 +371,8 @@
 
           <div class="settings-toggle-row" data-sortable-setting>
             <div>
-              <div class="toggle-title">附带对话原始链接</div>
-              <div class="toggle-desc">在导出的文档尾部附加对话的原始网址</div>
+              <div class="toggle-title">Include original chat URL</div>
+              <div class="toggle-desc">Append the original conversation URL to the exported document</div>
             </div>
             <label class="switch">
               <input type="checkbox" id="toggle-source-url">
@@ -382,8 +382,8 @@
 
           <div class="settings-toggle-row" data-sortable-setting>
             <div>
-              <div class="toggle-title">显示平台来源名称</div>
-              <div class="toggle-desc">在文档头部显示来源平台 (如 Claude)</div>
+              <div class="toggle-title">Show platform name</div>
+              <div class="toggle-desc">Show the source platform in the document header (e.g. Claude)</div>
             </div>
             <label class="switch">
               <input type="checkbox" id="toggle-platform-name" checked>
@@ -393,8 +393,8 @@
 
           <div class="settings-toggle-row" data-sortable-setting>
             <div>
-              <div class="toggle-title">显示对话角色标签</div>
-              <div class="toggle-desc">在聊天发言内容前显示 User / Assistant 角色</div>
+              <div class="toggle-title">Show role labels</div>
+              <div class="toggle-desc">Display User / Assistant labels before each message</div>
             </div>
             <label class="switch">
               <input type="checkbox" id="toggle-role-labels" checked>
@@ -404,8 +404,8 @@
 
           <div class="settings-toggle-row" data-sortable-setting>
             <div>
-              <div class="toggle-title">用户发言靠右对齐</div>
-              <div class="toggle-desc">将您的提问文本及气泡偏右侧排版 (PDF/图片)</div>
+              <div class="toggle-title">Right-align user messages</div>
+              <div class="toggle-desc">Align user prompts and bubbles to the right (PDF/Image)</div>
             </div>
             <label class="switch">
               <input type="checkbox" id="toggle-align-right" checked>
@@ -415,8 +415,8 @@
 
           <div class="settings-toggle-row" data-sortable-setting>
             <div>
-              <div class="toggle-title">显示 Obsidian 同步</div>
-              <div class="toggle-desc">在导出面板显示单个与批量 Obsidian 同步</div>
+              <div class="toggle-title">Show Obsidian sync</div>
+              <div class="toggle-desc">Display single and batch Obsidian sync in the export panel</div>
             </div>
             <label class="switch">
               <input type="checkbox" id="toggle-obsidian-sync" checked>
@@ -473,28 +473,28 @@
 
     <!-- Bottom Navigation Bar -->
     <div class="popup-footer-tabs">
-      <div class="footer-tab active" data-tab-id="dashboard" title="导出面板">
+      <div class="footer-tab active" data-tab-id="dashboard" title="Export panel">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <rect x="3" y="3" width="7" height="9"></rect>
           <rect x="14" y="3" width="7" height="5"></rect>
           <rect x="14" y="12" width="7" height="9"></rect>
           <rect x="3" y="16" width="7" height="5"></rect>
         </svg>
-        <span>导出</span>
+        <span>Export</span>
       </div>
-      <div class="footer-tab" data-tab-id="settings" title="导出配置">
+      <div class="footer-tab" data-tab-id="settings" title="Export settings">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <circle cx="12" cy="12" r="3"></circle>
           <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
         </svg>
-        <span>设置</span>
+        <span>Settings</span>
       </div>
     </div>
     <!-- VIP 订阅面板覆盖层 -->
     <div id="panel-subscribe" class="subscribe-overlay">
       <div class="subscribe-header">
-        <h2>升级至 Pro 会员</h2>
-        <button class="close-subscribe-btn" id="btn-close-subscribe" aria-label="关闭">
+        <h2>Upgrade To Claude Export Pro</h2>
+        <button class="close-subscribe-btn" id="btn-close-subscribe" aria-label="Cancel">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -503,12 +503,12 @@
       </div>
 
       <div class="subscribe-scroll-body">
-        <p class="subscribe-subtitle">解除额度限制，解锁出版级排版主题、本地导出凭证与双端 Pro 权益。</p>
+        <p class="subscribe-subtitle">Unlock higher local export limits, polished themes, batch workflows, and PDF, Docs, MD and More output.</p>
 
         <!-- 未登录状态提示 -->
         <div class="subscribe-login-notice" id="subscribe-login-warning" style="display: none;">
           <span class="warning-icon">💡</span>
-          <span class="warning-text">未登录账号，订阅前请先 <a href="#" id="subscribe-login-link">登录</a> 以绑定权益。</span>
+          <span class="warning-text">Not signed in. Please <a href="#" id="subscribe-login-link">Sign In</a> before subscribing to bind entitlements.</span>
         </div>
 
         <!-- 订阅方案列表 -->
@@ -519,37 +519,37 @@
               <input type="radio" name="subscribe-plan" value="monthly" class="plan-radio">
               <div class="plan-card-info">
                 <div class="plan-badge-row">
-                  <span class="plan-tag monthly-tag">月度 Pro</span>
-                  <span class="plan-discount-badge">省 56%</span>
+                  <span class="plan-tag monthly-tag">Monthly Pro</span>
+                  <span class="plan-discount-badge">Save 56%</span>
                 </div>
-                <span class="plan-title">Pro 月付计划</span>
+                <span class="plan-title">Pro Monthly Plan</span>
               </div>
             </div>
             <div class="plan-card-right">
               <span class="plan-price-original">$8.99</span>
               <span class="plan-price">$3.99</span>
-              <span class="plan-price-cadence">/ 月</span>
+              <span class="plan-price-cadence">/ month</span>
             </div>
           </label>
 
           <!-- Yearly Plan (Selected by default) -->
           <label class="plan-option-card active recommended" data-plan-id="yearly">
-            <span class="recommended-tag">推荐</span>
+            <span class="recommended-tag">Recommended</span>
             <div class="plan-card-left">
               <input type="radio" name="subscribe-plan" value="yearly" checked class="plan-radio">
               <div class="plan-card-info">
                 <div class="plan-badge-row">
-                  <span class="plan-tag yearly-tag">年度 Pro</span>
-                  <span class="plan-discount-badge">省 58%</span>
+                  <span class="plan-tag yearly-tag">Yearly Pro</span>
+                  <span class="plan-discount-badge">Save 58%</span>
                 </div>
-                <span class="plan-title">Pro 年付计划</span>
+                <span class="plan-title">Pro Yearly Plan</span>
               </div>
             </div>
             <div class="plan-card-right">
               <span class="plan-price-original">$5.00</span>
               <span class="plan-price">$2.08</span>
-              <span class="plan-price-cadence">/ 月</span>
-              <span class="plan-price-detail">按年支付 $24.99</span>
+              <span class="plan-price-cadence">/ month</span>
+              <span class="plan-price-detail">$24.99 billed yearly</span>
             </div>
           </label>
 
@@ -559,16 +559,16 @@
               <input type="radio" name="subscribe-plan" value="lifetime" class="plan-radio">
               <div class="plan-card-info">
                 <div class="plan-badge-row">
-                  <span class="plan-tag lifetime-tag">终身 Pro</span>
-                  <span class="plan-discount-badge">省 69%</span>
+                  <span class="plan-tag lifetime-tag">Lifetime Pro</span>
+                  <span class="plan-discount-badge">Save 69%</span>
                 </div>
-                <span class="plan-title">终身买断计划</span>
+                <span class="plan-title">Lifetime Plan</span>
               </div>
             </div>
             <div class="plan-card-right">
               <span class="plan-price-original">$129.99</span>
               <span class="plan-price">$39.99</span>
-              <span class="plan-price-cadence">一次性</span>
+              <span class="plan-price-cadence">one-time</span>
             </div>
           </label>
         </div>
@@ -577,31 +577,31 @@
         <div class="pro-features-container">
           <div class="feature-tick-item">
             <span class="tick-icon">✓</span>
-            <span>批量导出会话</span>
+            <span>Batch export conversations</span>
           </div>
           <div class="feature-tick-item">
             <span class="tick-icon">✓</span>
-            <span>Notion / Obsidian 无缝自动同步</span>
+            <span>Notion & Obsidian auto sync</span>
           </div>
           <div class="feature-tick-item">
             <span class="tick-icon">✓</span>
-            <span>无限制本地导出</span>
+            <span>Unlimited local exports</span>
           </div>
           <div class="feature-tick-item">
             <span class="tick-icon">✓</span>
-            <span>出版级排版主题</span>
+            <span>Publication-grade themes</span>
           </div>
           <div class="feature-tick-item">
             <span class="tick-icon">✓</span>
-            <span>移除水印</span>
+            <span>Hide watermark</span>
           </div>
         </div>
       </div>
 
       <div class="subscribe-footer">
-        <button class="subscribe-cta-btn" id="btn-subscribe-submit">支付 $24.99</button>
-        <button class="restore-purchase-btn" id="btn-subscribe-restore">恢复购买</button>
-        <p class="subscribe-footnote">所有导出均在本地浏览器安全运行。结账页面将在 tabpilotpro.com 打开并进行安全支付。本插件不收集也不上传任何对话内容。</p>
+        <button class="subscribe-cta-btn" id="btn-subscribe-submit">Pay $24.99</button>
+        <button class="restore-purchase-btn" id="btn-subscribe-restore">Restore Purchase</button>
+        <p class="subscribe-footnote">All exports run locally in your browser. Checkout opens on tabpilotpro.com for secure payment. This extension does not collect or upload any conversation content.</p>
       </div>
     </div>
 
@@ -610,12 +610,12 @@
       <div class="confirm-modal-card">
         <div class="confirm-modal-header">
           <span class="confirm-modal-icon">⚠️</span>
-          <h3>退出登录</h3>
+          <h3>Log Out</h3>
         </div>
-        <p class="confirm-modal-message">确定要退出当前账号吗？</p>
+        <p class="confirm-modal-message">Are you sure you want to log out of the current account?</p>
         <div class="confirm-modal-actions">
-          <button class="confirm-btn-cancel" id="confirm-btn-cancel">取消</button>
-          <button class="confirm-btn-ok" id="confirm-btn-ok">确定</button>
+          <button class="confirm-btn-cancel" id="confirm-btn-cancel">Cancel</button>
+          <button class="confirm-btn-ok" id="confirm-btn-ok">Confirm</button>
         </div>
       </div>
     </div>

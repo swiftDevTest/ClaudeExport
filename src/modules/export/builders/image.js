@@ -1,6 +1,7 @@
 import {
   getPlatformLabel,
   t,
+  untitledChatTitle,
   formatDateDisplay,
   IMAGE_RENDER_WIDTH,
   IMAGE_EXPORT_SCALE,
@@ -85,7 +86,7 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
 
   var titleLines = [];
   if (settings.show_conversation_title) {
-    titleLines = wrapText(measureCtx, metadata.title || "Untitled Chat", contentWidth, "800 34px " + theme.font.title).slice(0, 4);
+    titleLines = wrapText(measureCtx, metadata.title || untitledChatTitle(), contentWidth, "800 34px " + theme.font.title).slice(0, 4);
     y += titleLines.length * IMAGE_TITLE_LINE_HEIGHT;
   }
 

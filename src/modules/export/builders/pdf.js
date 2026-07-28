@@ -1,6 +1,7 @@
 import {
   getPlatformLabel,
   t,
+  untitledChatTitle,
   formatDateDisplay,
   IMAGE_RENDER_WIDTH,
   notifyProgress,
@@ -262,7 +263,7 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
 
   if (settings.show_conversation_title) {
     var titleFont = "800 30px " + DESIGN.font.title;
-    var titleLines = wrapText(ctx, cleanInlineMarkdownText(metadata.title || "Untitled Chat"), contentWidth, titleFont).slice(0, 4);
+    var titleLines = wrapText(ctx, cleanInlineMarkdownText(metadata.title || untitledChatTitle()), contentWidth, titleFont).slice(0, 4);
     drawLines(titleLines, titleFont, DESIGN.color.ink, 37);
     y += 8;
   }

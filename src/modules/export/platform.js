@@ -11,6 +11,7 @@ import {
   IMAGE_MAX_RENDER_HEIGHT,
   normalizeExportSettings,
   t,
+  untitledChatTitle,
   getFittedCanvasScale,
   dedupeImageBlocksWithinMessage,
   getBlockText,
@@ -279,7 +280,7 @@ function estimateImageHeight(messages, settings, metadata) {
   var height = 120;
   if (settings.show_platform_name || settings.show_export_time) height += 30;
   if (settings.show_conversation_title) {
-    height += estimateWrappedLineCount(metadata && metadata.title || "Untitled Chat", 32) * 42 + 14;
+    height += estimateWrappedLineCount(metadata && metadata.title || untitledChatTitle(), 32) * 42 + 14;
   }
   height += 26;
   messages.forEach(function (message) {
@@ -380,7 +381,7 @@ function resolveMessages(request) {
 
   var metadata = {
     platform: platform,
-    title: request && request.title || (typeof window !== "undefined" ? getConversationTitle() : "Untitled Chat"),
+    title: request && request.title || (typeof window !== "undefined" ? getConversationTitle() : untitledChatTitle()),
     exportedAt: new Date(),
     sourceUrl: request && request.sourceUrl || (typeof window !== "undefined" ? window.location.href : ""),
     scope: scope
