@@ -143,6 +143,38 @@ function applyPlatformFallbacks() {
   }
 }
 
+function normalizeExportFacade() {
+  const exportPath = join(REPO_ROOT, "src", "modules", "export.js");
+  if (!existsSync(exportPath)) return;
+
+  const directDefinition = /\n    buildDocxBlob: function \(messages, metadata, settings, options\) \{\n      assertMods\(\);\n      return _mods\.docx\.buildDocxBlob\(messages, metadata, settings, options\);\n    \},/g;
+  const lazyDefinition = /\n    buildDocxBlob: function \(messages, metadata, settings(?:, options)?\) \{ return ensureModules\(\)\.then\(function \(\) \{ return _mods\.docx\.buildDocxBlob\(messages, metadata, settings(?:, options)?\); \}\); \},/g;
+  const insertionAnchor = '    renderImagePreview: function (messages, settings) { return ensureModules().then(function () { return _mods.engine.renderImagePreview(messages, settings); }); },';
+  const normalizedDefinition = [
+    insertionAnchor,
+    "    buildDocxBlob: function (messages, metadata, settings, options) {",
+    "      return ensureModules().then(function () {",
+    "        return _mods.docx.buildDocxBlob(messages, metadata, settings, options);",
+    "      });",
+    "    },"
+  ].join("\n");
+
+  let source = readFileSync(exportPath, "utf8")
+    .replace(directDefinition, "")
+    .replace(lazyDefinition, "");
+  if (!source.includes(insertionAnchor)) {
+    throw new Error("Could not normalize buildDocxBlob: export facade anchor changed.");
+  }
+  source = source.replace(insertionAnchor, normalizedDefinition);
+
+  const definitionCount = (source.match(/\bbuildDocxBlob:\s*function\b/g) || []).length;
+  if (definitionCount !== 1) {
+    throw new Error(`Expected one buildDocxBlob facade after sync, found ${definitionCount}.`);
+  }
+  writeFileSync(exportPath, source, "utf8");
+  console.log("Normalized buildDocxBlob lazy facade with options forwarding.");
+}
+
 function isolatePlatformModule() {
   const platformPath = join(TARGET_EXPORT_DIR, "platform.js");
   if (!existsSync(platformPath)) return;
@@ -244,6 +276,7 @@ function main() {
   }
 
   applyPlatformFallbacks();
+  normalizeExportFacade();
   generateRegistry();
   isolatePlatformModule();
   cleanupUnusedPlatformExtractors();

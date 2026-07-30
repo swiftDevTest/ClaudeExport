@@ -195,6 +195,26 @@ test("auth and entitlement UI refresh mirrors the ChatVault fixed flow", () => {
   assert.ok(contentSignInSource.indexOf("await applyStoredAuthStateImmediately(session)") < contentSignInSource.indexOf("refreshAuthStateInBackground()"));
 });
 
+test("critical background imports are observable and storage fallbacks stay aligned", () => {
+  const backgroundSource = readText("../src/background.js");
+  const contentSource = readText("../src/content.js");
+  const popupSource = readText("../src/popup.js");
+  const authSource = readText("../src/supabase-auth.js");
+  const entitlementSource = readText("../src/modules/entitlements.js");
+
+  assert.match(backgroundSource, /Failed to import product-config\.js/);
+  assert.match(backgroundSource, /Failed to import supabase-config\.js/);
+  for (const [name, source] of [
+    ["background", backgroundSource],
+    ["content", contentSource],
+    ["popup", popupSource],
+    ["auth", authSource],
+    ["entitlements", entitlementSource]
+  ]) {
+    assert.match(source, /claude_export\./, `${name} should use the shared fallback namespace`);
+  }
+});
+
 test("async entitlement refresh updates the already-open popup", () => {
   const popupSource = readText("../src/popup.js");
   const contentSource = readText("../src/content.js");
@@ -284,7 +304,10 @@ test("checkout allows valid browser extension origins", () => {
   assert.match(httpSource, /function isAllowedChromeExtensionOrigin\(origin: string\)/);
   assert.match(httpSource, /url\.protocol === "chrome-extension:"/);
   assert.match(httpSource, /CHATVAULT_ALLOWED_EXTENSION_IDS/);
+  assert.match(httpSource, /mmfjokcnknkdljnaeffdloekdgkdfjnb/);
   assert.match(httpSource, /cjkfchfnmbhcpmbhobdanongbjkcbagj/);
+  assert.match(httpSource, /ljlmljccgbogejkhlnldgolahihniebj/);
+  assert.match(httpSource, /bhfclokpfejlpnhimafhenlholhapmmm/);
   assert.match(httpSource, /isAllowedChromeExtensionOrigin\(origin\)/);
 
   const runtimeSource = httpSource
@@ -304,13 +327,35 @@ test("checkout allows valid browser extension origins", () => {
     }
   });
 
+  assert.equal(isAllowedBrowserOrigin(requestWithOrigin("chrome-extension://mmfjokcnknkdljnaeffdloekdgkdfjnb")), true);
   assert.equal(isAllowedBrowserOrigin(requestWithOrigin("chrome-extension://cjkfchfnmbhcpmbhobdanongbjkcbagj")), true);
-  assert.equal(isAllowedBrowserOrigin(requestWithOrigin("chrome-extension://cjkfchfnmbhcpmbhobdanongbjkcbagj/")), true);
-  assert.equal(isAllowedBrowserOrigin(requestWithOrigin("chrome-extension://cjkfchfnmbhcpmbhobdanongbjkcbagj/path")), false);
+  assert.equal(isAllowedBrowserOrigin(requestWithOrigin("chrome-extension://ljlmljccgbogejkhlnldgolahihniebj")), true);
+  assert.equal(isAllowedBrowserOrigin(requestWithOrigin("chrome-extension://bhfclokpfejlpnhimafhenlholhapmmm")), true);
+  assert.equal(isAllowedBrowserOrigin(requestWithOrigin("chrome-extension://ljlmljccgbogejkhlnldgolahihniebj/")), true);
+  assert.equal(isAllowedBrowserOrigin(requestWithOrigin("chrome-extension://ljlmljccgbogejkhlnldgolahihniebj/path")), false);
   assert.equal(isAllowedBrowserOrigin(requestWithOrigin("chrome-extension://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")), false);
   assert.equal(isAllowedBrowserOrigin(requestWithOrigin("moz-extension://123e4567-e89b-12d3-a456-426614174000")), false);
   assert.equal(isAllowedBrowserOrigin(requestWithOrigin("safari-web-extension://123e4567-e89b-12d3-a456-426614174000")), false);
   assert.equal(isAllowedBrowserOrigin(requestWithOrigin("https://evil.example")), false);
+
+  const configuredRuntime = loadHttpRuntime({
+    env: {
+      get(name) {
+        return name === "CHATVAULT_ALLOWED_EXTENSION_IDS"
+          ? "ljlmljccgbogejkhlnldgolahihniebj"
+          : "";
+      }
+    }
+  });
+  assert.equal(
+    configuredRuntime.isAllowedBrowserOrigin(requestWithOrigin("chrome-extension://ljlmljccgbogejkhlnldgolahihniebj")),
+    true
+  );
+  assert.equal(
+    configuredRuntime.isAllowedBrowserOrigin(requestWithOrigin("chrome-extension://cjkfchfnmbhcpmbhobdanongbjkcbagj")),
+    false,
+    "explicit deployment configuration must replace the fallback set"
+  );
 });
 
 test("product backend contract is present for local deployment and review", () => {

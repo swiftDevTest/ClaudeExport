@@ -408,10 +408,6 @@
       assertMods();
       return _mods.markdown.buildMarkdownBlob(messages, metadata, settings, options);
     },
-    buildDocxBlob: function (messages, metadata, settings, options) {
-      assertMods();
-      return _mods.docx.buildDocxBlob(messages, metadata, settings, options);
-    },
     buildTxtBlob: function (messages, metadata, settings, options) {
       assertMods();
       return _mods.txt.buildTxtBlob(messages, metadata, settings, options);
@@ -483,7 +479,11 @@
     exportConversation: function (format) { return ensureModules().then(function () { return _mods.engine.startExport({ format: format, scope: "conversation", settings: DEFAULT_EXPORT_SETTINGS }); }); },
     exportSelectedMessages: function (format, selectedIndices) { return ensureModules().then(function () { return _mods.engine.startExport({ format: format, scope: "selected", selectedIndices: selectedIndices, settings: DEFAULT_EXPORT_SETTINGS }); }); },
     renderImagePreview: function (messages, settings) { return ensureModules().then(function () { return _mods.engine.renderImagePreview(messages, settings); }); },
-    buildDocxBlob: function (messages, metadata, settings) { return ensureModules().then(function () { return _mods.docx.buildDocxBlob(messages, metadata, settings); }); },
+    buildDocxBlob: function (messages, metadata, settings, options) {
+      return ensureModules().then(function () {
+        return _mods.docx.buildDocxBlob(messages, metadata, settings, options);
+      });
+    },
 
     _test: {
       createPdfFromJpegs: function (jpegs) { return ensureModules().then(function () { return _mods.pdf.createPdfFromJpegs(jpegs); }); },

@@ -16,6 +16,16 @@ const DEFAULT_ALLOWED_BROWSER_ORIGINS = [
   // 统一由 isAllowedChromeExtensionOrigin 处理，避免本表与扩展 ID 白名单行为不一致。
 ];
 
+// Shared product Edge Functions serve the ChatVault, ChatGPT, Claude, and Gemini
+// exporters from one Supabase project. Production should always configure
+// CHATVAULT_ALLOWED_EXTENSION_IDS; this set is only the safe known-ID fallback.
+const DEFAULT_ALLOWED_CHROME_EXTENSION_IDS = [
+  "mmfjokcnknkdljnaeffdloekdgkdfjnb",
+  "cjkfchfnmbhcpmbhobdanongbjkcbagj",
+  "ljlmljccgbogejkhlnldgolahihniebj",
+  "bhfclokpfejlpnhimafhenlholhapmmm"
+];
+
 function getConfiguredAllowedOrigins() {
   const configured = Deno.env.get("CHATVAULT_ALLOWED_ORIGINS") || "";
   return (configured ? configured.split(",") : DEFAULT_ALLOWED_BROWSER_ORIGINS)
@@ -27,17 +37,15 @@ function isAllowedChromeExtensionOrigin(origin: string) {
   try {
     const url = new URL(origin);
     if (url.protocol === "chrome-extension:") {
-      // 仅允许在配置白名单中的扩展 ID，不再接受任意 32 字符 ID。
-      // 通过 CHATVAULT_ALLOWED_EXTENSION_IDS 环境变量配置（逗号分隔）。
-      const allowed = (Deno.env.get("CHATVAULT_ALLOWED_EXTENSION_IDS") || "")
+      // Explicit deployment configuration replaces the fallback set.
+      const configured = (Deno.env.get("CHATVAULT_ALLOWED_EXTENSION_IDS") || "")
         .split(",")
-        .map((id) => id.trim())
+        .map((id) => id.trim().toLowerCase())
         .filter(Boolean);
-      if (allowed.length === 0) {
-        // 未配置白名单时仅允许本仓库已知的扩展 ID（chatgpt-export）
-        return url.hostname === "cjkfchfnmbhcpmbhobdanongbjkcbagj" && (url.pathname === "" || url.pathname === "/");
-      }
-      return allowed.includes(url.hostname) && (url.pathname === "" || url.pathname === "/");
+      const allowed = configured.length > 0
+        ? configured
+        : DEFAULT_ALLOWED_CHROME_EXTENSION_IDS;
+      return allowed.includes(url.hostname.toLowerCase()) && (url.pathname === "" || url.pathname === "/");
     }
     // Firefox & Safari 扩展：同样要求显式配置白名单（环境变量值为 UUID）
     if (/^(moz|safari-web)-extension:\/\//i.test(origin)) {

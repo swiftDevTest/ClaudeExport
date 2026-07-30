@@ -2,12 +2,19 @@
 // 注意：product-config.js 必须在 notion-background.js / obsidian-background.js 之前加载，
 // 因为它们需要通过 globalThis.CHATVAULT_PRODUCT_CONFIG.storageKey() 计算与 supabase-auth.js
 // 一致的 storage key（否则 session/entitlement 变更监听会因 key 不一致而失效）。
+// product-config / supabase-config 加载失败时必须留下明确日志，便于定位损坏的
+// 扩展包或配置。各运行上下文使用相同的 claude_export fallback namespace，
+// 但缺少完整配置仍会让产品元数据或登录能力降级。
 try {
   importScripts("product-config.js");
-} catch (error) {}
+} catch (error) {
+  console.error("[Background] Failed to import product-config.js:", error);
+}
 try {
   importScripts("supabase-config.js");
-} catch (error) {}
+} catch (error) {
+  console.error("[Background] Failed to import supabase-config.js:", error);
+}
 try {
   importScripts("notion-background.js");
 } catch (e) {
