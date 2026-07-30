@@ -14,6 +14,39 @@ var _imageBytesCache = new Map();
 var _imageBytesCacheBytes = 0;
 var _imageBytesInFlight = new Map();
 
+function describeMediaSourceForLog(src) {
+  var value = String(src || "");
+  if (/^data:/i.test(value)) {
+    var dataMime = value.match(/^data:([^;,]+)/i);
+    return { kind: "data-url", mime_type: dataMime ? dataMime[1].toLowerCase() : "unknown", length: value.length };
+  }
+  if (/^blob:/i.test(value)) {
+    return { kind: "blob-url", length: value.length };
+  }
+  try {
+    var parsed = new URL(value);
+    return { kind: "remote-url", protocol: parsed.protocol, hostname: parsed.hostname, length: value.length };
+  } catch (_error) {
+    return { kind: "opaque", length: value.length };
+  }
+}
+
+function sanitizeMediaErrorMessage(error) {
+  var message = String(error && error.message || "");
+  return message
+    .replace(/(?:https?|blob|data):[^\s)]+/gi, "[redacted-url]")
+    .slice(0, 240);
+}
+
+function warnMediaFailure(stage, src, error) {
+  console.warn("[media] image operation failed", {
+    stage: stage,
+    source: describeMediaSourceForLog(src),
+    error_type: error && error.name ? error.name : typeof error,
+    message: sanitizeMediaErrorMessage(error)
+  });
+}
+
 function normalizeImageMimeType(value) {
   var mimeType = String(value || "").split(";")[0].trim().toLowerCase();
   if (mimeType === "image/jpg") return "image/jpeg";
@@ -424,6 +457,7 @@ async function fetchImageBytesViaNetwork(src, options) {
     if (options && options.signal && options.signal.aborted) {
       throw createAbortError();
     }
+    warnMediaFailure("network-fetch", src, err);
   }
 
   try {
@@ -500,6 +534,7 @@ async function fetchImageBytesViaNetwork(src, options) {
       throw createAbortError();
     }
     if (/8 MiB browser capture limit/i.test(String(bgErr && bgErr.message || ""))) throw bgErr;
+    warnMediaFailure("background-fetch", src, bgErr);
   }
 
   return null;
@@ -755,6 +790,7 @@ async function _fetchImageBytesDirectly(src, options) {
       if (corsErr && corsErr.name === "AbortError") {
         throw corsErr;
       }
+      warnMediaFailure("cors-image-load", src, corsErr);
     }
   }
 
@@ -775,6 +811,7 @@ export async function preloadImageForDocx(src, index, options) {
     if (error && error.name === "AbortError") {
       throw error;
     }
+    warnMediaFailure("docx-preload", src, error);
     return null;
   }
   if (!bytesInfo) {
@@ -953,6 +990,7 @@ export async function preloadCanvasImages(messages, options) {
       if (err && err.name === "AbortError") {
         throw err;
       }
+      warnMediaFailure("canvas-preload", entry.src, err);
     }
   });
 

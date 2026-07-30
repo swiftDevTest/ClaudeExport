@@ -28,7 +28,7 @@ export function createExportUiController(options) {
   var exportFormats = deps.exportFormats || ["pdf", "word", "image", "markdown", "html", "txt", "json"];
   var t = deps.t || function (key, defaultText) { return defaultText || key; };
   var escapeHtml = deps.escapeHtml || defaultEscapeHtml;
-  var selectedLabel = deps.selectedLabel || function (count) { return String(count) + " " + t("selected_label_suffix", "Selected"); };
+  var selectedLabel = deps.selectedLabel || function (count) { return String(count) + " Selected"; };
 
   function hideFormatMenu() {
     exportState.menuContext = null;
@@ -86,7 +86,7 @@ export function createExportUiController(options) {
       markdown: t("format_markdown", "Markdown"),
       html: t("format_html", "HTML"),
       txt: t("content_format_text", "Text"),
-      json: t("format_json", "JSON")
+      json: "JSON"
     };
     var badges = {
       pdf: "P",
@@ -177,12 +177,11 @@ function getPositiveInteger(value) {
 function getFormatDisplayName(format) {
   var key = String(format || "pdf").toLowerCase();
   if (key === "word") return "DOCX";
-  if (key === "markdown") return t("format_markdown", "Markdown");
+  if (key === "markdown") return "Markdown";
   if (key === "html") return "HTML";
-  if (key === "image") return t("format_image", "Image");
-  if (key === "txt") return t("content_format_text", "Text");
+  if (key === "image") return "Image";
+  if (key === "txt") return "Text";
   if (key === "json") return "JSON";
-  if (key === "pdf") return t("format_pdf", "PDF");
   return key.toUpperCase();
 }
 
@@ -200,9 +199,9 @@ function getProgressTitle(format, progress) {
     return String(progress.title);
   }
   if (getProgressMode(progress) === "batch") {
-    return String((progress && progress.label) || t("batch_export", "Batch export"));
+    return String((progress && progress.label) || "Batch export");
   }
-  return t("content_exporting_format", "Exporting $1", getFormatDisplayName(format));
+  return "Exporting " + getFormatDisplayName(format);
 }
 
 function getProgressDetail(progress, percent) {

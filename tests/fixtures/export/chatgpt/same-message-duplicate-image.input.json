@@ -1,0 +1,32 @@
+{
+  "platform": "chatgpt",
+  "title": "Fixture same message duplicate image",
+  "scope": "conversation",
+  "messages": [
+    {
+      "role": "user",
+      "contentBlocks": [
+        {
+          "type": "paragraph",
+          "text": "Describe this image."
+        },
+        {
+          "type": "image",
+          "src": "https://example.test/assets/duplicate.png",
+          "alt": "First duplicate",
+          "sourceKind": "uploaded"
+        },
+        {
+          "type": "image",
+          "src": "https://example.test/assets/duplicate.png",
+          "alt": "Second duplicate",
+          "sourceKind": "uploaded"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ignore duplicate above."
+        }
+      ]
+    }
+  ]
+}

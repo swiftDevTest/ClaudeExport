@@ -12,7 +12,6 @@ import {
   shouldCoalesceInlineSegments,
   getCoalescedInlineSegmentsText,
   t,
-  untitledChatTitle,
   yieldToBrowser
 } from '../utils.js';
 import { fetchImageBytes } from '../media.js';
@@ -320,6 +319,8 @@ async function buildEmbeddedImageMap(messages, options) {
       }
     } catch (error) {
       if (error && error.name === "AbortError") throw error;
+      // 非 Abort 错误静默吞掉会使用户无法区分"图片不可用"与"瞬时获取失败"，这里记录一条诊断日志
+      console.warn("[ChatVault] HTML export: image embedding failed", { src: src, error: error && error.message });
     }
     notifyProgress(options, t("export_progress_embedding_images", "Embedding images"), 0.05 + 0.2 * ((index + 1) / Math.max(1, sources.length)));
   });
@@ -412,7 +413,7 @@ export async function buildHtmlBlob(messages, metadata, settings, options) {
   }
   var meta = [];
   if (settings.show_export_time && metadata && metadata.exportedAt) meta.push(escapeHtml(formatDateDisplay(metadata.exportedAt)));
-  var title = metadata && metadata.title || untitledChatTitle();
+  var title = metadata && metadata.title || "Untitled Chat";
   var header = settings.show_conversation_title || meta.length
     ? "<header>" + (settings.show_conversation_title ? "<h1>" + escapeHtml(title) + "</h1>" : "") + (meta.length ? '<div class="meta"><span>' + meta.join("</span><span>") + "</span></div>" : "") + "</header>"
     : "";

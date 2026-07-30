@@ -280,19 +280,22 @@ export function mergeAdjacentParagraphs(blocks) {
   return out;
 }
 
-  function mergeAdjacentLists(blocks) {
-    var out = [];
-    (blocks || []).forEach(function (block) {
-      if (!block || block.type !== "list") { out.push(block); return; }
-      var prev = out[out.length - 1];
-      if (prev && prev.type === "list" && prev.ordered === block.ordered && !block.start) {
-        prev.items = (prev.items || []).concat(block.items || []);
-        return;
-      }
+export function mergeAdjacentLists(blocks) {
+  var out = [];
+  (blocks || []).forEach(function (block) {
+    if (!block || block.type !== "list") {
       out.push(block);
-    });
-    return out;
-  }
+      return;
+    }
+    var prev = out[out.length - 1];
+    if (prev && prev.type === "list" && prev.ordered === block.ordered && !block.start) {
+      prev.items = (prev.items || []).concat(block.items || []);
+      return;
+    }
+    out.push(block);
+  });
+  return out;
+}
 
 export function walkElement(parent, blocks, structSet, depth) {
   if (!parent || isIgnoredContentNode(parent)) return;
@@ -395,11 +398,11 @@ export function walkElement(parent, blocks, structSet, depth) {
     }
 
     if (tag === "ul" || tag === "ol") {
-      var listBlock = attachBlockSource({
+      var listBlock = {
         type: "list",
         ordered: tag === "ol",
         items: extractListItems(child)
-      }, child);
+      };
       if (tag === "ol") {
         var startAttr = child.getAttribute && child.getAttribute("start");
         var startNum = parseInt(startAttr, 10);
@@ -407,21 +410,16 @@ export function walkElement(parent, blocks, structSet, depth) {
           listBlock.start = startNum;
         }
       }
-      blocks.push(listBlock);
+      blocks.push(attachBlockSource(listBlock, child));
       return;
     }
 
     if (tag === "table") {
       try {
-
         blocks.push(attachBlockSource(extractTable(child), child));
-
       } catch (tableErr) {
-
         // 单个表格解析失败不应中断整个消息解析
-
         console.warn("Table extraction failed, skipping:", tableErr);
-
       }
       return;
     }
@@ -688,16 +686,17 @@ export function extractTable(tableEl) {
 
   if (thead) {
     // 只选择直接子元素，避免嵌套表格的 th 被错误包含
-    Array.prototype.forEach.call(thead.querySelectorAll(":scope > tr > th, > tr > th"), function (th) {
+    var headCells = thead.querySelectorAll(":scope > tr > th");
+    if (!headCells.length) headCells = thead.querySelectorAll("tr > th");
+    Array.prototype.forEach.call(headCells, function (th) {
       headers.push(cleanText(th));
     });
   }
 
   // 只选择 table 的直接子 tr（不包含嵌套表格中的 tr）
-  var directTrs = tableEl.querySelectorAll(":scope > tbody > tr, > tr, > tbody > tr");
-  if (!directTrs.length) {
-    directTrs = tableEl.querySelectorAll("tbody > tr, > tr");
-  }
+  var directTrs = tableEl.querySelectorAll(":scope > tbody > tr");
+  if (!directTrs.length) directTrs = tableEl.querySelectorAll(":scope > tr");
+  if (!directTrs.length) directTrs = tableEl.querySelectorAll("tbody > tr");
 
   Array.prototype.forEach.call(directTrs, function (tr) {
     if (thead && (tr.parentElement === thead || thead.contains(tr))) return;

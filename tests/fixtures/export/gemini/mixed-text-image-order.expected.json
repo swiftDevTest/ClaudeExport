@@ -1,0 +1,28 @@
+{
+  "messages": [
+    {
+      "role": "assistant",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Before image"
+        },
+        {
+          "type": "image",
+          "sourceKind": "remote",
+          "normalizedSrc": "https://lh3.googleusercontent.com/image_generation_content/example.png",
+          "originalIndex": 1,
+          "alt": "Gemini image"
+        },
+        {
+          "type": "paragraph",
+          "text": "After image"
+        }
+      ]
+    }
+  ],
+  "assertions": {
+    "imageCount": 1,
+    "forbiddenText": []
+  }
+}

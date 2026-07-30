@@ -14,8 +14,7 @@ import {
   getCoalescedInlineSegmentsText,
   overlayCoalescedInlineLinks,
   isDalleMetadataText,
-  isGeminiImagePlaceholderText,
-  untitledChatTitle
+  isGeminiImagePlaceholderText
 } from './utils.js';
 import { captureExportHtmlStyle, sanitizeExportHtmlStyle } from './html-style.js';
 
@@ -444,7 +443,7 @@ export function createExportDocument(input) {
   var messages = alreadyNormalized ? source.messages : normalizeExportMessages(source.messages);
   var metadata = {
     platform: source.platform || metadataInput.platform || "",
-    title: metadataInput.title || source.title || untitledChatTitle(),
+    title: metadataInput.title || source.title || "Untitled Chat",
     sourceUrl: metadataInput.sourceUrl || source.sourceUrl || "",
     exportedAt: normalizeExportDate(metadataInput.exportedAt || source.exportedAt),
     scope: scope

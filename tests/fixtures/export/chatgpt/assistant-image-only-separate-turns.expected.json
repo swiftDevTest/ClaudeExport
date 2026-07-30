@@ -1,0 +1,32 @@
+{
+  "messages": [
+    {
+      "role": "assistant",
+      "blocks": [
+        {
+          "type": "image",
+          "sourceKind": "generated",
+          "normalizedSrc": "https://example.test/assets/generated-repeat.png",
+          "originalIndex": 0,
+          "alt": "Generated repeat"
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "blocks": [
+        {
+          "type": "image",
+          "sourceKind": "generated",
+          "normalizedSrc": "https://example.test/assets/generated-repeat.png",
+          "originalIndex": 0,
+          "alt": "Generated repeat"
+        }
+      ]
+    }
+  ],
+  "assertions": {
+    "imageCount": 2,
+    "forbiddenText": []
+  }
+}

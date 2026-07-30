@@ -13,8 +13,9 @@ test("PDF export fits tall image rows to remaining page height", () => {
   assert.match(pdfBuilderSource, /renderPdfImageGridRow\(fittedRow, imgX, y\)/);
 });
 
-test("PDF footer includes platform when platform metadata is enabled", () => {
-  assert.match(pdfBuilderSource, /!settings\.show_chatvault_badge && !settings\.show_platform_name && !settings\.show_export_time/);
-  assert.match(pdfBuilderSource, /settings\.show_platform_name && metadata\.platform/);
-  assert.match(pdfBuilderSource, /footer\.push\(getPlatformLabel\(metadata\.platform\)\)/);
+test("PDF footer only shows branding watermark, without platform or time", () => {
+  assert.match(pdfBuilderSource, /if \(!settings\.show_chatvault_badge\) return;/);
+  assert.match(pdfBuilderSource, /ctx\.fillText\(t\("export_pdf_footer_branding"/);
+  assert.doesNotMatch(pdfBuilderSource, /footer\.push\(getPlatformLabel\(metadata\.platform\)\)/);
+  assert.doesNotMatch(pdfBuilderSource, /footer\.push\(formatDateDisplay\(metadata\.exportedAt\)\)/);
 });

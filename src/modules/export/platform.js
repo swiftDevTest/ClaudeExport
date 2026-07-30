@@ -11,7 +11,6 @@ import {
   IMAGE_MAX_RENDER_HEIGHT,
   normalizeExportSettings,
   t,
-  untitledChatTitle,
   getFittedCanvasScale,
   dedupeImageBlocksWithinMessage,
   getBlockText,
@@ -135,6 +134,28 @@ function getParseStats() {
     droppedTurnCount: lastParseStats.droppedTurnCount,
     collectedAt: lastParseStats.collectedAt
   };
+}
+
+
+
+function parseChatGPTMessages(options) {
+  return withExportHtmlStyleCapture(shouldCaptureHtmlStyles(options), function () {
+    return parseChatGPTMessagesFromPlatform();
+  });
+}
+
+
+function parseClaudeMessages(options) {
+  return withExportHtmlStyleCapture(shouldCaptureHtmlStyles(options), function () {
+    return parseClaudeMessagesFromPlatform();
+  });
+}
+
+
+function parseGeminiMessages(options) {
+  return withExportHtmlStyleCapture(shouldCaptureHtmlStyles(options), function () {
+    return parseGeminiMessagesFromPlatform();
+  });
 }
 
 
@@ -280,7 +301,7 @@ function estimateImageHeight(messages, settings, metadata) {
   var height = 120;
   if (settings.show_platform_name || settings.show_export_time) height += 30;
   if (settings.show_conversation_title) {
-    height += estimateWrappedLineCount(metadata && metadata.title || untitledChatTitle(), 32) * 42 + 14;
+    height += estimateWrappedLineCount(metadata && metadata.title || "Untitled Chat", 32) * 42 + 14;
   }
   height += 26;
   messages.forEach(function (message) {
@@ -317,7 +338,7 @@ function resolveMessages(request) {
   var messages = [];
 
   if (!platform) {
-    return { ok: false, error: "Open and load a Claude conversation to export." };
+    return { ok: false, error: "Open a ChatGPT, Claude, or Gemini conversation to export." };
   }
 
   if (!allMessages.length && !hasSelectedMessages) {
@@ -381,7 +402,7 @@ function resolveMessages(request) {
 
   var metadata = {
     platform: platform,
-    title: request && request.title || (typeof window !== "undefined" ? getConversationTitle() : untitledChatTitle()),
+    title: request && request.title || (typeof window !== "undefined" ? getConversationTitle() : "Untitled Chat"),
     exportedAt: new Date(),
     sourceUrl: request && request.sourceUrl || (typeof window !== "undefined" ? window.location.href : ""),
     scope: scope
@@ -475,6 +496,9 @@ function getImageEligibility(input) {
 export {
   compareElementsInDocument,
   pushDistinctDocumentElement,
+  parseChatGPTMessages,
+  parseClaudeMessages,
+  parseGeminiMessages,
   parseMessages,
   getParseStats,
   getBlockText,

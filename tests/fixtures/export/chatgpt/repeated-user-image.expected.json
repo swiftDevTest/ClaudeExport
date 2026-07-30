@@ -1,0 +1,40 @@
+{
+  "messages": [
+    {
+      "role": "user",
+      "blocks": [
+        {
+          "type": "image",
+          "sourceKind": "uploaded",
+          "normalizedSrc": "https://example.test/assets/same-image.png",
+          "originalIndex": 0,
+          "alt": "User uploaded image"
+        },
+        {
+          "type": "paragraph",
+          "text": "First prompt"
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "blocks": [
+        {
+          "type": "image",
+          "sourceKind": "uploaded",
+          "normalizedSrc": "https://example.test/assets/same-image.png",
+          "originalIndex": 0,
+          "alt": "User uploaded image"
+        },
+        {
+          "type": "paragraph",
+          "text": "Second prompt"
+        }
+      ]
+    }
+  ],
+  "assertions": {
+    "imageCount": 2,
+    "forbiddenText": []
+  }
+}

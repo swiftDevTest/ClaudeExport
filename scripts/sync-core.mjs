@@ -113,7 +113,13 @@ function applyPlatformFallbacks() {
     const filePath = join(TARGET_EXPORT_DIR, relativePath);
     if (!existsSync(filePath)) return;
     const source = readFileSync(filePath, "utf8")
-      .replace(/globalThis\.CHATVAULT_PRODUCT_CONFIG\?\.productName \|\| "[^"]+"/g, productNameFallback);
+      .replace(/globalThis\.CHATVAULT_PRODUCT_CONFIG\?\.productName \|\| "[^"]+"/g, productNameFallback)
+      .replace(/t\("export_pdf_footer_branding",\s*"[^"]+"\)/g, 't("export_pdf_footer_branding", "Exported by Claude Export")')
+      .replace(/INCOMPLETE_EXPORT_NOTICE_PREFIX = "AI Chat Export notice:"/g, 'INCOMPLETE_EXPORT_NOTICE_PREFIX = "Claude Export notice:"')
+      .replace(/use AI Chat Export there to export/g, 'use Claude Export there to export')
+      .replace(/so AI Chat Export exported the available replies/g, 'so Claude Export exported the available replies')
+      .replace(/<dc:creator>AI Chat Export<\/dc:creator>/g, '<dc:creator>Claude Export</dc:creator>')
+      .replace(/<Application>AI Chat Export<\/Application>/g, '<Application>Claude Export</Application>');
     writeFileSync(filePath, source, "utf8");
   });
 
@@ -122,6 +128,31 @@ function applyPlatformFallbacks() {
     const source = readFileSync(receiptPath, "utf8")
       .replace(/extensionName:\s*"[^"]+"/g, "extensionName: " + productNameFallback);
     writeFileSync(receiptPath, source, "utf8");
+  }
+
+  // 处理 export-message-adapter.js 顶层副本
+  const exportMsgAdapterPath = join(REPO_ROOT, "src", "modules", "export-message-adapter.js");
+  if (existsSync(exportMsgAdapterPath)) {
+    const source = readFileSync(exportMsgAdapterPath, "utf8")
+      .replace(/use AI Chat Export there to export/g, 'use Claude Export there to export');
+    writeFileSync(exportMsgAdapterPath, source, "utf8");
+  }
+
+  // 处理 obsidian-background.js
+  const obsidianBgPath = join(REPO_ROOT, "src", "obsidian-background.js");
+  if (existsSync(obsidianBgPath)) {
+    const source = readFileSync(obsidianBgPath, "utf8")
+      .replace(/payload\.title \|\| "AI Chat Export"/g, 'payload.title || "Claude Export"');
+    writeFileSync(obsidianBgPath, source, "utf8");
+  }
+
+  // 处理 modules/obsidian/coordinator.js
+  const obsidianCoordinatorPath = join(REPO_ROOT, "src", "modules", "obsidian", "coordinator.js");
+  if (existsSync(obsidianCoordinatorPath)) {
+    const source = readFileSync(obsidianCoordinatorPath, "utf8")
+      .replace(/sanitizePathSegment\(input\.title, "AI Chat Export"\)/g, 'sanitizePathSegment(input.title, "Claude Export")')
+      .replace(/input\.title \|\| "AI Chat Export"/g, 'input.title || "Claude Export"');
+    writeFileSync(obsidianCoordinatorPath, source, "utf8");
   }
 
   const selectionPath = join(TARGET_EXPORT_DIR, "selection.js");

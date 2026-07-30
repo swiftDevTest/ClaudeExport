@@ -32,25 +32,17 @@
     const messages = Array.isArray(input?.messages) ? input.messages : [];
     const format = String(input?.format || "pdf").toLowerCase();
     const mode = String(input?.mode || "conversation").toLowerCase();
-    const platform = String(input?.platform || "claude").toLowerCase();
+    const platform = String(input?.platform || "chatgpt").toLowerCase();
     const limits = input?.imageLimits || { maxChars: 12000, maxMessages: 40, maxCodeChars: 8000, maxRenderHeight: 6000 };
     const maxCodeChars = Number.isFinite(Number(limits.maxCodeChars)) ? Number(limits.maxCodeChars) : 8000;
 
-    // i18n helper: prefers chrome.i18n.getMessage (returns locale-specific catalog text),
-    // falls back to defaultText (English) when no catalog is available.
-    function t(key, defaultText, ...args) {
-      try {
-        if (typeof chrome !== "undefined" && chrome.i18n && typeof chrome.i18n.getMessage === "function") {
-          const msg = chrome.i18n.getMessage(key, args);
-          if (msg) return msg;
-        }
-      } catch (e) {}
-      let result = String(defaultText || "");
-      args.forEach((arg, i) => {
-        result = result.split("$" + (i + 1)).join(String(arg));
-      });
-      return result;
-    }
+    let isZh = false;
+    try {
+      if (typeof chrome !== "undefined" && chrome.i18n && typeof chrome.i18n.getUILanguage === "function") {
+        const lang = chrome.i18n.getUILanguage() || "";
+        isZh = lang.startsWith("zh");
+      }
+    } catch (e) {}
 
     let userCount = 0;
     let assistantCount = 0;
@@ -87,7 +79,7 @@
       issues.push({
         id: "empty_conversation",
         severity: "high_risk",
-        message: t("export_health_empty_conversation", "No messages detected in this conversation. Please wait for the page to load."),
+        message: isZh ? "当前会话没有检测到有效的聊天信息，请等待页面加载。" : "No messages detected in this conversation. Please wait for the page to load.",
         action: "wait_load"
       });
     }
@@ -98,7 +90,7 @@
       issues.push({
         id: "empty_ai_only",
         severity: "high_risk",
-        message: t("export_health_empty_ai_only", "No assistant replies found in AI-only mode."),
+        message: isZh ? "在[仅导出AI回复]模式下未检测到AI的消息。" : "No assistant replies found in AI-only mode.",
         action: "change_mode"
       });
     }
@@ -108,7 +100,7 @@
       issues.push({
         id: "lazy_load_hint",
         severity: "info",
-        message: t("export_health_lazy_load_hint", "Tip: If the chat is long, scroll the page to ensure all messages are fully loaded in the browser."),
+        message: isZh ? "提示：如果聊天记录很长，请滚动页面以确保所有消息都已被加载到网页中。" : "Tip: If the chat is long, scroll the page to ensure all messages are fully loaded in the browser.",
         action: "scroll_page"
       });
     }
@@ -119,7 +111,7 @@
       issues.push({
         id: "embedded_images_too_large",
         severity: "high_risk",
-        message: t("export_health_embedded_too_large", "Embedded images are too large for a safe export. Reduce images or split the export to avoid running out of browser memory."),
+        message: isZh ? "本对话内嵌图片体积过大。请减少图片或拆分导出，以避免浏览器内存不足。" : "Embedded images are too large for a safe export. Reduce images or split the export to avoid running out of browser memory.",
         action: "split_export"
       });
     } else if (estimatedEmbeddedImageBytes > 20 * 1024 * 1024) {
@@ -127,7 +119,7 @@
       issues.push({
         id: "embedded_images_large",
         severity: "attention",
-        message: t("export_health_embedded_large", "This chat contains large embedded images and may use significant memory during export."),
+        message: isZh ? "本对话包含较大的内嵌图片，导出可能占用较多内存。" : "This chat contains large embedded images and may use significant memory during export.",
         action: "split_export"
       });
     }
@@ -137,7 +129,7 @@
       issues.push({
         id: "high_image_count",
         severity: "attention",
-        message: t("export_health_high_image_count", "This chat contains many images ($1), which might take longer to download and build.", imageCount),
+        message: formatMessage(isZh ? "本对话包含大量图片 ($1 张)，可能需要较长时间抓取并构建文档。" : "This chat contains many images ($1), which might take longer to download and build.", [imageCount]),
         args: [imageCount],
         action: "wait_longer"
       });
@@ -155,7 +147,9 @@
         issues.push({
           id: "png_scale_reduced",
           severity: "info",
-          message: t("export_health_png_scale_reduced", "The chat is long. Image export will reduce its pixel scale to fit browser canvas limits; use PDF to preserve full paginated fidelity."),
+          message: isZh
+            ? "对话内容较长，长图导出会自动降低像素倍率以适配浏览器画布限制；如需保持分页清晰度，请改用 PDF。"
+            : "The chat is long. Image export will reduce its pixel scale to fit browser canvas limits; use PDF to preserve full paginated fidelity.",
           action: "use_pdf"
         });
       }
@@ -177,7 +171,7 @@
       issues.push({
         id: "ultra_long_code",
         severity: "attention",
-        message: t("export_health_ultra_long_code", "Large code blocks detected. Word or PDF export is recommended for better formatting."),
+        message: isZh ? "检测到超长代码块，建议使用 Word/PDF 导出以保证最佳排版效果。" : "Large code blocks detected. Word or PDF export is recommended for better formatting.",
         action: "use_pdf_or_word"
       });
     }
@@ -198,12 +192,9 @@
           issues.push({
             id: "dom_parse_drop",
             severity: "attention",
-            message: t(
-              "export_health_dom_parse_drop",
-              "$1 of $2 candidate messages were not parsed. The page layout may have changed; scroll to load fully or update the extension.",
-              droppedCount,
-              candidateCount
-            ),
+            message: isZh
+              ? `检测到 ${droppedCount}/${candidateCount} 个候选消息未被解析，可能是页面结构变化导致部分内容丢失。请滚动加载完整或更新扩展。`
+              : `${droppedCount} of ${candidateCount} candidate messages were not parsed. The page layout may have changed; scroll to load fully or update the extension.`,
             action: "scroll_or_update_extension"
           });
         }
@@ -213,10 +204,9 @@
         issues.push({
           id: "dom_parse_empty",
           severity: "high_risk",
-          message: t(
-            "export_health_dom_parse_empty",
-            "Message elements were detected on the page but parsing returned nothing. The extension may be out of date; please update."
-          ),
+          message: isZh
+            ? "页面检测到消息元素但解析结果为空，扩展可能已过时。请更新扩展后再试。"
+            : "Message elements were detected on the page but parsing returned nothing. The extension may be out of date; please update.",
           action: "update_extension"
         });
       }

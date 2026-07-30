@@ -1,0 +1,40 @@
+{
+  "platform": "gemini",
+  "title": "Fixture Gemini no image inheritance",
+  "scope": "conversation",
+  "messages": [
+    {
+      "role": "user",
+      "contentBlocks": [
+        {
+          "type": "image",
+          "src": "https://lh3.googleusercontent.com/uploaded/user-first.png",
+          "alt": "Uploaded diagram",
+          "sourceKind": "remote"
+        },
+        {
+          "type": "paragraph",
+          "text": "Explain this diagram"
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "contentBlocks": [
+        {
+          "type": "paragraph",
+          "text": "It is a diagram."
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "contentBlocks": [
+        {
+          "type": "paragraph",
+          "text": "Now answer without another image"
+        }
+      ]
+    }
+  ]
+}

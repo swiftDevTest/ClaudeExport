@@ -1,7 +1,6 @@
 import {
   getPlatformLabel,
   t,
-  untitledChatTitle,
   formatDateDisplay,
   IMAGE_RENDER_WIDTH,
   IMAGE_EXPORT_SCALE,
@@ -86,7 +85,7 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
 
   var titleLines = [];
   if (settings.show_conversation_title) {
-    titleLines = wrapText(measureCtx, metadata.title || untitledChatTitle(), contentWidth, "800 34px " + theme.font.title).slice(0, 4);
+    titleLines = wrapText(measureCtx, metadata.title || "Untitled Chat", contentWidth, "800 34px " + theme.font.title).slice(0, 4);
     y += titleLines.length * IMAGE_TITLE_LINE_HEIGHT;
   }
 
@@ -313,6 +312,7 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
     if (block.type === "list") {
       var groups = [];
       var maxLineWidth = 0;
+      var listStart = block.start || 1;
       (block.items || []).forEach(function (item, index) {
         var itemFont = imageBodyFont;
         var textIndent = 26;
@@ -336,7 +336,7 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
           lineHeight: 28,
           font: itemFont,
           ordered: block.ordered,
-          index: (block.start || 1) + index,
+          index: listStart + index,
           isSub: false
         });
         (item.subItems || []).forEach(function (sub) {
@@ -854,7 +854,6 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
         ctx.restore();
       }
     } catch (error) {
-      ctx.restore();
       var failedBlock = Object.assign({}, block, {
         width: size,
         height: size + 12,
@@ -1036,7 +1035,7 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
   if (settings.show_chatvault_badge) {
     var footerY = y + IMAGE_FOOTER_TOP_GAP;
     ctx.font = "700 15px " + theme.font.body;
-    var footerText = t("export_pdf_footer_branding", "Claude Export");
+    var footerText = t("export_pdf_footer_branding", "Exported by Claude Export");
     var footerWidth = Math.max(120, ctx.measureText(footerText).width);
     var logoGradient = ctx.createLinearGradient(pad, footerY, pad + footerWidth, footerY);
     logoGradient.addColorStop(0, theme.color.accent);

@@ -16,28 +16,6 @@
   var EXTENSION_CONTEXT_INVALIDATED_ERROR_NAME = "ChatVaultExtensionContextInvalidatedError";
   var EXTENSION_CONTEXT_INVALIDATED_MESSAGE = "ChatVault was updated. Refresh this page to continue.";
 
-  function t(key, defaultText) {
-    var args = Array.prototype.slice.call(arguments, 2);
-    if (globalThis.CHATVAULT_I18N && typeof globalThis.CHATVAULT_I18N.t === "function") {
-      return globalThis.CHATVAULT_I18N.t(key, defaultText, ...args);
-    }
-    try {
-      if (typeof chrome !== "undefined" && chrome.i18n && typeof chrome.i18n.getMessage === "function") {
-        var val = chrome.i18n.getMessage(key, args);
-        if (val) return val;
-      }
-    } catch (error) {}
-    var formatted = String(defaultText || "");
-    args.forEach(function (arg, index) {
-      formatted = formatted.replace(new RegExp("\\$" + (index + 1), "g"), String(arg));
-    });
-    return formatted;
-  }
-
-  function untitledChatTitle() {
-    return t("untitled_chat", "Untitled Chat");
-  }
-
   var DEFAULT_EXPORT_SETTINGS = {
     export_ai_replies_only: false,
     show_export_time: true,
@@ -112,7 +90,7 @@
 
   function getConversationTitle() {
     if (typeof window === "undefined" || typeof document === "undefined" || !document.querySelector) {
-      return untitledChatTitle();
+      return "Untitled Chat";
     }
     var platform = detectPlatform();
     var pathname = window.location.pathname || "";
@@ -143,7 +121,7 @@
         .replace(/\s*-\s*ChatGPT\s*$/i, "")
         .replace(/^ChatGPT$/i, "")
         .trim();
-      return title || untitledChatTitle();
+      return title || "Untitled Chat";
     }
 
     if (platform === PLATFORM_CLAUDE) {
@@ -172,7 +150,7 @@
         .replace(/\s*[-|]\s*Claude\s*$/i, "")
         .replace(/^Claude$/i, "")
         .trim();
-      return title || untitledChatTitle();
+      return title || "Untitled Chat";
     }
 
     if (platform === PLATFORM_GEMINI) {
@@ -212,14 +190,14 @@
         .replace(/\s*[-|]\s*(?:Google\s+)?Gemini\s*$/i, "")
         .replace(/^(?:Google\s+)?Gemini\s*$/i, "")
         .trim();
-      return title || untitledChatTitle();
+      return title || "Untitled Chat";
     }
 
-    return untitledChatTitle();
+    return "Untitled Chat";
   }
 
   function sanitizeFilename(name) {
-    return String(name || untitledChatTitle()).replace(/[<>:"/\\|?*\x00-\x1f]/g, "").replace(/\s+/g, " ").trim().substring(0, 80) || untitledChatTitle();
+    return String(name || "Untitled Chat").replace(/[<>:"/\\|?*\x00-\x1f]/g, "").replace(/\s+/g, " ").trim().substring(0, 80) || "Untitled Chat";
   }
 
   function formatDateDisplay(date) {

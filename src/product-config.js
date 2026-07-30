@@ -10,6 +10,7 @@
     shortName: "Claude Export",
     checkoutUrl: "https://tabpilotpro.com/claude/checkout.html",
     checkoutBaseUrl: "https://tabpilotpro.com/claude",
+    uninstallUrl: "https://tabpilotpro.com/claude/uninstall.html",
     storageNamespace: "claude_export",
     isolatedMembership: true,
     supportedPlatforms: ["claude"],

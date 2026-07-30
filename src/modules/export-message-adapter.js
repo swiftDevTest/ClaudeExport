@@ -12,7 +12,7 @@
     var deps = options || {};
 
     function getChatPlatform(chat) {
-      return deps.getChatPlatform ? deps.getChatPlatform(chat) : chat && chat.platform || "claude";
+      return deps.getChatPlatform ? deps.getChatPlatform(chat) : chat && chat.platform || "chatgpt";
     }
 
     function getChatConversationId(chat) {
@@ -60,7 +60,7 @@
       }
 
       if (!activePlatform) {
-        return "Open Claude before exporting conversation bodies";
+        return "Open ChatGPT, Claude, or Gemini before exporting conversation bodies";
       }
 
       if (platform !== activePlatform) {

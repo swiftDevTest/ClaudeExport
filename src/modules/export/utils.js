@@ -23,10 +23,6 @@ export function t(key, defaultText, ...args) {
   return defaultText;
 }
 
-export function untitledChatTitle() {
-  return t("untitled_chat", "Untitled Chat");
-}
-
 export var PLATFORM_CHATGPT = "chatgpt";
 export var PLATFORM_CLAUDE = "claude";
 export var PLATFORM_GEMINI = "gemini";
@@ -83,7 +79,7 @@ export function normalizeBooleanSetting(value, defaultValue) {
 
 var CHINESE_THOUGHT_STATUS_PATTERN = /^\s*(?:已\s*)?(?:思考|推理)(?:了|中)?\s*(?:(?:约|大约|若干|几|数|多)?(?:\d+(?:\.\d+)?|[一二三四五六七八九十百千万半两]+)?\s*(?:毫秒|秒钟|秒|分钟|分|小时|时))?\s*[。.,，:：-]?\s*$/i;
 var ENGLISH_THOUGHT_STATUS_PATTERN = /^\s*(?:(?:Thought|Reasoned|Worked)\s+(?:for|about)|Thinking|Reasoning|Working)(?:\b|[\s:：,，。.·-]|$)[\s\S]{0,160}$/i;
-export var THOUGHT_ATTR_PATTERN = /\b(?:reasoning|thought|thinking|chain[-_ ]?of[-_ ]?thought|model[-_ ]?thought|oai[-_ ]?reasoning|recap|thinking[-_ ]?summary|reasoning[-_ ]?summary|internal[-_ ]?monologue|scratch[-_ ]?pad)\b/i;
+export var THOUGHT_ATTR_PATTERN = /\b(?:reasoning|thought|thinking|chain[-_ ]?of[-_ ]?thought|model[-_ ]?thought|oai[-_ ]?reasoning)\b/i;
 
 export function isThoughtStatusLine(value) {
   var text = String(value || "").trim();
@@ -145,7 +141,7 @@ export function collapseRepeatedConversationTitle(value) {
 
 export function getConversationTitle() {
   if (typeof window === "undefined" || typeof document === "undefined" || !document.querySelector) {
-    return untitledChatTitle();
+    return "Untitled Chat";
   }
   var platform = detectPlatform();
   var pathname = window.location.pathname || "";
@@ -176,7 +172,7 @@ export function getConversationTitle() {
       .replace(/\s*-\s*ChatGPT\s*$/i, "")
       .replace(/^ChatGPT$/i, "")
       .trim();
-    return title || untitledChatTitle();
+    return title || "Untitled Chat";
   }
 
   if (platform === PLATFORM_CLAUDE) {
@@ -205,7 +201,7 @@ export function getConversationTitle() {
       .replace(/\s*[-|]\s*Claude\s*$/i, "")
       .replace(/^Claude$/i, "")
       .trim();
-    return title || untitledChatTitle();
+    return title || "Untitled Chat";
   }
 
   if (platform === PLATFORM_GEMINI) {
@@ -245,10 +241,10 @@ export function getConversationTitle() {
       .replace(/\s*[-|]\s*(?:Google\s+)?Gemini\s*$/i, "")
       .replace(/^(?:Google\s+)?Gemini\s*$/i, "")
       .trim();
-    return title || untitledChatTitle();
+    return title || "Untitled Chat";
   }
 
-  return untitledChatTitle();
+  return "Untitled Chat";
 }
 
 export function isInsideUserQuery(element) {
@@ -328,11 +324,11 @@ export async function ensureAllGeminiMessagesLoaded(options) {
 }
 
 export function sanitizeFilename(name) {
-  return String(name || untitledChatTitle())
+  return String(name || "Untitled Chat")
     .replace(/[<>:"/\\|?*\x00-\x1f]/g, "")
     .replace(/\s+/g, " ")
     .trim()
-    .substring(0, 80) || untitledChatTitle();
+    .substring(0, 80) || "Untitled Chat";
 }
 
 export function formatDateDisplay(date) {
@@ -380,7 +376,7 @@ export function getExportFooterSegments(settings, metadata) {
   var sourceUrl = getExportSourceUrl(metadata);
   return {
     left: settings && settings.show_chatvault_badge
-      ? t("export_pdf_footer_branding", "Claude Export")
+      ? t("export_pdf_footer_branding", "Exported by Claude Export")
       : "",
     right: settings && settings.include_source_url && sourceUrl
       ? t("export_footer_source", "Export From: $1", sourceUrl)
@@ -1497,76 +1493,13 @@ export function stripThoughtText(value) {
     .trim();
 }
 
-function isEnabledInternalFlag(value) {
-  if (value === true || value === 1) return true;
-  return /^(?:true|1|yes|on)$/i.test(String(value || "").trim());
-}
-
-export function hasInternalVisibilityMarker(value) {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
-    return false;
-  }
-
-  var metadata = value.metadata && typeof value.metadata === "object" && !Array.isArray(value.metadata)
-    ? value.metadata
-    : {};
-  var containers = [value, metadata];
-  var flagNames = [
-    "is_thinking",
-    "is_reasoning",
-    "is_analysis",
-    "is_internal",
-    "internal",
-    "is_hidden",
-    "hidden",
-    "is_visually_hidden",
-    "is_visually_hidden_from_conversation",
-    "is_thinking_preamble_message"
-  ];
-
-  if (containers.some(function (container) {
-    return flagNames.some(function (name) {
-      return isEnabledInternalFlag(container[name]);
-    });
-  })) {
-    return true;
-  }
-
-  var hasInternalVisibility = containers.some(function (container) {
-    var visibility = container.visibility || container.display_visibility || container.audience;
-    return typeof visibility === "string" &&
-      /^(?:hidden|invisible|internal|model[-_ ]?only|assistant[-_ ]?only|private)$/i.test(visibility.trim());
-  });
-  if (hasInternalVisibility) {
-    return true;
-  }
-
-  return containers.some(function (container) {
-    return /^(?:assistant|model|tool|internal)$/i.test(String(container.recipient || "").trim());
-  });
-}
-
 export function isThoughtLikeContentValue(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     return false;
   }
 
-  var metadata = value.metadata && typeof value.metadata === "object" && !Array.isArray(value.metadata)
-    ? value.metadata
-    : {};
-  var type = [
-    value.type,
-    value.content_type,
-    value.kind,
-    value.name,
-    value.role,
-    metadata.type,
-    metadata.content_type,
-    metadata.kind
-  ].map(function (item) {
-    return String(item || "").trim().toLowerCase().replace(/[\s.-]+/g, "_");
-  }).filter(Boolean).join(" ");
-  if (/(?:^|\s)(?:analysis|reasoning|thinking|thought|chain_of_thought|model_thought|redacted_thinking|thinking_summary|reasoning_summary|analysis_summary|internal_reasoning|internal_monologue|scratchpad|recap|thought_summary|plan|internal_note)(?:\s|$)/i.test(type)) {
+  var type = String(value.type || value.content_type || value.kind || value.name || value.role || "").trim();
+  if (/^(analysis|reasoning|thinking|thought|chain_of_thought|model_thought)$/i.test(type)) {
     return true;
   }
 
@@ -1575,53 +1508,16 @@ export function isThoughtLikeContentValue(value) {
     value.label,
     value.summary,
     value.status,
-    value.display_name,
-    metadata.title,
-    metadata.label,
-    metadata.status,
-    metadata.display_name
+    value.display_name
   ].map(function (item) { return String(item || ""); }).join(" ");
 
-  return hasInternalVisibilityMarker(value) ||
-    (typeof value.thinking === "string" && Boolean(value.thinking.trim())) ||
-    THOUGHT_ATTR_PATTERN.test(label) ||
-    isThoughtStatusLine(label);
+  return THOUGHT_ATTR_PATTERN.test(label) || isThoughtStatusLine(label);
 }
 
-function isThoughtLikeElementSelf(element) {
+export function isThoughtLikeElement(element) {
   if (!element || !element.getAttribute) return false;
-  var explicitThoughtFlags = [
-    "data-is-thinking",
-    "data-thinking",
-    "data-is-reasoning",
-    "data-reasoning",
-    "data-is-analysis",
-    "data-analysis",
-    "data-is-internal",
-    "data-thought",
-    "data-recap",
-    "data-thinking-summary"
-  ];
-  if (explicitThoughtFlags.some(function (name) {
-    if (!element.hasAttribute || !element.hasAttribute(name)) return false;
-    var value = String(element.getAttribute(name) || "").trim();
-    return !/^(?:false|0|off|no)$/i.test(value);
-  })) {
-    return true;
-  }
-
-  var visibility = String(
-    element.getAttribute("data-visibility") ||
-    element.getAttribute("data-display-visibility") ||
-    ""
-  ).trim();
-  if (/^(?:hidden|invisible|internal|model[-_ ]?only|assistant[-_ ]?only|private)$/i.test(visibility)) {
-    return true;
-  }
-
   var label = [
     element.getAttribute("data-testid"),
-    element.getAttribute("data-test-id"),
     element.getAttribute("aria-label"),
     element.getAttribute("data-message-type"),
     element.getAttribute("data-content-type"),
@@ -1638,22 +1534,6 @@ function isThoughtLikeElementSelf(element) {
     .trim();
 
   return isThoughtStatusLine(text);
-}
-
-export function isThoughtLikeElement(element) {
-  if (isThoughtLikeElementSelf(element)) return true;
-
-  // Walk up ancestors (up to 5 levels) to detect thought containers.
-  // Claude.ai may render thinking prose inside child elements whose own
-  // attributes don't carry thought markers, but whose parent wrapper does.
-  var ancestor = element && element.parentElement ? element.parentElement : null;
-  var depth = 0;
-  while (ancestor && depth < 5) {
-    if (isThoughtLikeElementSelf(ancestor)) return true;
-    ancestor = ancestor.parentElement;
-    depth++;
-  }
-  return false;
 }
 
 var TOOL_CALL_CONTAINER_RE = /\b(?:tool[-_ ]?(?:call|use|input|output|result)|action[-_ ]?card|web[-_ ]?(?:search|browse)|code[-_ ]?interpreter)\b/i;
@@ -2076,10 +1956,7 @@ export function isIgnoredContentNode(element) {
   var testId = String(element.getAttribute("data-testid") || "");
   var label = String(element.getAttribute("aria-label") || "");
   var className = String(element.className || "");
-  var messageType = String(element.getAttribute("data-message-type") || "");
-  var contentType = String(element.getAttribute("data-content-type") || "");
-  var dataState = String(element.getAttribute("data-state") || "");
-  if (THOUGHT_ATTR_PATTERN.test(testId + " " + label + " " + className + " " + messageType + " " + contentType + " " + dataState)) {
+  if (THOUGHT_ATTR_PATTERN.test(testId + " " + label + " " + className)) {
     return true;
   }
 
@@ -2816,10 +2693,12 @@ export function getInlinePlainText(value) {
         return formatLatexUnicode("\\(" + text.trim() + "\\)");
       }
       if (marks.superscript || segment && segment.superscript) {
-        return formatLatexUnicode("\\(X^{" + text.trim() + "}\\)").replace(/^X/, "");
+        // 使用 LaTeX 空基上标语法 {}^{...}，避免占位符 hack 的边界问题
+        return formatLatexUnicode("\\({}^{" + text.trim() + "}\\)");
       }
       if (marks.subscript || segment && segment.subscript) {
-        return formatLatexUnicode("\\(X_{" + text.trim() + "}\\)").replace(/^X/, "");
+        // 使用 LaTeX 空基下标语法 {}_{...}
+        return formatLatexUnicode("\\({}_{" + text.trim() + "}\\)");
       }
       if (marks.code || segment && segment.code) {
         return text;
@@ -2851,9 +2730,9 @@ export function getInlineRichText(value) {
     var text = isMath
       ? formatLatexUnicode("\\(" + sanitizeInlineSegmentText(segment && segment.text || "").trim() + "\\)")
       : marks.superscript || segment.superscript
-      ? formatLatexUnicode("\\(X^{" + sanitizeInlineSegmentText(segment && segment.text || "").trim() + "}\\)").replace(/^X/, "")
+      ? formatLatexUnicode("\\({}^{" + sanitizeInlineSegmentText(segment && segment.text || "").trim() + "}\\)")
       : marks.subscript || segment.subscript
-      ? formatLatexUnicode("\\(X_{" + sanitizeInlineSegmentText(segment && segment.text || "").trim() + "}\\)").replace(/^X/, "")
+      ? formatLatexUnicode("\\({}_{" + sanitizeInlineSegmentText(segment && segment.text || "").trim() + "}\\)")
       : isCode
       ? sanitizeInlineSegmentText(segment && segment.text || "")
       : formatInlineTextForDisplay(segment && segment.text || "");

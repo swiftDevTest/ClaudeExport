@@ -1,0 +1,29 @@
+{
+  "platform": "chatgpt",
+  "title": "Fixture assistant image-only separate turns",
+  "scope": "conversation",
+  "messages": [
+    {
+      "role": "assistant",
+      "contentBlocks": [
+        {
+          "type": "image",
+          "src": "https://example.test/assets/generated-repeat.png",
+          "alt": "Generated repeat",
+          "sourceKind": "generated"
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "contentBlocks": [
+        {
+          "type": "image",
+          "src": "https://example.test/assets/generated-repeat.png",
+          "alt": "Generated repeat",
+          "sourceKind": "generated"
+        }
+      ]
+    }
+  ]
+}

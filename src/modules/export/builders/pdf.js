@@ -1,7 +1,6 @@
 import {
   getPlatformLabel,
   t,
-  untitledChatTitle,
   formatDateDisplay,
   IMAGE_RENDER_WIDTH,
   notifyProgress,
@@ -31,14 +30,6 @@ var SEPARATOR_MARGIN_BOTTOM = 25;
 var PDF_MAX_PAGES = 300;
 var PDF_MAX_ENCODED_PAGE_BYTES = 150 * 1024 * 1024;
 
-function getCenteredTextBaseline(ctx, top, height) {
-  var metrics = ctx.measureText("Hg");
-  if (metrics && Number.isFinite(metrics.actualBoundingBoxAscent) && Number.isFinite(metrics.actualBoundingBoxDescent)) {
-    return top + height / 2 + (metrics.actualBoundingBoxAscent - metrics.actualBoundingBoxDescent) / 2;
-  }
-  return top + height / 2 + 4;
-}
-
 // 判断颜色字符串是否为透明（"transparent" 或 alpha=0 的 rgba），用于占位框等场景回退到可见色
 function isTransparentPdfColor(value) {
   if (!value || typeof value !== "string") return false;
@@ -51,6 +42,14 @@ function isTransparentPdfColor(value) {
     return alpha === 0;
   }
   return false;
+}
+
+function getCenteredTextBaseline(ctx, top, height) {
+  var metrics = ctx.measureText("Hg");
+  if (metrics && Number.isFinite(metrics.actualBoundingBoxAscent) && Number.isFinite(metrics.actualBoundingBoxDescent)) {
+    return top + height / 2 + (metrics.actualBoundingBoxAscent - metrics.actualBoundingBoxDescent) / 2;
+  }
+  return top + height / 2 + 4;
 }
 
 export async function buildPdfBlob(messages, metadata, settingsInput, options) {
@@ -187,16 +186,10 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
   }
 
   function drawFooter() {
-    if (!settings.show_chatvault_badge && !settings.show_platform_name && !settings.show_export_time) return;
+    if (!settings.show_chatvault_badge) return;
     ctx.font = "10px " + DESIGN.font.body;
     ctx.fillStyle = DESIGN.color.muted;
-    var footer = [];
-    if (settings.show_chatvault_badge) footer.push(t("export_pdf_footer_branding", "Claude Export"));
-    if (settings.show_platform_name && metadata.platform) {
-      footer.push(getPlatformLabel(metadata.platform));
-    }
-    if (settings.show_export_time) footer.push(formatDateDisplay(metadata.exportedAt));
-    ctx.fillText(footer.join(" · "), margin, pageHeight - 36);
+    ctx.fillText(t("export_pdf_footer_branding", "Exported by Claude Export"), margin, pageHeight - 36);
   }
 
   function finalizeCurrentPage() {
@@ -209,6 +202,7 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
     var canvasWidth = canvas.width;
     var canvasHeight = canvas.height;
     var links = currentPageLinks.slice();
+    var finalizedPageNumber = totalPageCount;
     currentCanvas = null;
     currentPageLinks = [];
     pageJobs.push((async function () {
@@ -226,7 +220,11 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
           links: links
         };
       } catch (e) {
-        return null;
+        console.warn("[pdf] canvas encoding failed", {
+          page: finalizedPageNumber,
+          error_type: e && e.name ? e.name : typeof e
+        });
+        throw new Error(t("export_pdf_encode_failed", "PDF page rendering failed. Please try again."));
       } finally {
         try {
           canvas.width = 1;
@@ -242,7 +240,7 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
     pageJobs = [];
     var results = await Promise.all(jobs);
     for (var i = 0; i < results.length; i++) {
-      if (results[i]) encodedPages.push(results[i]);
+      encodedPages.push(results[i]);
     }
     if (encodedPageBytes > PDF_MAX_ENCODED_PAGE_BYTES) {
       throw new Error(t("export_pdf_too_large", "This conversation is too large to export as one PDF safely. Export a shorter range."));
@@ -263,7 +261,7 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
 
   if (settings.show_conversation_title) {
     var titleFont = "800 30px " + DESIGN.font.title;
-    var titleLines = wrapText(ctx, cleanInlineMarkdownText(metadata.title || untitledChatTitle()), contentWidth, titleFont).slice(0, 4);
+    var titleLines = wrapText(ctx, cleanInlineMarkdownText(metadata.title || "Untitled Chat"), contentWidth, titleFont).slice(0, 4);
     drawLines(titleLines, titleFont, DESIGN.color.ink, 37);
     y += 8;
   }
@@ -555,6 +553,7 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
     if (block.type === "list") {
       var groups = [];
       var maxLineWidth = 0;
+      var listStart = block.start || 1;
       (block.items || []).forEach(function (item, index) {
         var itemFont = bodyFont;
         var textIndent = 22;
@@ -578,7 +577,7 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
           lineHeight: 23,
           font: itemFont,
           ordered: block.ordered,
-          index: (block.start || 1) + index,
+          index: listStart + index,
           isSub: false
         });
         (item.subItems || []).forEach(function (sub) {
@@ -835,7 +834,6 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
         ctx.restore();
       }
     } catch (error) {
-      ctx.restore();
       var failedBlock = Object.assign({}, block, {
         width: size,
         height: size + 16,

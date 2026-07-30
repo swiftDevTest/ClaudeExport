@@ -1,4 +1,4 @@
-import { getPlatformLabel, t, untitledChatTitle, formatDateDisplay, sanitizeFilename, notifyProgress, yieldToBrowser, sanitizeExportText, sanitizeInlineSegmentText, sanitizeImageAlt, normalizeExportLinkHref, mapLimit, formatLatexUnicode, ensureImageBlockMetadata, getImageDedupKey, parseInlineMarkdown, getPrefixedInlineSegments } from '../utils.js';
+import { getPlatformLabel, t, formatDateDisplay, sanitizeFilename, notifyProgress, yieldToBrowser, sanitizeExportText, sanitizeInlineSegmentText, sanitizeImageAlt, normalizeExportLinkHref, mapLimit, formatLatexUnicode, ensureImageBlockMetadata, getImageDedupKey, parseInlineMarkdown, getPrefixedInlineSegments } from '../utils.js';
 import { preloadImageForDocx, calculateWordImageDimensions } from '../media.js';
 import { createZip } from '../zip.js';
 import { getWordTheme } from '../themes/word.js';
@@ -365,8 +365,8 @@ export function wordBlocks(blocks, imageCache, alignRight, themeWord, role, hype
     } else if (block.type === "code") {
       xml += wordCodeBlock(block, alignRight, themeWord);
     } else if (block.type === "list") {
+      var listStart = block.start || 1;
       block.items.forEach(function (item, index) {
-        var listStart = block.start || 1;
         var itemPrefix = block.ordered ? (listStart + index) + ".  " : "•  ";
         xml += wordParagraph(itemPrefix + item.text, mergeWordOptions({
           spacing: 80,
@@ -431,7 +431,7 @@ export async function buildDocxBlob(messages, metadata, settingsInput, options) 
   var signal = options.signal;
   var themeConfig = getWordTheme(settingsInput);
   var settings = themeConfig.settings;
-  var title = metadata.title || untitledChatTitle();
+  var title = metadata.title || "Untitled Chat";
   var platform = getPlatformLabel(metadata.platform);
   var date = formatDateDisplay(metadata.exportedAt);
   var themeWord = themeConfig.word;
@@ -475,6 +475,14 @@ export async function buildDocxBlob(messages, metadata, settingsInput, options) 
 
 
   var uniqueImages = Array.from(imageEntriesByKey.values()).filter(function (entry) { return entry.src; }).slice(0, DOCX_MAX_IMAGES);
+  if (imageEntriesByKey.size > DOCX_MAX_IMAGES) {
+    // 超出 DOCX_MAX_IMAGES 上限的图片会被静默截断并渲染为"Load Failed"占位，记录诊断日志便于排查
+    console.warn("[ChatVault] DOCX export: image count exceeded limit, truncating", {
+      total: imageEntriesByKey.size,
+      limit: DOCX_MAX_IMAGES,
+      dropped: imageEntriesByKey.size - DOCX_MAX_IMAGES
+    });
+  }
   var imageCache = {};
   if (uniqueImages.length > 0) {
     var loadedImages = 0;
@@ -586,10 +594,11 @@ export async function buildDocxBlob(messages, metadata, settingsInput, options) 
     }
   }
 
-  if (settings.show_chatvault_badge) {
-    bodyParts.push(wordParagraph(t("export_branding_footer", "Exported locally by Claude Export"), { color: themeWord.colorMuted, size: 9, spacing: 80 }));
-  }
   var body = bodyParts.join("");
+
+  var footerRef = settings.show_chatvault_badge
+    ? '<w:footerReference w:type="default" r:id="rIdFooter"/>'
+    : "";
 
   var documentXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
     '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
@@ -599,7 +608,7 @@ export async function buildDocxBlob(messages, metadata, settingsInput, options) 
     'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">' +
     '<w:background w:color="' + pageBg + '"/>' +
     "<w:body>" + body +
-    '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="720" w:footer="720" w:gutter="0"/></w:sectPr>' +
+    '<w:sectPr>' + footerRef + '<w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="720" w:footer="720" w:gutter="0"/></w:sectPr>' +
     "</w:body></w:document>";
 
   var zipFiles = [
@@ -610,6 +619,11 @@ export async function buildDocxBlob(messages, metadata, settingsInput, options) 
     { path: "word/document.xml", content: documentXml }
   ];
 
+  var includeFooter = !!settings.show_chatvault_badge;
+  if (includeFooter) {
+    zipFiles.push({ path: "word/footer1.xml", content: footerXml(themeWord) });
+  }
+
   getUniqueDocxImages(imageCache).forEach(function (img) {
     zipFiles.push({
       path: "word/" + img.path,
@@ -617,8 +631,8 @@ export async function buildDocxBlob(messages, metadata, settingsInput, options) 
     });
   });
 
-  zipFiles.push({ path: "[Content_Types].xml", content: contentTypesXml(imageCache) });
-  zipFiles.push({ path: "word/_rels/document.xml.rels", content: documentRelsXml(imageCache, hyperlinks) });
+  zipFiles.push({ path: "[Content_Types].xml", content: contentTypesXml(imageCache, includeFooter) });
+  zipFiles.push({ path: "word/_rels/document.xml.rels", content: documentRelsXml(imageCache, hyperlinks, includeFooter) });
 
   notifyProgress(options, t("export_progress_saving", "Saving export"), 0.88);
   var blob = new Blob([createZip(zipFiles)], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
@@ -636,7 +650,30 @@ export function getUniqueDocxImages(imageCache) {
   });
 }
 
-export function contentTypesXml(imageCache) {
+export function footerXml(themeWord) {
+  var colorMuted = (themeWord && themeWord.colorMuted) || "64748B";
+  var fontAscii = (themeWord && themeWord.fontAscii) || "Georgia";
+  var fontEastAsia = (themeWord && themeWord.fontEastAsia) || "DengXian";
+  var footerText = t("export_pdf_footer_branding", "Exported by Claude Export");
+
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+    '<w:ftr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
+    'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+    '<w:p>' +
+      '<w:pPr><w:pStyle w:val="Normal"/><w:jc w:val="center"/><w:spacing w:after="0" w:line="240" w:lineRule="auto"/></w:pPr>' +
+      '<w:r>' +
+        '<w:rPr>' +
+          '<w:rFonts w:ascii="' + xmlEscape(fontAscii) + '" w:hAnsi="' + xmlEscape(fontAscii) + '" w:eastAsia="' + xmlEscape(fontEastAsia) + '" w:cs="Arial"/>' +
+          '<w:color w:val="' + xmlEscape(colorMuted) + '"/>' +
+          '<w:sz w:val="18"/>' +
+        '</w:rPr>' +
+        '<w:t xml:space="preserve">' + xmlEscape(footerText) + '</w:t>' +
+      '</w:r>' +
+    '</w:p>' +
+    '</w:ftr>';
+}
+
+export function contentTypesXml(imageCache, includeFooter) {
   var extensions = { rels: true, xml: true };
   var imageDefaults = "";
   getUniqueDocxImages(imageCache).forEach(function (img) {
@@ -645,6 +682,10 @@ export function contentTypesXml(imageCache) {
       imageDefaults += '<Default Extension="' + img.ext + '" ContentType="' + img.mimeType + '"/>';
     }
   });
+
+  var footerOverride = includeFooter
+    ? '<Override PartName="/word/footer1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/>'
+    : "";
 
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
     '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
@@ -655,6 +696,7 @@ export function contentTypesXml(imageCache) {
     '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>' +
     '<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>' +
     '<Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>' +
+    footerOverride +
     "</Types>";
 }
 
@@ -667,7 +709,7 @@ export function packageRelsXml() {
     "</Relationships>";
 }
 
-export function documentRelsXml(imageCache, hyperlinks) {
+export function documentRelsXml(imageCache, hyperlinks, includeFooter) {
   var relsXml = "";
   getUniqueDocxImages(imageCache).forEach(function (img) {
     relsXml += '<Relationship Id="' + img.relId + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="' + img.path + '"/>';
@@ -675,6 +717,9 @@ export function documentRelsXml(imageCache, hyperlinks) {
   (hyperlinks && hyperlinks.entries || []).forEach(function (link) {
     relsXml += '<Relationship Id="' + xmlEscape(link.id) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="' + xmlEscape(link.target) + '" TargetMode="External"/>';
   });
+  if (includeFooter) {
+    relsXml += '<Relationship Id="rIdFooter" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer1.xml"/>';
+  }
 
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
     '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +

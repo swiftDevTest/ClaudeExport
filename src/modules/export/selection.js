@@ -342,7 +342,7 @@ function openInlineMenu(anchor, index) {
   ["pdf", "word", "image", "html"].forEach(function (format) {
     var item = document.createElement("button");
     item.type = "button";
-    item.textContent = format === "word" ? t("format_word", "Word") + " DOCX" : (format === "image" ? t("format_image", "Image") : format.toUpperCase());
+    item.textContent = format === "word" ? "Word DOCX" : format.toUpperCase();
     item.style.cssText = "display:block;width:100%;border:0;background:transparent;color:#17202a;text-align:left;border-radius:9px;padding:9px 10px;font:700 12px -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;cursor:pointer;";
     item.addEventListener("click", function (event) {
       event.preventDefault();

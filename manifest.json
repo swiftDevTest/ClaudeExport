@@ -44,7 +44,11 @@
         "src/content.css",
         "src/obsidian-content.css",
         "src/obsidian-settings.html",
-        "images/*"
+        "images/*",
+        "src/modules/export/notion-sync-engine.js",
+        "src/modules/obsidian/coordinator.js",
+        "src/modules/obsidian/renderer.js",
+        "src/modules/obsidian/media.js"
       ],
       "matches": [
         "https://claude.ai/*"

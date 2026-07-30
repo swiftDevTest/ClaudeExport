@@ -1,0 +1,28 @@
+{
+  "messages": [
+    {
+      "role": "user",
+      "blocks": [
+        {
+          "type": "image",
+          "sourceKind": "uploaded",
+          "normalizedSrc": "https://example.test/assets/duplicate.png",
+          "originalIndex": 1,
+          "alt": "First duplicate"
+        },
+        {
+          "type": "paragraph",
+          "text": "Describe this image."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ignore duplicate above."
+        }
+      ]
+    }
+  ],
+  "assertions": {
+    "imageCount": 1,
+    "forbiddenText": []
+  }
+}

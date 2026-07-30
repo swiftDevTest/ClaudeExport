@@ -1035,6 +1035,15 @@ try {
   chrome.runtime.onInstalled.addListener((details) => {
     createContextMenus();
     migrateLegacyStorageKeys();
+    // 注册卸载引导页 URL（install 和 update 都触发，确保 URL 始终注册）
+    // chrome.runtime.setUninstallURL 只接受 http/https 远程 URL，扩展文件卸载时已被删除
+    if (productConfig.uninstallUrl && typeof chrome.runtime.setUninstallURL === "function") {
+      chrome.runtime.setUninstallURL(productConfig.uninstallUrl, () => {
+        if (chrome.runtime.lastError) {
+          console.warn("[" + PRODUCT_ID + "] setUninstallURL failed:", chrome.runtime.lastError.message);
+        }
+      });
+    }
 
     if (!details || details.reason !== "install") {
       return;

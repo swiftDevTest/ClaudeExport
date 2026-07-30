@@ -326,7 +326,7 @@ export function renderObsidianMarkdown(input = {}) {
   const platform = cleanText(metadata.platform || "unknown").toLowerCase().replace(/[^a-z0-9_-]/g, "") || "unknown";
   const platformTag = cleanText(metadata.platformLabel || platform.charAt(0).toUpperCase() + platform.slice(1)).trim() || "AI";
   const exportedAt = formatExportedAt(metadata.exportedAt);
-  const productTag = (globalThis.CHATVAULT_PRODUCT_CONFIG?.productSlug || "claude-export").split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join("-");
+  const productTag = (globalThis.CHATVAULT_PRODUCT_CONFIG?.productSlug || "chatvault-exporter").split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join("-");
   const frontmatter = [
     "---",
     `From Source: ${yamlString(metadata.sourceUrl || "")}`,
