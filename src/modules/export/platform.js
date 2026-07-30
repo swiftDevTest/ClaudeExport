@@ -317,7 +317,7 @@ function resolveMessages(request) {
   var messages = [];
 
   if (!platform) {
-    return { ok: false, error: "Open a ChatGPT, Claude, or Gemini conversation to export." };
+    return { ok: false, error: "Open and load a Claude conversation to export." };
   }
 
   if (!allMessages.length && !hasSelectedMessages) {

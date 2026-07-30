@@ -26,11 +26,11 @@
     const statements = [];
 
     statements.push(t("privacy_proof_local_generation", "Document format [$1] is generated 100% locally in your browser.", format.toUpperCase()));
-    statements.push(t("privacy_proof_no_upload", "Chat content text is never uploaded to ChatVault servers for conversion."));
+    statements.push(t("privacy_proof_no_upload", "The extension never uploads chat text to its servers for conversion."));
     if (hasImages) {
       statements.push(t("privacy_proof_image_fetch", "As the conversation contains images, the extension will securely fetch image bytes from the original platform CDN locally."));
     }
-    statements.push(t("privacy_proof_usage_local", "Usage count is stored locally; VIP status is checked through the account service without uploading chat content or scanning your chat history list."));
+    statements.push(t("privacy_proof_usage_local", "Guest usage is stored locally. For signed-in users, quota and plan status may be verified and synchronized with the account service; chat content and history lists are not uploaded."));
 
     return {
       localGeneration: true,
@@ -38,6 +38,7 @@
       usesConversionServer: false,
       mayFetchOriginalImages: hasImages,
       storesUsageLocally: true,
+      syncsSignedInUsageWithAccountService: true,
       usageCost: Number(input?.usageCost) || 1,
       statements: statements
     };

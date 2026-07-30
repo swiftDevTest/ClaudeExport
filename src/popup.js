@@ -1553,7 +1553,7 @@
   }
 
   function showUnsupportedToast() {
-    showToast(t("toast_no_open_chat", "Open a ChatGPT, Claude, or Gemini conversation to export."));
+    showToast(t("toast_no_open_chat", "Open and load a Claude conversation to export."));
   }
 
   function showToast(message) {
@@ -3010,7 +3010,7 @@
         : selectionMode
           ? ot("obsidian_select_message_first_short", "Select messages", "请选择消息")
           : ot("obsidian_sync_current_short", "Sync", "同步");
-      current.disabled = selectionMode && selectedCount < 1;
+      current.disabled = !isSupportedPage || (selectionMode && selectedCount < 1);
       if (disconnect) disconnect.hidden = false;
       if (settingsStatus) settingsStatus.textContent = `${status.vaultName || ot("obsidian_vault", "Obsidian Vault", "Obsidian Vault")} | ${notesDestination}`;
     }

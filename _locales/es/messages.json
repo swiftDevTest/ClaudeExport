@@ -186,7 +186,7 @@
     "message": "Preparando exportación de chat: $1..."
   },
   "toast_no_open_chat": {
-    "message": "Abre una conversación de Claude para exportar."
+    "message": "Abre y carga una conversación de Claude para exportarla."
   },
   "toast_image_limit_exceeded": {
     "message": "Este contenido es demasiado largo para exportarlo como imagen de alta calidad. Expórtalo como PDF."
@@ -1728,129 +1728,135 @@
     "message": "El formato de documento [$1] se genera 100% localmente en tu navegador."
   },
   "privacy_proof_no_upload": {
-    "message": "El contenido del chat nunca se carga a los servidores de ChatVault para su conversión."
+    "message": "La extensión nunca sube el texto del chat a sus servidores para convertirlo."
   },
   "privacy_proof_image_fetch": {
     "message": "Como la conversación contiene imágenes, la extensión obtendrá de forma segura los bytes de imagen desde el CDN de la plataforma original localmente."
   },
   "privacy_proof_usage_local": {
-    "message": "El contador de uso se almacena localmente; el estado VIP se verifica a través del servicio de cuentas sin cargar contenido del chat ni escanear tu historial de chat."
+    "message": "El uso como invitado se guarda localmente. Para usuarios con sesión iniciada, la cuota y el plan pueden verificarse y sincronizarse con el servicio de cuenta; no se suben el contenido ni las listas del historial."
   },
   "template_appendix_original_prompts": {
     "message": "Apéndice: Prompts originales"
   },
   "connections_title": {
-    "message": "Connections"
+    "message": "Conexiones"
   },
   "language_label": {
-    "message": "Language"
+    "message": "Idioma"
   },
   "save_to_notion": {
-    "message": "Save to Notion"
+    "message": "Guardar en Notion"
   },
   "save_to_obsidian": {
-    "message": "Save to Obsidian"
+    "message": "Guardar en Obsidian"
   },
   "notion_disconnect_success": {
-    "message": "Notion disconnected."
+    "message": "Notion desconectado."
   },
   "notion_disconnect_failed": {
-    "message": "Could not disconnect Notion: $1"
+    "message": "No se pudo desconectar Notion: $1"
   },
   "notion_status_held": {
-    "message": "Queued"
+    "message": "En cola"
   },
   "notion_status_pending": {
-    "message": "Pending"
+    "message": "Pendiente"
   },
   "notion_status_running": {
-    "message": "Syncing"
+    "message": "Sincronizando"
   },
   "notion_status_retry_wait": {
-    "message": "Waiting to retry"
+    "message": "Esperando para reintentar"
   },
   "notion_status_succeeded": {
-    "message": "Sync succeeded"
+    "message": "Sincronización correcta"
   },
   "notion_status_partial": {
-    "message": "Completed with warnings"
+    "message": "Completado con advertencias"
   },
   "notion_status_failed": {
-    "message": "Sync failed"
+    "message": "Error de sincronización"
   },
   "notion_status_cancelled": {
-    "message": "Cancelled"
+    "message": "Cancelado"
   },
   "notion_datasource_fetch_failed": {
-    "message": "Fetch failed ($1)"
+    "message": "Error al obtener datos ($1)"
   },
   "notion_job_warnings_count": {
-    "message": "$1 warnings"
+    "message": "$1 advertencias"
   },
   "notion_cancel_job": {
-    "message": "Cancel task"
+    "message": "Cancelar tarea"
   },
   "notion_retry_job": {
-    "message": "Retry"
+    "message": "Reintentar"
   },
   "notion_open_page": {
-    "message": "Open Notion"
+    "message": "Abrir Notion"
   },
   "notion_select_database_first": {
-    "message": "Please select a Notion Database first."
+    "message": "Selecciona primero una base de datos de Notion."
   },
   "notion_sync_request_failed": {
-    "message": "Sync request failed. Make sure the page is refreshed and ready."
+    "message": "La solicitud de sincronización falló. Actualiza la página y comprueba que esté lista."
   },
   "notion_err_update_conflict": {
-    "message": "The conversation is not append-only. Choose Replace and sync again."
+    "message": "La conversación no permite solo añadir contenido. Elige Reemplazar y vuelve a sincronizar."
   },
   "notion_err_replace_required": {
-    "message": "The Notion page changed. Confirm Replace and sync again."
+    "message": "La página de Notion cambió. Confirma Reemplazar y vuelve a sincronizar."
   },
   "notion_err_ambiguous_append": {
-    "message": "A previous append result was ambiguous. Choose Replace to avoid duplicate blocks."
+    "message": "El resultado de una adición anterior fue ambiguo. Elige Reemplazar para evitar bloques duplicados."
   },
   "notion_err_image_upload": {
-    "message": "A conversation image could not be uploaded to Notion."
+    "message": "No se pudo subir a Notion una imagen de la conversación."
   },
   "notion_err_schema": {
-    "message": "The selected Data Source or content is not compatible with this sync operation."
+    "message": "La fuente de datos o el contenido seleccionados no son compatibles con esta operación de sincronización."
   },
   "notion_err_reconnect": {
-    "message": "Reconnect the Notion workspace and try again."
+    "message": "Vuelve a conectar el espacio de trabajo de Notion e inténtalo de nuevo."
   },
   "notion_err_permission": {
-    "message": "The Notion connection does not have permission for this page or Data Source."
+    "message": "La conexión de Notion no tiene permiso para esta página o fuente de datos."
   },
   "notion_err_missing": {
-    "message": "The mapped Notion page or Data Source is unavailable, moved to trash, or no longer shared."
+    "message": "La página o fuente de datos de Notion asignada no está disponible, se movió a la papelera o dejó de compartirse."
   },
   "notion_err_rate_limited": {
-    "message": "Notion is rate-limited or overloaded. Retry later."
+    "message": "Notion ha alcanzado el límite de solicitudes o está sobrecargado. Inténtalo más tarde."
   },
   "notion_err_temporary": {
-    "message": "A temporary network or Notion service error interrupted the sync."
+    "message": "Un error temporal de red o del servicio de Notion interrumpió la sincronización."
   },
   "notion_err_unknown": {
-    "message": "Notion sync could not be completed."
+    "message": "No se pudo completar la sincronización con Notion."
   },
   "format_json": {
     "message": "JSON"
   },
   "content_exporting_format": {
-    "message": "Exporting $1"
+    "message": "Exportando $1"
   },
   "selected_label_suffix": {
-    "message": "Selected"
+    "message": "Seleccionados"
   },
   "obsidian_opening_folder_picker": {
-    "message": "Opening the folder chooser..."
+    "message": "Abriendo el selector de carpetas..."
   },
   "obsidian_default_vault_name": {
     "message": "Obsidian Vault"
   },
   "obsidian_default_note_name": {
-    "message": "Obsidian note"
+    "message": "Nota de Obsidian"
+  },
+  "content_auth_session_expired": {
+    "message": "Tu sesión caducó y se cerró. Abre la extensión e inicia sesión de nuevo."
+  },
+  "content_export_fail_reauth_fix": {
+    "message": "Inicia sesión de nuevo y vuelve a intentar la exportación."
   }
 }

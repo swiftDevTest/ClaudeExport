@@ -186,7 +186,7 @@
     "message": "대화 내보내기 준비 중: $1..."
   },
   "toast_no_open_chat": {
-    "message": "내보내려면 Claude 대화를 열어주세요."
+    "message": "내보낼 Claude 대화를 열고 불러오세요."
   },
   "toast_image_limit_exceeded": {
     "message": "이 콘텐츠는 너무 길어 고품질 이미지로 내보낼 수 없습니다. PDF로 내보내세요."
@@ -1728,129 +1728,135 @@
     "message": "문서 형식 [$1]은(는) 브라우저에서 100% 로컬로 생성됩니다."
   },
   "privacy_proof_no_upload": {
-    "message": "채팅 콘텐츠는 변환을 위해 ChatVault 서버로 업로드되지 않습니다."
+    "message": "확장 프로그램은 변환을 위해 채팅 텍스트를 자체 서버에 업로드하지 않습니다."
   },
   "privacy_proof_image_fetch": {
     "message": "대화에 이미지가 포함되어 있으므로 확장 프로그램은 원래 플랫폼 CDN에서 이미지 바이트를 로컬로 안전하게 가져옵니다."
   },
   "privacy_proof_usage_local": {
-    "message": "사용 횟수는 로컬에 저장됩니다. VIP 상태는 채팅 콘텐츠를 업로드하거나 채팅 기록을 스캔하지 않고 계정 서비스를 통해 확인됩니다."
+    "message": "게스트 사용량은 로컬에 저장됩니다. 로그인 사용자의 할당량과 요금제 상태는 계정 서비스에서 확인 및 동기화될 수 있지만, 채팅 내용과 기록 목록은 업로드되지 않습니다."
   },
   "template_appendix_original_prompts": {
     "message": "부록: 원래 프롬프트"
   },
   "connections_title": {
-    "message": "Connections"
+    "message": "연결"
   },
   "language_label": {
-    "message": "Language"
+    "message": "언어"
   },
   "save_to_notion": {
-    "message": "Save to Notion"
+    "message": "Notion에 저장"
   },
   "save_to_obsidian": {
-    "message": "Save to Obsidian"
+    "message": "Obsidian에 저장"
   },
   "notion_disconnect_success": {
-    "message": "Notion disconnected."
+    "message": "Notion 연결이 해제되었습니다."
   },
   "notion_disconnect_failed": {
-    "message": "Could not disconnect Notion: $1"
+    "message": "Notion 연결을 해제할 수 없습니다: $1"
   },
   "notion_status_held": {
-    "message": "Queued"
+    "message": "대기열에 추가됨"
   },
   "notion_status_pending": {
-    "message": "Pending"
+    "message": "대기 중"
   },
   "notion_status_running": {
-    "message": "Syncing"
+    "message": "동기화 중"
   },
   "notion_status_retry_wait": {
-    "message": "Waiting to retry"
+    "message": "재시도 대기 중"
   },
   "notion_status_succeeded": {
-    "message": "Sync succeeded"
+    "message": "동기화 성공"
   },
   "notion_status_partial": {
-    "message": "Completed with warnings"
+    "message": "경고와 함께 완료됨"
   },
   "notion_status_failed": {
-    "message": "Sync failed"
+    "message": "동기화 실패"
   },
   "notion_status_cancelled": {
-    "message": "Cancelled"
+    "message": "취소됨"
   },
   "notion_datasource_fetch_failed": {
-    "message": "Fetch failed ($1)"
+    "message": "가져오기 실패($1)"
   },
   "notion_job_warnings_count": {
-    "message": "$1 warnings"
+    "message": "경고 $1개"
   },
   "notion_cancel_job": {
-    "message": "Cancel task"
+    "message": "작업 취소"
   },
   "notion_retry_job": {
-    "message": "Retry"
+    "message": "다시 시도"
   },
   "notion_open_page": {
-    "message": "Open Notion"
+    "message": "Notion 열기"
   },
   "notion_select_database_first": {
-    "message": "Please select a Notion Database first."
+    "message": "먼저 Notion 데이터베이스를 선택하세요."
   },
   "notion_sync_request_failed": {
-    "message": "Sync request failed. Make sure the page is refreshed and ready."
+    "message": "동기화 요청에 실패했습니다. 페이지를 새로고침하고 준비되었는지 확인하세요."
   },
   "notion_err_update_conflict": {
-    "message": "The conversation is not append-only. Choose Replace and sync again."
+    "message": "대화가 추가 전용이 아닙니다. 바꾸기를 선택하고 다시 동기화하세요."
   },
   "notion_err_replace_required": {
-    "message": "The Notion page changed. Confirm Replace and sync again."
+    "message": "Notion 페이지가 변경되었습니다. 바꾸기를 확인하고 다시 동기화하세요."
   },
   "notion_err_ambiguous_append": {
-    "message": "A previous append result was ambiguous. Choose Replace to avoid duplicate blocks."
+    "message": "이전 추가 결과가 불확실합니다. 블록 중복을 피하려면 바꾸기를 선택하세요."
   },
   "notion_err_image_upload": {
-    "message": "A conversation image could not be uploaded to Notion."
+    "message": "대화 이미지를 Notion에 업로드할 수 없습니다."
   },
   "notion_err_schema": {
-    "message": "The selected Data Source or content is not compatible with this sync operation."
+    "message": "선택한 데이터 소스 또는 콘텐츠가 이 동기화 작업과 호환되지 않습니다."
   },
   "notion_err_reconnect": {
-    "message": "Reconnect the Notion workspace and try again."
+    "message": "Notion 워크스페이스를 다시 연결한 후 다시 시도하세요."
   },
   "notion_err_permission": {
-    "message": "The Notion connection does not have permission for this page or Data Source."
+    "message": "Notion 연결에 이 페이지 또는 데이터 소스에 대한 권한이 없습니다."
   },
   "notion_err_missing": {
-    "message": "The mapped Notion page or Data Source is unavailable, moved to trash, or no longer shared."
+    "message": "연결된 Notion 페이지 또는 데이터 소스를 사용할 수 없거나, 휴지통으로 이동했거나, 더 이상 공유되지 않습니다."
   },
   "notion_err_rate_limited": {
-    "message": "Notion is rate-limited or overloaded. Retry later."
+    "message": "Notion이 요청 제한 중이거나 과부하 상태입니다. 나중에 다시 시도하세요."
   },
   "notion_err_temporary": {
-    "message": "A temporary network or Notion service error interrupted the sync."
+    "message": "일시적인 네트워크 또는 Notion 서비스 오류로 동기화가 중단되었습니다."
   },
   "notion_err_unknown": {
-    "message": "Notion sync could not be completed."
+    "message": "Notion 동기화를 완료할 수 없습니다."
   },
   "format_json": {
     "message": "JSON"
   },
   "content_exporting_format": {
-    "message": "Exporting $1"
+    "message": "$1 내보내는 중"
   },
   "selected_label_suffix": {
-    "message": "Selected"
+    "message": "선택됨"
   },
   "obsidian_opening_folder_picker": {
-    "message": "Opening the folder chooser..."
+    "message": "폴더 선택 창을 여는 중..."
   },
   "obsidian_default_vault_name": {
     "message": "Obsidian Vault"
   },
   "obsidian_default_note_name": {
-    "message": "Obsidian note"
+    "message": "Obsidian 노트"
+  },
+  "content_auth_session_expired": {
+    "message": "로그인 세션이 만료되어 로그아웃되었습니다. 확장 프로그램을 열고 다시 로그인하세요."
+  },
+  "content_export_fail_reauth_fix": {
+    "message": "다시 로그인한 후 내보내기를 다시 시도하세요."
   }
 }

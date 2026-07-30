@@ -231,7 +231,7 @@
     "message": "Preparing conversation export: $1..."
   },
   "toast_no_open_chat": {
-    "message": "Open a Claude conversation to export."
+    "message": "Open and load a Claude conversation to export."
   },
   "toast_image_limit_exceeded": {
     "message": "This content is too long for a high-quality image export. Export as PDF instead."
@@ -1728,13 +1728,13 @@
     "message": "Document format [$1] is generated 100% locally in your browser."
   },
   "privacy_proof_no_upload": {
-    "message": "Chat content text is never uploaded to ChatVault servers for conversion."
+    "message": "The extension never uploads chat text to its servers for conversion."
   },
   "privacy_proof_image_fetch": {
     "message": "As the conversation contains images, the extension will securely fetch image bytes from the original platform CDN locally."
   },
   "privacy_proof_usage_local": {
-    "message": "Usage count is stored locally; VIP status is checked through the account service without uploading chat content or scanning your chat history list."
+    "message": "Guest usage is stored locally. For signed-in users, quota and plan status may be verified and synchronized with the account service; chat content and history lists are not uploaded."
   },
   "template_appendix_original_prompts": {
     "message": "Appendix: Original Prompts"
@@ -1852,5 +1852,11 @@
   },
   "obsidian_default_note_name": {
     "message": "Obsidian note"
+  },
+  "content_auth_session_expired": {
+    "message": "Your sign-in session expired and you were signed out. Open the extension and sign in again."
+  },
+  "content_export_fail_reauth_fix": {
+    "message": "Sign in again, then retry the export."
   }
 }

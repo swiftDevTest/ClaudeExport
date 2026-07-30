@@ -3936,11 +3936,16 @@
       // 服务器预检：避免用户花费时间导出后才发现额度不足
       const preCheck = await verifySignedInExportAccess(total);
       if (!preCheck.allowed) {
-        throw new Error(preCheck.error || tx(
+        const preCheckError = new Error(preCheck.error || tx(
           "content_batch_quota_exceeded",
           "Daily export limit reached. Upgrade to Pro for unlimited exports.",
           "已达每日导出上限，升级 Pro 可无限导出。"
         ));
+        if (preCheck.reauthenticationRequired) {
+          preCheckError.code = "chatvault_reauthentication_required";
+          preCheckError.reauthenticationRequired = true;
+        }
+        throw preCheckError;
       }
 
       for (let index = 0; index < selectedItems.length; index += 1) {
@@ -4029,25 +4034,30 @@
 
       hideExportProgress();
       const saveResult = await saveBatchPreparedFiles(preparedFiles, rootName);
-      if (!saveResult || !saveResult.ok) {
-        if (saveResult?.cancelled) {
-          showPageToast(tx("content_export_save_cancelled", "Export cancelled.", "导出已取消。"));
-          return;
-        }
+      if (saveResult?.cancelled) {
+        showPageToast(tx("content_export_save_cancelled", "Export cancelled.", "导出已取消。"));
+        return;
+      }
+      if (!saveResult) {
+        throw new Error("Export save failed.");
+      }
+      if (!saveResult.ok && !Array.isArray(saveResult.failures)) {
         throw new Error(saveResult?.error || "Export save failed.");
       }
       const savedCount = Math.max(0, Number(saveResult.savedCount) || 0);
-      if (Array.isArray(saveResult.failures) && saveResult.failures.length) {
-        saveResult.failures.forEach((failure) => {
+      const saveFailures = Array.isArray(saveResult.failures) ? saveResult.failures : [];
+      const failedSavePaths = new Set(saveFailures.map((failure) => String(failure.downloadPath || "")));
+      if (saveFailures.length) {
+        saveFailures.forEach((failure) => {
           failures.push({
-            title: failure.filename || "",
+            title: failure.title || failure.filename || "",
             error: failure.error || "Export save failed."
           });
         });
       }
 
       // 服务器扣减：按实际成功导出数量扣减 Free 用户额度，避免本地计数被绕过
-      if (!isProUser) {
+      if (!isProUser && savedCount > 0) {
         const consumeResult = await syncVerifiedExportEntitlement(savedCount, { consume: true });
         if (!consumeResult || !consumeResult.allowed) {
           console.warn("Batch export server consume failed:", consumeResult && consumeResult.error);
@@ -4062,7 +4072,9 @@
       // 统一导出完成 UI：批量本地导出展示结果对话框（与批量同步、单次导出风格一致）
       const batchResultStatus = failures.length > 0 && savedCount > 0 ? "partial" : (savedCount > 0 ? "succeeded" : "failed");
       const batchResultItems = [
-        ...preparedFiles.map((f) => ({ title: f.title || f.filename, status: "saved" })),
+        ...preparedFiles
+          .filter((file) => !failedSavePaths.has(String(file.downloadPath || "")))
+          .map((file) => ({ title: file.title || file.filename, status: "saved" })),
         ...failures.map((f) => ({ title: f.title || f.filename || "", status: "failed" }))
       ];
       showExportResultDialog({
@@ -4072,13 +4084,25 @@
         failureCount: failures.length,
         items: batchResultItems
       });
-      globalThis.CHATVAULT_ANALYTICS?.track("export_success", {
+      globalThis.CHATVAULT_ANALYTICS?.track(savedCount > 0 ? "export_success" : "export_failed", {
         platform: getCurrentPlatformId() || "claude",
-        properties: { format, source: "batch_export", count: preparedFiles.length }
+        properties: savedCount > 0
+          ? { format, source: "batch_export", count: savedCount, failures: failures.length }
+          : { format, source: "batch_export", error_category: "save" }
       });
     } catch (error) {
       if (error?.message === "Export cancelled." || error?.name === "AbortError") {
         showPageToast(t("batch_export_cancelled", isChineseUi() ? "导出已取消。" : "Export cancelled."));
+      } else if (error?.code === "chatvault_reauthentication_required" || error?.reauthenticationRequired) {
+        const failure = classifyExportFailure(error, { format });
+        showExportResultDialog({
+          kind: "single",
+          status: "failed",
+          format,
+          failure: Object.assign({}, failure, {
+            onFix: buildFailureFixHandler(failure, { formatForExport: format, settingsForExport: settings })
+          })
+        });
       } else {
         showPageToast(tx("content_export_failed_message", "Export failed: $1", "导出失败：$1", error.message || "Export failed."));
         globalThis.CHATVAULT_ANALYTICS?.track("export_failed", {
@@ -5024,7 +5048,12 @@
       // 保存后立即释放 Blob 引用，降低批量导出内存峰值
       file.blob = null;
       if (!result.ok) {
-        failures.push({ filename: file.filename, error: result.error });
+        failures.push({
+          title: file.title,
+          filename: file.filename,
+          downloadPath: file.downloadPath,
+          error: result.error
+        });
       } else {
         savedCount += 1;
       }
@@ -5256,7 +5285,22 @@
     const code = String(error && error.code ? error.code : "");
     const format = String(context && context.format ? context.format : "").toLowerCase();
 
-    // 1. 图片超限（兜底分类，上层通常已用 showImageLimitModal 处理）
+    // 1. 登录状态失效
+    if (code === "chatvault_reauthentication_required" || error?.reauthenticationRequired === true) {
+      return {
+        category: "reauthentication_required",
+        reason: getReauthenticationRequiredMessage(),
+        suggestion: tx(
+          "content_export_fail_reauth_fix",
+          "Sign in again, then retry the export.",
+          "请重新登录后再重试导出。"
+        ),
+        fixAction: "sign_in",
+        fixLabel: t("popup_btn_login", isChineseUi() ? "登录" : "Sign In")
+      };
+    }
+
+    // 2. 图片超限（兜底分类，上层通常已用 showImageLimitModal 处理）
     if (code === "IMAGE_CANVAS_LIMIT_EXCEEDED") {
       return {
         category: "image_limit",
@@ -5267,7 +5311,7 @@
       };
     }
 
-    // 2. 保存对话框失败
+    // 3. 保存对话框失败
     if (/save dialog|saveAs|save.*not available|download.*not allowed|Save dialog/i.test(message)) {
       return {
         category: "save_failed",
@@ -5278,7 +5322,7 @@
       };
     }
 
-    // 3. Blob 构建失败
+    // 4. Blob 构建失败
     if (/blob creation|blob.*fail|Failed to execute.*createObjectURL/i.test(message)) {
       return {
         category: "blob_failed",
@@ -5289,7 +5333,7 @@
       };
     }
 
-    // 4. 网络/跨域错误
+    // 5. 网络/跨域错误
     if (/cors|cross-origin|network|Failed to fetch|download.*fail|tainted|security|Image.*load/i.test(message)) {
       if (format === "image") {
         return {
@@ -5309,7 +5353,7 @@
       };
     }
 
-    // 5. 内存不足
+    // 6. 内存不足
     if (/memory|out of memory|maximum call stack|allocation.*fail/i.test(message)) {
       if (format === "image") {
         return {
@@ -5329,7 +5373,7 @@
       };
     }
 
-    // 6. 超时
+    // 7. 超时
     if (/timeout|timed out/i.test(message)) {
       return {
         category: "timeout",
@@ -5340,7 +5384,7 @@
       };
     }
 
-    // 7. 默认/未知错误
+    // 8. 默认/未知错误
     return {
       category: "unknown",
       reason: tx("content_export_fail_unknown_reason", "An unexpected error occurred during export.", "导出过程中发生未知错误。"),
@@ -5356,13 +5400,24 @@
     const settings = context && context.settingsForExport ? context.settingsForExport : {};
     const item = context && context.item ? context.item : null;
     const formatForExport = context && context.formatForExport ? context.formatForExport : null;
+    const messages = Array.isArray(context && context.messagesForExport)
+      ? context.messagesForExport
+      : null;
+    if (action === "sign_in") {
+      return async () => {
+        const signedIn = await performSignIn();
+        if (signedIn) {
+          showPageToast(t("popup_login_success", isChineseUi() ? "登录成功。" : "Signed in successfully."));
+        }
+      };
+    }
     if (action === "change_format_pdf") {
       return () => {
         activeFormat = "pdf";
         if (item && typeof exportSingleSidebarConversation === "function") {
           exportSingleSidebarConversation(item, "pdf", settings);
         } else {
-          performExport({ settings });
+          performExport({ settings, messages });
         }
       };
     }
@@ -5372,7 +5427,7 @@
         if (item && typeof exportSingleSidebarConversation === "function") {
           exportSingleSidebarConversation(item, "markdown", settings);
         } else {
-          performExport({ settings });
+          performExport({ settings, messages });
         }
       };
     }
@@ -5386,7 +5441,7 @@
       if (item && formatForExport && typeof exportSingleSidebarConversation === "function") {
         exportSingleSidebarConversation(item, formatForExport, settings);
       } else {
-        performExport({ settings });
+        performExport({ settings, messages });
       }
     };
   }
@@ -5486,11 +5541,12 @@
         fixBtn.textContent = failure.fixLabel || tx("content_export_fix_retry", "Retry", "重试");
         currentFailureFixHandler = () => {
           hideBatchSyncResultDialog();
-          try {
-            failure.onFix();
-          } catch (fixError) {
-            console.warn("Failure fix handler error:", fixError);
-          }
+          Promise.resolve()
+            .then(() => failure.onFix())
+            .catch((fixError) => {
+              console.warn("Failure fix handler error:", fixError);
+              showPageToast(fixError?.message || tx("content_export_fail_unknown_reason", "An unexpected error occurred during export.", "导出过程中发生未知错误。"));
+            });
         };
         fixBtn.addEventListener("click", currentFailureFixHandler);
       }
@@ -5540,7 +5596,10 @@
             exportSingleSidebarConversation(result.item, fmt, result.settings);
           } else {
             activeFormat = fmt;
-            performExport({ settings: result.settings });
+            performExport({
+              settings: result.settings,
+              messages: Array.isArray(result.messages) ? result.messages : null
+            });
           }
         });
         itemsContainer.appendChild(button);
@@ -5571,6 +5630,7 @@
     if (confetti) confetti.hidden = true;
     const mark = shadowRoot.getElementById("cv-batch-result-mark");
     if (mark) mark.style.display = "";
+    shadowRoot.getElementById("cv-batch-result-items")?.replaceChildren();
     // 重置去重ID，允许下次相同结果的弹窗正常显示
     lastBatchSyncResultDialogId = "";
   }
@@ -5773,11 +5833,11 @@
     const requestSettings = options.settings && typeof options.settings === "object"
       ? options.settings
       : null;
+    const providedMessages = Array.isArray(options.messages) ? options.messages : null;
     const platformForExport = exporter.detectPlatform();
-    const isSelectedExport = exportSettings.mode === "selected";
 
     if (!platformForExport) {
-      showPageToast(t("toast_no_open_chat", isChineseUi() ? "请在支持的 AI 对话页打开并加载聊天内容后再导出。" : "Open a ChatGPT, Claude, or Gemini conversation to export."));
+      showPageToast(t("toast_no_open_chat", isChineseUi() ? "请打开并加载 Claude 对话后再导出。" : "Open and load a Claude conversation to export."));
       return;
     }
 
@@ -5790,6 +5850,7 @@
     const settingsForExport = requestSettings
       ? { ...exportSettings, ...requestSettings }
       : { ...exportSettings };
+    const isSelectedExport = settingsForExport.mode === "selected";
     const controller = new AbortController();
     abortController = controller;
     const signal = controller.signal;
@@ -5831,7 +5892,22 @@
     if (!entitlementPreflight.ok) {
       hideExportProgress();
       clearCurrentExportController();
-      showPageToast(entitlementPreflight.error || tx("content_entitlement_verify_failed", "Could not verify your export entitlement. Check your connection and try again.", "无法验证您的导出权益，请检查网络后重试。"));
+      if (entitlementPreflight.reauthenticationRequired) {
+        const entitlementError = new Error(entitlementPreflight.error || getReauthenticationRequiredMessage());
+        entitlementError.code = "chatvault_reauthentication_required";
+        entitlementError.reauthenticationRequired = true;
+        const failure = classifyExportFailure(entitlementError, { format: formatForExport });
+        showExportResultDialog({
+          kind: "single",
+          status: "failed",
+          format: formatForExport,
+          failure: Object.assign({}, failure, {
+            onFix: buildFailureFixHandler(failure, { formatForExport, settingsForExport })
+          })
+        });
+      } else {
+        showPageToast(entitlementPreflight.error || tx("content_entitlement_verify_failed", "Could not verify your export entitlement. Check your connection and try again.", "无法验证您的导出权益，请检查网络后重试。"));
+      }
       return;
     }
     if (!entitlementPreflight.allowed) {
@@ -5891,14 +5967,16 @@
     }
 
     const pageParseOptions = { includeHtmlStyles: formatForExport === "html" };
-    const pageMessagesForExport = isSelectedExport && typeof exporter.getSelectedMessages === "function"
-      ? exporter.getSelectedMessages(pageParseOptions)
-      : parseCurrentChatMessages(pageParseOptions);
+    let pageMessagesForExport = providedMessages || (
+      isSelectedExport && typeof exporter.getSelectedMessages === "function"
+        ? exporter.getSelectedMessages(pageParseOptions)
+        : parseCurrentChatMessages(pageParseOptions)
+    );
     let rawMessagesForExport = pageMessagesForExport;
     // 放宽条件：即使 DOM 解析返回 0 条消息，也尝试通过 API 抓取完整会话。
     // API 使用 URL 中的 conversationId 和用户 cookie，不依赖 DOM 选择器，
     // 可覆盖 DOM 虚拟化/懒加载导致 DOM 解析为空但会话实际存在的场景。
-    if (!isSelectedExport && platformForExport) {
+    if (!providedMessages && !isSelectedExport && platformForExport) {
       if (!globalThis.CHATVAULT_IS_BATCH_EXPORT) {
         renderExportProgress(formatForExport, {
           mode: "single",
@@ -5936,7 +6014,7 @@
       clearCurrentExportController();
       showPageToast(isSelectedExport
         ? tx("content_select_one_before_export", "Select at least one message before exporting.", "请先选择至少一条对话后再导出。")
-        : t("toast_no_open_chat", isChineseUi() ? "请在支持的 AI 对话页打开并加载聊天内容后再导出。" : "Open a ChatGPT, Claude, or Gemini conversation to export."));
+        : t("toast_no_open_chat", isChineseUi() ? "请打开并加载 Claude 对话后再导出。" : "Open and load a Claude conversation to export."));
       return;
     }
 
@@ -6102,7 +6180,12 @@
         setExportProgress(tx("content_progress_checking_export_access", "Preparing export...", "正在准备导出..."), 90);
         const entitlementVerification = await syncVerifiedExportEntitlement(1, { consume: true });
         if (!entitlementVerification.ok) {
-          throw new Error(entitlementVerification.error || tx("content_entitlement_verify_failed", "Could not verify your export entitlement. Check your connection and try again.", "无法验证您的导出权益，请检查网络后重试。"));
+          const entitlementError = new Error(entitlementVerification.error || tx("content_entitlement_verify_failed", "Could not verify your export entitlement. Check your connection and try again.", "无法验证您的导出权益，请检查网络后重试。"));
+          if (entitlementVerification.reauthenticationRequired) {
+            entitlementError.code = "chatvault_reauthentication_required";
+            entitlementError.reauthenticationRequired = true;
+          }
+          throw entitlementError;
         }
         if (!entitlementVerification.allowed) {
           hideExportProgress();
@@ -6211,7 +6294,8 @@
           format: formatForExport,
           filename: saveResult?.filename || blobResult?.filename || "",
           messageCount: metadata?.messageCount,
-          settings: settingsForExport
+          settings: settingsForExport,
+          messages: mode === "selected" ? rawMessagesForExport : null
         });
       }
 
@@ -6221,7 +6305,11 @@
         if (!globalThis.CHATVAULT_IS_BATCH_EXPORT) {
           // 单次导出失败：展示具体原因 + 一键修复对话框（替代原来的通用 toast）
           const failure = classifyExportFailure(e, { format: formatForExport });
-          const onFix = buildFailureFixHandler(failure, { formatForExport, settingsForExport });
+          const onFix = buildFailureFixHandler(failure, {
+            formatForExport,
+            settingsForExport,
+            messagesForExport: isSelectedExport ? rawMessagesForExport : null
+          });
           showExportResultDialog({
             kind: "single",
             status: "failed",

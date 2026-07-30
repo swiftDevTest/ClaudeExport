@@ -615,7 +615,10 @@ try {
   async function startGoogleOAuthSession(clientId) {
     googleOAuthInFlightCount += 1;
     try {
-      return await startGoogleOAuthSessionInternal(clientId);
+      // OAuth session storage and invalid-session cleanup must share one queue.
+      // Otherwise cleanup can read an old token, OAuth can store a new session,
+      // and cleanup can then overwrite that new session with null.
+      return await runSessionMutation(() => startGoogleOAuthSessionInternal(clientId));
     } finally {
       googleOAuthInFlightCount = Math.max(0, googleOAuthInFlightCount - 1);
     }

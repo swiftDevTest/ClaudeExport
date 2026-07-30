@@ -186,7 +186,7 @@
     "message": "チャットのエクスポートを準備中: $1..."
   },
   "toast_no_open_chat": {
-    "message": "エクスポートするには、ChatGPT、Claude、またはGeminiの対話を開いてください。"
+    "message": "エクスポートする Claude の会話を開いて読み込んでください。"
   },
   "toast_image_limit_exceeded": {
     "message": "このコンテンツは長すぎるため、高品質な画像としてエクスポートできません。PDFでエクスポートしてください。"
@@ -1728,129 +1728,135 @@
     "message": "ドキュメント形式 [$1] はブラウザ内で100%ローカルに生成されます。"
   },
   "privacy_proof_no_upload": {
-    "message": "チャット内容は変換のために ChatVault サーバーにアップロードされることはありません。"
+    "message": "拡張機能が変換のためにチャット本文を自身のサーバーへアップロードすることはありません。"
   },
   "privacy_proof_image_fetch": {
     "message": "会話に画像が含まれているため、拡張機能は元のプラットフォームの CDN から画像バイトを安全にローカルで取得します。"
   },
   "privacy_proof_usage_local": {
-    "message": "使用回数はローカルに保存されます。VIP ステータスはアカウントサービスを通じて確認され、チャット内容のアップロードやチャット履歴のスキャンは行われません。"
+    "message": "ゲストの利用回数はローカルに保存されます。ログインユーザーの割り当てとプラン状態はアカウントサービスで確認・同期される場合がありますが、チャット内容や履歴一覧はアップロードされません。"
   },
   "template_appendix_original_prompts": {
     "message": "付録：元のプロンプト"
   },
   "connections_title": {
-    "message": "Connections"
+    "message": "接続"
   },
   "language_label": {
-    "message": "Language"
+    "message": "言語"
   },
   "save_to_notion": {
-    "message": "Save to Notion"
+    "message": "Notion に保存"
   },
   "save_to_obsidian": {
-    "message": "Save to Obsidian"
+    "message": "Obsidian に保存"
   },
   "notion_disconnect_success": {
-    "message": "Notion disconnected."
+    "message": "Notion の接続を解除しました。"
   },
   "notion_disconnect_failed": {
-    "message": "Could not disconnect Notion: $1"
+    "message": "Notion の接続を解除できませんでした: $1"
   },
   "notion_status_held": {
-    "message": "Queued"
+    "message": "キュー済み"
   },
   "notion_status_pending": {
-    "message": "Pending"
+    "message": "保留中"
   },
   "notion_status_running": {
-    "message": "Syncing"
+    "message": "同期中"
   },
   "notion_status_retry_wait": {
-    "message": "Waiting to retry"
+    "message": "再試行待ち"
   },
   "notion_status_succeeded": {
-    "message": "Sync succeeded"
+    "message": "同期に成功しました"
   },
   "notion_status_partial": {
-    "message": "Completed with warnings"
+    "message": "警告付きで完了"
   },
   "notion_status_failed": {
-    "message": "Sync failed"
+    "message": "同期に失敗しました"
   },
   "notion_status_cancelled": {
-    "message": "Cancelled"
+    "message": "キャンセル済み"
   },
   "notion_datasource_fetch_failed": {
-    "message": "Fetch failed ($1)"
+    "message": "取得に失敗しました（$1）"
   },
   "notion_job_warnings_count": {
-    "message": "$1 warnings"
+    "message": "警告 $1 件"
   },
   "notion_cancel_job": {
-    "message": "Cancel task"
+    "message": "タスクをキャンセル"
   },
   "notion_retry_job": {
-    "message": "Retry"
+    "message": "再試行"
   },
   "notion_open_page": {
-    "message": "Open Notion"
+    "message": "Notion を開く"
   },
   "notion_select_database_first": {
-    "message": "Please select a Notion Database first."
+    "message": "先に Notion データベースを選択してください。"
   },
   "notion_sync_request_failed": {
-    "message": "Sync request failed. Make sure the page is refreshed and ready."
+    "message": "同期リクエストに失敗しました。ページを再読み込みし、準備ができていることを確認してください。"
   },
   "notion_err_update_conflict": {
-    "message": "The conversation is not append-only. Choose Replace and sync again."
+    "message": "この会話は追記のみでは同期できません。「置換」を選んで再同期してください。"
   },
   "notion_err_replace_required": {
-    "message": "The Notion page changed. Confirm Replace and sync again."
+    "message": "Notion ページが変更されています。「置換」を確認して再同期してください。"
   },
   "notion_err_ambiguous_append": {
-    "message": "A previous append result was ambiguous. Choose Replace to avoid duplicate blocks."
+    "message": "前回の追記結果が不明確です。ブロックの重複を避けるため「置換」を選んでください。"
   },
   "notion_err_image_upload": {
-    "message": "A conversation image could not be uploaded to Notion."
+    "message": "会話内の画像を Notion にアップロードできませんでした。"
   },
   "notion_err_schema": {
-    "message": "The selected Data Source or content is not compatible with this sync operation."
+    "message": "選択したデータソースまたは内容は、この同期処理と互換性がありません。"
   },
   "notion_err_reconnect": {
-    "message": "Reconnect the Notion workspace and try again."
+    "message": "Notion ワークスペースを再接続して、もう一度お試しください。"
   },
   "notion_err_permission": {
-    "message": "The Notion connection does not have permission for this page or Data Source."
+    "message": "Notion 接続には、このページまたはデータソースへの権限がありません。"
   },
   "notion_err_missing": {
-    "message": "The mapped Notion page or Data Source is unavailable, moved to trash, or no longer shared."
+    "message": "関連付けられた Notion ページまたはデータソースは利用できないか、ゴミ箱に移動されたか、共有が解除されています。"
   },
   "notion_err_rate_limited": {
-    "message": "Notion is rate-limited or overloaded. Retry later."
+    "message": "Notion がレート制限中または高負荷です。後でもう一度お試しください。"
   },
   "notion_err_temporary": {
-    "message": "A temporary network or Notion service error interrupted the sync."
+    "message": "一時的なネットワークまたは Notion サービスのエラーにより同期が中断されました。"
   },
   "notion_err_unknown": {
-    "message": "Notion sync could not be completed."
+    "message": "Notion の同期を完了できませんでした。"
   },
   "format_json": {
     "message": "JSON"
   },
   "content_exporting_format": {
-    "message": "Exporting $1"
+    "message": "$1 をエクスポート中"
   },
   "selected_label_suffix": {
-    "message": "Selected"
+    "message": "選択済み"
   },
   "obsidian_opening_folder_picker": {
-    "message": "Opening the folder chooser..."
+    "message": "フォルダー選択画面を開いています..."
   },
   "obsidian_default_vault_name": {
     "message": "Obsidian Vault"
   },
   "obsidian_default_note_name": {
-    "message": "Obsidian note"
+    "message": "Obsidian ノート"
+  },
+  "content_auth_session_expired": {
+    "message": "ログインセッションの有効期限が切れたため、ログアウトしました。拡張機能を開いて再度ログインしてください。"
+  },
+  "content_export_fail_reauth_fix": {
+    "message": "再度ログインしてから、エクスポートをやり直してください。"
   }
 }

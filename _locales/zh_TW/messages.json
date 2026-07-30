@@ -186,7 +186,7 @@
     "message": "正在準備對話匯出: $1..."
   },
   "toast_no_open_chat": {
-    "message": "開啟 Claude 對話以進行匯出。"
+    "message": "請開啟並載入 Claude 對話後再匯出。"
   },
   "toast_image_limit_exceeded": {
     "message": "此內容過長，無法保證高品質圖片匯出。建議改為匯出 PDF。"
@@ -1728,13 +1728,13 @@
     "message": "文件格式為 [$1]，完全在您瀏覽器的本地生成。"
   },
   "privacy_proof_no_upload": {
-    "message": "聊天文字正文絕對不會上傳到 ChatVault 遠端伺服器進行轉檔。"
+    "message": "擴充功能絕不會將聊天文字上傳到自身伺服器進行轉換。"
   },
   "privacy_proof_image_fetch": {
     "message": "由於對話包含圖片，擴充功能僅會透過瀏覽器背景從原 AI 平台的可信 CDN 拉取圖片位元組用於排版。"
   },
   "privacy_proof_usage_local": {
-    "message": "扣額計數儲存在本地；VIP 狀態僅透過帳號服務校驗，不會上傳聊天正文或掃描歷史聊天清單。"
+    "message": "訪客使用次數儲存在本機；登入使用者的額度與方案狀態可能透過帳號服務驗證及同步，但不會上傳聊天正文或歷史聊天清單。"
   },
   "template_appendix_original_prompts": {
     "message": "附錄：原始提問清單"
@@ -1852,5 +1852,11 @@
   },
   "obsidian_default_note_name": {
     "message": "Obsidian 筆記"
+  },
+  "content_auth_session_expired": {
+    "message": "登入狀態已失效，已為您安全登出。請開啟擴充功能並重新登入。"
+  },
+  "content_export_fail_reauth_fix": {
+    "message": "請重新登入後再重試匯出。"
   }
 }

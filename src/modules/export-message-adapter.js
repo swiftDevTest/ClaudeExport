@@ -60,7 +60,7 @@
       }
 
       if (!activePlatform) {
-        return "Open ChatGPT, Claude, or Gemini before exporting conversation bodies";
+        return "Open Claude before exporting conversation bodies";
       }
 
       if (platform !== activePlatform) {
