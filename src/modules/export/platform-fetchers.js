@@ -1,4 +1,8 @@
-import { sanitizeStructuredLinkText as sanitizeSharedStructuredLinkText } from "./utils.js";
+import {
+  hasInternalVisibilityMarker as hasSharedInternalVisibilityMarker,
+  isThoughtLikeContentValue as isSharedThoughtLikeContentValue,
+  sanitizeStructuredLinkText as sanitizeSharedStructuredLinkText
+} from "./utils.js";
 
 "use strict";
 
@@ -1101,24 +1105,7 @@ function createMissingDependencyError(name) {
   }
 
   function isThoughtContentValue(value) {
-    if (!value || typeof value !== "object" || Array.isArray(value)) {
-      return false;
-    }
-
-    const type = String(value.type || value.content_type || value.kind || value.name || value.role || "").trim();
-    if (/^(analysis|reasoning|thinking|thought|chain_of_thought|model_thought)$/i.test(type)) {
-      return true;
-    }
-
-    const label = [
-      value.title,
-      value.label,
-      value.summary,
-      value.status,
-      value.display_name
-    ].map((item) => String(item || "")).join(" ");
-
-    return THOUGHT_ATTR_PATTERN.test(label) || THOUGHT_LINE_PATTERN.test(label.trim());
+    return isSharedThoughtLikeContentValue(value);
   }
 
   function stripInvisibleTextControls(value) {
@@ -3226,10 +3213,37 @@ function createMissingDependencyError(name) {
     });
   }
 
+  function isClaudeMessageHiddenFromConversation(message) {
+    if (hasSharedInternalVisibilityMarker(message)) return true;
+    // If the message content is an array and ALL non-image items are
+    // thought-like, treat the entire message as hidden thinking.
+    const content = message?.content;
+    if (Array.isArray(content) && content.length > 0) {
+      let hasThought = false;
+      let hasNonThought = false;
+      content.forEach((item) => {
+        if (item && typeof item === "object") {
+          if (isSharedThoughtLikeContentValue(item)) {
+            hasThought = true;
+          } else if (item.type === "image" || item.type === "image_url" || item.images) {
+            // images don't count
+          } else if (item.text || item.content || item.value || item.markdown) {
+            hasNonThought = true;
+          }
+        }
+      });
+      if (hasThought && !hasNonThought) return true;
+    }
+    return false;
+  }
+
   function parseClaudeConversationPayload(payload, organizationId = "", rawConversationId = "") {
     const rawMessages = getClaudeMessagesFromPayload(payload);
     const messages = rawMessages
       .map((message) => {
+        if (isClaudeMessageHiddenFromConversation(message)) {
+          return null;
+        }
         const role = message?.sender || message?.role || message?.author || message?.type;
         const normalizedRole = normalizeExportRole(role);
         const contentBlocks = orderUserImageBlocksFirst(normalizedRole, claudeMessageToExportBlocks(message, organizationId, rawConversationId));
