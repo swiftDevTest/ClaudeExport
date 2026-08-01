@@ -524,6 +524,43 @@
     quotaInfo.textContent = t("popup_quota_remaining", "Today's remaining quota: $1 / $2 exports", remainingQuota, dailyLimit);
   }
 
+  // The local quota is shared by guest and signed-in sessions. A newly signed-in
+  // account can have a lower server counter (usually zero), so never let a
+  // server/cache snapshot replace a higher local counter from the same day.
+  function mergePopupUsageSnapshots() {
+    var values = Array.prototype.slice.call(arguments).filter(function (value) {
+      return value && typeof value === "object";
+    });
+    if (!values.length) return null;
+
+    var today = globalThis.CHATVAULT_ENTITLEMENTS?.getTodayString?.() || "";
+    var dated = values.filter(function (value) {
+      var date = String(value.usage_date || value.date || "");
+      return !today || !date || date === today;
+    });
+    var candidates = dated.length ? dated : values;
+    var winner = candidates[0];
+    var maxCount = -1;
+    candidates.forEach(function (value) {
+      var count = Math.max(0, Number(value.exportedChats || value.exported_chats || value.count || value.used || 0));
+      if (count > maxCount) {
+        maxCount = count;
+        winner = value;
+      }
+    });
+    return {
+      ...winner,
+      exportedChats: Math.max(0, maxCount),
+      date: String(winner.date || winner.usage_date || today),
+      dateBasis: winner.dateBasis || "utc"
+    };
+  }
+
+  async function getPopupUsageSnapshot(serverUsage, fallbackUsage) {
+    var localUsage = await getLocalUsageSnapshot();
+    return mergePopupUsageSnapshots(localUsage, serverUsage, fallbackUsage);
+  }
+
   function responseHasAccountIdentity(response) {
     return Boolean(
       response?.email ||
@@ -633,13 +670,22 @@
         return false;
       }
 
-      latestCachedEntitlementState = cached;
+      var usage = await getPopupUsageSnapshot(cached.usage);
+      var remainingQuota = cached.remainingQuota;
+      if (entitlements && cached.profile && !cached.isProUser) {
+        remainingQuota = entitlements.getRemainingFreeExports(cached.profile, usage || {});
+      }
+      latestCachedEntitlementState = {
+        ...cached,
+        usage: usage || cached.usage,
+        remainingQuota: remainingQuota
+      };
       isProUser = !!cached.isProUser;
       // 历史 bug：cached.session 没有 access_token（entitlements.js 构造时仅含 user 字段），
       // 直接传给 updateLocalUI 会让 hasActiveAuthSession 返回 false，UI 显示"未登录"。
       // 修复：上方 sessionMatchesCache 已校验 storedSession 有 access_token 且身份匹配 cached，
       // 优先传 storedSession 让登录态正确显示，cached.session 仅作兜底。
-      updateLocalUI(storedSession || cached.session, cached.profile, cached.remainingQuota);
+      updateLocalUI(storedSession || cached.session, cached.profile, remainingQuota);
       return true;
     } catch (error) {
       latestCachedEntitlementState = null;
@@ -737,12 +783,26 @@
     }
   }
 
-  function applyPopupStateResponse(response, options) {
+  async function applyPopupStateResponse(response, options) {
     if (!response || response.ok === false) {
       return false;
     }
     if (locallySignedOut && responseHasAccountIdentity(response)) {
       return false;
+    }
+
+    var entitlements = globalThis.CHATVAULT_ENTITLEMENTS;
+    var mergedUsage = await getPopupUsageSnapshot(response.dailyUsage);
+    if (mergedUsage) {
+      response = { ...response, dailyUsage: mergedUsage };
+      var responseProfile = response.profile || (entitlements && entitlements.normalizeProfile({
+        id: response.profile?.id || "",
+        email: response.email || "",
+        plan: response.isProUser ? "pro" : "free"
+      }));
+      if (entitlements && responseProfile && !response.isProUser) {
+        response.remainingQuota = entitlements.getRemainingFreeExports(responseProfile, mergedUsage);
+      }
     }
 
     cacheEntitlementStateFromResponse(response);
@@ -935,7 +995,7 @@
     var entitlements = globalThis.CHATVAULT_ENTITLEMENTS;
     var cached = await getCachedProfileForSession(session);
     var profile = cached?.profile || null;
-    var usage = cached?.usage || await getLocalUsageSnapshot();
+    var usage = await getPopupUsageSnapshot(cached?.usage);
     var remainingQuota = cached ? cached.remainingQuota : latestRemainingQuota;
 
     if (entitlements) {
@@ -1997,7 +2057,7 @@
     }
 
     var profile = verifiedState.profile;
-    var usage = await mergeVerifiedUsageWithLocal(verifiedState.usage) || {};
+    var usage = await getPopupUsageSnapshot(verifiedState.usage) || {};
     var remainingQuota = entitlements.getRemainingFreeExports(profile, usage || {});
     isProUser = entitlements.isPro(profile);
     latestRemainingQuota = remainingQuota;
@@ -2067,7 +2127,7 @@
 
     try {
       if (usageStore) {
-        usage = await usageStore.getDailyUsage();
+      usage = await getPopupUsageSnapshot(usage);
       }
     } catch (e) {
       console.warn("Local usage loading failed:", e);

@@ -29,6 +29,8 @@ var SEPARATOR_MARGIN_TOP = 25;
 var SEPARATOR_MARGIN_BOTTOM = 25;
 var PDF_MAX_PAGES = 300;
 var PDF_MAX_ENCODED_PAGE_BYTES = 150 * 1024 * 1024;
+var PDF_MAX_TABLE_ROW_LINES = 40;
+var PDF_MAX_PENDING_PAGE_JOBS = 2;
 
 // 判断颜色字符串是否为透明（"transparent" 或 alpha=0 的 rgba），用于占位框等场景回退到可见色
 function isTransparentPdfColor(value) {
@@ -96,6 +98,7 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
   var currentCanvas = null;
   var currentPageLinks = [];
   var ctx = null;
+  var contentClipActive = false;
   var y = 0;
   var pageNumber = 0;
   // Newsprint 主题噪点 pattern 缓存：避免每页重新生成 400 个随机 fillRect。
@@ -173,6 +176,13 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
       y = topMargin;
       currentCanvas = current.canvas;
       drawFooter();
+      // Defense in depth: even if a future block paginator regresses, body
+      // drawing must never enter the reserved footer area.
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, 0, pageWidth, pageHeight - bottomMargin);
+      ctx.clip();
+      contentClipActive = true;
     }
 
   function ensure(height) {
@@ -194,6 +204,10 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
 
   function finalizeCurrentPage() {
     if (!currentCanvas) return;
+    if (contentClipActive && ctx) {
+      ctx.restore();
+      contentClipActive = false;
+    }
     totalPageCount += 1;
     if (totalPageCount > PDF_MAX_PAGES) {
       throw new Error(t("export_pdf_too_many_pages", "This conversation is too large to export as one PDF safely. Export a shorter range."));
@@ -202,7 +216,6 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
     var canvasWidth = canvas.width;
     var canvasHeight = canvas.height;
     var links = currentPageLinks.slice();
-    var finalizedPageNumber = totalPageCount;
     currentCanvas = null;
     currentPageLinks = [];
     pageJobs.push((async function () {
@@ -220,10 +233,6 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
           links: links
         };
       } catch (e) {
-        console.warn("[pdf] canvas encoding failed", {
-          page: finalizedPageNumber,
-          error_type: e && e.name ? e.name : typeof e
-        });
         throw new Error(t("export_pdf_encode_failed", "PDF page rendering failed. Please try again."));
       } finally {
         try {
@@ -245,6 +254,12 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
     if (encodedPageBytes > PDF_MAX_ENCODED_PAGE_BYTES) {
       throw new Error(t("export_pdf_too_large", "This conversation is too large to export as one PDF safely. Export a shorter range."));
     }
+  }
+
+  async function drainPageJobsIfNeeded() {
+    if (pageJobs.length < PDF_MAX_PENDING_PAGE_JOBS) return;
+    await drainPageJobs();
+    await yieldToBrowser();
   }
 
   function drawLines(lines, font, color, lineHeight, x) {
@@ -293,12 +308,12 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
     }
     var message = messages[mi];
     var layout = measurePdfMessage(message);
-    renderPdfMessageCard(layout);
+    await renderPdfMessageCard(layout);
     if (mi > 0 && mi % 20 === 0) {
       notifyProgress(options, t("export_progress_paginating_doc", "Paginating export"), 0.08 + 0.64 * ((mi + 1) / Math.max(1, messages.length)));
       await new Promise(function (resolve) { setTimeout(resolve, 0); });
     }
-    if (pageJobs.length >= 5) {
+    if (pageJobs.length >= PDF_MAX_PENDING_PAGE_JOBS) {
       await drainPageJobs();
     }
   }
@@ -507,6 +522,139 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
     };
   }
 
+  function createPdfListChunk(block, lineStart, lineCount) {
+    var renderLines = block.renderLines || [];
+    var safeStart = Math.max(0, Math.min(renderLines.length - 1, Number(lineStart) || 0));
+    var safeCount = Math.max(1, Math.min(renderLines.length - safeStart, Number(lineCount) || 1));
+    var selected = renderLines.slice(safeStart, safeStart + safeCount);
+    var groups = [];
+    var contentHeight = 0;
+
+    selected.forEach(function (entry) {
+      contentHeight += entry.group.lineHeight;
+      var current = groups[groups.length - 1];
+      if (!current || current.sourceGroupIndex !== entry.groupIndex) {
+        current = Object.assign({}, entry.group, {
+          richLines: [],
+          sourceGroupIndex: entry.groupIndex,
+          showMarker: entry.lineIndex === 0
+        });
+        groups.push(current);
+      }
+      current.richLines.push(entry.richLine);
+    });
+
+    return Object.assign({}, block, {
+      groups: groups,
+      height: contentHeight + 6
+    });
+  }
+
+  function planPdfListChunk(block, lineStart, availableHeight) {
+    var renderLines = block.renderLines || [];
+    var safeStart = Math.max(0, Math.min(renderLines.length - 1, Number(lineStart) || 0));
+    var take = 0;
+    var contentHeight = 0;
+
+    while (safeStart + take < renderLines.length) {
+      var nextHeight = renderLines[safeStart + take].group.lineHeight;
+      if (contentHeight + nextHeight + 6 > availableHeight) break;
+      contentHeight += nextHeight;
+      take += 1;
+    }
+    if (take < 1) return null;
+    return {
+      take: take,
+      block: createPdfListChunk(block, safeStart, take)
+    };
+  }
+
+  function createPdfBlockquoteChunk(block, lineStart, lineCount) {
+    var lines = block.lines && block.lines.length ? block.lines : [""];
+    var safeStart = Math.max(0, Math.min(lines.length - 1, Number(lineStart) || 0));
+    var safeCount = Math.max(1, Math.min(lines.length - safeStart, Number(lineCount) || 1));
+    var richLines = block.richLines && block.richLines.length
+      ? block.richLines.slice(safeStart, safeStart + safeCount)
+      : null;
+    return Object.assign({}, block, {
+      lines: lines.slice(safeStart, safeStart + safeCount),
+      richLines: richLines,
+      height: safeCount * block.lineHeight + 24
+    });
+  }
+
+  function planPdfBlockquoteChunk(block, lineStart, availableHeight) {
+    var lines = block.lines && block.lines.length ? block.lines : [""];
+    var safeStart = Math.max(0, Math.min(lines.length - 1, Number(lineStart) || 0));
+    var maxLines = Math.floor((availableHeight - 24) / block.lineHeight);
+    if (maxLines < 1) return null;
+    var take = Math.min(lines.length - safeStart, maxLines);
+    return {
+      take: take,
+      block: createPdfBlockquoteChunk(block, safeStart, take)
+    };
+  }
+
+  function createPdfTableChunk(block, rowStart, rowCount) {
+    var rows = block.rows || [];
+    var safeStart = Math.max(0, Math.min(rows.length - 1, Number(rowStart) || 0));
+    var safeCount = Math.max(1, Math.min(rows.length - safeStart, Number(rowCount) || 1));
+    var chunkRows = rows.slice(safeStart, safeStart + safeCount);
+    return Object.assign({}, block, {
+      rows: chunkRows,
+      height: chunkRows.reduce(function (sum, row) { return sum + row.rowHeight; }, 0) + 12
+    });
+  }
+
+  function planPdfTableChunk(block, rowStart, availableHeight) {
+    var rows = block.rows || [];
+    var safeStart = Math.max(0, Math.min(rows.length - 1, Number(rowStart) || 0));
+    var take = 0;
+    var contentHeight = 0;
+
+    while (safeStart + take < rows.length) {
+      var nextHeight = rows[safeStart + take].rowHeight;
+      if (contentHeight + nextHeight + 12 > availableHeight) break;
+      contentHeight += nextHeight;
+      take += 1;
+    }
+    if (take < 1) return null;
+    return {
+      take: take,
+      block: createPdfTableChunk(block, safeStart, take)
+    };
+  }
+
+  function getPdfChunkUnitCount(block) {
+    if (!block) return 0;
+    if (block.type === "list") return (block.renderLines || []).length;
+    if (block.type === "blockquote") return block.lines && block.lines.length ? block.lines.length : 1;
+    if (block.type === "table") return (block.rows || []).length;
+    return 0;
+  }
+
+  function getPdfChunkMinimumHeight(block, unitStart) {
+    var safeStart = Math.max(0, Number(unitStart) || 0);
+    if (block.type === "list") {
+      var entry = (block.renderLines || [])[safeStart];
+      return entry ? entry.group.lineHeight + 6 : 0;
+    }
+    if (block.type === "blockquote") return block.lineHeight + 24;
+    if (block.type === "table") {
+      var row = (block.rows || [])[safeStart];
+      return row ? row.rowHeight + 12 : 0;
+    }
+    return 0;
+  }
+
+  function planPdfChunkedBlock(block, unitStart, availableHeight) {
+    if (!block) return null;
+    if (block.type === "list") return planPdfListChunk(block, unitStart, availableHeight);
+    if (block.type === "blockquote") return planPdfBlockquoteChunk(block, unitStart, availableHeight);
+    if (block.type === "table") return planPdfTableChunk(block, unitStart, availableHeight);
+    return null;
+  }
+
   function measurePdfBlock(block, width) {
     if (!block) return null;
     if (block.type === "heading") {
@@ -552,6 +700,7 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
     }
     if (block.type === "list") {
       var groups = [];
+      var renderLines = [];
       var maxLineWidth = 0;
       var listStart = block.start || 1;
       (block.items || []).forEach(function (item, index) {
@@ -606,9 +755,23 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
           });
         });
       });
+      groups.forEach(function (group, groupIndex) {
+        var lines = group.richLines && group.richLines.length
+          ? group.richLines
+          : [{ chunks: [{ text: "" }] }];
+        lines.forEach(function (richLine, lineIndex) {
+          renderLines.push({
+            group: group,
+            groupIndex: groupIndex,
+            lineIndex: lineIndex,
+            richLine: richLine
+          });
+        });
+      });
       return {
         type: "list",
         groups: groups,
+        renderLines: renderLines,
         height: groups.reduce(function (sum, group) { return sum + Math.max(1, group.richLines.length) * group.lineHeight; }, 0) + 6,
         maxWidth: Math.min(width, maxLineWidth)
       };
@@ -696,7 +859,23 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
       var rowHeight = Math.max(30, Math.max.apply(null, cellLines.map(function (lines) { return lines.length; })) * 15 + 14);
       return { header: row.header, cellLines: cellLines, rowHeight: rowHeight };
     });
-    return { type: "table", columnCount: columnCount, cellWidth: cellWidth, rows: rowLayouts, height: rowLayouts.reduce(function (sum, row) { return sum + row.rowHeight; }, 0) + 12 };
+    var paginatedRows = [];
+    rowLayouts.forEach(function (row) {
+      var lineCount = Math.max.apply(null, row.cellLines.map(function (lines) { return Math.max(1, lines.length); }));
+      if (lineCount <= PDF_MAX_TABLE_ROW_LINES) {
+        paginatedRows.push(row);
+        return;
+      }
+      for (var lineStart = 0; lineStart < lineCount; lineStart += PDF_MAX_TABLE_ROW_LINES) {
+        var take = Math.min(PDF_MAX_TABLE_ROW_LINES, lineCount - lineStart);
+        paginatedRows.push({
+          header: row.header,
+          cellLines: row.cellLines.map(function (lines) { return lines.slice(lineStart, lineStart + take); }),
+          rowHeight: Math.max(30, take * 15 + 14)
+        });
+      }
+    });
+    return { type: "table", columnCount: columnCount, cellWidth: cellWidth, rows: paginatedRows, height: paginatedRows.reduce(function (sum, row) { return sum + row.rowHeight; }, 0) + 12 };
   }
 
   function drawSegmentCard(ctx, x, y, width, height, radius, fill, stroke, shadowColor, hasTopRound, hasBottomRound) {
@@ -885,7 +1064,7 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
     });
   }
 
-  function renderPdfMessageCard(layout) {
+  async function renderPdfMessageCard(layout) {
     var message = layout.message;
     var isUser = message.role === "user";
     var cardWidth = layout.cardWidth || contentWidth;
@@ -910,19 +1089,23 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
         firstPartHeight += 20;
       }
       ensure(firstPartHeight);
+      await drainPageJobsIfNeeded();
       renderPdfRoleLabel(message, cardX, y, false, layout.alignRight, cardWidth);
       y += layout.roleHeight + 6;
     }
 
-    function renderPdfImageSection(section) {
-      section.rows.forEach(function (row, index) {
+    async function renderPdfImageSection(section) {
+      for (var index = 0; index < section.rows.length; index++) {
+        var row = section.rows[index];
         if (index) y += 8;
         var fittedRow = fitPdfImageRowToHeight(row, remainingPageHeight() - 10);
         if (fittedRow.height + 10 > remainingPageHeight() && y > topMargin + 8) {
           newPage();
+          await drainPageJobsIfNeeded();
           fittedRow = fitPdfImageRowToHeight(row, remainingPageHeight() - 10);
         }
         ensure(fittedRow.height + 10);
+        await drainPageJobsIfNeeded();
         var imgX;
         if (layout.alignRight) {
           imgX = margin + contentWidth - fittedRow.width;
@@ -934,21 +1117,25 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
           }
         }
         y = renderPdfImageGridRow(fittedRow, imgX, y) + 4;
-      });
+      }
     }
 
-    function renderPdfBubbleSection(section) {
+    async function renderPdfBubbleSection(section) {
       var segments = [];
-      (section.blocks || []).forEach(function (block) {
+      (section.blocks || []).forEach(function (block, blockIndex) {
         if (block.type === "heading" || block.type === "paragraph") {
           var fontSize = block.type === "heading" ? (block.font.includes("21px") ? 21 : block.font.includes("18px") ? 18 : 16) : 15;
-          block.lines.forEach(function (line) {
+          block.lines.forEach(function (line, lineIndex) {
             segments.push({
               type: "line",
               text: line,
+              richLine: block.richLines && block.richLines[lineIndex] ? block.richLines[lineIndex] : null,
+              blockType: block.type,
               font: block.font,
               lineHeight: block.lineHeight,
-              fontSize: fontSize
+              fontSize: fontSize,
+              headingGroupId: block.type === "heading" ? blockIndex : null,
+              headingLineIndex: block.type === "heading" ? lineIndex : null
             });
           });
           segments.push({ type: "spacing", height: 5 });
@@ -957,6 +1144,13 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
             type: "codeBlock",
             block: block,
             lineIndex: 0
+          });
+          segments.push({ type: "spacing", height: 5 });
+        } else if (/^(list|blockquote|table)$/.test(block.type) && getPdfChunkUnitCount(block) > 0) {
+          segments.push({
+            type: "chunkedBlock",
+            block: block,
+            unitIndex: 0
           });
           segments.push({ type: "spacing", height: 5 });
         } else {
@@ -989,12 +1183,42 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
           var lineIndex = Number(seg.lineIndex) || 0;
           return getPdfCodeHeaderHeight(seg.block, lineIndex) + 18 + seg.block.lineHeight;
         }
+        if (seg.type === "chunkedBlock") {
+          return getPdfChunkMinimumHeight(seg.block, seg.unitIndex);
+        }
         return getSegmentHeight(seg);
+      }
+
+      function getHeadingKeepHeight(segmentIndex) {
+        var heading = segments[segmentIndex];
+        if (!heading || heading.type !== "line" || heading.blockType !== "heading" || heading.headingLineIndex !== 0) {
+          return 0;
+        }
+        var required = 0;
+        var index = segmentIndex;
+        while (index < segments.length) {
+          var candidate = segments[index];
+          if (candidate.type !== "line" || candidate.headingGroupId !== heading.headingGroupId) break;
+          required += candidate.lineHeight;
+          index += 1;
+        }
+        while (index < segments.length && segments[index].type === "spacing") {
+          required += segments[index].height;
+          index += 1;
+        }
+        if (index < segments.length) {
+          required += getSegmentMinimumHeight(segments[index]);
+          if (index === segments.length - 1) required += bubblePaddingY;
+        } else {
+          required += bubblePaddingY;
+        }
+        return required;
       }
       
       while (currentIdx < segments.length) {
         if (y + 30 > pageHeight - bottomMargin) {
           newPage();
+          await drainPageJobsIfNeeded();
         }
         
         var isTop = isFirstSegment;
@@ -1063,8 +1287,50 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
             break;
           }
 
+          if (seg.type === "chunkedBlock") {
+            var totalUnits = getPdfChunkUnitCount(seg.block);
+            var unitIndex = Math.max(0, Math.min(totalUnits, Number(seg.unitIndex) || 0));
+            if (unitIndex >= totalUnits) {
+              nextIdx += 1;
+              continue;
+            }
+
+            var availableBlockHeight = pageHeight - bottomMargin - tempY;
+            var blockPlan = planPdfChunkedBlock(seg.block, unitIndex, availableBlockHeight);
+            if (blockPlan && isLastSegment && unitIndex + blockPlan.take >= totalUnits && tempY + blockPlan.block.height + bubblePaddingY > pageHeight - bottomMargin) {
+              blockPlan = planPdfChunkedBlock(seg.block, unitIndex, availableBlockHeight - bubblePaddingY);
+            }
+            if (!blockPlan) {
+              if (pageEntries.length > 0) {
+                break;
+              }
+              if (!startedAtFreshTop) {
+                needsFreshPage = true;
+                break;
+              }
+              throw new Error(t("export_pdf_encode_failed", "PDF page rendering failed. Please try again."));
+            }
+
+            var nextUnitIndex = unitIndex + blockPlan.take;
+            pageEntries.push({
+              type: "block",
+              block: blockPlan.block,
+              sourceChunkedSegment: seg,
+              nextUnitIndex: nextUnitIndex
+            });
+            tempY += blockPlan.block.height;
+
+            if (nextUnitIndex >= totalUnits) {
+              nextIdx += 1;
+              continue;
+            }
+            break;
+          }
+
           var segmentHeight = getSegmentHeight(seg);
           var needed = segmentHeight + (isLastSegment ? bubblePaddingY : 0);
+          var headingKeepHeight = getHeadingKeepHeight(nextIdx);
+          if (headingKeepHeight > needed) needed = headingKeepHeight;
           if (seg.type === "roleLabel" && !isLastSegment) {
             var nextMin = getSegmentMinimumHeight(segments[nextIdx + 1]);
             var isNextLast = nextIdx + 1 === segments.length - 1;
@@ -1088,11 +1354,13 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
 
         if (needsFreshPage && pageEntries.length === 0) {
           newPage();
+          await drainPageJobsIfNeeded();
           continue;
         }
 
         if (pageEntries.length === 0) {
           newPage();
+          await drainPageJobsIfNeeded();
           continue;
         }
         
@@ -1122,20 +1390,23 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
             renderPdfRoleLabel(seg.message, cardX + bubblePaddingX, y, true, seg.alignRight, cardWidth - bubblePaddingX * 2);
             y += seg.height;
           } else if (seg.type === "line") {
-            ctx.font = seg.font;
-            ctx.fillStyle = DESIGN.color.ink;
-            var oldBaseline = ctx.textBaseline;
-            ctx.textBaseline = "top";
-            var yOffset = (seg.lineHeight - seg.fontSize) / 2;
-            ctx.fillText(seg.text, cardX + bubblePaddingX, y + yOffset);
-            ctx.textBaseline = oldBaseline;
-            y += seg.lineHeight;
+            y = renderPdfBlockLayout({
+              type: seg.blockType || "paragraph",
+              lines: [seg.text],
+              richLines: seg.richLine ? [seg.richLine] : null,
+              font: seg.font,
+              lineHeight: seg.lineHeight,
+              height: seg.lineHeight
+            }, cardX + bubblePaddingX, y, cardWidth - bubblePaddingX * 2, false);
           } else if (seg.type === "spacing") {
             y += seg.height;
           } else if (seg.type === "block") {
             y = renderPdfBlockLayout(seg.block, cardX + bubblePaddingX, y, cardWidth - bubblePaddingX * 2, false);
             if (seg.sourceCodeSegment) {
               seg.sourceCodeSegment.lineIndex = seg.nextLineIndex;
+            }
+            if (seg.sourceChunkedSegment) {
+              seg.sourceChunkedSegment.unitIndex = seg.nextUnitIndex;
             }
           }
         }
@@ -1145,6 +1416,7 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
         } else {
           y = pageHeight - bottomMargin;
           newPage();
+          await drainPageJobsIfNeeded();
         }
         
         currentIdx = nextIdx;
@@ -1152,14 +1424,16 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
       }
     }
 
-    (layout.flowSections || []).forEach(function (section, sectionIndex) {
+    var flowSections = layout.flowSections || [];
+    for (var sectionIndex = 0; sectionIndex < flowSections.length; sectionIndex++) {
+      var section = flowSections[sectionIndex];
       if (sectionIndex) y += 12;
       if (section.type === "images") {
-        renderPdfImageSection(section);
+        await renderPdfImageSection(section);
       } else if (section.type === "bubble") {
-        renderPdfBubbleSection(section);
+        await renderPdfBubbleSection(section);
       }
-    });
+    }
 
     y += flatLayout ? 20 : 32;
   }
@@ -1404,7 +1678,7 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
           group.richLines.forEach(function (line, lineIndex) {
             var currentX = x + group.xOffset + (group.textIndent || 0);
             
-            if (lineIndex === 0) {
+            if (lineIndex === 0 && group.showMarker !== false) {
               ctx.save();
               ctx.fillStyle = DESIGN.color.ink;
               ctx.font = group.font;

@@ -4,12 +4,163 @@ import { readFileSync } from "node:fs";
 
 const pdfBuilderSource = readFileSync(new URL("../src/modules/export/builders/pdf.js", import.meta.url), "utf8");
 
+globalThis.chrome = globalThis.chrome || {
+  i18n: {
+    getMessage() { return ""; },
+    getUILanguage() { return "en"; }
+  }
+};
+
+const { renderPdfPages } = await import("../src/modules/export/builders/pdf.js");
+const { buildImageBlob } = await import("../src/modules/export/builders/image.js");
+
+function installFakeCanvasDocument(options = {}) {
+  const previousDocument = globalThis.document;
+  const canvases = [];
+  let maxLiveCanvases = 0;
+
+  function updateLiveCanvasCount() {
+    const live = canvases.filter(({ canvas }) => canvas.width > 1 && canvas.height > 1).length;
+    maxLiveCanvases = Math.max(maxLiveCanvases, live);
+  }
+
+  globalThis.document = {
+    createElement(tagName) {
+      assert.equal(tagName, "canvas");
+      const drawCalls = [];
+      const stateStack = [];
+      const context = {
+        font: "15px sans-serif",
+        fillStyle: "#000",
+        strokeStyle: "#000",
+        lineWidth: 1,
+        textAlign: "start",
+        textBaseline: "alphabetic",
+        clipActive: false,
+        scale() {},
+        fillRect() {},
+        strokeRect() {},
+        drawImage() {},
+        beginPath() {},
+        closePath() {},
+        moveTo() {},
+        lineTo() {},
+        quadraticCurveTo() {},
+        arc() {},
+        rect() {},
+        clip() { this.clipActive = true; },
+        fill() {},
+        stroke() {},
+        save() {
+          stateStack.push({
+            clipActive: this.clipActive,
+            font: this.font,
+            fillStyle: this.fillStyle,
+            strokeStyle: this.strokeStyle,
+            lineWidth: this.lineWidth,
+            textAlign: this.textAlign,
+            textBaseline: this.textBaseline
+          });
+        },
+        restore() {
+          const state = stateStack.pop();
+          if (state) Object.assign(this, state);
+        },
+        createLinearGradient() { return { addColorStop() {} }; },
+        createRadialGradient() { return { addColorStop() {} }; },
+        createPattern() { return {}; },
+        measureText(value) {
+          const text = String(value || "");
+          return {
+            width: text.length * 7,
+            actualBoundingBoxAscent: 11,
+            actualBoundingBoxDescent: 3
+          };
+        },
+        fillText(value, x, y) {
+          drawCalls.push({
+            text: String(value || ""),
+            x,
+            y,
+            clipActive: this.clipActive
+          });
+        }
+      };
+      let canvasWidth = 0;
+      let canvasHeight = 0;
+      const canvas = {
+        get width() { return canvasWidth; },
+        set width(value) { canvasWidth = value; updateLiveCanvasCount(); },
+        get height() { return canvasHeight; },
+        set height(value) { canvasHeight = value; updateLiveCanvasCount(); },
+      getContext() { return context; },
+      toBlob(callback, type) {
+          const finish = () => callback(options.failBlob ? null : new Blob([new Uint8Array([0xff, 0xd8, 0xff, 0xd9])], { type: type || "image/jpeg" }));
+          if (options.deferBlob) setTimeout(finish, 1);
+          else finish();
+        }
+      };
+      canvases.push({ canvas, context, drawCalls });
+      return canvas;
+    }
+  };
+
+  return {
+    canvases,
+    get maxLiveCanvases() { return maxLiveCanvases; },
+    restore() {
+      if (previousDocument === undefined) delete globalThis.document;
+      else globalThis.document = previousDocument;
+    }
+  };
+}
+
+function pdfSettings(overrides = {}) {
+  return {
+    export_style: "natural",
+    show_conversation_title: false,
+    show_platform_name: false,
+    show_export_time: false,
+    include_source_url: false,
+    show_role_labels: false,
+    show_chatvault_badge: true,
+    align_user_messages_right: false,
+    ...overrides
+  };
+}
+
+async function renderWithFakeCanvas(messages, settings = pdfSettings()) {
+  const fake = installFakeCanvasDocument();
+  try {
+    const pages = await renderPdfPages(messages, {
+      title: "Long content regression",
+      platform: "chatgpt",
+      scope: "conversation"
+    }, settings, {}, {});
+    return { pages, canvases: fake.canvases };
+  } finally {
+    fake.restore();
+  }
+}
+
+function assertContentStaysAboveFooter(canvases) {
+  const contentCalls = canvases.flatMap(({ drawCalls }) => drawCalls.filter((call) => call.clipActive));
+  assert.ok(contentCalls.length > 0);
+  assert.ok(contentCalls.every((call) => call.y <= 1049), "body text must stay above the PDF footer boundary");
+  canvases.forEach(({ drawCalls }) => {
+    const footer = drawCalls.filter((call) => call.text === "Exported by Claude Export");
+    assert.equal(footer.length, 1);
+    assert.equal(footer[0].clipActive, false);
+    assert.equal(footer[0].y, 1087);
+  });
+}
+
 test("PDF export fits tall image rows to remaining page height", () => {
   assert.match(pdfBuilderSource, /MIN_FITTED_IMAGE_ROW_HEIGHT\s*=\s*180/);
   assert.match(pdfBuilderSource, /function fitPdfImageRowToHeight/);
   assert.match(pdfBuilderSource, /maxOriginalHeight\s*=\s*Math\.max\(1,\s*maxHeight - 16\)/);
   assert.match(pdfBuilderSource, /fittedBlock\.height\s*=\s*fittedBlock\.originalHeight \+ 16/);
-  assert.match(pdfBuilderSource, /newPage\(\);\s*fittedRow = fitPdfImageRowToHeight/s);
+  assert.match(pdfBuilderSource, /newPage\(\);\s*await drainPageJobsIfNeeded\(\);\s*fittedRow = fitPdfImageRowToHeight/s);
   assert.match(pdfBuilderSource, /renderPdfImageGridRow\(fittedRow, imgX, y\)/);
 });
 
@@ -18,4 +169,121 @@ test("PDF footer only shows branding watermark, without platform or time", () =>
   assert.match(pdfBuilderSource, /ctx\.fillText\(t\("export_pdf_footer_branding"/);
   assert.doesNotMatch(pdfBuilderSource, /footer\.push\(getPlatformLabel\(metadata\.platform\)\)/);
   assert.doesNotMatch(pdfBuilderSource, /footer\.push\(formatDateDisplay\(metadata\.exportedAt\)\)/);
+});
+
+test("PDF export paginates long lists without orphan headings, clipping, or footer overlap", async () => {
+  const items = Array.from({ length: 120 }, (_, index) => ({ text: `Question${index + 1}` }));
+  const href = "https://example.com/long-list";
+  const { pages, canvases } = await renderWithFakeCanvas([{
+    role: "assistant",
+    contentBlocks: [
+      { type: "heading", level: 2, text: "Long list" },
+      { type: "list", ordered: true, items },
+      { type: "paragraph", text: "Linked appendix", segments: [{ text: "Linked appendix", href }] }
+    ]
+  }]);
+
+  assert.ok(pages.length >= 3);
+  assertContentStaysAboveFooter(canvases);
+
+  const markers = canvases.flatMap(({ drawCalls }) => drawCalls)
+    .filter((call) => /^\d+\.$/.test(call.text))
+    .map((call) => Number(call.text.slice(0, -1)));
+  assert.deepEqual(markers, Array.from({ length: 120 }, (_, index) => index + 1));
+
+  const headingPage = canvases.findIndex(({ drawCalls }) => drawCalls.some((call) => call.text === "Long list"));
+  const firstItemPage = canvases.findIndex(({ drawCalls }) => drawCalls.some((call) => call.text === "1."));
+  assert.equal(headingPage, firstItemPage);
+  assert.ok(pages.flatMap((page) => page.links || []).some((link) => link.href === href));
+});
+
+test("PDF export bounds live page canvases inside one very long message", async () => {
+  const fake = installFakeCanvasDocument({ deferBlob: true });
+  try {
+    const items = Array.from({ length: 320 }, (_, index) => ({ text: `MemoryItem${index + 1}` }));
+    const pages = await renderPdfPages([{
+      role: "assistant",
+      contentBlocks: [{ type: "list", ordered: true, items }]
+    }], {
+      title: "Memory regression",
+      platform: "chatgpt",
+      scope: "conversation"
+    }, pdfSettings(), {}, {});
+
+    assert.ok(pages.length >= 7);
+    assert.ok(fake.maxLiveCanvases <= 3, `expected at most 3 live page canvases, got ${fake.maxLiveCanvases}`);
+  } finally {
+    fake.restore();
+  }
+});
+
+test("PDF export fails closed when a page cannot be encoded", async () => {
+  const fake = installFakeCanvasDocument({ failBlob: true });
+  try {
+    await assert.rejects(
+      () => renderPdfPages([{
+        role: "assistant",
+        contentBlocks: [{ type: "paragraph", text: "Encoding failure" }]
+      }], {
+        title: "Encoding failure",
+        platform: "chatgpt",
+        scope: "conversation"
+      }, pdfSettings(), {}, {}),
+      /PDF page rendering failed/
+    );
+  } finally {
+    fake.restore();
+  }
+});
+
+test("PDF export paginates long blockquotes and oversized table rows", async () => {
+  const quoteText = Array.from({ length: 90 }, (_, index) => `QuoteLine${index + 1}`).join("\n");
+  const tableText = Array.from({ length: 100 }, (_, index) => `TableLine${index + 1}`).join("\n");
+  const { canvases } = await renderWithFakeCanvas([{
+    role: "assistant",
+    contentBlocks: [
+      { type: "heading", level: 2, text: "Quote section" },
+      { type: "blockquote", text: quoteText },
+      { type: "heading", level: 2, text: "Table section" },
+      { type: "table", headers: ["Details"], rows: [[tableText]] }
+    ]
+  }]);
+
+  assertContentStaysAboveFooter(canvases);
+  const allCalls = canvases.flatMap(({ drawCalls }) => drawCalls);
+  assert.ok(allCalls.some((call) => call.text === "QuoteLine90"));
+  assert.ok(allCalls.some((call) => call.text === "TableLine100"));
+
+  const headingPage = canvases.findIndex(({ drawCalls }) => drawCalls.some((call) => call.text === "Table section"));
+  const tablePage = canvases.findIndex(({ drawCalls }) => drawCalls.some((call) => call.text === "TableLine1"));
+  assert.equal(headingPage, tablePage);
+});
+
+test("Image export keeps a long list complete and places branding after the content", async () => {
+  const fake = installFakeCanvasDocument();
+  try {
+    const items = Array.from({ length: 120 }, (_, index) => ({ text: `ImageItem${index + 1}` }));
+    const blob = await buildImageBlob([{
+      role: "assistant",
+      contentBlocks: [{ type: "list", ordered: true, items }]
+    }], {
+      title: "Long image",
+      platform: "chatgpt",
+      scope: "conversation"
+    }, pdfSettings(), {});
+    assert.equal(blob.type, "image/png");
+
+    const rendered = fake.canvases.find(({ drawCalls }) => drawCalls.some((call) => call.text === "Exported by Claude Export"));
+    assert.ok(rendered);
+    const markers = rendered.drawCalls
+      .filter((call) => /^\d+\.$/.test(call.text))
+      .map((call) => Number(call.text.slice(0, -1)));
+    assert.deepEqual(markers, Array.from({ length: 120 }, (_, index) => index + 1));
+
+    const footerY = rendered.drawCalls.find((call) => call.text === "Exported by Claude Export").y;
+    const lastMarkerY = rendered.drawCalls.find((call) => call.text === "120.").y;
+    assert.ok(lastMarkerY < footerY);
+  } finally {
+    fake.restore();
+  }
 });

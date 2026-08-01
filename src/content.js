@@ -522,7 +522,20 @@
     }
 
     const profile = cached.profile;
-    const usage = cached.usage || _popupStateCache.dailyUsage || dailyUsage;
+    // Guest and signed-in usage share one local counter. Keep the highest
+    // same-day snapshot so a fresh account's server value cannot reset it.
+    const usageCandidates = [dailyUsage, _popupStateCache.dailyUsage, cached.usage].filter((value) => value && typeof value === "object");
+    const today = entitlements.getTodayString?.() || "";
+    const datedCandidates = usageCandidates.filter((value) => {
+      const date = String(value.usage_date || value.date || "");
+      return !today || !date || date === today;
+    });
+    const candidates = datedCandidates.length ? datedCandidates : usageCandidates;
+    const usage = candidates.reduce((best, value) => {
+      const count = Math.max(0, Number(value.exportedChats || value.exported_chats || value.count || value.used || 0));
+      const bestCount = Math.max(0, Number(best?.exportedChats || best?.exported_chats || best?.count || best?.used || 0));
+      return count > bestCount ? value : best;
+    }, candidates[0] || {});
     return {
       ..._popupStateCache,
       isProUser: entitlements.isPro(profile),
@@ -952,6 +965,18 @@
       return { ok: true, allowed: true, serverVerified: false };
     }
 
+    // Do not call the consuming endpoint when the shared local quota is already
+    // exhausted. A newly signed-in account can have a zero server counter even
+    // though the guest quota was already used up on this browser.
+    if (!isProUser && !localQuotaAllows(count)) {
+      return {
+        ok: true,
+        allowed: false,
+        serverVerified: false,
+        error: FREE_QUOTA_EXHAUSTED_MESSAGE
+      };
+    }
+
     try {
       const result = await globalThis.CHATVAULT_SUPABASE_API.request("/functions/v1/product-verify-export-entitlement", {
         accessToken: session.access_token,
@@ -973,7 +998,11 @@
         currentUserProfile = syncedProfile;
         isProUser = entitlements.isPro(currentUserProfile);
       }
-      const serverAllowed = result?.ok !== false && result?.allowed !== false;
+      // A consume response has already atomically charged the server; trust its
+      // decision so a concurrent local update cannot double-charge this export.
+      const serverAllowed = result?.ok !== false && result?.allowed !== false && (
+        consume || isProUser || localQuotaAllows(count)
+      );
       const serverConsumed = consume && serverAllowed;
       const serverUsage = result?.usage || result?.data?.usage || null;
       if (serverUsage) {
