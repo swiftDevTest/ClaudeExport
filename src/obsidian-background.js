@@ -9,7 +9,12 @@
   const JOB_STORE = "jobs";
   const HISTORY_STORE = "history";
   const ACTIVE_VAULT_KEY = "active";
+  const _productConfig = globalThis.CHATVAULT_PRODUCT_CONFIG || {};
+  const storageKey = typeof _productConfig.storageKey === "function"
+    ? _productConfig.storageKey
+    : (name) => `claude_export.${name}`;
   const CONFIG_KEY = "chatvault_obsidian_config_v1";
+  const PRODUCT_CONFIG_KEY = storageKey("obsidian_config.v1");
   // 历史问题：STALE_JOB_MS=24h，SW 崩溃后 job 卡在 writing 状态 24 小时，
   // 用户期间无法启动新同步（job_conflict）。配合 alarms 周期清理降到 10min，
   // SW 异常终止后用户最长等待 12min（2min alarm 周期 + 10min stale 阈值）即可恢复。
@@ -204,6 +209,12 @@
   async function getVaultRecord() {
     const record = await getRecord(VAULT_STORE, ACTIVE_VAULT_KEY);
     return record && record.handle ? record : null;
+  }
+
+  async function getObsidianConfig() {
+    const current = await storageGet(PRODUCT_CONFIG_KEY);
+    if (current) return current;
+    return storageGet(CONFIG_KEY);
   }
 
   // 用户可在设置页显式指定 Obsidian 内部注册的 vault 名（与文件夹名可能不同，
@@ -415,7 +426,7 @@
 
   async function beginJob(payload) {
     const vault = await requireWritableVault();
-    const config = normalizeConfig(await storageGet(CONFIG_KEY));
+    const config = normalizeConfig(await getObsidianConfig());
     if (!config.configured) {
       const configError = new Error("Choose an Obsidian note folder before syncing.");
       configError.code = "directories_missing";
@@ -610,7 +621,7 @@
 
   async function getStatus() {
     const record = await getVaultRecord();
-    const config = normalizeConfig(await storageGet(CONFIG_KEY));
+    const config = normalizeConfig(await getObsidianConfig());
     if (!record) return { connected: false, permission: "missing", directoriesValid: false, vaultDetected: false, config, activeJob: null };
     const permission = await getPermissionState(record.handle);
     // Fire-and-forget stale job cleanup so it does not block the status
@@ -651,7 +662,7 @@
     for (const job of jobs) await abortJob(job.id, { bestEffort: true });
     await deleteRecord(VAULT_STORE, ACTIVE_VAULT_KEY);
     const config = normalizeConfig(null);
-    await storageSet({ [CONFIG_KEY]: config });
+    await storageSet({ [CONFIG_KEY]: config, [PRODUCT_CONFIG_KEY]: config });
     return { connected: false, permission: "missing", directoriesValid: false, vaultDetected: false, config, activeJob: null };
   }
 

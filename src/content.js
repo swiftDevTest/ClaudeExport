@@ -3039,7 +3039,9 @@
     renderBatchNotionDestination();
     try {
       const connectionResponse = await notionBatchMessage({ type: "CHATVAULT_NOTION_LIST_CONNECTIONS" });
-      const connections = (connectionResponse.connections || []).filter((item) => item?.mode === "oauth");
+      const connections = (connectionResponse.connections || []).filter((item) => (
+        item?.mode === "oauth" && (!item.product_slug || item.product_slug === _productConfig.productSlug)
+      ));
       const results = await Promise.all(connections.map(async (connection) => {
         try {
           const response = await notionBatchMessage({

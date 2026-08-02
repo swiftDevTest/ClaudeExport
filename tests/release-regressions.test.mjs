@@ -87,6 +87,19 @@ test("new connection and sync UI is localized instead of falling back to English
   }
 });
 
+test("Obsidian settings and background keep the stable ChatVault key in sync", () => {
+  const backgroundSource = readText("../src/obsidian-background.js");
+  const settingsSource = readText("../src/obsidian-settings.js");
+  assert.match(backgroundSource, /const CONFIG_KEY = "chatvault_obsidian_config_v1"/);
+  assert.match(backgroundSource, /const PRODUCT_CONFIG_KEY = storageKey\("obsidian_config\.v1"\)/);
+  assert.match(backgroundSource, /async function getObsidianConfig\(\)/);
+  assert.match(settingsSource, /const CONFIG_KEY = "chatvault_obsidian_config_v1"/);
+  assert.match(settingsSource, /const PRODUCT_CONFIG_KEY = storageKey\("obsidian_config\.v1"\)/);
+  assert.match(settingsSource, /\[CONFIG_KEY\]: savedConfig/);
+  assert.match(settingsSource, /\[PRODUCT_CONFIG_KEY\]: savedConfig/);
+  assert.match(settingsSource, /let directoryPickerInFlight = false/);
+});
+
 test("privacy proof accurately separates local conversion from account quota sync", async () => {
   globalThis.chrome = {
     i18n: {

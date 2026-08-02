@@ -1616,26 +1616,91 @@
 
   async function searchDataSources(connectionId) {
     const token = await getNotionToken(connectionId);
-    const results = [];
+    let searchResults = [];
     let cursor = null;
-    do {
-      const payload = await notionRequest(connectionId, token, "/v1/search", {
-        method: "POST",
-        json: {
-          filter: { property: "object", value: "data_source" },
-          page_size: 100,
-          ...(cursor ? { start_cursor: cursor } : {})
-        }
-      });
-      (payload.results || []).forEach((item) => {
-        results.push({
-          id: item.id,
-          databaseId: item.parent && item.parent.database_id || "",
-          title: (item.title || []).map((part) => part.plain_text || part.text && part.text.content || "").join("") || "Untitled data source"
+    try {
+      do {
+        const payload = await notionRequest(connectionId, token, "/v1/search", {
+          method: "POST",
+          json: {
+            filter: { property: "object", value: "data_source" },
+            page_size: 100,
+            ...(cursor ? { start_cursor: cursor } : {})
+          }
         });
+        searchResults.push(...(payload.results || []));
+        cursor = payload.has_more ? payload.next_cursor : null;
+      } while (cursor);
+    } catch (error) {
+      const isSearchShapeMismatch = Number(error?.status || 0) === 400 || /validation|filter/i.test(String(error?.code || ""));
+      if (!isSearchShapeMismatch) throw error;
+      searchResults = [];
+    }
+
+    // Notion's search response has existed in two shapes during the Database
+    // to Data Source migration. Some workspaces still return `database`
+    // objects even when the integration can read their Data Sources. An empty
+    // filtered response must therefore be retried without a filter before we
+    // tell the user that no Database was shared.
+    if (!searchResults.length) {
+      cursor = null;
+      do {
+        const payload = await notionRequest(connectionId, token, "/v1/search", {
+          method: "POST",
+          json: {
+            page_size: 100,
+            ...(cursor ? { start_cursor: cursor } : {})
+          }
+        });
+        searchResults.push(...(payload.results || []));
+        cursor = payload.has_more ? payload.next_cursor : null;
+      } while (cursor);
+    }
+
+    const results = [];
+    const seenDataSourceIds = new Set();
+    const appendDataSource = (dataSource, databaseId, fallbackTitle) => {
+      const id = String(dataSource && dataSource.id || "");
+      if (!id || seenDataSourceIds.has(id)) return;
+      seenDataSourceIds.add(id);
+      const directTitle = (Array.isArray(dataSource?.title) ? dataSource.title : [])
+        .map((part) => part.plain_text || part.text && part.text.content || "")
+        .join("");
+      results.push({
+        id,
+        databaseId: String(databaseId || dataSource?.parent?.database_id || ""),
+        title: directTitle || String(dataSource?.name || fallbackTitle || "Untitled data source")
       });
-      cursor = payload.has_more ? payload.next_cursor : null;
-    } while (cursor);
+    };
+
+    searchResults.forEach((item) => {
+      if (item?.object === "data_source") {
+        appendDataSource(item, item.parent?.database_id, "Untitled data source");
+      }
+    });
+
+    const legacyDatabases = searchResults.filter((item) => item?.object === "database" && item.id);
+    for (const database of legacyDatabases) {
+      const databaseTitle = notionObjectTitle(database) || "Untitled Database";
+      let dataSources = Array.isArray(database.data_sources) ? database.data_sources : [];
+      if (!dataSources.length) {
+        try {
+          const retrieved = await notionRequest(
+            connectionId,
+            token,
+            `/v1/databases/${encodeURIComponent(database.id)}`,
+            {}
+          );
+          dataSources = Array.isArray(retrieved.data_sources) ? retrieved.data_sources : [];
+        } catch (error) {
+          // A search result can disappear between search and retrieval. Other
+          // authorized Databases should still remain selectable.
+          console.warn("[Notion Sync] Could not resolve a legacy Database:", error);
+        }
+      }
+      dataSources.forEach((dataSource) => appendDataSource(dataSource, database.id, databaseTitle));
+    }
+
     return results;
   }
 

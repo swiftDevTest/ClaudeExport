@@ -306,6 +306,7 @@ test("checkout allows valid browser extension origins", () => {
   assert.match(httpSource, /CHATVAULT_ALLOWED_EXTENSION_IDS/);
   assert.match(httpSource, /mmfjokcnknkdljnaeffdloekdgkdfjnb/);
   assert.match(httpSource, /cjkfchfnmbhcpmbhobdanongbjkcbagj/);
+  assert.match(httpSource, /hgonhclokojiceeeeefkljaljjhmkoig/);
   assert.match(httpSource, /ljlmljccgbogejkhlnldgolahihniebj/);
   assert.match(httpSource, /bhfclokpfejlpnhimafhenlholhapmmm/);
   assert.match(httpSource, /isAllowedChromeExtensionOrigin\(origin\)/);
@@ -329,6 +330,7 @@ test("checkout allows valid browser extension origins", () => {
 
   assert.equal(isAllowedBrowserOrigin(requestWithOrigin("chrome-extension://mmfjokcnknkdljnaeffdloekdgkdfjnb")), true);
   assert.equal(isAllowedBrowserOrigin(requestWithOrigin("chrome-extension://cjkfchfnmbhcpmbhobdanongbjkcbagj")), true);
+  assert.equal(isAllowedBrowserOrigin(requestWithOrigin("chrome-extension://hgonhclokojiceeeeefkljaljjhmkoig")), true);
   assert.equal(isAllowedBrowserOrigin(requestWithOrigin("chrome-extension://ljlmljccgbogejkhlnldgolahihniebj")), true);
   assert.equal(isAllowedBrowserOrigin(requestWithOrigin("chrome-extension://bhfclokpfejlpnhimafhenlholhapmmm")), true);
   assert.equal(isAllowedBrowserOrigin(requestWithOrigin("chrome-extension://ljlmljccgbogejkhlnldgolahihniebj/")), true);

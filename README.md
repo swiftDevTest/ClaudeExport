@@ -20,17 +20,17 @@ Before submitting to Chrome Web Store:
 
 ## OAuth Redirects
 
-The source manifest intentionally does not pin a public `key`. Unpacked builds may therefore use a development extension ID, while the Chrome Web Store build uses its assigned production ID.
+The extension manifest includes the Chrome Web Store public `key`, so local unpacked builds use the same ID as the published extension.
 
 Register this exact Google OAuth redirect URI on the Google OAuth client configured in `src/supabase-config.js`:
 
-`https://ljlmljccgbogejkhlnldgolahihniebj.chromiumapp.org/`
+`https://hgonhclokojiceeeeefkljaljjhmkoig.chromiumapp.org/`
 
 Current Google OAuth client ID:
 
 `285963973789-94pbkh7qlk0o04d2ji3uggecs27td888.apps.googleusercontent.com`
 
-The URI above is the production Chrome Web Store redirect. Register any unpacked-development ID separately when testing Google OAuth locally.
+The URI above is used by both the published and local unpacked builds.
 
 Do not reuse competitor or placeholder Chrome Web Store IDs in OAuth configuration.
 
@@ -41,9 +41,15 @@ The shared product Edge Functions serve ChatVault, ChatGPT, Claude, and Gemini e
 ```text
 mmfjokcnknkdljnaeffdloekdgkdfjnb
 cjkfchfnmbhcpmbhobdanongbjkcbagj
+hgonhclokojiceeeeefkljaljjhmkoig
 ljlmljccgbogejkhlnldgolahihniebj
 bhfclokpfejlpnhimafhenlholhapmmm
 ```
+
+`hgonhclokojiceeeeefkljaljjhmkoig` is the current Claude Export Chrome Web
+Store ID used by the website links and the manifest public key. The legacy
+`ljlmljccgbogejkhlnldgolahihniebj` ID remains allowlisted only for existing
+installations during migration.
 
 After changing `_shared/http.ts`, redeploy these browser-facing functions:
 

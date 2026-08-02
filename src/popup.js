@@ -2333,7 +2333,8 @@
     connectionId: "",
     dataSourceId: "",
     databaseId: "",
-    workspaceName: ""
+    workspaceName: "",
+    dataSourceLoadError: ""
   };
   const NOTION_UI_CACHE_KEY = storageKey("notion_ui_cache.v1");
   const NOTION_SELECTED_CONNECTION_ID_KEY = storageKey("notion_selected_connection_id");
@@ -2349,6 +2350,7 @@
     return (Array.isArray(connections) ? connections : []).filter((item) => item?.mode === "oauth").slice(0, 20).map((item) => ({
       id: String(item?.id || "").slice(0, 200),
       mode: "oauth",
+      product_slug: String(item?.product_slug || productSlug).slice(0, 80),
       workspace_name: String(item?.workspace_name || "").slice(0, 200),
       data_source_id: String(item?.data_source_id || "").slice(0, 200)
     })).filter((item) => item.id);
@@ -2378,7 +2380,8 @@
       connectionId: String(cache.connectionId || ""),
       dataSourceId: String(cache.dataSourceId || ""),
       databaseId: String(cache.databaseId || ""),
-      workspaceName: String(cache.workspaceName || "")
+      workspaceName: String(cache.workspaceName || ""),
+      dataSourceLoadError: ""
     };
     return true;
   }
@@ -2443,7 +2446,9 @@
     let connections;
     try {
       const response = await notionBackgroundMessage({ type: "CHATVAULT_NOTION_LIST_CONNECTIONS" });
-      connections = (response.connections || []).filter((item) => item?.mode === "oauth");
+      connections = (response.connections || []).filter((item) => (
+        item?.mode === "oauth" && (!item.product_slug || item.product_slug === productSlug)
+      ));
     } catch (error) {
       console.warn("[Notion Sync] Failed to load connections:", error);
       return false;
@@ -2459,6 +2464,7 @@
     notionConfig.connectionId = selectedConnection?.id || "";
     notionConfig.mode = selectedConnection ? "oauth" : "unlinked";
     notionConfig.workspaceName = selectedConnection?.workspace_name || "";
+    notionConfig.dataSourceLoadError = "";
     notionConfig.dataSourceId = selectedSources[notionConfig.connectionId] ||
       cachedDataSources.find((item) => item.connectionId === notionConfig.connectionId && item.id === notionConfig.dataSourceId)?.id ||
       selectedConnection?.data_source_id || "";
@@ -2532,11 +2538,19 @@
           };
         } catch (error) {
           console.warn("[Notion Sync] Could not load Databases for a connection:", error);
-          return { connectionId: connection.id, ok: false, dataSources: [] };
+          return { connectionId: connection.id, ok: false, dataSources: [], error };
         }
       }));
       const successfulConnections = new Set(responses.filter((item) => item.ok).map((item) => item.connectionId));
       if (!successfulConnections.size && options.preserveExisting === true && previousDataSources.length) {
+        notionConfig.dataSourceLoadError = "";
+        renderNotionDataSourceOptions();
+        return false;
+      }
+      if (!successfulConnections.size) {
+        const firstError = responses.find((item) => item.error)?.error;
+        notionConfig.dataSources = [];
+        notionConfig.dataSourceLoadError = String(firstError?.message || obsidianText("unknown error", "未知错误"));
         renderNotionDataSourceOptions();
         return false;
       }
@@ -2545,6 +2559,7 @@
         ...previousDataSources.filter((item) => !successfulConnections.has(item.connectionId))
       ];
       notionConfig.dataSources = dataSources;
+      notionConfig.dataSourceLoadError = "";
       let selected = dataSources.find((item) => (
         item.connectionId === notionConfig.connectionId && item.id === notionConfig.dataSourceId
       ));
@@ -2566,12 +2581,12 @@
     } catch (error) {
       if (options.preserveExisting === true && previousDataSources.length) {
         notionConfig.dataSources = previousDataSources;
+        notionConfig.dataSourceLoadError = "";
         renderNotionDataSourceOptions();
       } else {
-        const option = document.createElement("option");
-        option.value = "";
-        option.textContent = t("notion_datasource_fetch_failed", obsidianText(`Fetch failed ($1)`, `拉取失败 ($1)`), error && error.message ? error.message : obsidianText("unknown error", "未知错误"));
-        dbSelect.replaceChildren(option);
+        notionConfig.dataSources = [];
+        notionConfig.dataSourceLoadError = String(error?.message || obsidianText("unknown error", "未知错误"));
+        renderNotionDataSourceOptions();
       }
       return false;
     }
@@ -2582,20 +2597,27 @@
     if (!dbSelect) return;
     const dataSources = notionConfig.dataSources || [];
     const helper = document.getElementById("notion-db-helper");
+    const saveButton = document.getElementById("btn-sync-notion-oauth");
     dbSelect.innerHTML = "";
     if (!dataSources.length) {
       const option = document.createElement("option");
       option.value = "";
-      option.textContent = t("notion_no_data_source", "No authorized Database found");
+      option.textContent = notionConfig.dataSourceLoadError
+        ? t("notion_datasource_fetch_failed", obsidianText("Fetch failed ($1)", "拉取失败 ($1)"), notionConfig.dataSourceLoadError)
+        : t("notion_no_data_source", "No authorized Database found");
       dbSelect.appendChild(option);
       dbSelect.disabled = true;
+      if (saveButton) saveButton.disabled = true;
       if (helper) {
-        helper.textContent = t("notion_share_database_hint", "Share a Notion Database with the ChatVault connection (open a Database → ⋯ → Connections → add ChatVault), then reopen this popup.");
+        helper.textContent = notionConfig.dataSourceLoadError
+          ? t("notion_datasource_fetch_failed", obsidianText("Fetch failed ($1)", "拉取失败 ($1)"), notionConfig.dataSourceLoadError)
+          : t("notion_share_database_hint", "Share a Notion Database with the ChatVault connection (open a Database → ⋯ → Connections → add ChatVault), then reopen this popup.");
         helper.style.display = "block";
       }
       return;
     }
     if (helper) helper.style.display = "none";
+    if (saveButton) saveButton.disabled = false;
     const workspaceCount = new Set(dataSources.map((item) => item.connectionId)).size;
     dataSources.forEach((dataSource) => {
       const option = document.createElement("option");

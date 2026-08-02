@@ -8,7 +8,8 @@
   const HISTORY_STORE = "history";
   const _productConfig = globalThis.CHATVAULT_PRODUCT_CONFIG || {};
   const storageKey = typeof _productConfig.storageKey === "function" ? _productConfig.storageKey : (name) => `claude_export.${name}`;
-  const CONFIG_KEY = storageKey("obsidian_config.v1");
+  const CONFIG_KEY = "chatvault_obsidian_config_v1";
+  const PRODUCT_CONFIG_KEY = storageKey("obsidian_config.v1");
   const i18n = globalThis.CHATVAULT_I18N;
   let databasePromise = null;
   let selectedHandle = null;
@@ -20,6 +21,9 @@
   let assetsRoot = "";
   let notesDirectorySelected = false;
   let assetsRootCustom = false;
+  let directoryPickerInFlight = false;
+  let historyLoadPromise = null;
+  let disconnectPromise = null;
 
   const elements = {};
 
@@ -248,18 +252,22 @@
   }
 
   async function chooseVault() {
+    if (directoryPickerInFlight) return;
     if (typeof window.showDirectoryPicker !== "function") {
       setResult(t("obsidian_settings_picker_unsupported", "This Chrome version does not support folder access. Update Chrome and try again."), "error");
       return;
     }
+    directoryPickerInFlight = true;
     try {
       selectedHandle = await window.showDirectoryPicker({ id: "chatvault-obsidian-vault", mode: "readwrite", startIn: "documents" });
       vaultPermissionGranted = true;
       // 选择新 vault 时重置名称覆盖，默认用文件夹名（也是 Obsidian 默认的 vault 名）。
       vaultNameOverride = "";
       await saveVaultHandle(selectedHandle, vaultNameOverride);
+      const resetConfig = { version: 2, configured: false, notesRoot: "", assetsRoot: "", assetsRootCustom: false, updatedAt: Date.now() };
       await new Promise((resolve, reject) => chrome.storage.local.set({
-        [CONFIG_KEY]: { version: 2, configured: false, notesRoot: "", assetsRoot: "", assetsRootCustom: false, updatedAt: Date.now() }
+        [CONFIG_KEY]: resetConfig,
+        [PRODUCT_CONFIG_KEY]: resetConfig
       }, () => chrome.runtime.lastError ? reject(new Error(chrome.runtime.lastError.message)) : resolve()));
       currentVaultName = selectedHandle.name || "Obsidian Vault";
       notesRoot = "";
@@ -284,11 +292,15 @@
     } catch (error) {
       if (error && error.name === "AbortError") return;
       setResult(error && error.message || t("obsidian_settings_choose_vault_failed", "Could not choose the Vault."), "error");
+    } finally {
+      directoryPickerInFlight = false;
     }
   }
 
   async function chooseNotesDirectory() {
+    if (directoryPickerInFlight) return;
     if (!requireVaultBeforeFolderChoice()) return;
+    directoryPickerInFlight = true;
     try {
       notesRoot = await chooseDirectoryWithinVault("chatvault-obsidian-notes");
       notesDirectorySelected = true;
@@ -299,11 +311,15 @@
     } catch (error) {
       if (error?.name === "AbortError") return;
       setResult(error?.message || t("obsidian_settings_choose_notes_failed", "Could not choose the notes folder."), "error");
+    } finally {
+      directoryPickerInFlight = false;
     }
   }
 
   async function chooseAssetsDirectory() {
+    if (directoryPickerInFlight) return;
     if (!requireVaultBeforeFolderChoice()) return;
+    directoryPickerInFlight = true;
     try {
       assetsRoot = await chooseDirectoryWithinVault("chatvault-obsidian-assets");
       assetsRootCustom = true;
@@ -312,6 +328,8 @@
     } catch (error) {
       if (error?.name === "AbortError") return;
       setResult(error?.message || t("obsidian_settings_choose_assets_failed", "Could not choose the assets folder."), "error");
+    } finally {
+      directoryPickerInFlight = false;
     }
   }
 
@@ -351,8 +369,7 @@
       // 保存时同步持久化用户在 UI 中编辑过的 vault 名覆盖值。
       // 验证写入权限与目录仍使用 handle，仅 obsidian:// URL 使用覆盖值。
       await saveVaultHandle(handle, vaultNameOverride);
-      await new Promise((resolve, reject) => chrome.storage.local.set({
-        [CONFIG_KEY]: {
+      const savedConfig = {
           version: 2,
           configured: true,
           notesDirectoryConfigured: true,
@@ -360,7 +377,10 @@
           assetsRoot: normalizedAssetsRoot,
           assetsRootCustom,
           updatedAt: Date.now()
-        }
+      };
+      await new Promise((resolve, reject) => chrome.storage.local.set({
+        [CONFIG_KEY]: savedConfig,
+        [PRODUCT_CONFIG_KEY]: savedConfig
       }, () => chrome.runtime.lastError ? reject(new Error(chrome.runtime.lastError.message)) : resolve()));
       selectedHandle = handle;
       currentVaultName = handle.name || t("obsidian_default_vault_name", "Obsidian Vault");
@@ -389,7 +409,15 @@
     if (verified) returnToConversation();
   }
 
-  async function disconnect() {
+  function disconnect() {
+    if (disconnectPromise) return disconnectPromise;
+    disconnectPromise = disconnectOnce().finally(() => {
+      disconnectPromise = null;
+    });
+    return disconnectPromise;
+  }
+
+  async function disconnectOnce() {
     try {
       await runtimeMessage({ type: "CHATVAULT_OBSIDIAN_DISCONNECT" });
       selectedHandle = null;
@@ -422,7 +450,15 @@
     catch (error) { return new Date(value).toLocaleString(); }
   }
 
-  async function loadHistory() {
+  function loadHistory() {
+    if (historyLoadPromise) return historyLoadPromise;
+    historyLoadPromise = loadHistoryOnce().finally(() => {
+      historyLoadPromise = null;
+    });
+    return historyLoadPromise;
+  }
+
+  async function loadHistoryOnce() {
     try {
       const response = await runtimeMessage({ type: "CHATVAULT_OBSIDIAN_GET_HISTORY" });
       const history = Array.isArray(response.history) ? response.history : [];
@@ -474,7 +510,9 @@
   async function hydrate() {
     const [record, config] = await Promise.all([
       getVaultRecord().catch(() => null),
-      new Promise((resolve) => chrome.storage.local.get(CONFIG_KEY, (result) => resolve(result && result[CONFIG_KEY] || null)))
+      new Promise((resolve) => chrome.storage.local.get([PRODUCT_CONFIG_KEY, CONFIG_KEY], (result) => {
+        resolve(result && (result[PRODUCT_CONFIG_KEY] || result[CONFIG_KEY]) || null);
+      }))
     ]);
     if (config) {
       const isLegacyDefault = Number(config.version || 1) < 2 &&

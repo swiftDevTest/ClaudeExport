@@ -362,9 +362,12 @@ button:focus-visible,
 
 #panel-dashboard.active {
   display: grid;
-  grid-template-rows: auto auto minmax(116px, 1fr) auto auto;
+  grid-template-rows: auto auto auto auto;
+  align-content: start;
   gap: 12px;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 #panel-settings.active {
@@ -943,6 +946,12 @@ button:focus-visible,
 .notion-save-btn:active,
 .action-btn:active {
   transform: translateY(1px) scale(0.99);
+}
+
+.notion-save-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+  box-shadow: none;
 }
 
 .section-card {

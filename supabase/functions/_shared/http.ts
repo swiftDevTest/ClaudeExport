@@ -22,6 +22,9 @@ const DEFAULT_ALLOWED_BROWSER_ORIGINS = [
 const DEFAULT_ALLOWED_CHROME_EXTENSION_IDS = [
   "mmfjokcnknkdljnaeffdloekdgkdfjnb",
   "cjkfchfnmbhcpmbhobdanongbjkcbagj",
+  // Current Claude Export Chrome Web Store listing.
+  "hgonhclokojiceeeeefkljaljjhmkoig",
+  // Retained for existing installs and unpacked sessions during migration.
   "ljlmljccgbogejkhlnldgolahihniebj",
   "bhfclokpfejlpnhimafhenlholhapmmm"
 ];

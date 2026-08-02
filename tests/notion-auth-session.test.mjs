@@ -29,3 +29,18 @@ test("Notion does not turn an expired product session into a disconnected worksp
   assert.match(popup, /skipUserRefresh: true/);
   assert.match(popup, /error\.status = Number\(response\?\.status \|\| 0\)/);
 });
+
+test("Notion database discovery supports both Data Source and legacy Database search results", () => {
+  const background = read("src/notion-background.js");
+  const popup = read("src/popup.js");
+  const css = read("src/popup.css");
+
+  assert.match(background, /if \(!searchResults\.length\)/);
+  assert.match(background, /item\?\.object === "data_source"/);
+  assert.match(background, /item\?\.object === "database"/);
+  assert.match(background, /\/v1\/databases\/\$\{encodeURIComponent\(database\.id\)\}/);
+  assert.match(popup, /dataSourceLoadError/);
+  assert.match(popup, /item\.product_slug === productSlug/);
+  assert.match(popup, /if \(saveButton\) saveButton\.disabled = true/);
+  assert.match(css, /#panel-dashboard\.active[\s\S]*?overflow-y: auto/);
+});
