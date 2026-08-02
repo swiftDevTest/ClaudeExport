@@ -30,7 +30,97 @@ var SEPARATOR_MARGIN_BOTTOM = 25;
 var PDF_MAX_PAGES = 300;
 var PDF_MAX_ENCODED_PAGE_BYTES = 150 * 1024 * 1024;
 var PDF_MAX_TABLE_ROW_LINES = 40;
-var PDF_MAX_PENDING_PAGE_JOBS = 2;
+var PDF_FAST_PENDING_PAGE_JOBS = 5;
+var PDF_CONSERVATIVE_PENDING_PAGE_JOBS = 2;
+
+function getInlineValueLength(value) {
+  if (typeof value === "string") return value.length;
+  if (typeof value === "number" || typeof value === "boolean") return String(value).length;
+  if (Array.isArray(value)) {
+    return value.reduce(function (sum, item) { return sum + getInlineValueLength(item); }, 0);
+  }
+  if (!value || typeof value !== "object") return 0;
+  if (typeof value.text === "string") return value.text.length;
+  if (Array.isArray(value.segments)) return getInlineValueLength(value.segments);
+  return 0;
+}
+
+function getExplicitLineCount(value) {
+  var text = typeof value === "string"
+    ? value
+    : value && typeof value.text === "string"
+      ? value.text
+      : "";
+  return text ? text.split(/\r?\n/).length : 0;
+}
+
+function shouldUseConservativePdfEncoding(messages) {
+  var totalTextLength = 0;
+  var totalBlocks = 0;
+  var imageCount = 0;
+  var oversizedStructure = false;
+
+  (messages || []).forEach(function (message) {
+    (message && message.contentBlocks || []).forEach(function (block) {
+      if (!block || oversizedStructure) return;
+      totalBlocks += 1;
+
+      if (block.type === "image") {
+        imageCount += 1;
+        return;
+      }
+
+      if (block.type === "list") {
+        var listUnits = 0;
+        (block.items || []).forEach(function (item) {
+          listUnits += 1;
+          totalTextLength += getInlineValueLength(item);
+          (item && item.subItems || []).forEach(function (subItem) {
+            listUnits += 1;
+            totalTextLength += getInlineValueLength(subItem);
+          });
+        });
+        if (listUnits >= 160) oversizedStructure = true;
+        return;
+      }
+
+      if (block.type === "table") {
+        var rows = block.rows || [];
+        totalTextLength += getInlineValueLength(block.headers || []);
+        rows.forEach(function (row) {
+          (row || []).forEach(function (cell) {
+            totalTextLength += getInlineValueLength(cell);
+            if (getExplicitLineCount(cell) >= 60) oversizedStructure = true;
+          });
+        });
+        if (rows.length >= 60) oversizedStructure = true;
+        return;
+      }
+
+      totalTextLength += getInlineValueLength(block);
+      if ((block.type === "blockquote" || block.type === "code") && getExplicitLineCount(block) >= 120) {
+        oversizedStructure = true;
+      }
+    });
+  });
+
+  var deviceMemory = 0;
+  try {
+    deviceMemory = Number(globalThis.navigator && globalThis.navigator.deviceMemory || 0);
+  } catch (error) {}
+
+  return oversizedStructure ||
+    totalTextLength >= 120000 ||
+    totalBlocks >= 600 ||
+    imageCount >= 12 ||
+    (Number.isFinite(deviceMemory) && deviceMemory > 0 && deviceMemory <= 4);
+}
+
+function isPlainPdfRichLine(line) {
+  return Boolean(line && Array.isArray(line.chunks) && line.chunks.every(function (chunk) {
+    return !chunk || (!chunk.bold && !chunk.italic && !chunk.code && !chunk.href);
+  }));
+}
 
 // 判断颜色字符串是否为透明（"transparent" 或 alpha=0 的 rgba），用于占位框等场景回退到可见色
 function isTransparentPdfColor(value) {
@@ -91,6 +181,9 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
   var bottomMargin = 74;
   var contentWidth = pageWidth - margin * 2;
   var pageJobs = [];
+  var maxPendingPageJobs = shouldUseConservativePdfEncoding(messages)
+    ? PDF_CONSERVATIVE_PENDING_PAGE_JOBS
+    : PDF_FAST_PENDING_PAGE_JOBS;
   var encodedPages = [];
   var totalPageCount = 0;
   var encodedPageBytes = 0;
@@ -106,6 +199,9 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
   var bodyFont = "15px " + DESIGN.font.body;
   var bodyLineHeight = 24;
   var MIN_FITTED_IMAGE_ROW_HEIGHT = 180;
+  var footerBranding = settings.show_chatvault_badge
+    ? t("export_pdf_footer_branding", "Exported by Claude Export")
+    : "";
 
   function newPage() {
       finalizeCurrentPage();
@@ -196,10 +292,10 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
   }
 
   function drawFooter() {
-    if (!settings.show_chatvault_badge) return;
+    if (!footerBranding) return;
     ctx.font = "10px " + DESIGN.font.body;
     ctx.fillStyle = DESIGN.color.muted;
-    ctx.fillText(t("export_pdf_footer_branding", "Exported by Claude Export"), margin, pageHeight - 36);
+    ctx.fillText(footerBranding, margin, pageHeight - 36);
   }
 
   function finalizeCurrentPage() {
@@ -257,7 +353,7 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
   }
 
   async function drainPageJobsIfNeeded() {
-    if (pageJobs.length < PDF_MAX_PENDING_PAGE_JOBS) return;
+    if (pageJobs.length < maxPendingPageJobs) return;
     await drainPageJobs();
     await yieldToBrowser();
   }
@@ -313,7 +409,7 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
       notifyProgress(options, t("export_progress_paginating_doc", "Paginating export"), 0.08 + 0.64 * ((mi + 1) / Math.max(1, messages.length)));
       await new Promise(function (resolve) { setTimeout(resolve, 0); });
     }
-    if (pageJobs.length >= PDF_MAX_PENDING_PAGE_JOBS) {
+    if (pageJobs.length >= maxPendingPageJobs) {
       await drainPageJobs();
     }
   }
@@ -1611,11 +1707,20 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
       var fonts = getFontsForStyle(block.font, DESIGN.font);
 
       if (block.richLines) {
-        block.richLines.forEach(function (line) {
-          var currentX = x;
-          line.chunks.forEach(function (chunk) {
-            currentX += drawRichChunk(chunk, currentX, cursor + yOffset, fontSize, fonts, DESIGN.color.ink);
-          });
+        block.richLines.forEach(function (line, lineIndex) {
+          if (isPlainPdfRichLine(line)) {
+            ctx.font = block.font;
+            ctx.fillStyle = DESIGN.color.ink;
+            var plainLine = block.lines && block.lines[lineIndex] !== undefined
+              ? block.lines[lineIndex]
+              : line.chunks.map(function (chunk) { return chunk && chunk.text || ""; }).join("");
+            ctx.fillText(plainLine, x, cursor + yOffset);
+          } else {
+            var currentX = x;
+            line.chunks.forEach(function (chunk) {
+              currentX += drawRichChunk(chunk, currentX, cursor + yOffset, fontSize, fonts, DESIGN.color.ink);
+            });
+          }
           cursor += block.lineHeight;
         });
       } else {

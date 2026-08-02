@@ -82,6 +82,7 @@ function installFakeCanvasDocument(options = {}) {
             text: String(value || ""),
             x,
             y,
+            font: this.font,
             clipActive: this.clipActive
           });
         }
@@ -165,8 +166,9 @@ test("PDF export fits tall image rows to remaining page height", () => {
 });
 
 test("PDF footer only shows branding watermark, without platform or time", () => {
-  assert.match(pdfBuilderSource, /if \(!settings\.show_chatvault_badge\) return;/);
-  assert.match(pdfBuilderSource, /ctx\.fillText\(t\("export_pdf_footer_branding"/);
+  assert.match(pdfBuilderSource, /var footerBranding = settings\.show_chatvault_badge/);
+  assert.match(pdfBuilderSource, /if \(!footerBranding\) return;/);
+  assert.match(pdfBuilderSource, /ctx\.fillText\(footerBranding/);
   assert.doesNotMatch(pdfBuilderSource, /footer\.push\(getPlatformLabel\(metadata\.platform\)\)/);
   assert.doesNotMatch(pdfBuilderSource, /footer\.push\(formatDateDisplay\(metadata\.exportedAt\)\)/);
 });
@@ -215,6 +217,49 @@ test("PDF export bounds live page canvases inside one very long message", async 
   } finally {
     fake.restore();
   }
+});
+
+test("PDF export restores the five-page encoding pipeline for ordinary content", async () => {
+  const fake = installFakeCanvasDocument({ deferBlob: true });
+  try {
+    const messages = Array.from({ length: 80 }, (_, index) => ({
+      role: "assistant",
+      contentBlocks: [{
+        type: "paragraph",
+        text: `Fast message ${index + 1} ` + "plain text ".repeat(32)
+      }]
+    }));
+    const pages = await renderPdfPages(messages, {
+      title: "Fast ordinary export",
+      platform: "claude",
+      scope: "conversation"
+    }, pdfSettings(), {}, {});
+
+    assert.ok(pages.length >= 8);
+    assert.ok(fake.maxLiveCanvases > 3, `expected fast pipeline to exceed the conservative limit, got ${fake.maxLiveCanvases}`);
+    assert.ok(fake.maxLiveCanvases <= 6, `expected at most 6 live canvases, got ${fake.maxLiveCanvases}`);
+  } finally {
+    fake.restore();
+  }
+});
+
+test("PDF export draws unstyled text directly while retaining rich link rendering", async () => {
+  const href = "https://example.com/rich";
+  const { pages, canvases } = await renderWithFakeCanvas([{
+    role: "assistant",
+    contentBlocks: [
+      { type: "heading", level: 2, text: "Plain heading" },
+      { type: "paragraph", text: "Plain paragraph" },
+      { type: "paragraph", text: "Rich link", segments: [{ text: "Rich link", href }] }
+    ]
+  }]);
+
+  const calls = canvases.flatMap(({ drawCalls }) => drawCalls);
+  const heading = calls.find((call) => call.text === "Plain heading");
+  const paragraph = calls.find((call) => call.text === "Plain paragraph");
+  assert.match(heading.font, /^800 /);
+  assert.doesNotMatch(paragraph.font, /^normal /);
+  assert.ok(pages.flatMap((page) => page.links || []).some((link) => link.href === href));
 });
 
 test("PDF export fails closed when a page cannot be encoded", async () => {
