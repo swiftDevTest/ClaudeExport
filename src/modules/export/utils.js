@@ -2,7 +2,39 @@ import { captureExportHtmlStyle, getExportHtmlStyleDifference, sanitizeExportHtm
 
 const i18n = globalThis.CHATVAULT_I18N;
 
+function getWatermarkLocale() {
+  try {
+    if (typeof chrome !== "undefined" && chrome.i18n && typeof chrome.i18n.getUILanguage === "function") {
+      return String(chrome.i18n.getUILanguage() || "").replace(/_/g, "-").toLowerCase();
+    }
+  } catch (error) {}
+  try {
+    return String(globalThis.navigator?.language || "").replace(/_/g, "-").toLowerCase();
+  } catch (error) {}
+  return "en";
+}
+
+function getLocalizedWatermark(productName) {
+  var locale = getWatermarkLocale();
+  if (locale === "zh-tw" || locale === "zh-hk" || locale === "zh-mo") return "由 " + productName + " 本地端匯出";
+  if (locale === "zh-cn" || locale === "zh-sg" || locale.startsWith("zh")) return "由 " + productName + " 本地导出";
+  if (locale.startsWith("ja")) return productName + " によってローカルにエクスポートされました";
+  if (locale.startsWith("ko")) return productName + "를 통해 로컬로 내보냄";
+  if (locale.startsWith("fr")) return "Exporté localement par " + productName;
+  if (locale.startsWith("de")) return "Lokal exportiert durch " + productName;
+  if (locale.startsWith("es")) return "Exportado localmente por " + productName;
+  if (locale.startsWith("pt")) return "Exportado localmente pelo " + productName;
+  return "Exported by " + productName;
+}
+
 export function t(key, defaultText, ...args) {
+  // The watermark is product-scoped. Keep the visible signature consistent
+  // across locales and make sure standalone products never inherit another
+  // product's stale locale value.
+  if (key === "export_pdf_footer_branding" || key === "export_branding_footer") {
+    var productName = globalThis.CHATVAULT_PRODUCT_CONFIG?.productName || "Claude Export";
+    return getLocalizedWatermark(productName);
+  }
   if (i18n && typeof i18n.t === "function") {
     return i18n.t(key, defaultText, ...args);
   }
