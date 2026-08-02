@@ -691,6 +691,29 @@
 .cv-batch-result-mark[data-status="partial"] { background: #c9871a; }
 .cv-batch-result-mark[data-status="failed"] { background: #c94b5c; }
 
+.cv-batch-result-confetti {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 40px;
+  margin: 0 auto 12px;
+  color: #d97706;
+  font-size: 14px;
+}
+
+.cv-batch-result-confetti strong {
+  font-size: 30px;
+  line-height: 1;
+}
+
+.cv-batch-result-confetti[hidden],
+.cv-export-result-meta[hidden],
+.cv-export-failure-info[hidden],
+#cv-export-failure-fix[hidden] {
+  display: none;
+}
+
 .cv-batch-result-card h2 {
   margin: 0;
   color: #17202a;
@@ -703,6 +726,46 @@
   color: #64748b;
   font-size: 12.5px;
   line-height: 1.5;
+}
+
+.cv-export-result-meta {
+  margin: -8px auto 16px;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.cv-export-failure-info {
+  margin: 14px 0;
+  padding: 12px 14px;
+  text-align: left;
+  background: #fff7f7;
+  border: 1px solid #fecdd3;
+  border-radius: 10px;
+}
+
+.cv-export-failure-info p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.cv-export-failure-reason {
+  color: #9f1239;
+  font-weight: 700;
+}
+
+.cv-export-failure-suggestion {
+  margin-top: 5px !important;
+  color: #475569;
+}
+
+.cv-re-export-label {
+  grid-column: 1 / -1;
+  margin: 0 0 2px;
+  color: #64748b;
+  font-size: 12px;
+  text-align: left;
 }
 
 .cv-batch-result-items {

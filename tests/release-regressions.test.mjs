@@ -138,6 +138,17 @@ test("selected re-export keeps its message snapshot and never expands to the ful
   assert.match(contentSource, /messages: Array\.isArray\(result\.messages\) \? result\.messages : null/);
 });
 
+test("export result dialog keeps the shared confetti and re-export layout styles", () => {
+  const contentStyles = readText("../src/content.css");
+
+  assert.match(contentStyles, /\.cv-batch-result-confetti\s*\{[\s\S]*?display:\s*flex/);
+  assert.match(contentStyles, /\.cv-batch-result-confetti strong\s*\{[\s\S]*?font-size:\s*30px/);
+  assert.match(contentStyles, /\.cv-batch-result-confetti\[hidden\][\s\S]*?display:\s*none/);
+  assert.match(contentStyles, /\.cv-export-result-meta\s*\{/);
+  assert.match(contentStyles, /\.cv-export-failure-info\s*\{/);
+  assert.match(contentStyles, /\.cv-re-export-label\s*\{[\s\S]*?grid-column:\s*1\s*\/\s*-1/);
+});
+
 test("reauthentication, OAuth cleanup, and batch save results preserve structured state", () => {
   const backgroundSource = readText("../src/background.js");
   const contentSource = readText("../src/content.js");
