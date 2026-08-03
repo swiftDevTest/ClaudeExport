@@ -291,6 +291,12 @@ function defaultPlatformLabel(platform) {
       return INCOMPLETE_EXPORT_NOTICE_PREFIX + " This export may be incomplete. " + label + " returned AI replies for " + titleLabel + " without the original user questions, so Claude Export exported the available replies and marked this file. To recover the missing questions, open this conversation in " + label + " and export again, or use Select messages export after the conversation is open.";
     }
 
+    function getUnknownContentExportMessage(chat) {
+      var platform = getChatPlatform(chat);
+      var label = deps.getPlatformLabel ? deps.getPlatformLabel(platform) : defaultPlatformLabel(platform);
+      return INCOMPLETE_EXPORT_NOTICE_PREFIX + " This export may be incomplete because " + label + " returned a message format this version of Claude Export does not recognize. Refresh the extension and try again, or use Select messages export after the conversation is open.";
+    }
+
     function hasIncompleteExportNotice(messages) {
       return (Array.isArray(messages) ? messages : []).some(function (message) {
         return (message && message.contentBlocks || []).some(function (block) {
@@ -314,6 +320,34 @@ function defaultPlatformLabel(platform) {
       }].concat(list);
     }
 
+    function prependUnknownContentExportNotice(chat, messages) {
+      var list = Array.isArray(messages) ? messages : [];
+      if (hasIncompleteExportNotice(list)) {
+        return list;
+      }
+
+      return [{
+        role: "assistant",
+        contentBlocks: [{
+          type: "paragraph",
+          text: getUnknownContentExportMessage(chat)
+        }]
+      }].concat(list);
+    }
+
+    function getFetchDiagnostics(messages) {
+      return Array.isArray(messages) && messages._chatVaultFetchDiagnostics &&
+        typeof messages._chatVaultFetchDiagnostics === "object"
+        ? messages._chatVaultFetchDiagnostics
+        : null;
+    }
+
+    function canUseWholePageForUnknownContent(messages, pageMessages) {
+      if (!Array.isArray(pageMessages) || !pageMessages.length) return false;
+      if (pageMessages.length < (Array.isArray(messages) ? messages.length : 0)) return false;
+      return hasMessageRole(pageMessages, "user") && hasMessageRole(pageMessages, "assistant");
+    }
+
     function ensureCompleteConversationMessages(chat, messages, options) {
       if (isLikelyIncompleteConversationMessages(messages, options)) {
         return prependIncompleteExportNotice(chat, messages);
@@ -322,8 +356,35 @@ function defaultPlatformLabel(platform) {
       return messages;
     }
 
+    function messagesHaveValidTextContent(messages) {
+      if (!Array.isArray(messages) || !messages.length) return false;
+      return messages.some(function (message) {
+        return (message && message.contentBlocks || []).some(function (block) {
+          if (!block) return false;
+          if (block.type === "image") return true;
+          return String(block.text || "").trim().length > 0;
+        });
+      });
+    }
+
     function returnApiMessagesOrPageFallback(chat, messages, pageMessages, options) {
       var fallbackMessages = Array.isArray(pageMessages) ? pageMessages : getCurrentPageMessages(chat);
+      var diagnostics = getFetchDiagnostics(messages);
+      if (diagnostics && diagnostics.hasUnknownContent) {
+        // Preserve the existing source boundary: replace the API result with
+        // one complete page snapshot, never merge individual DOM/API turns.
+        if (canUseWholePageForUnknownContent(messages, fallbackMessages)) {
+          return ensureCompleteConversationMessages(chat, fallbackMessages, options);
+        }
+        // 如果 API 消息有有效文本内容，即使存在未知 part 也直接使用，
+        // 未知 part 可能只是新功能（如 reasoning），不影响已有内容
+        if (Array.isArray(messages) && messages.length > 0 && messagesHaveValidTextContent(messages)) {
+          return ensureCompleteConversationMessages(chat, messages, options);
+        }
+        if (Array.isArray(messages) && messages.length > 0) {
+          return prependUnknownContentExportNotice(chat, messages);
+        }
+      }
       if (shouldUsePageMessagesForIncompleteApi(messages, fallbackMessages)) {
         return ensureCompleteConversationMessages(chat, fallbackMessages, options);
       }

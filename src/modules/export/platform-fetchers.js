@@ -1089,9 +1089,18 @@ function createMissingDependencyError(name) {
 
   function stripInternalTurnMarkers(value) {
     function removeMarkers(text) {
-      return String(text || "").replace(/\b([a-z][a-z0-9_]{0,30})?turn\d{1,12}([a-z][a-z0-9_]{0,30})\d+\b/gi, (match, prefix, target) => {
-        return isInternalTurnMarker(prefix, target) ? "" : match;
-      });
+      // 使用否定前瞻 (?!turn) 防止 prefix/target 贪婪匹配跨越多个连续标记
+      // 配合循环替换处理 citeturn1search2turn3search4 等连续拼接情况
+      const pattern = /((?!turn)[a-z](?:(?!turn)[a-z0-9_]){0,30})?turn\d{1,12}((?!turn)[a-z](?:(?!turn)[a-z0-9_]){0,30})\d+/gi;
+      let result = String(text || "");
+      let prev;
+      do {
+        prev = result;
+        result = result.replace(pattern, (match, prefix, target) => {
+          return isInternalTurnMarker(prefix, target) ? "" : match;
+        });
+      } while (result !== prev);
+      return result;
     }
 
     const lines = String(value || "").split(/\r?\n/);
