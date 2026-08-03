@@ -34,11 +34,11 @@
     </defs>
     <style>
       svg {
-        font-family: "PingFang SC", "Avenir Next", "Helvetica Neue", Arial, "Noto Sans CJK SC", sans-serif;
+        font-family: "Avenir Next", "Helvetica Neue", Arial, sans-serif;
         text-rendering: geometricPrecision;
       }
       text {
-        font-family: "PingFang SC", "Avenir Next", "Helvetica Neue", Arial, "Noto Sans CJK SC", sans-serif;
+        font-family: "Avenir Next", "Helvetica Neue", Arial, sans-serif;
       }
     </style>
 
@@ -97,6 +97,7 @@
     </g>
 
     <rect x="746" y="22" width="594" height="516" rx="48" fill="#ffffff" opacity="0.5" stroke="#e8c5b0"/>
+    <g data-store-component="main-ui-screenshot">
 
     <g transform="translate(878 30) rotate(0 165 250)" filter="url(#deepShadow)" opacity="1">
       <defs>
@@ -110,5 +111,6 @@
       <rect x="0" y="0" width="330" height="500" rx="28" fill="none" stroke="#ffffff" stroke-opacity="0.88" stroke-width="2"/>
     </g>
 
+    </g>
 
 </svg>

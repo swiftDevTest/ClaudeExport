@@ -34,11 +34,11 @@
     </defs>
     <style>
       svg {
-        font-family: "PingFang SC", "Avenir Next", "Helvetica Neue", Arial, "Noto Sans CJK SC", sans-serif;
+        font-family: "Avenir Next", "Helvetica Neue", Arial, sans-serif;
         text-rendering: geometricPrecision;
       }
       text {
-        font-family: "PingFang SC", "Avenir Next", "Helvetica Neue", Arial, "Noto Sans CJK SC", sans-serif;
+        font-family: "Avenir Next", "Helvetica Neue", Arial, sans-serif;
       }
     </style>
 
