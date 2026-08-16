@@ -52,7 +52,17 @@ function createMissingDependencyError(name) {
 
     const copy = { ...block };
     if (typeof copy.text === "string") {
-      copy.text = normalizeExportText(copy.text);
+      // Code content is positional: normal prose sanitization deliberately
+      // collapses whitespace around punctuation, which corrupts ASCII/Unicode
+      // diagrams such as `↓            ↓`. Keep every visible space intact.
+      copy.text = copy.type === "code"
+        ? normalizeCodeText(copy.text)
+        // LaTeX is source data. Normal prose cleanup can rewrite meaningful
+        // whitespace commands and delimiters before the export document has a
+        // chance to preserve them.
+        : copy.type === "math"
+          ? copy.text.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "").trim().slice(0, 8000)
+        : normalizeExportText(copy.text);
     }
     if (Array.isArray(copy.headers)) {
       copy.headers = copy.headers.map((cell) => normalizeExportText(cell));
@@ -439,6 +449,13 @@ function createMissingDependencyError(name) {
 
   function copyPagePresentation(target, source, includeHtmlStyles) {
     if (!target || !source) return;
+    if (target.type === "math" && source.type === "math") {
+      if (source.text) target.text = source.text;
+      target.display = source.display !== false;
+      // MathML is semantic fallback data, not presentation styling. Preserve
+      // it even when a user has disabled captured HTML styles.
+      if (source.mathMl) target.mathMl = source.mathMl;
+    }
     if (target.type === "code" && Array.isArray(source.codeSegments)) {
       var pageCodeText = source.codeSegments.map(function (segment) {
         return String(segment && segment.text || "");
@@ -459,7 +476,6 @@ function createMissingDependencyError(name) {
         target.segments = includeHtmlStyles ? source.segments : source.segments.map(function (segment) {
           var cleanSegment = segment && typeof segment === "object" ? { ...segment } : { text: String(segment || "") };
           delete cleanSegment.htmlStyle;
-          delete cleanSegment.mathMl;
           return cleanSegment;
         });
       }
@@ -1341,6 +1357,49 @@ function createMissingDependencyError(name) {
     return stripClaudeUnsupportedMediaPlaceholderText(text);
   }
 
+  function normalizeCodeText(value) {
+    return String(value == null ? "" : value)
+      .replace(/\r\n?/g, "\n")
+      .replace(/\u00a0/g, " ")
+      .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u200b-\u200f\u202a-\u202e\u2060\ufeff]/g, "")
+      // Remove only entirely empty outer rows. Leading spaces in a real first
+      // row are layout data and must never be trimmed.
+      .replace(/^(?:\n)+|(?:\n)+$/g, "");
+  }
+
+  function normalizeMarkdownForExport(value) {
+    const lines = String(value == null ? "" : value).replace(/\r\n?/g, "\n").split("\n");
+    const output = [];
+    let prose = [];
+    let codeFenceLength = 0;
+
+    function flushProse() {
+      if (!prose.length) return;
+      const normalized = normalizeExportText(prose.join("\n"));
+      if (normalized) output.push(normalized);
+      prose = [];
+    }
+
+    lines.forEach((line) => {
+      if (codeFenceLength > 0) {
+        output.push(line);
+        if (getClosingFenceLength(line) >= codeFenceLength) codeFenceLength = 0;
+        return;
+      }
+
+      const openingFenceLength = getOpeningCodeFenceLength(line);
+      if (openingFenceLength > 0) {
+        flushProse();
+        output.push(line);
+        codeFenceLength = openingFenceLength;
+        return;
+      }
+      prose.push(line);
+    });
+    flushProse();
+    return output.join("\n").trim();
+  }
+
   function stripClaudeUnsupportedMediaPlaceholderText(text) {
     let sawPlaceholder = false;
     const cleaned = String(text || "")
@@ -1799,11 +1858,45 @@ function createMissingDependencyError(name) {
 
   function createChatGptTextBlock(type, value, extra = {}) {
     const generated = annotateChatGptGeneratedFileLinks(value);
+    const mathSegments = generated ? null : splitInlineMathSegments(value);
     return {
       type,
-      ...(generated || { text: value }),
+      ...(generated || (mathSegments ? { text: value, segments: mathSegments } : { text: value })),
       ...extra
     };
+  }
+
+  function looksLikeInlineMathExpression(value, isExplicitTexDelimiter) {
+    const expression = String(value || "").trim();
+    if (!expression || expression.length > 8000) return false;
+    if (isExplicitTexDelimiter) return true;
+    // A dollar amount must remain normal prose. Require LaTeX syntax or a
+    // mathematical operator before treating $...$ as an inline equation.
+    return /\\[A-Za-z]+|[\^_{}]|(?:^|\s)[A-Za-z0-9]+\s*(?:[=<>+*/]|\\[a-zA-Z])/.test(expression);
+  }
+
+  // API conversation payloads are Markdown source, unlike the page DOM where
+  // KaTeX is already represented by <math>. Preserve inline TeX as semantic
+  // segments so Word/PDF/image never send it through generic backslash escape
+  // handling (which previously changed \left into left and \frac into frac).
+  function splitInlineMathSegments(value) {
+    const source = String(value == null ? "" : value);
+    if (!source || source.length > 100000) return null;
+    const pattern = /\\\(([^\n]*?)\\\)|\$([^$\n]+?)\$/g;
+    const segments = [];
+    let cursor = 0;
+    let match;
+    while ((match = pattern.exec(source)) !== null) {
+      const isExplicitTexDelimiter = match[1] !== undefined;
+      const expression = isExplicitTexDelimiter ? match[1] : match[2];
+      if (!looksLikeInlineMathExpression(expression, isExplicitTexDelimiter)) continue;
+      if (match.index > cursor) segments.push({ text: source.slice(cursor, match.index) });
+      segments.push({ text: expression.trim(), marks: { math: true } });
+      cursor = pattern.lastIndex;
+    }
+    if (!segments.length) return null;
+    if (cursor < source.length) segments.push({ text: source.slice(cursor) });
+    return segments;
   }
 
   function createChatGptListItem(value) {
@@ -1814,7 +1907,7 @@ function createMissingDependencyError(name) {
   }
 
   function plainTextToExportBlocks(input, options = {}) {
-    const text = normalizeExportText(unwrapMarkdownDirectiveContainers(input));
+    const text = normalizeMarkdownForExport(unwrapMarkdownDirectiveContainers(input));
     if (!text) {
       return [];
     }
@@ -1832,6 +1925,36 @@ function createMissingDependencyError(name) {
       paragraph = [];
     }
 
+    function appendDisplayMath(expression) {
+      var latex = String(expression || "")
+        .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "")
+        .trim()
+        .slice(0, 8000);
+      if (latex) blocks.push({ type: "math", text: latex, display: true });
+    }
+
+    function readDisplayMath(openPattern, closePattern, initialExpression) {
+      var parts = initialExpression ? [initialExpression] : [];
+      index += 1;
+      while (index < lines.length) {
+        var candidate = lines[index];
+        var closeMatch = candidate.match(closePattern);
+        if (closeMatch) {
+          if (closeMatch[1]) parts.push(closeMatch[1]);
+          index += 1;
+          appendDisplayMath(parts.join("\n"));
+          return true;
+        }
+        parts.push(candidate);
+        index += 1;
+      }
+      // An unmatched delimiter is ordinary prose and must not silently eat
+      // the remainder of a conversation.
+      paragraph.push(openPattern === "dollar" ? "$$" : "\\[");
+      paragraph.push.apply(paragraph, parts);
+      return false;
+    }
+
     while (index < lines.length) {
       const line = lines[index];
       const trimmed = line.trim();
@@ -1839,6 +1962,34 @@ function createMissingDependencyError(name) {
       if (!trimmed) {
         flushParagraph();
         index += 1;
+        continue;
+      }
+
+      // API conversation bodies contain Markdown source rather than rendered
+      // KaTeX DOM. Recognize display delimiters before ordinary paragraphs so
+      // the same semantic math block reaches every exporter.
+      var singleDollarMath = trimmed.match(/^\$\$([\s\S]*?)\$\$$/);
+      if (singleDollarMath && singleDollarMath[0] === trimmed) {
+        flushParagraph();
+        appendDisplayMath(singleDollarMath[1]);
+        index += 1;
+        continue;
+      }
+      if (/^\$\$\s*$/.test(trimmed)) {
+        flushParagraph();
+        readDisplayMath("dollar", /^\s*\$\$\s*$/, "");
+        continue;
+      }
+      var singleBracketMath = trimmed.match(/^\\\[([\s\S]*?)\\\]$/);
+      if (singleBracketMath) {
+        flushParagraph();
+        appendDisplayMath(singleBracketMath[1]);
+        index += 1;
+        continue;
+      }
+      if (/^\\\[\s*$/.test(trimmed)) {
+        flushParagraph();
+        readDisplayMath("bracket", /^\s*\\\]\s*$/, "");
         continue;
       }
 
@@ -4468,6 +4619,7 @@ function createMissingDependencyError(name) {
       _test: {
         chatGptMessageToExportBlocks: chatGptMessageToExportBlocks,
         classifyChatGptContentPart: classifyChatGptContentPart,
+        plainTextToExportBlocks: plainTextToExportBlocks,
         CHATGPT_KNOWN_CONTENT_TYPES: CHATGPT_KNOWN_CONTENT_TYPES
       }
     };

@@ -1858,5 +1858,68 @@
   },
   "content_export_fail_reauth_fix": {
     "message": "再度ログインしてから、エクスポートをやり直してください。"
+  },
+  "popup_theme_preview": {
+    "message": "プレビュー"
+  },
+  "export_theme_midnightRose": {
+    "message": "ミッドナイトローズ"
+  },
+  "help_category_export": {
+    "message": "エクスポート方法"
+  },
+  "help_category_general": {
+    "message": "一般的な質問"
+  },
+  "help_category_notion": {
+    "message": "Notion 同期"
+  },
+  "help_category_obsidian": {
+    "message": "Obsidian 同期"
+  },
+  "help_footer_contact": {
+    "message": "まだヘルプが必要ですか？お問い合わせ："
+  },
+  "help_load_failed": {
+    "message": "ヘルプコンテンツの読み込みに失敗しました。"
+  },
+  "help_loading": {
+    "message": "読み込み中..."
+  },
+  "help_no_results": {
+    "message": "一致する質問が見つかりませんでした。"
+  },
+  "help_page_subtitle": {
+    "message": "エクスポート方法、Notion・Obsidian同期に関するよくある質問の回答を見つける"
+  },
+  "help_page_title": {
+    "message": "ヘルプセンター"
+  },
+  "help_search_placeholder": {
+    "message": "質問を検索..."
+  },
+  "popup_help_center": {
+    "message": "ヘルプセンター"
+  },
+  "toast_export_cancelled": {
+    "message": "エクスポートをキャンセルしました。"
+  },
+  "toast_export_context_invalidated": {
+    "message": "拡張機能が更新されました。ページを再読み込みして再試行してください。"
+  },
+  "toast_export_chatgpt_unavailable": {
+    "message": "Claude に接続できません。ページを再読み込みしてログインし、再度お試しください。"
+  },
+  "toast_export_network": {
+    "message": "ネットワークまたはログインの問題です。ページを再読み込みして再試行してください。"
+  },
+  "content_batch_select_all": {
+    "message": "すべて選択"
+  },
+  "content_batch_select_all_tooltip": {
+    "message": "表示中の会話を最大10件まで選択"
+  },
+  "content_retry": {
+    "message": "再試行"
   }
 }

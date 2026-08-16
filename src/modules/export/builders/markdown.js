@@ -5,7 +5,6 @@ import {
   sanitizeExportText,
   sanitizeImageAlt,
   sanitizeInlineSegmentText,
-  formatLatexUnicode,
   hasLatexMathSyntax,
   getExportFooterSegments,
   shouldCoalesceInlineSegments,
@@ -13,6 +12,7 @@ import {
   notifyProgress,
   yieldToBrowser
 } from '../utils.js';
+import { normalizeMathLatex } from '../math.js';
 
 var MESSAGE_SEPARATOR_MARKDOWN = "---";
 var BRANDING_FOOTER_STYLE = "display: flex; justify-content: space-between; gap: 16px; margin: 8px 0 0;";
@@ -89,14 +89,21 @@ export async function buildMarkdownBlob(messages, metadata, settings, options) {
       switch (block.type) {
         case "heading":
           var level = Math.min(6, (block.level || 1) + 1); // Indent by one level to fit main H1
-          var hashes = "";
-          for (var k = 0; k < level; k++) hashes += "#";
+          // 优化：使用 String.prototype.repeat() 替代循环拼接
+          var hashes = "#".repeat(level);
           lines.push(hashes + " " + renderInlineSegments(block));
           lines.push("");
           break;
 
         case "paragraph":
           lines.push(renderInlineSegments(block));
+          lines.push("");
+          break;
+
+        case "math":
+          lines.push("$$");
+          lines.push(normalizeMathLatex(block.text));
+          lines.push("$$");
           lines.push("");
           break;
 
@@ -179,10 +186,10 @@ function renderInlineSegments(block) {
     return renderMarkdownText(block.text || "");
   }
   if (shouldCoalesceInlineSegments(block.segments)) {
-    return formatLatexUnicode(getCoalescedInlineSegmentsText(block.segments, block.text));
+    return renderMarkdownText(getCoalescedInlineSegmentsText(block.segments, block.text));
   }
   if (shouldRenderLatexSegmentsAsPlainText(block.segments)) {
-    return formatLatexUnicode(block.segments.map(function (seg) {
+    return renderMarkdownText(block.segments.map(function (seg) {
       return sanitizeInlineSegmentText(seg && seg.text || "");
     }).join(""));
   }
@@ -192,7 +199,7 @@ function renderInlineSegments(block) {
     var isCode = Boolean(marks.code || seg.code);
     var isMath = Boolean(marks.math || seg.math);
     var text = isMath
-      ? formatLatexUnicode("\\(" + sanitizeInlineSegmentText(seg.text || "").trim() + "\\)")
+      ? "$" + normalizeMathLatex(sanitizeInlineSegmentText(seg.text || "")) + "$"
       : isCode ? sanitizeInlineSegmentText(seg.text || "") : renderMarkdownInlineText(seg.text || "");
     var isBold = Boolean(marks.bold || seg.bold);
     var isItalic = Boolean(marks.italic || seg.italic);
@@ -213,20 +220,47 @@ function renderInlineSegments(block) {
 }
 
 function renderMarkdownText(value) {
-  return formatLatexUnicode(sanitizeExportText(value));
+  return normalizeMarkdownMathDelimiters(sanitizeExportText(value));
 }
 
 function renderMarkdownImage(block) {
   var alt = escapeMarkdownLinkText(sanitizeImageAlt(block && block.alt || "Image"));
   var src = String(block && block.src || "").trim();
+  // 准确度修复：原先仅 https?:// 图片可导出，data URL（Claude 附件等）和 blob URL
+  // 全部丢失为 [Image] 占位。data URL 自包含可离线渲染，应保留；blob: 是会话级
+  // 临时 URL，导出后失效，保留为占位符。
   if (/^https?:\/\//i.test(src)) {
     return "![" + alt + "](" + escapeMarkdownLinkDestination(src) + ")";
+  }
+  if (/^data:image\//i.test(src)) {
+    // 超大 data URL 内联会让 .md 文件膨胀到数十 MB，编辑器/查看器易卡死。
+    // 超过 512KB 的 data URL 退化为占位符，避免单张图炸整个 Markdown 文件。
+    if (src.length > 512 * 1024) {
+      return t("export_image_placeholder", "[Image]");
+    }
+    return "![" + alt + "](" + src + ")";
   }
   return t("export_image_placeholder", "[Image]");
 }
 
 function renderMarkdownInlineText(value) {
-  return formatLatexUnicode(sanitizeInlineSegmentText(value));
+  return normalizeMarkdownMathDelimiters(sanitizeInlineSegmentText(value));
+}
+
+// Markdown is the portable source format. Never replace its TeX with a
+// best-effort Unicode approximation: a matrix or nested fraction cannot be
+// reconstructed afterwards. Convert alternate TeX delimiters to Markdown's
+// standard $ / $$ form so every downstream Markdown renderer sees one syntax.
+function normalizeMarkdownMathDelimiters(value) {
+  return String(value == null ? "" : value)
+    .replace(/\\\[([\s\S]*?)\\\]/g, function (_match, expression) {
+      var latex = normalizeMathLatex(expression);
+      return latex ? "$$\n" + latex + "\n$$" : "";
+    })
+    .replace(/\\\(([^\n]*?)\\\)/g, function (_match, expression) {
+      var latex = normalizeMathLatex(expression);
+      return latex ? "$" + latex + "$" : "";
+    });
 }
 
 function wrapMarkdownSpan(value, marker) {

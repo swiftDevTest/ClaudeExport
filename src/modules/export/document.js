@@ -26,6 +26,7 @@ export var EXPORT_BLOCK_TYPES = {
   list: true,
   blockquote: true,
   table: true,
+  math: true,
   image: true,
   separator: true
 };
@@ -226,7 +227,12 @@ function copyTextBlock(block, type, index) {
   var copy = { ...block, type: type };
   if (copy.textSource !== "dom") delete copy.textSource;
   copy.text = type === "code"
-    ? String(copy.text == null ? "" : copy.text).replace(/\u00a0/g, " ").trim()
+    ? String(copy.text == null ? "" : copy.text)
+      .replace(/\r\n?/g, "\n")
+      .replace(/\u00a0/g, " ")
+      // Code and text diagrams use first-line indentation for positioning.
+      // Drop blank outer rows only; never use trim() here.
+      .replace(/^(?:\n)+|(?:\n)+$/g, "")
     : sanitizeExportText(copy.text);
   var generatedFiles = normalizeGeneratedFileEntries(copy);
   if (generatedFiles.length) {
@@ -340,6 +346,29 @@ export function normalizeExportBlock(block, index) {
     return text && !isDalleMetadataText(text) && !isGeminiImagePlaceholderText(text)
       ? textBlock
       : null;
+  }
+
+  if (type === "math") {
+    // A display formula is semantic content, not a paragraph whose TeX can be
+    // rewritten by the normal text sanitizer. Keep both the portable source
+    // LaTeX and any source MathML captured from the conversation DOM.
+    var latex = String(block.text == null ? "" : block.text)
+      .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "")
+      .trim()
+      .slice(0, 8000);
+    if (!latex) return null;
+    var mathBlock = {
+      ...block,
+      type: "math",
+      text: latex,
+      display: block.display !== false,
+      originalIndex: Number.isFinite(Number(block.originalIndex)) ? Number(block.originalIndex) : Number(index)
+    };
+    var mathMl = sanitizeExportMathMl(block.mathMl);
+    if (mathMl) mathBlock.mathMl = mathMl;
+    else delete mathBlock.mathMl;
+    delete mathBlock.segments;
+    return mathBlock;
   }
 
   if (type === "list") {

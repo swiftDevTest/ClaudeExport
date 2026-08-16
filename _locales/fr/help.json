@@ -1,0 +1,132 @@
+{
+  "categories": [
+    {
+      "id": "export",
+      "title": "Méthodes d'exportation",
+      "items": [
+        {
+          "q": "Comment exporter la conversation actuelle ?",
+          "a": "<p>Cliquez sur l'icône de l'extension dans la barre d'outils du navigateur pour ouvrir la fenêtre contextuelle. Dans la zone <strong>Exportation en un clic</strong>, sélectionnez le format souhaité (PDF / Word / Markdown / HTML / Image / TXT) pour exporter toute la conversation sur la page actuelle.</p><div class=\"help-tip\"><strong>Astuce :</strong> Avant l'exportation, vous pouvez ajuster les thèmes de mise en page et les options de contenu (titre, horodatage, filigrane, etc.) dans le panneau Paramètres. Les thèmes s'appliquent uniquement aux exportations PDF et Image.</div>"
+        },
+        {
+          "q": "Comment exporter plusieurs conversations par lots ?",
+          "a": "<p>Cliquez sur la bannière <strong>Exportation par lots</strong> dans la fenêtre contextuelle. Un panneau d'exportation par lots apparaîtra, récupérant automatiquement la liste des conversations depuis la barre latérale.</p><ol><li>Recherchez ou cochez les conversations que vous souhaitez exporter (maximum 10)</li><li>Sélectionnez le format et le thème d'exportation</li><li>Cliquez sur le bouton Exporter — les fichiers seront exportés et enregistrés automatiquement</li></ol><div class=\"help-tip\"><strong>Les membres Pro</strong> bénéficient d'exportations par lots illimitées. Les utilisateurs gratuits peuvent l'essayer <strong>une fois</strong> après s'être connectés.</div>"
+        },
+        {
+          "q": "Comment exporter uniquement les messages sélectionnés ?",
+          "a": "<p>Cliquez sur la bannière <strong>Exportation sélective personnalisée</strong> dans la fenêtre contextuelle pour entrer en mode de sélection des messages :</p><ol><li>Une case à cocher circulaire apparaît à côté de chaque message — cliquez pour sélectionner les messages souhaités</li><li>Utilisez « Sélectionner toutes les IA » dans la barre flottante pour cocher rapidement toutes les réponses de l'IA</li><li>Choisissez un format d'exportation et cliquez sur Exporter</li><li>Cliquez sur Quitter une fois terminé pour quitter le mode de sélection</li></ol><p>Le mode de sélection prend en charge le défilement et le zoom — les cases à cocher suivent automatiquement les positions des messages.</p>"
+        },
+        {
+          "q": "Comment exporter rapidement via le menu contextuel ?",
+          "a": "<p>Sur une conversation <strong>Claude</strong>, faites un clic droit, choisissez « Claude Export », puis le format d’exportation.</p><div class=\"help-tip\"><strong>Formats pris en charge :</strong> PDF, Word, Markdown, HTML, Image, TXT, JSON.</div><p>Pour sélectionner certains messages, utilisez l’exportation sélective dans la fenêtre contextuelle.</p>"
+        },
+        {
+          "q": "Quels formats d'exportation sont pris en charge ?",
+          "a": "<p>Au total, <strong>7 formats</strong> sont pris en charge :</p><ul><li><strong>PDF</strong> — Idéal pour le partage et l'impression, prend en charge les thèmes</li><li><strong>Word (docx)</strong> — Idéal pour une édition ultérieure</li><li><strong>Markdown</strong> — Idéal pour la gestion des connaissances et l'importation dans d'autres outils</li><li><strong>HTML</strong> — Conserve la mise en forme complète, s'ouvre dans n'importe quel navigateur</li><li><strong>Image (PNG)</strong> — Idéal pour les réseaux sociaux, prend en charge les thèmes</li><li><strong>TXT</strong> — Texte brut, taille compacte</li><li><strong>JSON</strong> — Données structurées, idéal pour une utilisation programmatique</li></ul>"
+        },
+        {
+          "q": "Où les fichiers exportés sont-ils enregistrés ?",
+          "a": "<p>Tous les fichiers exportés sont enregistrés dans le <strong>répertoire de téléchargement par défaut</strong> de votre navigateur via le mécanisme de téléchargement du navigateur. Vous pouvez afficher ou modifier le chemin de téléchargement dans Paramètres Chrome → Téléchargements.</p><p>Pour les exportations par lots, plusieurs fichiers sont téléchargés séquentiellement. Si vous choisissez la synchronisation Notion ou Obsidian, les fichiers sont synchronisés directement vers la plateforme respective au lieu d'être téléchargés localement.</p>"
+        }
+      ]
+    },
+    {
+      "id": "notion",
+      "title": "Autorisation et synchronisation Notion",
+      "items": [
+        {
+          "q": "Comment connecter mon espace de travail Notion ?",
+          "a": "<p>Dans la carte « Save to Notion » de la fenêtre contextuelle, cliquez sur le bouton <strong>Connect Notion</strong> :</p><ol><li>Il vous sera demandé de vous connecter d'abord à votre compte Claude Export (si vous n'êtes pas connecté)</li><li>Après la connexion, la page d'autorisation Notion s'ouvre automatiquement</li><li>Sélectionnez les pages/bases de données que vous souhaitez autoriser dans Notion et cliquez sur « Allow access »</li><li>Revenez à la fenêtre contextuelle et sélectionnez la Database cible pour démarrer la synchronisation</li></ol><div class=\"help-tip\"><strong>Remarque :</strong> Vous devez sélectionner au moins une page ou base de données Notion pendant l'autorisation pour que Claude Export puisse écrire du contenu.</div>"
+        },
+        {
+          "q": "Que faire si je vois « No authorized Database found » après la connexion ?",
+          "a": "<p>Cela signifie que la connexion Notion a été établie, mais qu'aucune Database n'a été partagée avec Claude Export. Suivez ces étapes :</p><ol><li>Ouvrez la Database cible dans Notion</li><li>Cliquez sur le menu <code>⋯</code> en haut à droite</li><li>Sélectionnez « Connections » → recherchez et ajoutez « Claude Export »</li><li>Rouvre la fenêtre contextuelle de l'extension — la Database devrait maintenant apparaître dans le menu déroulant</li></ol>"
+        },
+        {
+          "q": "Que dois-je faire si la connexion Notion a expiré ?",
+          "a": "<p>Lorsque le jeton d'accès Notion expire, une barre d'avertissement orange apparaît : « Notion access has expired, please reconnect to continue syncing. »</p><ol><li>Cliquez sur le bouton <strong>Reconnect</strong> dans la barre d'avertissement</li><li>La page d'autorisation Notion s'ouvrira à nouveau</li><li>Après l'autorisation, la synchronisation reprendra normalement</li></ol><div class=\"help-tip\">Les jetons expirent généralement après de longues périodes d'inactivité ou si les autorisations sont révoquées dans Notion. La reconnexion ne supprime pas les données existantes.</div>"
+        },
+        {
+          "q": "Que dois-je faire si la synchronisation Notion échoue ?",
+          "a": "<p>Les échecs de synchronisation peuvent avoir diverses causes — vérifiez le message d'erreur :</p><ul><li><strong>Réseau ou service occupé :</strong> Le système réessaie automatiquement jusqu'à 5 fois, veuillez patienter</li><li><strong>Permission refusée (403) :</strong> La page cible n'a pas été partagée avec Claude Export — reconnectez-vous dans Notion</li><li><strong>Page introuvable (404) :</strong> La page Notion précédemment mappée a peut-être été supprimée ou mise à la corbeille — choisissez une nouvelle destination</li><li><strong>Conflit de contenu :</strong> Le contenu de la page existante a été modifié — choisissez le mode « Replace » et synchronisez à nouveau</li><li><strong>Limite de débit (429) :</strong> Notion est occupé — réessayez plus tard</li></ul><div class=\"help-tip\">Si le problème persiste, actualisez la page de la plateforme IA et réessayez, ou déconnectez et réautorisez la connexion Notion. Si le problème persiste, essayez de vous déconnecter de votre compte Claude Export et de vous reconnecter.</div>"
+        },
+        {
+          "q": "Que faire si les images ne se téléchargent pas pendant la synchronisation Notion ?",
+          "a": "<p>Notion impose des limites de taille de fichier sur les images. Les images dépassant la limite sont remplacées par des espaces réservés. Causes possibles :</p><ul><li>L'image dépasse la limite de taille de fichier de votre espace de travail Notion</li><li>Le format de l'image n'est pas pris en charge par Notion</li><li>Un problème réseau a empêché le téléchargement de l'image</li></ul><p>Si certaines images n'ont pas pu être téléchargées, vous verrez « Synced to Notion with partial degradation. » Ouvrez la page Notion pour vérifier et ajouter manuellement les images manquantes.</p>"
+        },
+        {
+          "q": "Que faire si je reçois une erreur « permission denied » ou « page unavailable » ?",
+          "a": "<p>Cela signifie généralement que la page ou la Database Notion cible n'a pas été partagée avec la connexion Claude Export, ou que le partage a été révoqué. Pour corriger :</p><ol><li>Ouvrez la page ou la Database cible dans Notion</li><li>Cliquez sur <code>⋯</code> → « Connections » → confirmez que « Claude Export » est ajouté</li><li>Si déjà ajouté mais toujours en échec, essayez de supprimer et de réajouter la connexion Claude Export</li><li>Revenez à la fenêtre contextuelle de l'extension et synchronisez à nouveau</li></ol>"
+        },
+        {
+          "q": "Comment déconnecter Notion ?",
+          "a": "<p>Dans le panneau <strong>Paramètres</strong> de la fenêtre contextuelle de l'extension, recherchez la carte Connexions et cliquez sur le bouton <strong>Disconnect</strong> de la ligne Notion.</p><p>Après la déconnexion, Claude Export révoque le jeton d'accès Notion. Le contenu déjà synchronisé vers Notion ne sera pas supprimé. Si la déconnexion échoue, les données locales sont conservées — vous pouvez réessayer plus tard.</p>"
+        }
+      ]
+    },
+    {
+      "id": "obsidian",
+      "title": "Autorisation et synchronisation Obsidian",
+      "items": [
+        {
+          "q": "Comment connecter un Vault Obsidian ?",
+          "a": "<p>La synchronisation Obsidian utilise l'API File System Access du navigateur — <strong>aucun OAuth requis</strong>, tout fonctionne localement.</p><ol><li>Cliquez sur le bouton de configuration dans la carte « Save to Obsidian » de la fenêtre contextuelle pour ouvrir la page des paramètres Obsidian</li><li>Cliquez sur « Choose Vault » et sélectionnez le répertoire racine de votre Vault Obsidian (le dossier contenant le dossier <code>.obsidian</code>)</li><li>Sélectionnez le répertoire des notes et le répertoire facultatif des ressources</li><li>Cliquez sur « Verify and Save » pour terminer la connexion</li></ol><div class=\"help-tip\"><strong>Remarque :</strong> Nécessite Chrome 86+ pour la prise en charge de l'API File System Access.</div>"
+        },
+        {
+          "q": "Comment choisir les répertoires de notes et de ressources ?",
+          "a": "<p>Dans la page des paramètres Obsidian :</p><ul><li><strong>Répertoire des notes :</strong> Où les fichiers Markdown synchronisés sont stockés — doit être à l'intérieur du Vault</li><li><strong>Répertoire des ressources :</strong> Où les images et autres médias sont stockés — par défaut le répertoire des notes si non défini</li></ul><p>Les chemins ne peuvent pas contenir <code>..</code>, <code>.obsidian</code> ou des caractères système invalides. Tous les répertoires sélectionnés doivent se trouver à l'intérieur de la racine du Vault.</p>"
+        },
+        {
+          "q": "Que faire si les autorisations du Vault ont expiré ?",
+          "a": "<p>Après les redémarrages du navigateur ou de longues périodes d'inactivité, les autorisations d'écriture du Vault peuvent expirer. Vous verrez « Vault permission has expired, reauthorization required » lors de la synchronisation.</p><ol><li>Ouvrez le panneau Paramètres de la fenêtre contextuelle de l'extension</li><li>Cliquez sur le bouton <strong>Configure</strong> de la ligne Obsidian pour ouvrir les paramètres</li><li>Cliquez à nouveau sur « Verify and Save » — le navigateur redemandera l'autorisation</li><li>Autorisez l'accès pour reprendre la synchronisation</li></ol><div class=\"help-tip\">Si les autorisations continuent d'expirer, vérifiez si le navigateur s'exécute en mode navigation privée (la navigation privée ne prend pas en charge les autorisations persistantes du système de fichiers).</div>"
+        },
+        {
+          "q": "Que dois-je faire si la synchronisation Obsidian échoue ?",
+          "a": "<p>Causes et solutions d'échec courantes :</p><ul><li><strong>Vault non connecté :</strong> Connectez d'abord un Vault Obsidian dans les Paramètres</li><li><strong>Répertoire manquant :</strong> Le répertoire de notes précédemment sélectionné a peut-être été supprimé ou renommé — resélectionnez-le dans les paramètres</li><li><strong>Conflit d'écriture :</strong> Une note d'une autre source existe déjà au même chemin — renommez la note ou supprimez le fichier en conflit</li><li><strong>Une autre synchronisation en cours :</strong> Une seule tâche de synchronisation Obsidian est autorisée à la fois — attendez que la tâche actuelle se termine</li></ul><p>En cas d'échec de la synchronisation, la note n'est ni créée ni modifiée — il est sûr de réessayer.</p>"
+        },
+        {
+          "q": "Que faire si je vois « Not a Vault root directory » ?",
+          "a": "<p>Cela signifie que le dossier sélectionné ne contient pas de répertoire <code>.obsidian</code>. Bien que la sélection d'un sous-répertoire permette toujours l'écriture de fichiers, les liens <code>obsidian://</code> échoueront avec « Vault not found. »</p><p>Veuillez cliquer à nouveau sur « Choose Vault » et sélectionner le <strong>dossier parent</strong> qui contient le dossier <code>.obsidian</code> (c'est-à-dire la racine du Vault enregistrée dans Obsidian).</p>"
+        },
+        {
+          "q": "Que faire si certaines images manquent lors de la synchronisation Obsidian ?",
+          "a": "<p>Pour des raisons de stabilité, chaque note conserve un maximum de <strong>50 images</strong> — les supplémentaires sont ignorées. Autres causes possibles :</p><ul><li>Image provenant d'un domaine ou d'un format non pris en charge</li><li>L'image dépasse la limite de sécurité de 8 Mo et ne peut pas être compressée</li><li>Un GIF animé ou un SVG dépasse la capacité de compression</li></ul><p>S'il y a des avertissements d'image après la synchronisation, le statut affiche « Synced with warnings. » Ouvrez la note pour vérifier et ajouter manuellement les images manquantes.</p>"
+        },
+        {
+          "q": "Comment déconnecter Obsidian ?",
+          "a": "<p>Dans le panneau <strong>Paramètres</strong> de la fenêtre contextuelle de l'extension, recherchez la carte Connexions et cliquez sur le bouton <strong>Disconnect</strong> de la ligne Obsidian.</p><p>Après la déconnexion, le gestionnaire du Vault est supprimé du stockage local. Les notes et fichiers de ressources déjà synchronisés vers le Vault ne sont pas supprimés. Vous devrez resélectionner et autoriser le Vault pour l'utiliser à nouveau.</p>"
+        }
+      ]
+    },
+    {
+      "id": "general",
+      "title": "Questions générales",
+      "items": [
+        {
+          "q": "Quelle est la différence entre Free et Pro ?",
+          "a": "<p>Le plan Free permet <strong>3 exportations par jour</strong>, 2 thèmes de base et 1 essai d'exportation par lots.</p><p>Pro débloque toutes les fonctionnalités :</p><ul><li>Exportations locales illimitées</li><li>Exportations par lots illimitées</li><li>8 thèmes de mise en page de qualité publication</li><li>Masquer le filigrane</li><li>Synchronisation automatique transparente Notion / Obsidian</li><li>Modèles professionnels basés sur des scénarios</li><li>Contrôles qualité avant exportation</li></ul><div class=\"help-tip\">Pro propose des plans Mensuel (4,99 $), Annuel (29,99 $) et À vie (49,99 $).</div>"
+        },
+        {
+          "q": "Combien d'exportations puis-je faire par jour avec le plan Free ?",
+          "a": "<p>Le plan Free permet <strong>3 exportations par jour</strong> (réinitialisées par date UTC).</p><p>La synchronisation Notion consomme également le quota d'exportation (sauf les tâches de déduplication). La synchronisation Obsidian ne consomme pas de quota. Passez à Pro pour des exportations illimitées.</p>"
+        },
+        {
+          "q": "À quoi servent les paramètres de thème ?",
+          "a": "<p>Les thèmes déterminent le style de mise en page visuelle des documents exportés. <strong>Les thèmes s'appliquent uniquement aux exportations PDF et Image</strong> — les autres formats ne sont pas affectés.</p><p>10 thèmes disponibles :</p><ul><li><strong>Free :</strong> Minimalist (par défaut), Natural</li><li><strong>Pro :</strong> Midnight Dark, Editorial, Terminal, Newsprint, Aurora, McKinsey, Oxford, Rose de Minuit</li></ul>"
+        },
+        {
+          "q": "Comment la confidentialité des données est-elle assurée ?",
+          "a": "<p>Toutes les opérations d'analyse et d'exportation sont <strong>100 % locales dans le navigateur</strong> — le contenu des conversations n'est jamais téléchargé vers les serveurs Claude Export.</p><ul><li>La génération de documents et la conversion de format se font localement</li><li>Uniquement lorsque les conversations contiennent des images, l'extension récupère les octets d'image depuis le CDN de confiance de la plateforme IA d'origine pour la mise en page</li><li>Les compteurs d'utilisation sont stockés localement</li><li>La synchronisation Notion envoie uniquement vos conversations sélectionnées directement vers votre espace de travail Notion</li><li>La synchronisation Obsidian est entièrement locale — les fichiers restent sur votre appareil</li><li>Les paiements sont traités de manière sécurisée par Paddle — aucune donnée de carte de crédit collectée</li></ul>"
+        },
+        {
+          "q": "Quelle plateforme d’IA est prise en charge ?",
+          "a": "<p><strong>Claude Export</strong> est conçu pour les conversations <strong>Claude</strong> sur <strong>claude.ai</strong>. Ouvrez une conversation pour utiliser l’extension.</p>"
+        },
+        {
+          "q": "Combien de conversations puis-je sélectionner pour l'exportation par lots ?",
+          "a": "<p>L'exportation par lots permet un maximum de <strong>10 conversations</strong> à la fois. Si vous dépassez cette limite, le message suivant s'affiche : « For the best export experience, a maximum of 10 per batch is supported. Please export in multiple batches. »</p><p>Si la barre latérale n'affiche pas la liste des conversations, déployez la barre latérale ou actualisez la page et réessayez.</p>"
+        }
+      ]
+    }
+  ]
+}

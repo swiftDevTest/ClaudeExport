@@ -58,6 +58,10 @@
     {
       "resources": [
         "src/modules/export/utils.js",
+        "src/modules/export/math.js",
+        "src/vendor/katex/katex.mjs",
+        "src/vendor/katex/katex.min.css",
+        "src/vendor/katex/fonts/*",
         "src/modules/export/html-style.js",
         "src/modules/export/platform.js",
         "src/modules/export/parser-dom.js",

@@ -17,6 +17,7 @@ import {
 import { fetchImageBytes } from '../media.js';
 import { getExportTheme } from '../themes/tokens.js';
 import { isTransparentCssColor, serializeExportHtmlStyle } from '../html-style.js';
+import { getMathMl } from '../math.js';
 
 function escapeHtml(value) {
   return String(value == null ? "" : value)
@@ -233,7 +234,7 @@ function renderInlineSegments(block) {
     var sanitizedText = sanitizeInlineSegmentText(segment.text || "");
     var mathMl = isMath ? sanitizeExportMathMl(segment.mathMl) : "";
     var text = mathMl || (isMath
-      ? escapeHtml(formatLatexUnicode("\\(" + sanitizedText.trim() + "\\)"))
+      ? getMathMl({ type: "math", text: sanitizedText, display: false })
       : renderLiteralInlineText(sanitizedText));
     var inlineStyle = styleAttribute(segment.htmlStyle);
     if (inlineStyle) text = "<span" + inlineStyle + ">" + text + "</span>";
@@ -335,6 +336,12 @@ function renderBlock(block, imageMap) {
     return "<h" + level + blockStyle + ">" + renderInlineSegments(block) + "</h" + level + ">";
   }
   if (block.type === "paragraph") return "<p" + blockStyle + ">" + renderInlineSegments(block) + "</p>";
+  if (block.type === "math") {
+    var mathMl = getMathMl(block);
+    return mathMl
+      ? '<div class="math-display"' + blockStyle + ">" + mathMl + "</div>"
+      : '<div class="math-display math-fallback"' + blockStyle + ">" + escapeHtml(block.text || "") + "</div>";
+  }
   if (block.type === "code") {
     var language = String(block.language || "").replace(/[^a-z0-9_+.-]/gi, "").slice(0, 40);
     var label = language ? '<div class="code-label">' + escapeHtml(language) + "</div>" : "";
@@ -379,7 +386,7 @@ function buildCss(theme, styleId, settings) {
     *{box-sizing:border-box}html{background:#fff}body{margin:0;background:${natural ? "#fff" : pageBackground(theme)};color:var(--ink);font:16px/1.72 ${theme.font && theme.font.body || "sans-serif"};overflow-wrap:anywhere}
     main{width:min(920px,calc(100% - 32px));margin:0 auto;padding:56px 0 40px}header{padding-bottom:24px;border-bottom:1px solid var(--line);margin-bottom:30px}h1,h2,h3,h4,h5,h6{font-family:${theme.font && theme.font.title || "sans-serif"};line-height:1.3;margin:1.35em 0 .55em}h1{font-size:2rem;margin:0 0 12px}.meta{display:flex;flex-wrap:wrap;gap:8px 18px;color:var(--muted);font-size:.9rem}
     .message{max-width:100%;margin:0 0 22px;padding:${flat ? "4px 0 22px" : "22px 24px"};background:transparent;border:${flat ? "0" : "1px solid"};border-bottom:${flat ? "1px solid var(--line)" : "1px solid"};border-radius:${flat ? "0" : "16px"};box-shadow:none}.message.user{${userAlign};background:${flat ? "transparent" : color.cardBgUser || "#eef8fb"};border-color:${flat ? "var(--line)" : color.cardBorderUser || "#bfe6ee"}}.message.assistant{background:${flat ? "transparent" : color.cardBgAssistant || "#fff"};border-color:${flat ? "var(--line)" : color.cardBorderAssistant || "#dbe7ef"}}
-    .message p{margin:.35em 0 1em}.message> :last-child{margin-bottom:0}a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:2px}code{font-family:${theme.font && theme.font.mono || "monospace"};background:${natural ? "#f3f4f6" : color.tagBgAssistant || "#f1f5f9"};padding:.12em .35em;border-radius:5px}.math-inline{display:inline-block;max-width:100%;vertical-align:middle;white-space:nowrap;overflow-x:auto;font-family:${theme.font && theme.font.body || "serif"}}.math-inline math{font-size:1em}mark{color:inherit;border-radius:3px;padding:0 .08em}.code-block{margin:18px 0;background:var(--code-bg);color:var(--code-text);border-radius:10px;overflow:hidden}.code-label{padding:8px 14px;border-bottom:1px solid rgba(255,255,255,.15);font:700 .72rem ${theme.font && theme.font.mono || "monospace"};opacity:.8}.code-block pre{margin:0;padding:16px;overflow:auto;white-space:pre}.code-block code{padding:0;background:transparent;color:inherit}
+    .message p{margin:.35em 0 1em}.message> :last-child{margin-bottom:0}a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:2px}code{font-family:${theme.font && theme.font.mono || "monospace"};background:${natural ? "#f3f4f6" : color.tagBgAssistant || "#f1f5f9"};padding:.12em .35em;border-radius:5px}.math-inline{display:inline-block;max-width:100%;vertical-align:middle;white-space:nowrap;overflow-x:auto;font-family:${theme.font && theme.font.body || "serif"}}.math-inline math{font-size:1em}.math-display{display:block;max-width:100%;overflow-x:auto;margin:1.1em 0;text-align:center;font-family:${theme.font && theme.font.body || "serif"}}.math-display math{font-size:1.15em}.math-fallback{white-space:pre-wrap;font-family:${theme.font && theme.font.mono || "monospace"}}mark{color:inherit;border-radius:3px;padding:0 .08em}.code-block{margin:18px 0;background:var(--code-bg);color:var(--code-text);border-radius:10px;overflow:hidden}.code-label{padding:8px 14px;border-bottom:1px solid rgba(255,255,255,.15);font:700 .72rem ${theme.font && theme.font.mono || "monospace"};opacity:.8}.code-block pre{margin:0;padding:16px;overflow:auto;white-space:pre}.code-block code{padding:0;background:transparent;color:inherit}
     blockquote{margin:18px 0;padding:12px 16px;background:var(--quote-bg);border-left:4px solid var(--quote-border);border-radius:0 8px 8px 0}hr{height:0;margin:24px 0;border:0;border-top:1px solid var(--line)}.table-wrap{overflow-x:auto;margin:18px 0}table{width:100%;border-collapse:collapse;font-size:.92rem}th,td{padding:10px 12px;border:1px solid var(--line);text-align:left;vertical-align:top}th{background:${natural ? "#f8fafc" : color.tagBgAssistant || "#f1f5f9"}}figure{margin:20px 0}img{display:block;max-width:100%;height:auto;border-radius:8px}figcaption{margin-top:6px;color:var(--muted);font-size:.8rem}.image-placeholder{margin:16px 0;padding:14px;border:1px dashed var(--line);color:var(--muted);text-align:center}footer{display:flex;justify-content:space-between;gap:18px;margin-top:34px;padding-top:16px;border-top:${natural ? "0" : "1px solid var(--line)"};color:var(--muted);font-size:.8rem}footer span:last-child{text-align:right}
     @media(max-width:640px){main{width:min(100% - 24px,920px);padding-top:28px}.message{max-width:100%;padding:${flat ? "4px 0 18px" : "18px"}}footer{display:block}footer span{display:block;margin-top:6px}footer span:last-child{text-align:left}}
     @media print{body{background:#fff}main{width:auto;padding:0}.message{break-inside:avoid;box-shadow:none}a{color:inherit}footer{break-before:avoid}}

@@ -1,0 +1,132 @@
+{
+  "categories": [
+    {
+      "id": "export",
+      "title": "Export Methods",
+      "items": [
+        {
+          "q": "How do I export the current conversation?",
+          "a": "<p>Click the extension icon in the browser toolbar to open the popup. In the <strong>One-Click Export</strong> area, select your desired format (PDF / Word / Markdown / HTML / Image / TXT) to export the full conversation on the current page.</p><div class=\"help-tip\"><strong>Tip:</strong> Before exporting, you can adjust layout themes and content options (title, timestamp, watermark, etc.) in the Settings panel. Themes apply only to PDF and Image exports.</div>"
+        },
+        {
+          "q": "How do I batch export multiple conversations?",
+          "a": "<p>Click the <strong>Batch Export</strong> banner in the popup. A batch export panel will appear, automatically fetching the conversation list from the sidebar.</p><ol><li>Search or check the conversations you want to export (max 10)</li><li>Select the export format and theme</li><li>Click the Export button — files will be exported and saved automatically</li></ol><div class=\"help-tip\"><strong>Pro members</strong> get unlimited batch exports. Free users can try it <strong>once</strong> after signing in.</div>"
+        },
+        {
+          "q": "How do I export only selected messages?",
+          "a": "<p>Click the <strong>Custom Selective Export</strong> banner in the popup to enter message selection mode:</p><ol><li>A circular checkbox appears next to each message — click to select the messages you want</li><li>Use \"Select All AI\" in the floating bar to quickly check all AI replies</li><li>Choose an export format and click Export</li><li>Click Exit when done to leave selection mode</li></ol><p>Selection mode supports scrolling and zooming — checkboxes follow message positions automatically.</p>"
+        },
+        {
+          "q": "How do I quickly export via the right-click menu?",
+          "a": "<p>Right-click anywhere on a <strong>Claude</strong> conversation page, select “Claude Export,” then choose a format to export the current conversation.</p><div class=\"help-tip\"><strong>Supported formats:</strong> PDF, Word, Markdown, HTML, Image, TXT, JSON.</div><p>For selected messages, use Custom Selective Export from the popup.</p>"
+        },
+        {
+          "q": "What export formats are supported?",
+          "a": "<p>A total of <strong>7 formats</strong> are supported:</p><ul><li><strong>PDF</strong> — Great for sharing and printing, supports themes</li><li><strong>Word (docx)</strong> — Great for further editing</li><li><strong>Markdown</strong> — Great for knowledge management and importing into other tools</li><li><strong>HTML</strong> — Preserves full styling, opens in any browser</li><li><strong>Image (PNG)</strong> — Great for social media, supports themes</li><li><strong>TXT</strong> — Plain text, compact size</li><li><strong>JSON</strong> — Structured data, great for programmatic use</li></ul>"
+        },
+        {
+          "q": "Where are exported files saved?",
+          "a": "<p>All exported files are saved to your browser's <strong>default download directory</strong> via the browser's download mechanism. You can view or change the download path in Chrome Settings → Downloads.</p><p>For batch exports, multiple files are downloaded sequentially. If you choose Notion or Obsidian sync, files are synced directly to the respective platform instead of downloading locally.</p>"
+        }
+      ]
+    },
+    {
+      "id": "notion",
+      "title": "Notion Authorization & Sync",
+      "items": [
+        {
+          "q": "How do I connect my Notion workspace?",
+          "a": "<p>In the popup's \"Save to Notion\" card, click the <strong>Connect Notion</strong> button:</p><ol><li>You'll be asked to sign in to your Claude Export account first (if not signed in)</li><li>After signing in, the Notion authorization page opens automatically</li><li>Select the pages/databases you want to authorize in Notion and click \"Allow access\"</li><li>Return to the popup and select the target Database to start syncing</li></ol><div class=\"help-tip\"><strong>Note:</strong> You must select at least one Notion page or database during authorization for Claude Export to write content.</div>"
+        },
+        {
+          "q": "What if I see \"No authorized Database found\" after connecting?",
+          "a": "<p>This means the Notion connection was established, but no Database was shared with Claude Export. Follow these steps:</p><ol><li>Open the target Database in Notion</li><li>Click the <code>⋯</code> menu in the top right</li><li>Select \"Connections\" → search for and add \"Claude Export\"</li><li>Reopen the extension popup — the Database should now appear in the dropdown</li></ol>"
+        },
+        {
+          "q": "What should I do if the Notion connection has expired?",
+          "a": "<p>When the Notion access token expires, an orange warning bar appears: \"Notion access has expired, please reconnect to continue syncing.\"</p><ol><li>Click the <strong>Reconnect</strong> button on the warning bar</li><li>The Notion authorization page will open again</li><li>After authorizing, sync will resume normally</li></ol><div class=\"help-tip\">Tokens typically expire after long periods of inactivity or if permissions are revoked in Notion. Reconnecting does not delete existing data.</div>"
+        },
+        {
+          "q": "What should I do if Notion sync fails?",
+          "a": "<p>Sync failures can have various causes — check the error message:</p><ul><li><strong>Network or service busy:</strong> The system auto-retries up to 5 times, please wait</li><li><strong>Permission denied (403):</strong> The target page hasn't been shared with Claude Export — reconnect in Notion</li><li><strong>Page not found (404):</strong> The previously mapped Notion page may have been deleted or trashed — choose a new destination</li><li><strong>Content conflict:</strong> Existing page content was modified — choose \"Replace\" mode and sync again</li><li><strong>Rate limited (429):</strong> Notion is busy — try again later</li></ul><div class=\"help-tip\">If the issue persists, refresh the AI platform page and retry, or disconnect and re-authorize the Notion connection. If problems continue, try signing out and signing back in to your Claude Export account.</div>"
+        },
+        {
+          "q": "What if images fail to upload during Notion sync?",
+          "a": "<p>Notion imposes file size limits on images. Images exceeding the limit are replaced with placeholders. Possible causes:</p><ul><li>Image exceeds your Notion workspace's file size limit</li><li>Image format is not supported by Notion</li><li>Network issue prevented image download</li></ul><p>If some images couldn't be uploaded, you'll see \"Synced to Notion with partial degradation.\" Open the Notion page to check and manually add missing images.</p>"
+        },
+        {
+          "q": "What if I get a \"permission denied\" or \"page unavailable\" error?",
+          "a": "<p>This usually means the target Notion page or Database hasn't been shared with the Claude Export connection, or the sharing was revoked. To fix:</p><ol><li>Open the target page or Database in Notion</li><li>Click <code>⋯</code> → \"Connections\" → confirm \"Claude Export\" is added</li><li>If already added but still failing, try removing and re-adding the Claude Export connection</li><li>Return to the extension popup and sync again</li></ol>"
+        },
+        {
+          "q": "How do I disconnect Notion?",
+          "a": "<p>In the extension popup's <strong>Settings</strong> panel, find the Connections card and click the <strong>Disconnect</strong> button on the Notion row.</p><p>After disconnecting, Claude Export revokes the Notion access token. Content already synced to Notion will not be deleted. If disconnection fails, local data is retained — you can retry later.</p>"
+        }
+      ]
+    },
+    {
+      "id": "obsidian",
+      "title": "Obsidian Authorization & Sync",
+      "items": [
+        {
+          "q": "How do I connect an Obsidian Vault?",
+          "a": "<p>Obsidian sync uses the browser's File System Access API — <strong>no OAuth required</strong>, everything runs locally.</p><ol><li>Click the configure button in the popup's \"Save to Obsidian\" card to open the Obsidian settings page</li><li>Click \"Choose Vault\" and select your Obsidian Vault root directory (the folder containing the <code>.obsidian</code> folder)</li><li>Select the notes directory and optional assets directory</li><li>Click \"Verify and Save\" to complete the connection</li></ol><div class=\"help-tip\"><strong>Note:</strong> Requires Chrome 86+ for File System Access API support.</div>"
+        },
+        {
+          "q": "How do I choose notes and assets directories?",
+          "a": "<p>In the Obsidian settings page:</p><ul><li><strong>Notes directory:</strong> Where synced Markdown files are stored — must be inside the Vault</li><li><strong>Assets directory:</strong> Where images and other media are stored — defaults to the notes directory if not set</li></ul><p>Paths cannot contain <code>..</code>, <code>.obsidian</code>, or invalid system characters. All selected directories must be inside the Vault root.</p>"
+        },
+        {
+          "q": "What if Vault permissions have expired?",
+          "a": "<p>After browser restarts or long periods of inactivity, Vault write permissions may expire. You'll see \"Vault permission has expired, reauthorization required\" when syncing.</p><ol><li>Open the extension popup's Settings panel</li><li>Click the <strong>Configure</strong> button on the Obsidian row to open settings</li><li>Click \"Verify and Save\" again — the browser will re-prompt for permission</li><li>Allow access to resume syncing</li></ol><div class=\"help-tip\">If permissions keep expiring, check if the browser is running in incognito mode (incognito doesn't support persistent file system permissions).</div>"
+        },
+        {
+          "q": "What should I do if Obsidian sync fails?",
+          "a": "<p>Common failure causes and solutions:</p><ul><li><strong>Vault not connected:</strong> Connect an Obsidian Vault in Settings first</li><li><strong>Directory missing:</strong> The previously selected notes directory may have been deleted or renamed — reselect it in settings</li><li><strong>Write conflict:</strong> A note from a different source already exists at the same path — rename the note or delete the conflicting file</li><li><strong>Another sync in progress:</strong> Only one Obsidian sync task is allowed at a time — wait for the current task to finish</li></ul><p>If sync fails, the note is not created or modified — it's safe to retry.</p>"
+        },
+        {
+          "q": "What if I see \"Not a Vault root directory\"?",
+          "a": "<p>This means the selected folder doesn't contain a <code>.obsidian</code> directory. While selecting a subdirectory still allows file writes, <code>obsidian://</code> links will fail with \"Vault not found.\"</p><p>Please click \"Choose Vault\" again and select the <strong>parent folder</strong> that contains the <code>.obsidian</code> folder (i.e., the Vault root registered in Obsidian).</p>"
+        },
+        {
+          "q": "What if some images are missing during Obsidian sync?",
+          "a": "<p>For stability, each note retains a maximum of <strong>50 images</strong> — extras are skipped. Other possible causes:</p><ul><li>Image from an unsupported domain or format</li><li>Image exceeds the 8MB safety limit and can't be compressed</li><li>Animated GIF or SVG exceeds compression capability</li></ul><p>If there are image warnings after sync, the status shows \"Synced with warnings.\" Open the note to check and manually add missing images.</p>"
+        },
+        {
+          "q": "How do I disconnect Obsidian?",
+          "a": "<p>In the extension popup's <strong>Settings</strong> panel, find the Connections card and click the <strong>Disconnect</strong> button on the Obsidian row.</p><p>After disconnecting, the Vault handle is removed from local storage. Notes and asset files already synced to the Vault are not deleted. You'll need to reselect and authorize the Vault to use it again.</p>"
+        }
+      ]
+    },
+    {
+      "id": "general",
+      "title": "General Questions",
+      "items": [
+        {
+          "q": "What's the difference between Free and Pro?",
+          "a": "<p>The Free plan allows <strong>3 exports per day</strong>, 2 basic themes, and 1 batch export trial.</p><p>Pro unlocks all features:</p><ul><li>Unlimited local exports</li><li>Unlimited batch exports</li><li>8 publication-grade layout themes</li><li>Hide watermark</li><li>Seamless Notion / Obsidian auto-sync</li><li>Scenario-based professional templates</li><li>Pre-export quality checks</li></ul><div class=\"help-tip\">Pro offers Monthly ($4.99), Yearly ($29.99), and Lifetime ($49.99) plans.</div>"
+        },
+        {
+          "q": "How many exports can I do per day on the Free plan?",
+          "a": "<p>The Free plan allows <strong>3 exports per day</strong> (reset by UTC date).</p><p>Notion sync also consumes export quota (except deduplication tasks). Obsidian sync does not consume quota. Upgrade to Pro for unlimited exports.</p>"
+        },
+        {
+          "q": "What do theme settings do?",
+          "a": "<p>Themes determine the visual layout style of exported documents. <strong>Themes apply only to PDF and Image exports</strong> — other formats are not affected.</p><p>10 themes available:</p><ul><li><strong>Free:</strong> Minimalist (default), Natural</li><li><strong>Pro:</strong> Midnight Dark, Editorial, Terminal, Newsprint, Aurora, McKinsey, Oxford, Midnight Rose</li></ul>"
+        },
+        {
+          "q": "How is data privacy ensured?",
+          "a": "<p>All parsing and export operations are <strong>100% local in the browser</strong> — chat content is never uploaded to Claude Export servers.</p><ul><li>Document generation and format conversion happen locally</li><li>Only when conversations contain images does the extension fetch image bytes from the original AI platform's trusted CDN for layout</li><li>Usage counts are stored locally</li><li>Notion sync sends only your selected conversations directly to your Notion workspace</li><li>Obsidian sync is entirely local — files stay on your device</li><li>Payments are securely processed by Paddle — no credit card data collected</li></ul>"
+        },
+        {
+          "q": "Which platform is supported?",
+          "a": "<p><strong>Claude Export</strong> supports Claude conversations on <strong>claude.ai</strong>. Open a conversation there and the extension icon will activate.</p>"
+        },
+        {
+          "q": "How many conversations can I select for batch export?",
+          "a": "<p>Batch export allows a maximum of <strong>10 conversations</strong> at a time. Exceeding this shows: \"For the best export experience, a maximum of 10 per batch is supported. Please export in multiple batches.\"</p><p>If the sidebar doesn't show the conversation list, expand the sidebar or refresh the page and try again.</p>"
+        }
+      ]
+    }
+  ]
+}

@@ -516,6 +516,63 @@ export var EXPORT_THEMES = {
       separatorColor: "D8D0C7"
     }
   },
+  midnightRose: {
+    id: "midnightRose",
+    name: "Midnight Rose",
+    bg: { type: "mesh", colors: ["#1F1430", "#2A1A30", "#1A1024"] },
+    font: {
+      title: '"Cormorant Garamond", "Playfair Display", Georgia, serif',
+      body: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+      mono: '"SF Mono", Menlo, Monaco, Consolas, monospace'
+    },
+    color: {
+      ink: "#F2E6F0",
+      muted: "#A890A0",
+      accent: "#E8B4B8",
+      accentDark: "#C49B9E",
+      cardBgUser: "#2A1A30",
+      cardBorderUser: "#D4A5A5",
+      cardBgAssistant: "#2A1A30",
+      cardBorderAssistant: "#3D2A45",
+      codeBg: "#0F0818",
+      codeText: "#F0D0D8",
+      quoteBg: "#241428",
+      quoteBorder: "#E8B4B8",
+      tagBgUser: "#2A1A30",
+      tagBorderUser: "#D4A5A5",
+      tagBgAssistant: "#2A1A30",
+      tagBorderAssistant: "#3D2A45",
+      shadow: "rgba(232,180,184,0.10)",
+      line: "#3D2A45"
+    },
+    word: {
+      fontAscii: "Georgia",
+      fontEastAsia: "Songti SC",
+      colorTitle: "C49B9E",
+      colorText: "F2E6F0",
+      colorMuted: "A890A0",
+      pageBg: "1A1024",
+      metaBg: "2A1A30",
+      metaBorder: "D4A5A5",
+      metaText: "E8B4B8",
+      userBg: "2A1A30",
+      userBorder: "D4A5A5",
+      assistantBg: "2A1A30",
+      assistantBorder: "3D2A45",
+      inlineCodeBg: "241428",
+      inlineCodeText: "E8B4B8",
+      codeBg: "0F0818",
+      codeText: "F0D0D8",
+      codeBorder: "0F0818",
+      codeLabel: "D4A5A5",
+      quoteBg: "241428",
+      quoteBorder: "E8B4B8",
+      tableHeaderBg: "241428",
+      tableHeaderText: "E8B4B8",
+      tableBorder: "3D2A45",
+      separatorColor: "3D2A45"
+    }
+  },
   midnight: {
     id: "midnight",
     name: "Midnight Dark",

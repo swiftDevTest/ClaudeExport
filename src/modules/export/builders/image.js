@@ -24,6 +24,34 @@ import {
 } from '../utils.js';
 import { preloadCanvasImages } from '../media.js';
 import { getImageTheme } from '../themes/image.js';
+import { getMathAssetKey, mathFallbackText, preloadMathAssets } from '../math.js';
+
+// newsprint 噪点 tile 缓存：256×256 离屏画布生成一次后用 createPattern("repeat")
+// 平铺任意尺寸画布，避免在巨型画布上逐个 fillRect。模块级复用，跨多次导出共享。
+var _newsprintNoiseTile = null;
+function getNewsprintNoiseTile() {
+  if (_newsprintNoiseTile) return _newsprintNoiseTile;
+  try {
+    if (typeof document === "undefined" || typeof document.createElement !== "function") return null;
+    var tile = document.createElement("canvas");
+    tile.width = 256;
+    tile.height = 256;
+    var tctx = tile.getContext("2d");
+    if (!tctx) return null;
+    tctx.fillStyle = "rgba(0, 0, 0, 0.015)";
+    for (var i = 0; i < 400; i++) {
+      var rx = Math.random() * 256;
+      var ry = Math.random() * 256;
+      var rw = Math.random() * 2 + 1;
+      var rh = Math.random() * 2 + 1;
+      tctx.fillRect(rx, ry, rw, rh);
+    }
+    _newsprintNoiseTile = tctx.createPattern(tile, "repeat");
+    return _newsprintNoiseTile;
+  } catch (_e) {
+    return null;
+  }
+}
 
 var SEPARATOR_MARGIN_TOP = 25;
 var SEPARATOR_MARGIN_BOTTOM = 25;
@@ -65,6 +93,8 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
 
   throwIfAborted();
   var imageCache = await preloadCanvasImages(messages, options);
+  throwIfAborted();
+  var mathAssets = await preloadMathAssets(messages, options, 18, true);
   throwIfAborted();
   var themeConfig = getImageTheme(settingsInput);
   var settings = themeConfig.settings;
@@ -128,6 +158,41 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
     return block;
   }
 
+  // Canvas has no native MathML layout. Split semantic inline equations into
+  // adjacent formula rows so they use the same KaTeX PNG as display math while
+  // retaining all surrounding rich-text segments in their original order.
+  function expandInlineMathBlocks(blocks) {
+    var output = [];
+    (blocks || []).forEach(function (block) {
+      var segments = block && block.type === "paragraph" && Array.isArray(block.segments) ? block.segments : null;
+      var hasMath = segments && segments.some(function (segment) {
+        var marks = segment && segment.marks || {};
+        return Boolean(segment && (segment.math || marks.math));
+      });
+      if (!hasMath) {
+        output.push(block);
+        return;
+      }
+      var textSegments = [];
+      function flushText() {
+        if (!textSegments.length) return;
+        output.push({ ...block, type: "paragraph", text: textSegments.map(function (item) { return item.text || ""; }).join(""), segments: textSegments });
+        textSegments = [];
+      }
+      segments.forEach(function (segment) {
+        var marks = segment && segment.marks || {};
+        if (segment && (segment.math || marks.math)) {
+          flushText();
+          output.push({ type: "math", text: segment.text || "", display: false, inline: true });
+        } else if (segment) {
+          textSegments.push(segment);
+        }
+      });
+      flushText();
+    });
+    return output;
+  }
+
   function measureImageMessage(message) {
     var isUser = message.role === "user";
     var alignRight = isUser && settings.align_user_messages_right;
@@ -135,7 +200,7 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
     var maxCardWidth = alignRight ? contentWidth * 0.75 : contentWidth;
     var horizontalPadding = flatLayout ? 8 : 48;
     var maxInnerWidth = maxCardWidth - horizontalPadding;
-    var allBlocks = (message.contentBlocks || []).map(function (block) {
+    var allBlocks = expandInlineMathBlocks(message.contentBlocks).map(function (block) {
       return measureImageBlock(getVisualMessageBlock(block, message.role), maxInnerWidth);
     }).filter(Boolean);
     
@@ -257,16 +322,30 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
 
   function measureImageBlock(block, width) {
     if (!block) return null;
+    if (block.type === "math") {
+      var mathAsset = mathAssets.get(getMathAssetKey(block, 18));
+      if (mathAsset) {
+        var mathWidth = Math.min(width, mathAsset.width);
+        var mathHeight = Math.max(1, mathAsset.height * (mathWidth / Math.max(1, mathAsset.width)));
+        return { type: "math", asset: mathAsset, width: mathWidth, height: mathHeight + 14, originalHeight: mathHeight };
+      }
+      var fallbackFont = "16px " + theme.font.mono;
+      var fallbackLines = wrapText(measureCtx, mathFallbackText(block.text), width, fallbackFont);
+      return { type: "math", fallback: true, lines: fallbackLines.length ? fallbackLines : [""], font: fallbackFont, lineHeight: 24, height: Math.max(1, fallbackLines.length) * 24 + 10 };
+    }
     if (block.type === "heading") {
       var headingSize = block.level === 1 ? 27 : block.level === 2 ? 24 : 21;
       var headingFont = "850 " + headingSize + "px " + theme.font.title;
-      var headingText = getInlinePlainText(block);
       var headingRichText = getInlineRichText(block);
-      var headingLines = wrapText(measureCtx, cleanInlineMarkdownText(headingText), width, headingFont);
+      // 优化：从 richLines 派生 lines，省去一次完整 wrapText 测量（与 pdf.js 一致）。
+      // heading/paragraph 渲染走 richLines，lines 仅作测量/兜底，chunks 求和等价。
       var richLines = wrapRichText(measureCtx, headingRichText, width, headingFont, theme.font);
+      var headingLines = richLines.length ? richLines.map(function (line) {
+        return line.chunks.map(function (c) { return c.text; }).join("");
+      }) : [""];
       return {
         type: "heading",
-        lines: headingLines.length ? headingLines : [""],
+        lines: headingLines,
         richLines: richLines,
         font: headingFont,
         lineHeight: headingSize + 11,
@@ -275,13 +354,15 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
     }
 
     if (block.type === "paragraph") {
-      var paragraphText = getInlinePlainText(block);
       var paragraphRichText = getInlineRichText(block);
-      var paragraphLines = wrapText(measureCtx, cleanInlineMarkdownText(paragraphText), width, imageBodyFont);
+      // 优化：不再单独调用 wrapText，从 richLines 派生 plain lines。
       var richLines = wrapRichText(measureCtx, paragraphRichText, width, imageBodyFont, theme.font);
+      var paragraphLines = richLines.length ? richLines.map(function (line) {
+        return line.chunks.map(function (c) { return c.text; }).join("");
+      }) : [""];
       return {
         type: "paragraph",
-        lines: paragraphLines.length ? paragraphLines : [""],
+        lines: paragraphLines,
         richLines: richLines,
         font: imageBodyFont,
         lineHeight: imageBodyLineHeight,
@@ -292,7 +373,7 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
     if (block.type === "code") {
       var codeFont = "15px " + theme.font.mono;
       var frame = getImageCodeFrame(width);
-      var codeLines = wrapText(measureCtx, block.text, frame.width - frame.paddingX * 2, codeFont);
+      var codeLines = wrapText(measureCtx, block.text, frame.width - frame.paddingX * 2, codeFont, { preserveWhitespace: true });
       var isTerminalTheme = theme.id === "aurora" || theme.id === "terminal";
       var codeHeader = (block.language || isTerminalTheme) ? 32 : 16;
       var codeLineHeight = 24;
@@ -531,13 +612,12 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
   }
 
   if (theme.id === "newsprint") {
-    ctx.fillStyle = "rgba(0, 0, 0, 0.015)";
-    for (var i = 0; i < 400; i++) {
-      var rx = Math.random() * width;
-      var ry = Math.random() * height;
-      var rw = Math.random() * 2 + 1;
-      var rh = Math.random() * 2 + 1;
-      ctx.fillRect(rx, ry, rw, rh);
+    // 优化：原实现在数亿像素的巨型画布上逐个 fillRect 400 次噪点，开销大。
+    // 改为生成 256×256 噪点 tile，用 createPattern("repeat") 一次性平铺整个画布。
+    var noiseTile = getNewsprintNoiseTile();
+    if (noiseTile) {
+      ctx.fillStyle = noiseTile;
+      ctx.fillRect(0, 0, width, height);
     }
   }
 
@@ -643,6 +723,20 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
       }
     }
 
+    if (block.type === "math") {
+      if (block.asset && block.asset.element) {
+        try {
+          var mathX = block.inline ? x : x + Math.max(0, (width - block.width) / 2);
+          ctx.drawImage(block.asset.element, mathX, cursor + 4, block.width, block.originalHeight);
+          return cursor + block.height;
+        } catch (error) {}
+      }
+      ctx.font = block.font || ("16px " + theme.font.mono);
+      ctx.fillStyle = theme.color.ink;
+      block.lines.forEach(function (line, index) { ctx.fillText(line, x, cursor + 3 + index * block.lineHeight); });
+      return cursor + block.height;
+    }
+
     if (block.type === "heading" || block.type === "paragraph") {
       var oldBaseline = ctx.textBaseline;
       ctx.textBaseline = "top";
@@ -684,7 +778,7 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
         ctx.font = block.font;
         ctx.fillStyle = theme.color.codeText;
         block.lines.forEach(function (line) {
-          ctx.fillText(line, frameX + paddingX, codeY);
+          (ctx.fillTextPreservingWhitespace || ctx.fillText).call(ctx, line, frameX + paddingX, codeY);
           codeY += block.lineHeight;
         });
       } else {
@@ -698,7 +792,7 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
         ctx.font = block.font;
         ctx.fillStyle = theme.color.codeText;
         block.lines.forEach(function (line) {
-          ctx.fillText(line, frameX + paddingX, codeY);
+          (ctx.fillTextPreservingWhitespace || ctx.fillText).call(ctx, line, frameX + paddingX, codeY);
           codeY += block.lineHeight;
         });
       }

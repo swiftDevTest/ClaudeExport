@@ -98,12 +98,46 @@
   }
 
   async function setDailyUsage(usage) {
-    const today = getTodayString();
-    const current = normalize(await getDailyUsage(), today);
-    const incoming = normalize(usage, today);
-    const merged = mergeDailyUsage(current, incoming, today);
-    await saveDailyUsage(merged);
-    return merged;
+    return withUsageLock(async () => {
+      const today = getTodayString();
+      const current = normalize(await getDailyUsage(), today);
+      const incoming = normalize(usage, today);
+      const merged = mergeDailyUsage(current, incoming, today);
+      await saveDailyUsage(merged);
+      return merged;
+    });
+  }
+
+  async function reconcileConsumedDailyUsage(serverUsage, count = 1) {
+    return withUsageLock(async () => {
+      const today = getTodayString();
+      const amount = Math.max(1, Number(count) || 1);
+      const current = normalize(await getDailyUsage(), today);
+      const incoming = normalize(serverUsage, today);
+      const serverCount = Math.max(0, Number(incoming.exportedChats) || 0);
+      const serverBeforeThisExport = Math.max(0, serverCount - amount);
+      const latestServerEvent = incoming.exportEvents[incoming.exportEvents.length - 1];
+      const alreadyImported = Boolean(latestServerEvent) && current.exportEvents.some((event) =>
+        event && event.at === latestServerEvent.at && event.count === latestServerEvent.count
+      );
+
+      if (alreadyImported) {
+        const merged = mergeDailyUsage(current, incoming, today);
+        await saveDailyUsage(merged);
+        return merged;
+      }
+      const beforeExport = mergeDailyUsage(
+        current,
+        { ...incoming, exportedChats: serverBeforeThisExport },
+        today
+      );
+      const reconciled = {
+        ...beforeExport,
+        exportedChats: Math.max(0, Number(beforeExport.exportedChats) || 0) + amount
+      };
+      await saveDailyUsage(reconciled);
+      return reconciled;
+    });
   }
 
   async function resetDailyUsage() {
@@ -184,6 +218,7 @@
     getDailyUsage,
     incrementDailyUsage,
     setDailyUsage,
+    reconcileConsumedDailyUsage,
     resetDailyUsage,
     getTodayString
   };

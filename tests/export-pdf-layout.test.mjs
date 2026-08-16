@@ -165,10 +165,9 @@ test("PDF export fits tall image rows to remaining page height", () => {
   assert.match(pdfBuilderSource, /renderPdfImageGridRow\(fittedRow, imgX, y\)/);
 });
 
-test("PDF footer only shows branding watermark, without platform or time", () => {
-  assert.match(pdfBuilderSource, /var footerBranding = settings\.show_chatvault_badge/);
-  assert.match(pdfBuilderSource, /if \(!footerBranding\) return;/);
-  assert.match(pdfBuilderSource, /ctx\.fillText\(footerBranding/);
+test("PDF footer includes only branding without platform and export time", () => {
+  assert.match(pdfBuilderSource, /if \(!settings\.show_chatvault_badge\) return;/);
+  assert.match(pdfBuilderSource, /ctx\.fillText\(t\("export_pdf_footer_branding"/);
   assert.doesNotMatch(pdfBuilderSource, /footer\.push\(getPlatformLabel\(metadata\.platform\)\)/);
   assert.doesNotMatch(pdfBuilderSource, /footer\.push\(formatDateDisplay\(metadata\.exportedAt\)\)/);
 });
@@ -328,6 +327,37 @@ test("Image export keeps a long list complete and places branding after the cont
     const footerY = rendered.drawCalls.find((call) => call.text === "Exported by Claude Export").y;
     const lastMarkerY = rendered.drawCalls.find((call) => call.text === "120.").y;
     assert.ok(lastMarkerY < footerY);
+  } finally {
+    fake.restore();
+  }
+});
+
+test("Image export keeps every positional space in a code diagram", async () => {
+  const diagram = [
+    "                 iOS Native",
+    "                     │",
+    "        ┌────────────┼────────────┐",
+    "        ↓            ↓            ↓",
+    "   Native Router   Bridge     Lifecycle",
+    "        │            │            │",
+    "        └──────── FlutterEngine ───┘"
+  ];
+  const fake = installFakeCanvasDocument();
+  try {
+    await buildImageBlob([{
+      role: "assistant",
+      contentBlocks: [{ type: "code", text: diagram.join("\n") }]
+    }], {
+      title: "Diagram",
+      platform: "chatgpt",
+      scope: "conversation"
+    }, pdfSettings(), {});
+
+    const rendered = fake.canvases.find(({ drawCalls }) => drawCalls.some((call) => call.text === diagram[0]));
+    assert.ok(rendered, "the first diagram row should be drawn verbatim");
+    diagram.forEach((line) => {
+      assert.ok(rendered.drawCalls.some((call) => call.text === line), `diagram row must retain its exact spaces: ${line}`);
+    });
   } finally {
     fake.restore();
   }

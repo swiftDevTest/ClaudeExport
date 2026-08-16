@@ -111,6 +111,7 @@ export function safeNotionConnection(row: Record<string, unknown>) {
     workspace_name: String(row.workspace_name || "Unknown Workspace"),
     workspace_icon: typeof row.workspace_icon === "string" ? row.workspace_icon : null,
     owner_user_id: typeof row.owner_user_id === "string" ? row.owner_user_id : null,
+    product_slug: String(row.product_slug || "ai-chat-export"),
     status: String(row.status || "active"),
     created_at: String(row.created_at || ""),
     updated_at: String(row.updated_at || "")

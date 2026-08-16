@@ -433,8 +433,23 @@ export function notifyProgress(options, message, progress) {
   } catch (error) {}
 }
 
+// 优先用 MessageChannel 让出主线程：不受嵌套 setTimeout(0) 的 4ms 最小钳制，
+// 长导出循环（PDF 分页、文本构建）每页都 yield 时可减少数秒累积延迟。
+// 缺省时（如旧环境/测试宿主）回退到 setTimeout(0)。
+var _canUseMessageChannelYield = typeof MessageChannel !== "undefined";
 export function yieldToBrowser() {
   return new Promise(function (resolve) {
+    if (_canUseMessageChannelYield) {
+      var channel = new MessageChannel();
+      channel.port2.onmessage = function () {
+        channel.port2.onmessage = null;
+        try { channel.port1.close(); } catch (error) {}
+        try { channel.port2.close(); } catch (error) {}
+        resolve();
+      };
+      channel.port1.postMessage(null);
+      return;
+    }
     setTimeout(resolve, 0);
   });
 }
@@ -1150,6 +1165,9 @@ export function getBlockText(block) {
     }).join("\n");
   }
   if (block.type === "image") return "[Image: " + (block.alt || "Image") + "]";
+  // TeX is source data for a semantic display equation. Do not run it through
+  // prose cleanup: that can collapse commands and spacing operators.
+  if (block.type === "math") return String(block.text || "");
   return sanitizeExportText(block.text || "");
 }
 
@@ -1940,7 +1958,9 @@ export function isDalleMetadataText(text) {
   if (/^Command\s+['"]bash\s+-lc\s+.*failed\s+with\s+status/i.test(trimmed)) return true;
 
   // Filter DALL-E tool output: file paths, dimensions, aspect ratios, inspection prompts
-  if (/\/mnt\/data\//.test(trimmed)) return true;
+  // 准确度修复：原 `\/mnt\/data\/` 无锚点，会误删任何提及该路径的代码/用户文本。
+  // 改为仅当文本以 /mnt/data/ 图片路径开头时过滤（DALL-E 输出行的典型形态）。
+  if (/^\/mnt\/data\/\S+\.(png|jpe?g|webp|gif|bmp|tiff|svg|pdf)/im.test(trimmed)) return true;
   if (/\(\s*wxh\s*=/.test(trimmed)) return true;
   if (/exact aspect ratio/.test(trimmed)) return true;
   if (/visually inspect the generated image/.test(trimmed)) return true;
@@ -1951,8 +1971,11 @@ export function isDalleMetadataText(text) {
   if (/\<\|no_watermark\|\>/.test(trimmed)) return true;
   if (/^Model caption\s*:/i.test(trimmed)) return true;
   if (/close to aspect ratio/i.test(trimmed)) return true;
-  if (/^I'll create\b.*\bimage\b/i.test(trimmed) && trimmed.length < 200) return true;
-  if (/^I'll generate\b.*\bimage\b/i.test(trimmed) && trimmed.length < 200) return true;
+  // 准确度修复："I'll create/generate ... image" 是 assistant 对用户的正常说明，
+  // 原先长度<200 即过滤会误删正常回复。增加 DALL-E 元数据信号作为附加条件，
+  // 仅当同时包含尺寸/路径/dall-e 等元数据时才判定为工具元数据并过滤。
+  var dalleNarration = (/^I'll create\b.*\bimage\b/i.test(trimmed) || /^I'll generate\b.*\bimage\b/i.test(trimmed)) && trimmed.length < 200;
+  if (dalleNarration && /(aspect ratio|wxh|dall-?e|\(\s*\d+x\d+\s*\)|\/mnt\/data\/)/i.test(trimmed)) return true;
 
   return false;
 }
@@ -2228,8 +2251,14 @@ export function formatLatexUnicode(text) {
     math = math.replace(/\\operatorname\{([^}]+)\}/g, "$1");
     math = math.replace(/\\(?:quad|qquad|,|;|!)/g, " ");
     math = replaceSupersSubscripts(math);
-    math = math.replace(/[{}]/g, "");
-    math = math.replace(/\\/g, "");
+    // 准确度修复：原先这里 `replace(/[{}]/g, "")` + `replace(/\\/g, "")` 会无条件
+    // 移除所有花括号和反斜杠。对于已识别的命令（\alpha/\sqrt/\frac 等）反斜杠和
+    // 花括号已在上面被正则消耗，这两步只影响"未识别"命令，把它们破坏成乱码：
+    //   \mathbb{R}        -> mathbbR
+    //   \begin{bmatrix}.. -> beginbmatrix..
+    // 现在保留未识别命令的原始 LaTeX 源码，Obsidian/Word 等渲染器可正确渲染，
+    // 比产生乱码更准确。仅清理完全空的花括号分组（无内容的 `{}`）。
+    math = math.replace(/\{\s*\}/g, "");
     return math.trim();
   }
 
@@ -2310,8 +2339,30 @@ export function createCanvas(width, height, scale) {
   canvas.width = Math.round(width * scale);
   canvas.height = Math.round(height * scale);
   var ctx = canvas.getContext("2d");
+  if (!ctx) {
+    var contextErr = new Error(t("export_image_canvas_limit", "This conversation is too long for a high-quality image export because browsers limit canvas size. Export as PDF instead."));
+    contextErr.code = "IMAGE_CANVAS_LIMIT_EXCEEDED";
+    throw contextErr;
+  }
   var nativeFillText = ctx.fillText.bind(ctx);
   var nativeMeasureText = ctx.measureText.bind(ctx);
+  // Code blocks and text diagrams are already sanitized by their parser, but
+  // their visible spaces carry layout. Expose an explicit raw-text path so a
+  // final canvas safety pass cannot collapse `↓            ↓` to `↓ ↓`.
+  ctx.fillTextPreservingWhitespace = function (text, x, y, maxWidth) {
+    var value = String(text == null ? "" : text)
+      .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u200b-\u200f\u202a-\u202e\u2060\ufeff]/g, "");
+    var rx = Math.round(x);
+    var ry = Math.round(y);
+    return typeof maxWidth === "number"
+      ? nativeFillText(value, rx, ry, maxWidth)
+      : nativeFillText(value, rx, ry);
+  };
+  ctx.measureTextPreservingWhitespace = function (text) {
+    var value = String(text == null ? "" : text)
+      .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u200b-\u200f\u202a-\u202e\u2060\ufeff]/g, "");
+    return nativeMeasureText(value);
+  };
   ctx.fillText = function (text, x, y, maxWidth) {
     var cleaned = sanitizeCached(text);
     var rx = Math.round(x);
@@ -2335,7 +2386,9 @@ export function canvasToBlob(canvas, type, quality, timeoutMs) {
     var timer = setTimeout(function () {
       if (settled) return;
       settled = true;
-      reject(new Error("Canvas export timed out. Please try exporting again."));
+      var timeoutErr = new Error("Canvas export timed out. Please try exporting again.");
+      timeoutErr.code = "IMAGE_CANVAS_LIMIT_EXCEEDED";
+      reject(timeoutErr);
     }, Number.isFinite(Number(timeoutMs)) && Number(timeoutMs) > 0 ? Number(timeoutMs) : CANVAS_TO_BLOB_TIMEOUT_MS);
 
     function finish(fn, value) {
@@ -2348,12 +2401,17 @@ export function canvasToBlob(canvas, type, quality, timeoutMs) {
     try {
       canvas.toBlob(function (blob) {
         if (!blob) {
-          finish(reject, new Error("Canvas export failed."));
+          var blobErr = new Error(t("export_image_canvas_limit", "This conversation is too long for a high-quality image export because browsers limit canvas size. Export as PDF instead."));
+          blobErr.code = "IMAGE_CANVAS_LIMIT_EXCEEDED";
+          finish(reject, blobErr);
           return;
         }
         finish(resolve, blob);
       }, type || "image/png", quality);
     } catch (error) {
+      if (error && !error.code) {
+        error.code = "IMAGE_CANVAS_LIMIT_EXCEEDED";
+      }
       finish(reject, error);
     }
   });
@@ -2388,8 +2446,12 @@ export function blobToDataUrl(blob) {
   });
 }
 
-export function wrapText(ctx, text, maxWidth, font) {
+export function wrapText(ctx, text, maxWidth, font, options) {
   ctx.font = font;
+  var preserveWhitespace = Boolean(options && options.preserveWhitespace);
+  var measureText = preserveWhitespace && typeof ctx.measureTextPreservingWhitespace === "function"
+    ? ctx.measureTextPreservingWhitespace.bind(ctx)
+    : ctx.measureText.bind(ctx);
   var lines = [];
   String(text || "").split("\n").forEach(function (paragraph) {
     if (!paragraph.trim()) {
@@ -2402,7 +2464,7 @@ export function wrapText(ctx, text, maxWidth, font) {
 
     tokens.forEach(function (token) {
       var test = line + token;
-      if (ctx.measureText(test).width > maxWidth && line !== "") {
+      if (measureText(test).width > maxWidth && line !== "") {
         var isAvoidHeadPunc = /^[，。？！、：）】]/.test(token);
         if (isAvoidHeadPunc && line.length > 0) {
           var lastChar = line.slice(-1);
@@ -2416,16 +2478,16 @@ export function wrapText(ctx, text, maxWidth, font) {
         line = test;
       }
 
-      if (ctx.measureText(line).width > maxWidth) {
+      if (measureText(line).width > maxWidth) {
         var currentText = line;
-        while (currentText && ctx.measureText(currentText).width > maxWidth) {
+        while (currentText && measureText(currentText).width > maxWidth) {
           var lo = 1;
           var hi = currentText.length;
           var best = 1;
           while (lo <= hi) {
             var mid = Math.floor((lo + hi) / 2);
             var candidate = currentText.substring(0, mid);
-            if (ctx.measureText(candidate).width <= maxWidth) {
+            if (measureText(candidate).width <= maxWidth) {
               best = mid;
               lo = mid + 1;
             } else {

@@ -36,6 +36,8 @@
   var checkoutFlowPromise = null;
   var authStorageListenerAttached = false;
   var locallySignedOut = false;
+  var showStoredAuthStateInFlight = null;
+  var showStoredAuthStatePendingReapply = false;
   var obsidianSyncVisible = true;
   var obsidianUiReady = false;
   var obsidianStatus = null;
@@ -179,6 +181,7 @@
     setText('[data-theme="aurora"] .theme-name', "export_theme_aurora", "Aurora");
     setText('[data-theme="mckinsey"] .theme-name', "export_theme_mckinsey", "McKinsey");
     setText('[data-theme="oxford"] .theme-name', "export_theme_oxford", "Oxford");
+    setText('[data-theme="midnightRose"] .theme-name', "export_theme_midnightRose", "Midnight Rose");
 
     setText("#content-export-settings-card h3", "popup_settings_section_title", "Content Export Settings");
     setSettingTexts("toggle-title", "export_opt_title", "Conversation Title", "popup_title_desc", "Show the conversation title at the top of the document");
@@ -512,6 +515,7 @@
   function setQuotaInfo(quotaInfo, remainingQuota, pro) {
     if (!quotaInfo) return;
     quotaInfo.textContent = "";
+    quotaInfo.classList.remove("is-refresh-required");
     latestRemainingQuota = Math.max(0, Number(remainingQuota) || 0);
     latestQuotaKnown = true;
     if (pro) {
@@ -538,7 +542,9 @@
       var date = String(value.usage_date || value.date || "");
       return !today || !date || date === today;
     });
-    var candidates = dated.length ? dated : values;
+    // 仅采用当天快照；若无当天快照则返回 null，避免跨天旧快照误报剩余配额偏低。
+    if (!dated.length) return null;
+    var candidates = dated;
     var winner = candidates[0];
     var maxCount = -1;
     candidates.forEach(function (value) {
@@ -985,43 +991,64 @@
     return usage;
   }
 
-  async function showStoredAuthStateImmediately() {
-    var session = await getStoredAuthSessionSnapshot();
-    if (!hasActiveAuthSession(session)) {
-      return false;
+  async function showStoredAuthStateImmediately(options) {
+    if (showStoredAuthStateInFlight) {
+      if (options?.reapplyAfterInFlight) {
+        showStoredAuthStatePendingReapply = true;
+      }
+      return showStoredAuthStateInFlight;
     }
-    locallySignedOut = false;
 
-    var entitlements = globalThis.CHATVAULT_ENTITLEMENTS;
-    var cached = await getCachedProfileForSession(session);
-    var profile = cached?.profile || null;
-    var usage = await getPopupUsageSnapshot(cached?.usage);
-    var remainingQuota = cached ? cached.remainingQuota : latestRemainingQuota;
+    showStoredAuthStateInFlight = (async function () {
+      var session = await getStoredAuthSessionSnapshot();
+      if (!hasActiveAuthSession(session)) {
+        return false;
+      }
+      locallySignedOut = false;
 
-    if (entitlements) {
-      if (!profile) {
-        profile = entitlements.normalizeProfile({
-          id: session.user?.id || "",
-          email: session.user?.email || "",
-          plan: "free"
+      var entitlements = globalThis.CHATVAULT_ENTITLEMENTS;
+      var cached = await getCachedProfileForSession(session);
+      var profile = cached?.profile || null;
+      var usage = await getPopupUsageSnapshot(cached?.usage);
+      var remainingQuota = cached ? cached.remainingQuota : latestRemainingQuota;
+
+      if (entitlements) {
+        if (!profile) {
+          profile = entitlements.normalizeProfile({
+            id: session.user?.id || "",
+            email: session.user?.email || "",
+            plan: "free"
+          });
+        }
+        isProUser = entitlements.isPro(profile);
+        if (!cached || !Number.isFinite(Number(remainingQuota))) {
+          remainingQuota = entitlements.getRemainingFreeExports(profile, usage || {});
+        }
+      } else {
+        isProUser = false;
+      }
+
+      updateLocalUI(session, profile, remainingQuota);
+
+      var loginWarning = document.getElementById("subscribe-login-warning");
+      if (loginWarning) {
+        loginWarning.style.display = "none";
+      }
+
+      return true;
+    })();
+
+    try {
+      return await showStoredAuthStateInFlight;
+    } finally {
+      showStoredAuthStateInFlight = null;
+      if (showStoredAuthStatePendingReapply) {
+        showStoredAuthStatePendingReapply = false;
+        showStoredAuthStateImmediately().catch(function (error) {
+          console.warn("Failed to reapply auth state after entitlement update:", error);
         });
       }
-      isProUser = entitlements.isPro(profile);
-      if (!cached || !Number.isFinite(Number(remainingQuota))) {
-        remainingQuota = entitlements.getRemainingFreeExports(profile, usage || {});
-      }
-    } else {
-      isProUser = false;
     }
-
-    updateLocalUI(session, profile, remainingQuota);
-
-    var loginWarning = document.getElementById("subscribe-login-warning");
-    if (loginWarning) {
-      loginWarning.style.display = "none";
-    }
-
-    return true;
   }
 
   async function showSignedOutStateImmediately() {
@@ -1093,7 +1120,7 @@
           return;
         }
 
-        showStoredAuthStateImmediately().catch(function (error) {
+        showStoredAuthStateImmediately({ reapplyAfterInFlight: true }).catch(function (error) {
           console.warn("Failed to apply updated entitlement state:", error);
         });
       });
@@ -1154,6 +1181,7 @@
   function setRefreshRequired(quotaInfo) {
     if (!quotaInfo) return;
     quotaInfo.textContent = "";
+    quotaInfo.classList.add("is-refresh-required");
     var title = document.createElement("div");
     title.className = "inline-error-message";
     title.textContent = t("popup_refresh_required_title", "Please refresh the page to activate the extension");
@@ -1261,6 +1289,29 @@
     // 1. 初始化平台及链接监听
     document.getElementById("btn-open-chatgpt").addEventListener("click", function () {
       chrome.tabs.create({ url: "https://claude.ai/" });
+      window.close();
+    });
+
+    // 帮助中心入口
+    function openHelpPage(hash) {
+      var url = chrome.runtime.getURL("src/help.html");
+      if (hash) url += "#" + hash;
+      chrome.tabs.create({ url: url });
+      window.close();
+    }
+    var btnHelpNotion = document.getElementById("btn-help-notion");
+    if (btnHelpNotion) btnHelpNotion.addEventListener("click", function () { openHelpPage("notion"); });
+    var btnHelpNotionReconnect = document.getElementById("btn-help-notion-reconnect");
+    if (btnHelpNotionReconnect) btnHelpNotionReconnect.addEventListener("click", function () { openHelpPage("notion"); });
+    var btnHelpObsidian = document.getElementById("btn-help-obsidian");
+    if (btnHelpObsidian) btnHelpObsidian.addEventListener("click", function () { openHelpPage("obsidian"); });
+    var btnHelpCenter = document.getElementById("btn-open-help-center");
+    if (btnHelpCenter) btnHelpCenter.addEventListener("click", function () { openHelpPage(); });
+
+    // 主题效果预览入口
+    var btnThemePreview = document.getElementById("theme-preview-btn");
+    if (btnThemePreview) btnThemePreview.addEventListener("click", function () {
+      chrome.tabs.create({ url: chrome.runtime.getURL("src/theme-preview.html") });
       window.close();
     });
 
@@ -1792,8 +1843,10 @@
     }
 
     await clearPendingCheckoutIntent();
-    await showStoredAuthStateImmediately();
-    refreshPopupState(true);
+    // signInWithGoogle 内部已通过 CHATVAULT_REFRESH_AUTH_STATE 触发了
+    // showStoredAuthStateImmediately + refreshPopupState，
+    // 同时 storeSession 写入 storage 还会触发 storage.onChanged，
+    // 此处无需再重复调用，避免登录后 3 重并发状态恢复导致 UI 卡顿。
     return signedInSession;
   }
 
@@ -1918,11 +1971,12 @@
           showToast(t("popup_login_incomplete", "Sign-in was not completed. Please try again."));
           return;
         }
-        await showStoredAuthStateImmediately();
+        // signInWithGoogle 内部已通过 CHATVAULT_REFRESH_AUTH_STATE 触发了
+        // showStoredAuthStateImmediately + refreshPopupState，
+        // 同时 storeSession 写入 storage 还会触发 storage.onChanged，
+        // 此处无需再重复调用，避免登录后 3 重并发状态恢复导致 UI 卡顿。
         showToast(t("popup_login_success", "Signed in."));
       }
-
-      refreshPopupState(true);
     } catch (error) {
       showToast(t("popup_login_failed", "Sign-in failed: $1", error && error.message ? error.message : t("popup_try_later", "Please try again later.")));
       try {
@@ -2271,13 +2325,32 @@
         }, 180);
         btnCancel.onclick = null;
         btnOk.onclick = null;
+        modal.removeEventListener("click", onOverlayClick);
+        document.removeEventListener("keydown", onEscKey);
+      }
+
+      function cancel() {
+        cleanUp();
+        resolve(false);
       }
 
       btnCancel.onclick = function (e) {
         if (e) e.preventDefault();
-        cleanUp();
-        resolve(false);
+        cancel();
       };
+
+      // 点击遮罩或按 ESC 视为取消（与通用模态框交互习惯一致）
+      function onOverlayClick(e) {
+        if (e.target === modal) cancel();
+      }
+      function onEscKey(e) {
+        if (e.key === "Escape") {
+          e.preventDefault();
+          cancel();
+        }
+      }
+      modal.addEventListener("click", onOverlayClick);
+      document.addEventListener("keydown", onEscKey);
 
       btnOk.onclick = function (e) {
         if (e) e.preventDefault();
@@ -2852,8 +2925,10 @@
             showToast(t("popup_login_incomplete", "Sign-in was not completed. Please try again."));
             return;
           }
-          await showStoredAuthStateImmediately();
-          refreshPopupState(true);
+          // signInWithGoogle 内部已通过 CHATVAULT_REFRESH_AUTH_STATE 触发了
+          // showStoredAuthStateImmediately + refreshPopupState，
+          // 同时 storeSession 写入 storage 还会触发 storage.onChanged，
+          // 此处无需再重复调用，避免登录后 3 重并发状态恢复导致 UI 卡顿。
         } catch (loginError) {
           showToast(t("popup_login_failed", "Sign-in failed: $1", loginError?.message || "Sign-in failed."));
           return;

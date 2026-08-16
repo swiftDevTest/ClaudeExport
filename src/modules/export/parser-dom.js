@@ -65,7 +65,7 @@ export function cleanCodeText(element) {
   }
   return String((clone || target).textContent || "")
     .replace(/\u00a0/g, " ")
-    .replace(/\n{4,}/g, "\n\n\n")
+    .replace(/\n{8,}/g, "\n\n\n")
     .trim();
 }
 
@@ -232,6 +232,30 @@ function hasMeaningfulInlineSegments(segments) {
   });
 }
 
+function isDisplayMathElement(element, segment) {
+  var label = getElementLabel(element);
+  if (/(?:^|\s)(?:katex-display|math-display)(?:\s|$)|\bdisplay(?:-mode)?\b/i.test(label)) return true;
+  var mathMl = String(segment && segment.mathMl || "");
+  return /<math\b[^>]*\bdisplay=["'](?:block|true)["']/i.test(mathMl);
+}
+
+function getStandaloneDisplayMathBlock(element) {
+  var segments = cleanInlineSegments(element);
+  var meaningful = (segments || []).filter(function (segment) {
+    return String(segment && segment.text || "").trim();
+  });
+  if (meaningful.length !== 1) return null;
+  var segment = meaningful[0];
+  var marks = segment && segment.marks || {};
+  if (!(segment && (segment.math || marks.math)) || !isDisplayMathElement(element, segment)) return null;
+  return attachBlockSource({
+    type: "math",
+    text: String(segment.text || "").trim(),
+    mathMl: segment.mathMl || "",
+    display: true
+  }, element);
+}
+
 export function markStructuralNodes(root) {
   var structSet = new WeakSet();
   if (!root || typeof root.querySelectorAll !== "function") {
@@ -305,6 +329,11 @@ export function walkElement(parent, blocks, structSet, depth) {
   }
 
   var parentTag = String(parent.tagName || "").toLowerCase();
+  var standaloneMath = getStandaloneDisplayMathBlock(parent);
+  if (standaloneMath) {
+    blocks.push(standaloneMath);
+    return;
+  }
   if (parentTag === "pre" || (isCodeLikeElement(parent) && !parent.querySelector("p,ul,ol,table,blockquote,img"))) {
     var parentCodeText = cleanCodeText(parent);
     if (parentCodeText && (parentTag === "pre" || isSubstantialCodeText(parentCodeText))) {
@@ -321,11 +350,17 @@ export function walkElement(parent, blocks, structSet, depth) {
     }
   }
 
-  var directText = Array.prototype.slice.call(parent.childNodes || []).filter(function (node) {
-    return node.nodeType === 3;
-  }).map(function (node) {
-    return String(node.textContent || "").replace(/\s+/g, " ").trim();
-  }).filter(Boolean).join(" ");
+  // 优化：单循环替代链式 filter/map/filter，减少中间数组创建
+  var directTextParts = [];
+  var childNodes = parent.childNodes || [];
+  for (var ci = 0; ci < childNodes.length; ci++) {
+    var node = childNodes[ci];
+    if (node.nodeType === 3) {
+      var text = String(node.textContent || "").replace(/\s+/g, " ").trim();
+      if (text) directTextParts.push(text);
+    }
+  }
+  var directText = directTextParts.join(" ");
   directText = sanitizeExportText(decodeVisibleTextEscapes(stripThoughtText(directText)));
   if (isIgnoredRoleLabel(directText)) {
     directText = "";
@@ -371,6 +406,11 @@ export function walkElement(parent, blocks, structSet, depth) {
     }
 
     if (tag === "p") {
+      var displayMath = getStandaloneDisplayMathBlock(child);
+      if (displayMath) {
+        blocks.push(displayMath);
+        return;
+      }
       var paragraphText = cleanText(child);
       if (isIgnoredRoleLabel(paragraphText)) {
         return;

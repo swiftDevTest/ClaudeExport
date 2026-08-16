@@ -715,6 +715,14 @@ button:focus-visible,
   transform: translateY(1px) scale(0.99);
 }
 
+/* 导出进行中：禁用按钮并给出忙碌视觉反馈，防止重复点击 */
+.export-grid-item.is-busy,
+.export-grid-item[disabled] {
+  cursor: progress;
+  opacity: 0.62;
+  pointer-events: none;
+}
+
 .format-icon {
   grid-row: 1;
   width: 23px;
@@ -876,6 +884,62 @@ button:focus-visible,
   line-height: 1.25;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.sync-heading-title-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.sync-help-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+
+.sync-help-btn svg {
+  width: 12px;
+  height: 12px;
+}
+
+.sync-help-btn:hover {
+  background: var(--accent-soft, rgba(79, 107, 237, 0.1));
+  color: var(--accent-ink, #4f6bed);
+}
+
+.help-center-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  border: 1px solid rgba(217, 228, 223, 0.9);
+  border-radius: var(--radius-lg);
+  background: rgba(246, 250, 248, 0.95);
+  color: var(--accent-ink, #4f6bed);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s, box-shadow .15s;
+}
+
+.help-center-card:hover {
+  background: var(--accent-soft, rgba(79, 107, 237, 0.08));
+  box-shadow: var(--shadow-card);
 }
 
 .notion-sync-main {
@@ -1225,6 +1289,10 @@ button:focus-visible,
 }
 .theme-circle--oxford {
   background: #1e3a8a;
+}
+.theme-circle--midnight-rose {
+  background: linear-gradient(135deg, #1f1430 0%, #d4a5a5 100%);
+  box-shadow: 0 0 0 1px rgba(212, 165, 165, 0.3);
 }
 
 .theme-name {
@@ -1629,6 +1697,13 @@ input:checked + .slider::before {
 .quota-status-text b {
   color: var(--text-dark, #1e293b);
   font-weight: 650;
+}
+
+/* 刷新提示态：注入多行标题+描述，需覆盖单行配额文本的 nowrap/省略号样式 */
+.quota-status-text.is-refresh-required {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
 }
 
 .language-settings-card {
@@ -3112,4 +3187,27 @@ input:checked + .slider::before {
 
 #obsidian-sync-section {
   margin-top: 4px !important;
+}
+
+.theme-preview-link {
+  margin-left: auto;
+  padding: 4px 10px;
+  border: 1px solid rgba(var(--cv-primary-rgb, 201, 100, 66), 0.2);
+  border-radius: 6px;
+  background: rgba(var(--cv-primary-rgb, 201, 100, 66), 0.08);
+  color: var(--primary-hover, #7c2d12);
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.4;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.theme-preview-link:hover {
+  background: rgba(var(--cv-primary-rgb, 201, 100, 66), 0.14);
+}
+
+.theme-preview-link:focus-visible {
+  outline: 2px solid rgba(var(--cv-primary-rgb, 201, 100, 66), 0.4);
+  outline-offset: 1px;
 }

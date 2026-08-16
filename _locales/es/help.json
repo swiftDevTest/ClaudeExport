@@ -1,0 +1,132 @@
+{
+  "categories": [
+    {
+      "id": "export",
+      "title": "Métodos de exportación",
+      "items": [
+        {
+          "q": "¿Cómo exporto la conversación actual?",
+          "a": "<p>Haz clic en el icono de la extensión en la barra de herramientas del navegador para abrir el popup. En el área de <strong>Exportación con un clic</strong>, selecciona el formato deseado (PDF / Word / Markdown / HTML / Imagen / TXT) para exportar la conversación completa de la página actual.</p><div class=\"help-tip\"><strong>Consejo:</strong> Antes de exportar, puedes ajustar los temas de diseño y las opciones de contenido (título, marca de tiempo, marca de agua, etc.) en el panel de Configuración. Los temas solo se aplican a las exportaciones en PDF e Imagen.</div>"
+        },
+        {
+          "q": "¿Cómo exporto varias conversaciones por lotes?",
+          "a": "<p>Haz clic en el banner de <strong>Exportación por lotes</strong> en el popup. Aparecerá un panel de exportación por lotes que obtiene automáticamente la lista de conversaciones de la barra lateral.</p><ol><li>Busca o marca las conversaciones que deseas exportar (máximo 10)</li><li>Selecciona el formato y el tema de exportación</li><li>Haz clic en el botón Exportar — los archivos se exportarán y guardarán automáticamente</li></ol><div class=\"help-tip\">Los <strong>miembros Pro</strong> tienen exportaciones por lotes ilimitadas. Los usuarios gratuitos pueden probarlo <strong>una vez</strong> tras iniciar sesión.</div>"
+        },
+        {
+          "q": "¿Cómo exporto solo los mensajes seleccionados?",
+          "a": "<p>Haz clic en el banner de <strong>Exportación selectiva personalizada</strong> en el popup para entrar en el modo de selección de mensajes:</p><ol><li>Aparecerá una casilla circular junto a cada mensaje — haz clic para seleccionar los mensajes que desees</li><li>Usa \"Seleccionar todas las IA\" en la barra flotante para marcar rápidamente todas las respuestas de la IA</li><li>Elige un formato de exportación y haz clic en Exportar</li><li>Haz clic en Salir cuando termines para salir del modo de selección</li></ol><p>El modo de selección admite desplazamiento y zoom — las casillas siguen automáticamente las posiciones de los mensajes.</p>"
+        },
+        {
+          "q": "¿Cómo exporto rápidamente mediante el menú contextual?",
+          "a": "<p>En una conversación de <strong>Claude</strong>, haz clic derecho, elige «Claude Export» y selecciona el formato de exportación.</p><div class=\"help-tip\"><strong>Formatos admitidos:</strong> PDF, Word, Markdown, HTML, Imagen, TXT, JSON.</div><p>Para elegir mensajes concretos, usa la exportación selectiva del popup.</p>"
+        },
+        {
+          "q": "¿Qué formatos de exportación son compatibles?",
+          "a": "<p>Se admiten un total de <strong>7 formatos</strong>:</p><ul><li><strong>PDF</strong> — Ideal para compartir e imprimir, admite temas</li><li><strong>Word (docx)</strong> — Ideal para edición posterior</li><li><strong>Markdown</strong> — Ideal para gestión de conocimiento e importación a otras herramientas</li><li><strong>HTML</strong> — Conserva todo el estilo, se abre en cualquier navegador</li><li><strong>Imagen (PNG)</strong> — Ideal para redes sociales, admite temas</li><li><strong>TXT</strong> — Texto sin formato, tamaño compacto</li><li><strong>JSON</strong> — Datos estructurados, ideal para uso programático</li></ul>"
+        },
+        {
+          "q": "¿Dónde se guardan los archivos exportados?",
+          "a": "<p>Todos los archivos exportados se guardan en el <strong>directorio de descarga predeterminado</strong> de tu navegador mediante el mecanismo de descarga del navegador. Puedes ver o cambiar la ruta de descarga en Configuración de Chrome → Descargas.</p><p>Para exportaciones por lotes, los archivos se descargan secuencialmente. Si eliges la sincronización con Notion u Obsidian, los archivos se sincronizan directamente con la plataforma correspondiente en lugar de descargarse localmente.</p>"
+        }
+      ]
+    },
+    {
+      "id": "notion",
+      "title": "Autorización y sincronización con Notion",
+      "items": [
+        {
+          "q": "¿Cómo conecto mi espacio de trabajo de Notion?",
+          "a": "<p>En la tarjeta \"Guardar en Notion\" del popup, haz clic en el botón <strong>Conectar Notion</strong>:</p><ol><li>Primero se te pedirá que inicies sesión en tu cuenta de Claude Export (si no has iniciado sesión)</li><li>Después de iniciar sesión, la página de autorización de Notion se abre automáticamente</li><li>Selecciona las páginas/bases de datos que deseas autorizar en Notion y haz clic en \"Permitir acceso\"</li><li>Vuelve al popup y selecciona la Database de destino para empezar a sincronizar</li></ol><div class=\"help-tip\"><strong>Nota:</strong> Debes seleccionar al menos una página o base de datos de Notion durante la autorización para que Claude Export pueda escribir contenido.</div>"
+        },
+        {
+          "q": "¿Qué hago si veo \"No se ha encontrado ninguna Database autorizada\" después de conectar?",
+          "a": "<p>Esto significa que la conexión con Notion se estableció, pero no se compartió ninguna Database con Claude Export. Sigue estos pasos:</p><ol><li>Abre la Database de destino en Notion</li><li>Haz clic en el menú <code>⋯</code> en la esquina superior derecha</li><li>Selecciona \"Conexiones\" → busca y añade \"Claude Export\"</li><li>Vuelve a abrir el popup de la extensión — la Database debería aparecer ahora en el menú desplegable</li></ol>"
+        },
+        {
+          "q": "¿Qué debo hacer si la conexión de Notion ha caducado?",
+          "a": "<p>Cuando el token de acceso de Notion caduca, aparece una barra de advertencia naranja: \"El acceso a Notion ha caducado, vuelve a conectar para continuar con la sincronización.\"</p><ol><li>Haz clic en el botón <strong>Reconectar</strong> en la barra de advertencia</li><li>La página de autorización de Notion se volverá a abrir</li><li>Después de autorizar, la sincronización se reanudará con normalidad</li></ol><div class=\"help-tip\">Los tokens suelen caducar tras largos períodos de inactividad o si se revocan los permisos en Notion. Reconectar no elimina los datos existentes.</div>"
+        },
+        {
+          "q": "¿Qué debo hacer si la sincronización con Notion falla?",
+          "a": "<p>Los fallos de sincronización pueden tener varias causas — revisa el mensaje de error:</p><ul><li><strong>Red o servicio ocupado:</strong> El sistema reintentará automáticamente hasta 5 veces, por favor espera</li><li><strong>Permiso denegado (403):</strong> La página de destino no se ha compartido con Claude Export — reconecta en Notion</li><li><strong>Página no encontrada (404):</strong> La página de Notion previamente asignada puede haber sido eliminada o movida a la papelera — elige un nuevo destino</li><li><strong>Conflicto de contenido:</strong> El contenido de la página existente fue modificado — elige el modo \"Reemplazar\" y sincroniza de nuevo</li><li><strong>Límite de tasa (429):</strong> Notion está ocupado — inténtalo de nuevo más tarde</li></ul><div class=\"help-tip\">Si el problema persiste, actualiza la página de la plataforma de IA y reintenta, o desconecta y vuelve a autorizar la conexión de Notion. Si los problemas continúan, intenta cerrar sesión y volver a iniciar sesión en tu cuenta de Claude Export.</div>"
+        },
+        {
+          "q": "¿Qué pasa si las imágenes no se pueden subir durante la sincronización con Notion?",
+          "a": "<p>Notion impone límites de tamaño de archivo a las imágenes. Las imágenes que superan el límite se reemplazan con marcadores de posición. Posibles causas:</p><ul><li>La imagen supera el límite de tamaño de archivo de tu espacio de trabajo de Notion</li><li>El formato de imagen no es compatible con Notion</li><li>Un problema de red impidió la descarga de la imagen</li></ul><p>Si algunas imágenes no se pudieron subir, verás \"Sincronizado con Notion con degradación parcial.\" Abre la página de Notion para revisar y añadir manualmente las imágenes faltantes.</p>"
+        },
+        {
+          "q": "¿Qué hago si recibo un error de \"permiso denegado\" o \"página no disponible\"?",
+          "a": "<p>Esto normalmente significa que la página o Database de Notion de destino no se ha compartido con la conexión de Claude Export, o que el acceso fue revocado. Para solucionarlo:</p><ol><li>Abre la página o Database de destino en Notion</li><li>Haz clic en <code>⋯</code> → \"Conexiones\" → confirma que \"Claude Export\" está añadido</li><li>Si ya está añadido pero sigue fallando, intenta eliminar y volver a añadir la conexión de Claude Export</li><li>Vuelve al popup de la extensión y sincroniza de nuevo</li></ol>"
+        },
+        {
+          "q": "¿Cómo desconecto Notion?",
+          "a": "<p>En el panel de <strong>Configuración</strong> del popup de la extensión, busca la tarjeta de Conexiones y haz clic en el botón <strong>Desconectar</strong> en la fila de Notion.</p><p>Después de desconectar, Claude Export revoca el token de acceso de Notion. El contenido ya sincronizado con Notion no se eliminará. Si la desconexión falla, los datos locales se conservan — puedes reintentarlo más tarde.</p>"
+        }
+      ]
+    },
+    {
+      "id": "obsidian",
+      "title": "Autorización y sincronización con Obsidian",
+      "items": [
+        {
+          "q": "¿Cómo conecto un Vault de Obsidian?",
+          "a": "<p>La sincronización con Obsidian utiliza la API de File System Access del navegador — <strong>no requiere OAuth</strong>, todo se ejecuta localmente.</p><ol><li>Haz clic en el botón de configurar en la tarjeta \"Guardar en Obsidian\" del popup para abrir la página de configuración de Obsidian</li><li>Haz clic en \"Elegir Vault\" y selecciona el directorio raíz de tu Vault de Obsidian (la carpeta que contiene la carpeta <code>.obsidian</code>)</li><li>Selecciona el directorio de notas y el directorio opcional de recursos</li><li>Haz clic en \"Verificar y guardar\" para completar la conexión</li></ol><div class=\"help-tip\"><strong>Nota:</strong> Requiere Chrome 86+ para ser compatible con la API de File System Access.</div>"
+        },
+        {
+          "q": "¿Cómo elijo los directorios de notas y recursos?",
+          "a": "<p>En la página de configuración de Obsidian:</p><ul><li><strong>Directorio de notas:</strong> Donde se almacenan los archivos Markdown sincronizados — debe estar dentro del Vault</li><li><strong>Directorio de recursos:</strong> Donde se almacenan las imágenes y otros medios — por defecto es el directorio de notas si no se establece</li></ul><p>Las rutas no pueden contener <code>..</code>, <code>.obsidian</code> ni caracteres no válidos del sistema. Todos los directorios seleccionados deben estar dentro de la raíz del Vault.</p>"
+        },
+        {
+          "q": "¿Qué pasa si los permisos del Vault han caducado?",
+          "a": "<p>Después de reiniciar el navegador o tras largos períodos de inactividad, los permisos de escritura del Vault pueden caducar. Verás \"El permiso del Vault ha caducado, se requiere reautorización\" al sincronizar.</p><ol><li>Abre el panel de Configuración del popup de la extensión</li><li>Haz clic en el botón <strong>Configurar</strong> en la fila de Obsidian para abrir la configuración</li><li>Haz clic en \"Verificar y guardar\" de nuevo — el navegador volverá a solicitar permiso</li><li>Permite el acceso para reanudar la sincronización</li></ol><div class=\"help-tip\">Si los permisos siguen caducando, comprueba si el navegador se está ejecutando en modo incógnito (el modo incógnito no admite permisos persistentes del sistema de archivos).</div>"
+        },
+        {
+          "q": "¿Qué debo hacer si la sincronización con Obsidian falla?",
+          "a": "<p>Causas comunes de fallo y soluciones:</p><ul><li><strong>Vault no conectado:</strong> Conecta primero un Vault de Obsidian en Configuración</li><li><strong>Directorio no encontrado:</strong> El directorio de notas seleccionado previamente puede haber sido eliminado o renombrado — vuelve a seleccionarlo en la configuración</li><li><strong>Conflicto de escritura:</strong> Ya existe una nota de otra fuente en la misma ruta — renombra la nota o elimina el archivo conflictivo</li><li><strong>Otra sincronización en curso:</strong> Solo se permite una tarea de sincronización de Obsidian a la vez — espera a que termine la tarea actual</li></ul><p>Si la sincronización falla, la nota no se crea ni se modifica — es seguro reintentar.</p>"
+        },
+        {
+          "q": "¿Qué pasa si veo \"No es un directorio raíz de Vault\"?",
+          "a": "<p>Esto significa que la carpeta seleccionada no contiene un directorio <code>.obsidian</code>. Aunque seleccionar un subdirectorio aún permite escribir archivos, los enlaces <code>obsidian://</code> fallarán con \"Vault no encontrado.\"</p><p>Por favor, haz clic en \"Elegir Vault\" de nuevo y selecciona la <strong>carpeta principal</strong> que contiene la carpeta <code>.obsidian</code> (es decir, la raíz del Vault registrada en Obsidian).</p>"
+        },
+        {
+          "q": "¿Qué pasa si faltan algunas imágenes durante la sincronización con Obsidian?",
+          "a": "<p>Por estabilidad, cada nota conserva un máximo de <strong>50 imágenes</strong> — las adicionales se omiten. Otras posibles causas:</p><ul><li>Imagen de un dominio o formato no compatible</li><li>La imagen supera el límite de seguridad de 8 MB y no se puede comprimir</li><li>Un GIF animado o SVG supera la capacidad de compresión</li></ul><p>Si hay advertencias de imágenes después de la sincronización, el estado muestra \"Sincronizado con advertencias.\" Abre la nota para revisar y añadir manualmente las imágenes faltantes.</p>"
+        },
+        {
+          "q": "¿Cómo desconecto Obsidian?",
+          "a": "<p>En el panel de <strong>Configuración</strong> del popup de la extensión, busca la tarjeta de Conexiones y haz clic en el botón <strong>Desconectar</strong> en la fila de Obsidian.</p><p>Después de desconectar, el identificador del Vault se elimina del almacenamiento local. Las notas y los archivos de recursos ya sincronizados con el Vault no se eliminan. Necesitarás volver a seleccionar y autorizar el Vault para usarlo de nuevo.</p>"
+        }
+      ]
+    },
+    {
+      "id": "general",
+      "title": "Preguntas generales",
+      "items": [
+        {
+          "q": "¿Cuál es la diferencia entre Free y Pro?",
+          "a": "<p>El plan Free permite <strong>3 exportaciones por día</strong>, 2 temas básicos y 1 prueba de exportación por lotes.</p><p>Pro desbloquea todas las funciones:</p><ul><li>Exportaciones locales ilimitadas</li><li>Exportaciones por lotes ilimitadas</li><li>8 temas de diseño de calidad editorial</li><li>Ocultar marca de agua</li><li>Sincronización automática fluida con Notion / Obsidian</li><li>Plantillas profesionales basadas en escenarios</li><li>Controles de calidad previos a la exportación</li></ul><div class=\"help-tip\">Pro ofrece planes Mensual ($4.99), Anual ($29.99) y Vitalicio ($49.99).</div>"
+        },
+        {
+          "q": "¿Cuántas exportaciones puedo hacer por día en el plan Free?",
+          "a": "<p>El plan Free permite <strong>3 exportaciones por día</strong> (se reinicia por fecha UTC).</p><p>La sincronización con Notion también consume cuota de exportación (excepto las tareas de deduplicación). La sincronización con Obsidian no consume cuota. Actualiza a Pro para exportaciones ilimitadas.</p>"
+        },
+        {
+          "q": "¿Para qué sirven los ajustes de tema?",
+          "a": "<p>Los temas determinan el estilo de diseño visual de los documentos exportados. <strong>Los temas solo se aplican a las exportaciones en PDF e Imagen</strong> — otros formatos no se ven afectados.</p><p>10 temas disponibles:</p><ul><li><strong>Free:</strong> Minimalista (predeterminado), Natural</li><li><strong>Pro:</strong> Midnight Dark, Editorial, Terminal, Newsprint, Aurora, McKinsey, Oxford, Rosa de Medianoche</li></ul>"
+        },
+        {
+          "q": "¿Cómo se garantiza la privacidad de los datos?",
+          "a": "<p>Todas las operaciones de análisis y exportación son <strong>100% locales en el navegador</strong> — el contenido del chat nunca se sube a los servidores de Claude Export.</p><ul><li>La generación de documentos y la conversión de formato ocurren localmente</li><li>Solo cuando las conversaciones contienen imágenes, la extensión obtiene los bytes de imagen del CDN de confianza de la plataforma de IA original para el diseño</li><li>Los contadores de uso se almacenan localmente</li><li>La sincronización con Notion envía solo tus conversaciones seleccionadas directamente a tu espacio de trabajo de Notion</li><li>La sincronización con Obsidian es completamente local — los archivos permanecen en tu dispositivo</li><li>Los pagos son procesados de forma segura por Paddle — no se recopilan datos de tarjetas de crédito</li></ul>"
+        },
+        {
+          "q": "¿Qué plataforma de IA es compatible?",
+          "a": "<p><strong>Claude Export</strong> está diseñado para conversaciones de <strong>Claude</strong> en <strong>claude.ai</strong>. Abre una conversación para usar la extensión.</p>"
+        },
+        {
+          "q": "¿Cuántas conversaciones puedo seleccionar para la exportación por lotes?",
+          "a": "<p>La exportación por lotes permite un máximo de <strong>10 conversaciones</strong> a la vez. Si se supera este límite, se muestra: \"Para la mejor experiencia de exportación, se admite un máximo de 10 por lote. Por favor, exporta en varios lotes.\"</p><p>Si la barra lateral no muestra la lista de conversaciones, expande la barra lateral o actualiza la página e inténtalo de nuevo.</p>"
+        }
+      ]
+    }
+  ]
+}

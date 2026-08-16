@@ -1,0 +1,132 @@
+{
+  "categories": [
+    {
+      "id": "export",
+      "title": "匯出方式",
+      "items": [
+        {
+          "q": "如何匯出目前的對話？",
+          "a": "<p>點選瀏覽器工具列中的擴充功能圖示以開啟彈出視窗。在<strong>一鍵匯出</strong>區域中，選擇您想要的格式（PDF / Word / Markdown / HTML / 圖片 / TXT）以匯出目前頁面的完整對話。</p><div class=\"help-tip\"><strong>提示：</strong>匯出前，您可以在設定面板中調整版面主題和內容選項（標題、時間戳記、浮水印等）。主題僅套用於 PDF 和圖片匯出。</div>"
+        },
+        {
+          "q": "如何批次匯出多個對話？",
+          "a": "<p>點選彈出視窗中的<strong>批次匯出</strong>橫幅。將顯示批次匯出面板，自動從側邊欄擷取對話列表。</p><ol><li>搜尋或勾選您要匯出的對話（最多 10 個）</li><li>選擇匯出格式和主題</li><li>點選匯出按鈕 — 檔案將自動匯出並儲存</li></ol><div class=\"help-tip\"><strong>Pro 會員</strong>可享有無限批次匯出。免費使用者登入後可<strong>試用一次</strong>。</div>"
+        },
+        {
+          "q": "如何只匯出選取的訊息？",
+          "a": "<p>點選彈出視窗中的<strong>自訂選擇性匯出</strong>橫幅以進入訊息選取模式：</p><ol><li>每則訊息旁會出現圓形勾選框 — 點選以選取您要的訊息</li><li>使用浮動工具列中的「全選 AI」可快速勾選所有 AI 回覆</li><li>選擇匯出格式並點選匯出</li><li>完成後點選離開以退出選取模式</li></ol><p>選取模式支援捲動和縮放 — 勾選框會自動跟隨訊息位置。</p>"
+        },
+        {
+          "q": "如何透過右鍵選單快速匯出？",
+          "a": "<p>在 <strong>Claude</strong> 對話頁面按一下右鍵，選擇「Claude Export」，再選擇目標格式即可匯出目前對話。</p><div class=\"help-tip\"><strong>支援格式：</strong>PDF、Word、Markdown、HTML、圖片、TXT、JSON。</div><p>如需選取部分訊息，請使用彈出視窗中的「自訂選擇性匯出」。</p>"
+        },
+        {
+          "q": "支援哪些匯出格式？",
+          "a": "<p>總共支援<strong>7 種格式</strong>：</p><ul><li><strong>PDF</strong> — 適合分享與列印，支援主題</li><li><strong>Word (docx)</strong> — 適合進一步編輯</li><li><strong>Markdown</strong> — 適合知識管理與匯入其他工具</li><li><strong>HTML</strong> — 保留完整樣式，可在任何瀏覽器中開啟</li><li><strong>圖片 (PNG)</strong> — 適合社群媒體，支援主題</li><li><strong>TXT</strong> — 純文字，檔案小巧</li><li><strong>JSON</strong> — 結構化資料，適合程式化使用</li></ul>"
+        },
+        {
+          "q": "匯出的檔案儲存在哪裡？",
+          "a": "<p>所有匯出的檔案都會透過瀏覽器的下載機制儲存到您瀏覽器的<strong>預設下載目錄</strong>。您可以在 Chrome 設定 → 下載項目中查看或變更下載路徑。</p><p>批次匯出時，多個檔案會依序下載。如果您選擇同步至 Notion 或 Obsidian，檔案會直接同步到各平台而不會下載到本機。</p>"
+        }
+      ]
+    },
+    {
+      "id": "notion",
+      "title": "Notion 授權與同步",
+      "items": [
+        {
+          "q": "如何連接我的 Notion 工作區？",
+          "a": "<p>在彈出視窗的「儲存至 Notion」卡片中，點選<strong>連接 Notion</strong>按鈕：</p><ol><li>系統會先要求您登入 Claude Export 帳號（若尚未登入）</li><li>登入後會自動開啟 Notion 授權頁面</li><li>在 Notion 中選擇您要授權的頁面/資料庫，並點選「允許存取」</li><li>返回彈出視窗並選擇目標 Database 即可開始同步</li></ol><div class=\"help-tip\"><strong>注意：</strong>授權時必須至少選擇一個 Notion 頁面或資料庫，Claude Export 才能寫入內容。</div>"
+        },
+        {
+          "q": "連接後顯示「找不到已授權的 Database」怎麼辦？",
+          "a": "<p>這表示 Notion 連接已建立，但沒有與 Claude Export 共用的 Database。請依照以下步驟操作：</p><ol><li>在 Notion 中開啟目標 Database</li><li>點選右上角的 <code>⋯</code> 選單</li><li>選擇「連接」→ 搜尋並新增「Claude Export」</li><li>重新開啟擴充功能彈出視窗 — Database 現在應該會出現在下拉選單中</li></ol>"
+        },
+        {
+          "q": "Notion 連線已過期怎麼辦？",
+          "a": "<p>當 Notion 存取權杖過期時，會出現橘色警告列：「Notion 存取已過期，請重新連接以繼續同步。」</p><ol><li>點選警告列上的<strong>重新連接</strong>按鈕</li><li>Notion 授權頁面將再次開啟</li><li>授權完成後，同步將正常恢復</li></ol><div class=\"help-tip\">權杖通常會在長時間未使用或在 Notion 中撤銷權限後過期。重新連接不會刪除現有資料。</div>"
+        },
+        {
+          "q": "Notion 同步失敗怎麼辦？",
+          "a": "<p>同步失敗的原因可能很多 — 請查看錯誤訊息：</p><ul><li><strong>網路或服務忙碌：</strong>系統會自動重試最多 5 次，請稍候</li><li><strong>權限被拒（403）：</strong>目標頁面尚未與 Claude Export 共用 — 請在 Notion 中重新連接</li><li><strong>找不到頁面（404）：</strong>先前對應的 Notion 頁面可能已被刪除或丟棄 — 請選擇新的目的地</li><li><strong>內容衝突：</strong>現有頁面內容已被修改 — 請選擇「取代」模式後再次同步</li><li><strong>速率限制（429）：</strong>Notion 目前忙碌 — 請稍後再試</li></ul><div class=\"help-tip\">若問題持續，請重新整理 AI 平台頁面並重試，或中斷並重新授權 Notion 連接。若問題仍未解決，可嘗試登出 Claude Export 帳號後重新登入。</div>"
+        },
+        {
+          "q": "Notion 同步時圖片上傳失敗怎麼辦？",
+          "a": "<p>Notion 對圖片有檔案大小限制。超過限制的圖片會以預留位置取代。可能原因：</p><ul><li>圖片超過您 Notion 工作區的檔案大小限制</li><li>圖片格式不被 Notion 支援</li><li>網路問題導致圖片無法下載</li></ul><p>若部分圖片無法上傳，您會看到「已同步至 Notion，但部分內容降級」。請開啟 Notion 頁面檢查並手動補上缺失的圖片。</p>"
+        },
+        {
+          "q": "出現「權限被拒」或「頁面無法使用」錯誤怎麼辦？",
+          "a": "<p>這通常表示目標 Notion 頁面或 Database 尚未與 Claude Export 連接共用，或共用已被撤銷。解決方法：</p><ol><li>在 Notion 中開啟目標頁面或 Database</li><li>點選 <code>⋯</code> →「連接」→ 確認已新增「Claude Export」</li><li>若已新增但仍失敗，請嘗試移除並重新新增 Claude Export 連接</li><li>返回擴充功能彈出視窗並再次同步</li></ol>"
+        },
+        {
+          "q": "如何中斷 Notion 連接？",
+          "a": "<p>在擴充功能彈出視窗的<strong>設定</strong>面板中，找到連接卡片並點選 Notion 列的<strong>中斷連接</strong>按鈕。</p><p>中斷連接後，Claude Export 會撤銷 Notion 存取權杖。已同步至 Notion 的內容不會被刪除。若中斷失敗，本機資料會保留 — 您可以稍後再試。</p>"
+        }
+      ]
+    },
+    {
+      "id": "obsidian",
+      "title": "Obsidian 授權與同步",
+      "items": [
+        {
+          "q": "如何連接 Obsidian Vault？",
+          "a": "<p>Obsidian 同步使用瀏覽器的 File System Access API — <strong>無需 OAuth</strong>，所有操作都在本機執行。</p><ol><li>點選彈出視窗中「儲存至 Obsidian」卡片的設定按鈕以開啟 Obsidian 設定頁面</li><li>點選「選擇 Vault」並選擇您的 Obsidian Vault 根目錄（包含 <code>.obsidian</code> 資料夾的資料夾）</li><li>選擇筆記目錄和選用的素材目錄</li><li>點選「驗證並儲存」以完成連接</li></ol><div class=\"help-tip\"><strong>注意：</strong>需要 Chrome 86+ 才能支援 File System Access API。</div>"
+        },
+        {
+          "q": "如何選擇筆記和素材目錄？",
+          "a": "<p>在 Obsidian 設定頁面中：</p><ul><li><strong>筆記目錄：</strong>同步的 Markdown 檔案儲存位置 — 必須位於 Vault 內</li><li><strong>素材目錄：</strong>圖片和其他媒體儲存位置 — 若未設定則預設為筆記目錄</li></ul><p>路徑不可包含 <code>..</code>、<code>.obsidian</code> 或無效的系統字元。所有選擇的目錄都必須位於 Vault 根目錄內。</p>"
+        },
+        {
+          "q": "Vault 權限已過期怎麼辦？",
+          "a": "<p>瀏覽器重新啟動或長時間未使用後，Vault 寫入權限可能會過期。同步時您會看到「Vault 權限已過期，需要重新授權」。</p><ol><li>開啟擴充功能彈出視窗的設定面板</li><li>點選 Obsidian 列的<strong>設定</strong>按鈕以開啟設定</li><li>再次點選「驗證並儲存」 — 瀏覽器會再次提示權限</li><li>允許存取以恢復同步</li></ol><div class=\"help-tip\">若權限持續過期，請檢查瀏覽器是否以無痕模式執行（無痕模式不支援持久的檔案系統權限）。</div>"
+        },
+        {
+          "q": "Obsidian 同步失敗怎麼辦？",
+          "a": "<p>常見失敗原因與解決方案：</p><ul><li><strong>Vault 未連接：</strong>請先在設定中連接 Obsidian Vault</li><li><strong>目錄缺失：</strong>先前選擇的筆記目錄可能已被刪除或重新命名 — 請在設定中重新選擇</li><li><strong>寫入衝突：</strong>相同路徑已存在來自其他來源的筆記 — 請重新命名筆記或刪除衝突檔案</li><li><strong>另一項同步進行中：</strong>同一時間僅允許一個 Obsidian 同步任務 — 請等候目前任務完成</li></ul><p>若同步失敗，筆記不會被建立或修改 — 可放心重試。</p>"
+        },
+        {
+          "q": "出現「不是 Vault 根目錄」怎麼辦？",
+          "a": "<p>這表示選擇的資料夾不包含 <code>.obsidian</code> 目錄。雖然選擇子目錄仍可寫入檔案，但 <code>obsidian://</code> 連結會顯示「找不到 Vault」而失敗。</p><p>請再次點選「選擇 Vault」並選擇包含 <code>.obsidian</code> 資料夾的<strong>父資料夾</strong>（即在 Obsidian 中註冊的 Vault 根目錄）。</p>"
+        },
+        {
+          "q": "Obsidian 同步時部分圖片缺失怎麼辦？",
+          "a": "<p>為確保穩定性，每則筆記最多保留<strong>50 張圖片</strong> — 超出部分會略過。其他可能原因：</p><ul><li>圖片來自不支援的網域或格式</li><li>圖片超過 8MB 安全限制且無法壓縮</li><li>動態 GIF 或 SVG 超出壓縮能力</li></ul><p>若同步後有圖片警告，狀態會顯示「已同步但有警告」。請開啟筆記檢查並手動補上缺失的圖片。</p>"
+        },
+        {
+          "q": "如何中斷 Obsidian 連接？",
+          "a": "<p>在擴充功能彈出視窗的<strong>設定</strong>面板中，找到連接卡片並點選 Obsidian 列的<strong>中斷連接</strong>按鈕。</p><p>中斷連接後，Vault 控制代碼會從本機儲存中移除。已同步至 Vault 的筆記和素材檔案不會被刪除。如需再次使用，您需要重新選擇並授權 Vault。</p>"
+        }
+      ]
+    },
+    {
+      "id": "general",
+      "title": "一般問題",
+      "items": [
+        {
+          "q": "免費版和 Pro 有什麼差別？",
+          "a": "<p>免費方案允許<strong>每天 3 次匯出</strong>、2 個基本主題，以及 1 次批次匯出試用。</p><p>Pro 解鎖所有功能：</p><ul><li>無限本機匯出</li><li>無限批次匯出</li><li>8 個出版品質版面主題</li><li>隱藏浮水印</li><li>無縫 Notion / Obsidian 自動同步</li><li>情境式專業範本</li><li>匯出前品質檢查</li></ul><div class=\"help-tip\">Pro 提供月費（$4.99）、年費（$29.99）和終身（$49.99）方案。</div>"
+        },
+        {
+          "q": "免費方案每天可以匯出幾次？",
+          "a": "<p>免費方案允許<strong>每天 3 次匯出</strong>（依 UTC 日期重置）。</p><p>Notion 同步也會消耗匯出配額（去重任務除外）。Obsidian 同步不消耗配額。升級至 Pro 即可享有無限匯出。</p>"
+        },
+        {
+          "q": "主題設定有什麼作用？",
+          "a": "<p>主題決定匯出文件的視覺版面風格。<strong>主題僅套用於 PDF 和圖片匯出</strong> — 其他格式不受影響。</p><p>提供 10 種主題：</p><ul><li><strong>免費：</strong>極簡（預設）、自然</li><li><strong>Pro：</strong>午夜深色、編輯、終端機、報紙、極光、麥肯錫、牛津、午夜玫瑰</li></ul>"
+        },
+        {
+          "q": "如何確保資料隱私？",
+          "a": "<p>所有解析和匯出操作都是<strong>100% 在瀏覽器本機執行</strong> — 對話內容絕不會上傳至 Claude Export 伺服器。</p><ul><li>文件生成和格式轉換都在本機進行</li><li>僅當對話包含圖片時，擴充功能才會從原始 AI 平台的可信 CDN 擷取圖片位元組以進行版面配置</li><li>使用次數儲存在本機</li><li>Notion 同步僅將您選擇的對話直接傳送至您的 Notion 工作區</li><li>Obsidian 同步完全在本機進行 — 檔案保留在您的裝置上</li><li>付款由 Paddle 安全處理 — 不收集任何信用卡資料</li></ul>"
+        },
+        {
+          "q": "支援哪個 AI 平台？",
+          "a": "<p><strong>Claude Export</strong> 專用於匯出 <strong>Claude</strong> 對話，支援網址為 <strong>claude.ai</strong>。開啟該平台的對話頁面後即可使用擴充功能。</p>"
+        },
+        {
+          "q": "批次匯出可以選取多少個對話？",
+          "a": "<p>批次匯出一次最多允許<strong>10 個對話</strong>。超過此數量會顯示：「為確保最佳匯出體驗，每批最多支援 10 個。請分批匯出。」</p><p>若側邊欄未顯示對話列表，請展開側邊欄或重新整理頁面後再試。</p>"
+        }
+      ]
+    }
+  ]
+}

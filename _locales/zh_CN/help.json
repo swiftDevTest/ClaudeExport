@@ -1,0 +1,132 @@
+{
+  "categories": [
+    {
+      "id": "export",
+      "title": "导出方式",
+      "items": [
+        {
+          "q": "如何导出当前对话？",
+          "a": "<p>点击浏览器工具栏中的扩展图标打开弹窗，在<strong>一键导出</strong>区域选择目标格式（PDF / Word / Markdown / HTML / Image / TXT），即可导出当前页面的完整对话。</p><div class=\"help-tip\"><strong>提示：</strong>导出前可以在「设置」面板中调整排版主题、内容选项（标题、时间、水印等），主题仅对 PDF 和 Image 生效。</div>"
+        },
+        {
+          "q": "如何批量导出多个对话？",
+          "a": "<p>在弹窗中点击<strong>批量导出</strong>横幅，页面会弹出批量导出面板，自动从侧边栏抓取会话列表。</p><ol><li>在面板中搜索或勾选需要导出的会话（最多 10 个）</li><li>选择导出格式和主题</li><li>点击「导出」按钮，系统会逐个导出并自动保存</li></ol><div class=\"help-tip\"><strong>Pro 会员</strong>可无限次使用批量导出；免费用户登录后可免费体验 <strong>1 次</strong>。</div>"
+        },
+        {
+          "q": "如何只导出部分消息？",
+          "a": "<p>在弹窗中点击<strong>自定义选择性导出</strong>横幅，进入消息选择模式：</p><ol><li>每条消息左侧会出现一个圆形复选框，点击勾选要导出的消息</li><li>可以使用浮动选择栏的「全选 AI」快速选中所有 AI 回复</li><li>选择导出格式后点击「导出」</li><li>完成后点击「退出」退出选择模式</li></ol><p>选择模式支持滚动和缩放，复选框会自动跟随消息位置更新。</p>"
+        },
+        {
+          "q": "如何通过右键菜单快速导出？",
+          "a": "<p>在 <strong>Claude</strong> 对话页面右键点击，选择「Claude Export」，再选择目标格式即可导出当前对话。</p><div class=\"help-tip\"><strong>支持的格式：</strong>PDF、Word、Markdown、HTML、Image、TXT、JSON。</div><p>如需选择部分消息，请使用弹窗中的「自定义选择性导出」。</p>"
+        },
+        {
+          "q": "支持哪些导出格式？",
+          "a": "<p>共支持 <strong>7 种</strong>导出格式：</p><ul><li><strong>PDF</strong> — 适合分享和打印，支持排版主题</li><li><strong>Word (docx)</strong> — 适合二次编辑</li><li><strong>Markdown</strong> — 适合知识管理和导入其他工具</li><li><strong>HTML</strong> — 保留完整样式，浏览器直接打开</li><li><strong>Image (PNG)</strong> — 适合社交媒体分享，支持排版主题</li><li><strong>TXT</strong> — 纯文本，体积小</li><li><strong>JSON</strong> — 结构化数据，适合程序处理</li></ul>"
+        },
+        {
+          "q": "导出的文件保存在哪里？",
+          "a": "<p>所有导出文件通过浏览器的下载功能保存到你的<strong>默认下载目录</strong>。可以在 Chrome 设置 → 下载内容中查看或修改下载路径。</p><p>批量导出时，多个文件会依次下载；如果选择了 Notion 或 Obsidian 同步，则不会下载到本地，而是直接同步到对应平台。</p>"
+        }
+      ]
+    },
+    {
+      "id": "notion",
+      "title": "Notion 授权与同步",
+      "items": [
+        {
+          "q": "如何连接 Notion 工作区？",
+          "a": "<p>在弹窗的「Save to Notion」卡片中点击<strong>连接 Notion</strong>按钮：</p><ol><li>系统会先要求你登录 Claude Export 账号（如未登录）</li><li>登录后自动打开 Notion 授权页面</li><li>在 Notion 中选择要授权的页面/数据库，点击「允许访问」</li><li>授权完成后回到弹窗，选择目标 Database 即可开始同步</li></ol><div class=\"help-tip\"><strong>注意：</strong>授权时需要选择至少一个 Notion 页面或数据库，Claude Export 才能向其写入内容。</div>"
+        },
+        {
+          "q": "授权后提示\"未找到授权的 Database\"怎么办？",
+          "a": "<p>这说明 Notion 连接已建立，但没有向 Claude Export 授权任何 Database。请按以下步骤操作：</p><ol><li>打开 Notion 中的目标 Database</li><li>点击右上角的 <code>⋯</code> 菜单</li><li>选择「连接」→ 搜索并添加「Claude Export」</li><li>回到扩展弹窗重新打开，Database 下拉列表应能显示该数据库</li></ol>"
+        },
+        {
+          "q": "Notion 连接过期需要重新连接怎么办？",
+          "a": "<p>当 Notion 访问令牌过期时，弹窗会显示橙色警告条「Notion 访问已过期，请重新连接以继续同步」。</p><ol><li>点击警告条上的<strong>重新连接</strong>按钮</li><li>系统会重新打开 Notion 授权页面</li><li>完成授权后即可恢复正常同步</li></ol><div class=\"help-tip\">令牌通常在长时间未使用或 Notion 端撤销权限后过期，重新连接不会丢失已有数据。</div>"
+        },
+        {
+          "q": "Notion 同步失败怎么办？",
+          "a": "<p>同步失败可能有多种原因，请根据错误提示判断：</p><ul><li><strong>网络或服务繁忙：</strong>系统会自动重试最多 5 次，请耐心等待</li><li><strong>权限不足 (403)：</strong>目标页面未向 Claude Export 授权，请在 Notion 中重新连接</li><li><strong>页面不存在 (404)：</strong>之前映射的 Notion 页面可能已被删除或移入回收站，请重新选择目标</li><li><strong>内容冲突：</strong>已有页面内容被修改，请选择「替换」模式重新同步</li><li><strong>限流 (429)：</strong>Notion 服务繁忙，请稍后重试</li></ul><div class=\"help-tip\">如果问题持续存在，请刷新 AI 平台页面后重试，或断开 Notion 连接后重新授权。若问题仍未解决，可尝试退出 Claude Export 账号后重新登录。</div>"
+        },
+        {
+          "q": "Notion 同步时图片无法上传怎么办？",
+          "a": "<p>Notion 对图片有大小限制，超出限制的图片会被替换为占位符。可能的原因：</p><ul><li>图片超过 Notion 工作区的文件大小上限</li><li>图片格式不被 Notion 支持</li><li>网络问题导致图片获取失败</li></ul><p>同步完成后，如果部分图片未能上传，会显示「已同步到 Notion，但有部分内容降级」提示。打开 Notion 页面检查对应位置，可手动补充图片。</p>"
+        },
+        {
+          "q": "提示\"权限不足\"或\"页面不可用\"怎么办？",
+          "a": "<p>这通常是因为目标 Notion 页面或 Database 未向 Claude Export 连接授权，或授权后被撤销。解决方法：</p><ol><li>打开 Notion 中的目标页面或 Database</li><li>点击 <code>⋯</code> →「连接」→ 确认「Claude Export」已添加</li><li>如果已添加但仍报错，尝试先移除再重新添加 Claude Export 连接</li><li>回到扩展弹窗重新同步</li></ol>"
+        },
+        {
+          "q": "如何断开 Notion 连接？",
+          "a": "<p>在扩展弹窗的<strong>设置</strong>面板中，找到 Connections 卡片，点击 Notion 行的<strong>断开连接</strong>按钮。</p><p>断开后，Claude Export 会撤销 Notion 访问令牌，已同步到 Notion 的内容不会被删除。如果断开失败，本地数据会保留，可稍后重试。</p>"
+        }
+      ]
+    },
+    {
+      "id": "obsidian",
+      "title": "Obsidian 授权与同步",
+      "items": [
+        {
+          "q": "如何连接 Obsidian Vault？",
+          "a": "<p>Obsidian 同步基于浏览器的文件系统访问 API，<strong>无需 OAuth 授权</strong>，全部在本地完成。</p><ol><li>在弹窗「Save to Obsidian」卡片中点击配置按钮，打开 Obsidian 设置页</li><li>点击「选择 Vault」按钮，选择你的 Obsidian Vault 根目录（包含 <code>.obsidian</code> 文件夹的目录）</li><li>选择笔记存储目录和资源目录（可选）</li><li>点击「验证并保存」，完成连接</li></ol><div class=\"help-tip\"><strong>注意：</strong>需要 Chrome 86+ 版本支持文件系统访问 API。</div>"
+        },
+        {
+          "q": "如何选择笔记目录和资源目录？",
+          "a": "<p>在 Obsidian 设置页中：</p><ul><li><strong>笔记目录：</strong>同步的 Markdown 文件存放位置，必须在 Vault 内部</li><li><strong>资源目录：</strong>图片等媒体资源存放位置，如不设置则与笔记目录相同</li></ul><p>路径不能包含 <code>..</code>、<code>.obsidian</code> 或系统非法字符。所选目录必须在 Vault 根目录内部。</p>"
+        },
+        {
+          "q": "Vault 权限失效了怎么办？",
+          "a": "<p>浏览器重启或长时间未使用后，Vault 的写入权限可能失效。表现是同步时提示「Vault 权限已失效，需要重新授权」。</p><ol><li>打开扩展弹窗的设置面板</li><li>点击 Obsidian 行的<strong>配置</strong>按钮进入设置页</li><li>重新点击「验证并保存」，浏览器会重新弹出权限请求</li><li>允许后即可恢复同步</li></ol><div class=\"help-tip\">如果反复失效，请检查浏览器是否在隐身模式下运行（隐身模式不支持文件系统持久权限）。</div>"
+        },
+        {
+          "q": "Obsidian 同步失败怎么办？",
+          "a": "<p>常见失败原因和解决方案：</p><ul><li><strong>未连接 Vault：</strong>请先在设置中连接 Obsidian Vault</li><li><strong>目录丢失：</strong>之前选择的笔记目录可能已被删除或重命名，请在设置中重新选择</li><li><strong>写入冲突：</strong>同一路径已有其他来源的笔记，请修改笔记标题或删除冲突文件</li><li><strong>已有任务运行中：</strong>同一时间只允许一个 Obsidian 同步任务，请等待当前任务完成</li></ul><p>如果同步失败，笔记不会被创建或修改，可安全重试。</p>"
+        },
+        {
+          "q": "提示\"不是 Vault 根目录\"怎么办？",
+          "a": "<p>这说明你选择的文件夹内部没有 <code>.obsidian</code> 目录。虽然选错子目录仍然可以写入文件，但 <code>obsidian://</code> 链接会以「Vault not found」失败。</p><p>请重新点击「选择 Vault」，选择包含 <code>.obsidian</code> 文件夹的<strong>父级目录</strong>（即 Obsidian 中注册的 Vault 根目录）。</p>"
+        },
+        {
+          "q": "Obsidian 同步时部分图片丢失怎么办？",
+          "a": "<p>为确保同步稳定性，每篇笔记最多保留 <strong>50 张</strong>图片，超出的会被跳过。其他可能导致图片缺失的原因：</p><ul><li>图片来自不支持的域名或格式</li><li>图片超过 8MB 安全限制且无法压缩</li><li>动态 GIF 或 SVG 超过压缩能力</li></ul><p>同步完成后如果有图片警告，会显示「已同步，有警告」状态。打开笔记检查缺失位置，可手动补充。</p>"
+        },
+        {
+          "q": "如何断开 Obsidian 连接？",
+          "a": "<p>在扩展弹窗的<strong>设置</strong>面板中，找到 Connections 卡片，点击 Obsidian 行的<strong>断开连接</strong>按钮。</p><p>断开后，Vault 句柄会从本地存储中移除，已同步到 Vault 的笔记和资源文件不会被删除。重新使用时需要重新选择 Vault 并授权。</p>"
+        }
+      ]
+    },
+    {
+      "id": "general",
+      "title": "通用问题",
+      "items": [
+        {
+          "q": "免费版和 Pro 版有什么区别？",
+          "a": "<p>免费版每天可导出 <strong>3 次</strong>，可使用 2 个基础主题，批量导出可免费体验 1 次。</p><p>Pro 版解锁全部能力：</p><ul><li>无限次本地导出</li><li>无限次批量导出</li><li>8 个出版级排版主题</li><li>隐藏水印</li><li>Notion / Obsidian 无缝自动同步</li><li>场景化专业模板</li><li>导出前质量检查</li></ul><div class=\"help-tip\">Pro 提供月度 ($4.99)、年度 ($29.99) 和终身 ($49.99) 三种方案。</div>"
+        },
+        {
+          "q": "免费版每天可以导出多少次？",
+          "a": "<p>免费版每天可导出 <strong>3 次</strong>（按 UTC 日期重置）。</p><p>Notion 同步也会消耗导出额度（去重任务除外）。Obsidian 同步不消耗额度。升级 Pro 后无次数限制。</p>"
+        },
+        {
+          "q": "主题设置有什么作用？",
+          "a": "<p>主题决定了导出文档的视觉排版风格。<strong>主题仅对 PDF 和 Image 导出生效</strong>，其他格式不受影响。</p><p>共 10 个主题：</p><ul><li><strong>免费：</strong>极简纯白 (default)、自然原生 (natural)</li><li><strong>Pro：</strong>暗黑深邃 (midnight)、学术社评 (editorial)、赛博终端 (terminal)、复古印报 (newsprint)、流光极光 (aurora)、麦肯锡商务 (mckinsey)、学术深青 (oxford)、午夜玫瑰 (midnightRose)</li></ul>"
+        },
+        {
+          "q": "数据隐私如何保障？",
+          "a": "<p>所有解析和导出操作<strong>100% 在浏览器本地完成</strong>，聊天内容不会上传到 Claude Export 服务器。</p><ul><li>文档生成、格式转换均在本地进行</li><li>仅当对话包含图片时，扩展会从原 AI 平台可信 CDN 获取图片字节用于排版</li><li>额度计数保存在本地</li><li>Notion 同步仅将你选择的对话直接发送到你的 Notion 工作区</li><li>Obsidian 同步完全本地，文件保存在你的设备上</li><li>支付通过 Paddle 安全处理，不收集银行卡信息</li></ul>"
+        },
+        {
+          "q": "支持哪个 AI 平台？",
+          "a": "<p><strong>Claude Export</strong> 专用于导出 <strong>Claude</strong> 对话，适配地址为 <strong>claude.ai</strong>。打开该平台的对话页面后，扩展图标即可使用。</p>"
+        },
+        {
+          "q": "批量导出最多可选多少个对话？",
+          "a": "<p>批量导出一次最多选择 <strong>10 个</strong>会话，超出提示「为了导出体验，一次最多导出 10 个，请分多次导出」。</p><p>如果侧边栏没有显示会话列表，请先展开侧边栏或刷新页面后再试。</p>"
+        }
+      ]
+    }
+  ]
+}

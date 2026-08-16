@@ -11,6 +11,20 @@ import {
   yieldToBrowser
 } from '../utils.js';
 
+// 动态代码围栏：代码内容含 ``` 时，固定三反引号会提前闭合，导致后续内容溢出代码块。
+// 按内容中最长反引号序列 +1 确定围栏长度（与 markdown.js getCodeFence 一致）。
+function getCodeFence(text) {
+  var maxRun = 0;
+  String(text || "").replace(/`{3,}/g, function (match) {
+    maxRun = Math.max(maxRun, match.length);
+    return match;
+  });
+  var size = Math.max(3, maxRun + 1);
+  var fence = "";
+  for (var i = 0; i < size; i++) fence += "`";
+  return fence;
+}
+
 function getPlainTextWithGeneratedFileLink(block, metadata) {
   var text = getInlinePlainText(block);
   if (!block || (!block.generatedFile && !Array.isArray(block.generatedFiles))) return text;
@@ -88,8 +102,8 @@ export async function buildTxtBlob(messages, metadata, settings, options) {
       switch (block.type) {
         case "heading":
           var level = Math.min(6, block.level || 1);
-          var hashes = "";
-          for (var k = 0; k < level; k++) hashes += "#";
+          // 优化：使用 String.prototype.repeat() 替代循环拼接
+          var hashes = "#".repeat(level);
           lines.push(hashes + " " + getPlainTextWithGeneratedFileLink(block, metadata));
           lines.push("");
           break;
@@ -100,9 +114,10 @@ export async function buildTxtBlob(messages, metadata, settings, options) {
           break;
 
         case "code":
-          lines.push("```" + (block.language || ""));
+          var codeFence = getCodeFence(block && block.text);
+          lines.push(codeFence + (block.language || ""));
           lines.push(block.text || "");
-          lines.push("```");
+          lines.push(codeFence);
           lines.push("");
           break;
 

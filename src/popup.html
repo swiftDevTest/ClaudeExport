@@ -4,6 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Claude Export</title>
+  <!-- Reserve the action popup's full layout before external CSS and async
+       extension startup finish, so Chrome never keeps the empty-popup size. -->
+  <style>
+    html, body { margin: 0; width: 360px; min-width: 360px; min-height: 540px; background: #eaf6f1; }
+    .popup-container { width: 360px; min-width: 360px; min-height: 540px; }
+  </style>
   <link rel="stylesheet" href="popup.css">
   <link rel="stylesheet" href="obsidian-popup.css">
 </head>
@@ -179,6 +185,9 @@
               <div class="notion-sync-heading">
                 <div class="notion-sync-title">
                   <h3>Save to Notion</h3>
+                  <button type="button" class="sync-help-btn" id="btn-help-notion" data-i18n-title="help_category_notion" title="Notion help" aria-label="Notion help">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                  </button>
                   <button type="button" class="cv-help-tooltip notion-help-tooltip" id="notion-help-tooltip" aria-label="Notion sync data disclosure">
                     <span class="cv-help-icon">?</span>
                     <span class="cv-tooltip-text" id="notion-tooltip-text">When you sync, the selected conversation and included images are sent directly to your connected Notion workspace. Claude Export does not receive or store this content.</span>
@@ -208,7 +217,12 @@
           <!-- Obsidian 同步：与 Notion 使用同一层级的简洁操作行 -->
           <div class="obsidian-sync-section" id="obsidian-sync-section" style="display: none;">
             <div class="obsidian-sync-heading">
-              <h3>Save to Obsidian</h3>
+              <div class="sync-heading-title-row">
+                <h3>Save to Obsidian</h3>
+                <button type="button" class="sync-help-btn" id="btn-help-obsidian" data-i18n-title="help_category_obsidian" title="Obsidian help" aria-label="Obsidian help">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                </button>
+              </div>
               <p id="obsidian-connection-status">Local Markdown & assets</p>
             </div>
             <div class="obsidian-sync-main">
@@ -274,6 +288,7 @@
               <span class="cv-help-icon">?</span>
               <span class="cv-tooltip-text" id="theme-tooltip-text">Themes apply only to PDF and Image exports. Other formats are not affected.</span>
             </button>
+            <button type="button" class="theme-preview-link" id="theme-preview-btn" data-i18n="popup_theme_preview">效果预览</button>
           </h3>
           <div class="settings-theme-grid is-initializing" aria-busy="true">
             <div class="theme-option active" data-theme="default">
@@ -317,6 +332,11 @@
             <div class="theme-option theme-option--pro" data-theme="oxford">
               <span class="theme-circle theme-circle--oxford"></span>
               <span class="theme-name">Oxford</span>
+              <span class="theme-pro-badge">PRO</span>
+            </div>
+            <div class="theme-option theme-option--pro" data-theme="midnightRose">
+              <span class="theme-circle theme-circle--midnight-rose"></span>
+              <span class="theme-name" data-i18n="export_theme_midnightRose">Midnight Rose</span>
               <span class="theme-pro-badge">PRO</span>
             </div>
           </div>
@@ -466,6 +486,15 @@
               <a href="mailto:chatvaultaisupport@gmail.com" class="contact-email-link">chatvaultaisupport@gmail.com</a>
             </div>
           </div>
+
+          <button type="button" class="help-center-card" id="btn-open-help-center">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+              <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+            <span data-i18n="popup_help_center">Help Center</span>
+          </button>
         </div>
       </div>
 

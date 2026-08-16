@@ -155,6 +155,12 @@
       var fallback = node.getAttribute("title") || "";
       node.setAttribute("title", t(key, fallback));
     });
+
+    scope.querySelectorAll("[data-i18n-placeholder]").forEach(function (node) {
+      var key = node.getAttribute("data-i18n-placeholder");
+      var fallback = node.getAttribute("placeholder") || "";
+      node.setAttribute("placeholder", t(key, fallback));
+    });
   }
 
   globalThis.CHATVAULT_I18N = {

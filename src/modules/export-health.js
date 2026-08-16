@@ -38,10 +38,17 @@
 
     let isZh = false;
     try {
-      if (typeof chrome !== "undefined" && chrome.i18n && typeof chrome.i18n.getUILanguage === "function") {
-        const lang = chrome.i18n.getUILanguage() || "";
-        isZh = lang.startsWith("zh");
+      // 与 popup.js/content.js 保持一致：优先采用用户手动选择的语言，
+      // 否则回退到浏览器 UI 语言。原先只看 chrome.i18n.getUILanguage()，
+      // 用户在设置里切到英文但浏览器是中文时，健康提示仍是中文，与界面不一致。
+      let lang = "";
+      if (globalThis.CHATVAULT_I18N && typeof globalThis.CHATVAULT_I18N.getLanguage === "function") {
+        lang = globalThis.CHATVAULT_I18N.getLanguage() || "";
       }
+      if (!lang && typeof chrome !== "undefined" && chrome.i18n && typeof chrome.i18n.getUILanguage === "function") {
+        lang = chrome.i18n.getUILanguage() || "";
+      }
+      isZh = /^zh/i.test(lang);
     } catch (e) {}
 
     let userCount = 0;

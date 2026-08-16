@@ -1,0 +1,430 @@
+/* ===== Help Center Styles ===== */
+:root {
+  --help-bg: #f7f8fa;
+  --help-surface: #ffffff;
+  --help-border: #e4e7eb;
+  --help-text: #1a1d23;
+  --help-text-secondary: #5f6b7a;
+  --help-primary: var(--primary-color, #c96442);
+  --help-primary-light: var(--accent-wash, #fff1e8);
+  --help-shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
+  --help-radius: 12px;
+  --help-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --help-bg: #0f1115;
+    --help-surface: #1a1d23;
+    --help-border: #2a2e36;
+    --help-text: #e4e7eb;
+    --help-text-secondary: #9aa4b2;
+    --help-primary: var(--primary-color, #c96442);
+    --help-primary-light: #1e2433;
+    --help-shadow: 0 1px 3px rgba(0,0,0,.3);
+  }
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: var(--help-font);
+  background: var(--help-bg);
+  color: var(--help-text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.help-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== Header ===== */
+.help-header {
+  background: var(--help-surface);
+  border-bottom: 1px solid var(--help-border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--help-shadow);
+}
+
+.help-header-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.help-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.help-header-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+}
+
+.help-header-titles h1 {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.help-header-titles p {
+  font-size: 13px;
+  color: var(--help-text-secondary);
+  margin-top: 2px;
+}
+
+.help-header-tools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.help-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.help-search-icon {
+  position: absolute;
+  left: 10px;
+  color: var(--help-text-secondary);
+  pointer-events: none;
+}
+
+.help-search-input {
+  padding: 8px 12px 8px 36px;
+  border: 1px solid var(--help-border);
+  border-radius: 8px;
+  background: var(--help-bg);
+  color: var(--help-text);
+  font-size: 14px;
+  width: 240px;
+  transition: border-color .2s, box-shadow .2s;
+}
+
+.help-search-input:focus {
+  outline: none;
+  border-color: var(--help-primary);
+  box-shadow: 0 0 0 3px rgba(var(--cv-primary-rgb, 201, 100, 66), .12);
+}
+
+.help-language-select {
+  padding: 8px 32px 8px 12px;
+  border: 1px solid var(--help-border);
+  border-radius: 8px;
+  background: var(--help-bg);
+  color: var(--help-text);
+  font-size: 14px;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+
+/* ===== Body Layout ===== */
+.help-body {
+  max-width: 1100px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 24px;
+  display: flex;
+  gap: 24px;
+  flex: 1;
+}
+
+/* ===== Sidebar ===== */
+.help-sidebar {
+  width: 200px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 92px;
+  align-self: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.help-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--help-text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  transition: background .15s, color .15s;
+}
+
+.help-nav-item:hover {
+  background: var(--help-primary-light);
+  color: var(--help-primary);
+}
+
+.help-nav-item.active {
+  background: var(--help-primary-light);
+  color: var(--help-primary);
+}
+
+.help-nav-item svg {
+  flex-shrink: 0;
+}
+
+/* ===== Content ===== */
+.help-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.help-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 60px 0;
+  color: var(--help-text-secondary);
+}
+
+.help-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--help-border);
+  border-top-color: var(--help-primary);
+  border-radius: 50%;
+  animation: help-spin .8s linear infinite;
+}
+
+@keyframes help-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ===== Q&A Section ===== */
+.help-section {
+  margin-bottom: 32px;
+  scroll-margin-top: 100px;
+}
+
+.help-section-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--help-border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.help-section-title .help-section-icon {
+  color: var(--help-primary);
+}
+
+/* ===== Q&A Item (Accordion) ===== */
+.help-qa {
+  background: var(--help-surface);
+  border: 1px solid var(--help-border);
+  border-radius: var(--help-radius);
+  margin-bottom: 10px;
+  overflow: hidden;
+  transition: box-shadow .2s;
+}
+
+.help-qa:hover {
+  box-shadow: var(--help-shadow);
+}
+
+.help-qa-question {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  user-select: none;
+  transition: background .15s;
+}
+
+.help-qa-question:hover {
+  background: var(--help-primary-light);
+}
+
+.help-qa-chevron {
+  flex-shrink: 0;
+  transition: transform .25s;
+  color: var(--help-text-secondary);
+}
+
+.help-qa.open .help-qa-chevron {
+  transform: rotate(180deg);
+}
+
+.help-qa-answer {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .3s ease;
+}
+
+.help-qa.open .help-qa-answer {
+  max-height: 2000px;
+}
+
+.help-qa-answer-inner {
+  padding: 0 18px 16px;
+  font-size: 14px;
+  color: var(--help-text-secondary);
+  line-height: 1.7;
+}
+
+.help-qa-answer-inner p {
+  margin-bottom: 8px;
+}
+
+.help-qa-answer-inner ol,
+.help-qa-answer-inner ul {
+  margin: 8px 0 8px 20px;
+}
+
+.help-qa-answer-inner li {
+  margin-bottom: 4px;
+}
+
+.help-qa-answer-inner strong {
+  color: var(--help-text);
+  font-weight: 600;
+}
+
+.help-qa-answer-inner code {
+  background: var(--help-bg);
+  border: 1px solid var(--help-border);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 13px;
+  font-family: "SF Mono", "Fira Code", Consolas, monospace;
+}
+
+.help-qa-answer-inner .help-tip {
+  background: var(--help-primary-light);
+  border-left: 3px solid var(--help-primary);
+  border-radius: 0 8px 8px 0;
+  padding: 10px 14px;
+  margin: 10px 0;
+  font-size: 13px;
+  color: var(--help-text);
+}
+
+.help-qa-answer-inner .help-tip strong {
+  color: var(--help-primary);
+}
+
+/* Search highlight */
+.help-qa.hidden {
+  display: none;
+}
+
+help-mark {
+  background: rgba(255, 213, 79, .5);
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+/* No results */
+.help-no-results {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--help-text-secondary);
+}
+
+.help-no-results svg {
+  margin-bottom: 12px;
+  opacity: .4;
+}
+
+/* ===== Footer ===== */
+.help-footer {
+  background: var(--help-surface);
+  border-top: 1px solid var(--help-border);
+  padding: 20px 24px;
+}
+
+.help-footer-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--help-text-secondary);
+  flex-wrap: wrap;
+}
+
+.help-footer-email {
+  color: var(--help-primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.help-footer-email:hover {
+  text-decoration: underline;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+  .help-header-inner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .help-header-tools {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .help-search-input {
+    width: 100%;
+  }
+
+  .help-language-select {
+    width: 100%;
+  }
+
+  .help-body {
+    flex-direction: column;
+    padding: 16px;
+  }
+
+  .help-sidebar {
+    width: 100%;
+    position: static;
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--help-border);
+  }
+
+  .help-nav-item {
+    flex-shrink: 0;
+    padding: 8px 12px;
+  }
+}

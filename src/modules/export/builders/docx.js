@@ -2,6 +2,7 @@ import { getPlatformLabel, t, formatDateDisplay, sanitizeFilename, notifyProgres
 import { preloadImageForDocx, calculateWordImageDimensions } from '../media.js';
 import { createZip } from '../zip.js';
 import { getWordTheme } from '../themes/word.js';
+import { getMathAssetKey, mathFallbackText, preloadMathAssets } from '../math.js';
 
 var DOCX_MAX_IMAGES = 50;
 var DOCX_MAX_AGGREGATE_IMAGE_BYTES = 32 * 1024 * 1024;
@@ -116,10 +117,18 @@ export function wordParagraph(text, options) {
         color: isCode ? (opts.inlineCodeText || "0F6574") : (segment.href ? "0563C1" : opts.color),
         preserveSegmentSpace: true
       });
+      var mathCached = isMath && opts.mathImageCache && opts.mathImageCache["__math__" + getMathAssetKey({
+        type: "math", text: segment.text, display: false
+      }, 18)];
       var segmentText = isMath
         ? formatLatexUnicode("\\(" + sanitizeInlineSegmentText(segment.text || "").trim() + "\\)")
         : segment.text;
-      var runXml = wordRun(segmentText, chunkOpts);
+      // Word supports drawing elements inside a text run. Using the same
+      // cached KaTeX PNG preserves fractions, matrices, and delimiters inline
+      // instead of degrading them to the Unicode fallback.
+      var runXml = mathCached
+        ? wordImageRun(mathCached, "Formula: " + (segment.text || ""), mathCached.width * 9525, mathCached.height * 9525)
+        : wordRun(segmentText, chunkOpts);
       var relId = getDocxHyperlinkRelId(opts.hyperlinks, segment.href);
       return relId
         ? '<w:hyperlink r:id="' + xmlEscape(relId) + '" w:history="1">' + runXml + "</w:hyperlink>"
@@ -342,6 +351,7 @@ export function wordBlocks(blocks, imageCache, alignRight, themeWord, role, hype
   var xml = "";
   var isUser = role === "user";
   var messageStyle = getMessageWordStyle(themeWord, isUser, alignRight, hyperlinks, flatLayout);
+  messageStyle.mathImageCache = imageCache;
   // Right-align only likely single-line user prompts; wrapped text should start from the left.
   var messageTextAlign = alignRight && role === "user" ? "right" : undefined;
   for (var blockIndex = 0; blockIndex < blocks.length; blockIndex += 1) {
@@ -362,6 +372,19 @@ export function wordBlocks(blocks, imageCache, alignRight, themeWord, role, hype
         align: messageTextAlign,
         segments: getPrefixedInlineSegments("", block.segments)
       }, messageStyle));
+    } else if (block.type === "math") {
+      var mathCached = imageCache && imageCache["__math__" + getMathAssetKey(block, 18)];
+      if (mathCached) {
+        xml += wordImageParagraph(mathCached, "Formula: " + (block.text || ""), alignRight);
+      } else {
+        xml += wordParagraph(mathFallbackText(block.text), mergeWordOptions({
+          spacing: 120,
+          color: themeWord.colorText,
+          align: messageTextAlign,
+          font: "Cambria Math",
+          plainText: true
+        }, messageStyle));
+      }
     } else if (block.type === "code") {
       xml += wordCodeBlock(block, alignRight, themeWord);
     } else if (block.type === "list") {
@@ -452,6 +475,8 @@ export async function buildDocxBlob(messages, metadata, settingsInput, options) 
 
   throwIfAborted();
   notifyProgress(options, t("export_progress_preparing_docx", "Preparing Word document"), 0.06);
+  var mathAssets = await preloadMathAssets(messages, options, 18, true);
+  throwIfAborted();
 
   var imageEntriesByKey = new Map();
   messages.forEach(function (message) {
@@ -522,6 +547,20 @@ export async function buildDocxBlob(messages, metadata, settingsInput, options) 
           });
         }
       }
+    });
+  }
+
+  // Formula PNGs come from the same KaTeX render path as PDF and bitmap
+  // exports, but are embedded as ordinary DOCX drawing parts for broad Word
+  // compatibility (including Word versions without complete OMML support).
+  var uniqueMathAssets = Array.from(mathAssets.entries());
+  if (uniqueMathAssets.length) {
+    var loadedMath = await mapLimit(uniqueMathAssets, 2, async function (entry, index) {
+      throwIfAborted();
+      return preloadImageForDocx(entry[1].src, uniqueImages.length + index, options);
+    });
+    loadedMath.forEach(function (result, index) {
+      if (result) imageCache["__math__" + uniqueMathAssets[index][0]] = result;
     });
   }
 

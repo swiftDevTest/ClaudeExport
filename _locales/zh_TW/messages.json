@@ -1858,5 +1858,68 @@
   },
   "content_export_fail_reauth_fix": {
     "message": "請重新登入後再重試匯出。"
+  },
+  "popup_theme_preview": {
+    "message": "效果預覽"
+  },
+  "export_theme_midnightRose": {
+    "message": "午夜玫瑰"
+  },
+  "help_category_export": {
+    "message": "匯出方式"
+  },
+  "help_category_general": {
+    "message": "一般問題"
+  },
+  "help_category_notion": {
+    "message": "Notion 同步"
+  },
+  "help_category_obsidian": {
+    "message": "Obsidian 同步"
+  },
+  "help_footer_contact": {
+    "message": "還需要協助？聯絡我們："
+  },
+  "help_load_failed": {
+    "message": "載入說明內容失敗。"
+  },
+  "help_loading": {
+    "message": "載入中..."
+  },
+  "help_no_results": {
+    "message": "未找到符合的問題。"
+  },
+  "help_page_subtitle": {
+    "message": "查找關於匯出方式、Notion 和 Obsidian 同步的常見問題解答"
+  },
+  "help_page_title": {
+    "message": "說明中心"
+  },
+  "help_search_placeholder": {
+    "message": "搜尋問題..."
+  },
+  "popup_help_center": {
+    "message": "說明中心"
+  },
+  "toast_export_cancelled": {
+    "message": "已取消匯出。"
+  },
+  "toast_export_context_invalidated": {
+    "message": "擴充功能已更新，請重新整理頁面後再試一次。"
+  },
+  "toast_export_chatgpt_unavailable": {
+    "message": "無法連接 Claude，請重新整理頁面並確認已登入後再試一次。"
+  },
+  "toast_export_network": {
+    "message": "網路或登入異常，請重新整理頁面後再試一次。"
+  },
+  "content_batch_select_all": {
+    "message": "全選"
+  },
+  "content_batch_select_all_tooltip": {
+    "message": "選擇至多 10 個可見對話"
+  },
+  "content_retry": {
+    "message": "重試"
   }
 }

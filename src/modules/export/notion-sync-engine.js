@@ -51,7 +51,7 @@ const NOTION_IMAGE_MIME_TYPES = new Set([
   "image/heic", "image/tiff", "image/bmp"
 ]);
 const NOTION_SOURCE_BLOCK_TYPES = new Set([
-  "paragraph", "heading", "code", "list", "blockquote", "quote", "table", "image", "separator"
+  "paragraph", "heading", "code", "list", "blockquote", "quote", "table", "math", "image", "separator"
 ]);
 
 const CODE_LANGUAGE_ALIASES = Object.freeze({
@@ -630,6 +630,17 @@ function contentBlocksToNodes(contentBlocks, mediaBySource, warnings) {
           else output.push(...richTextBlocks("paragraph", block.segments, block.text, warnings));
         }
         break;
+      case "math": {
+        const expression = normalizeNotionEquationExpression(block.text);
+        if (!expression) break;
+        if (Array.from(expression).length > NOTION_LIMITS.equationExpression) {
+          pushWarning(warnings, "equation_too_long", "Block equation exceeded Notion's expression limit and was preserved as LaTeX code.");
+          output.push(...codeNodes({ text: expression, language: "latex" }, warnings));
+        } else {
+          output.push(createNode({ object: "block", type: "equation", equation: { expression } }));
+        }
+        break;
+      }
       case "heading": {
         const level = Math.max(1, Math.min(3, Number(block.level) || 1));
         output.push(...richTextBlocks(`heading_${level}`, block.segments, block.text, warnings));

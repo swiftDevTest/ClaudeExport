@@ -1858,5 +1858,68 @@
   },
   "content_export_fail_reauth_fix": {
     "message": "Melden Sie sich erneut an und wiederholen Sie dann den Export."
+  },
+  "popup_theme_preview": {
+    "message": "Vorschau"
+  },
+  "export_theme_midnightRose": {
+    "message": "Mitternachtsrose"
+  },
+  "help_category_export": {
+    "message": "Exportmethoden"
+  },
+  "help_category_general": {
+    "message": "Allgemeine Fragen"
+  },
+  "help_category_notion": {
+    "message": "Notion-Synchronisierung"
+  },
+  "help_category_obsidian": {
+    "message": "Obsidian-Synchronisierung"
+  },
+  "help_footer_contact": {
+    "message": "Brauchen Sie noch Hilfe? Kontaktieren Sie uns:"
+  },
+  "help_load_failed": {
+    "message": "Hilfeinhalte konnten nicht geladen werden."
+  },
+  "help_loading": {
+    "message": "Laden..."
+  },
+  "help_no_results": {
+    "message": "Keine passenden Fragen gefunden."
+  },
+  "help_page_subtitle": {
+    "message": "Antworten zu häufigen Fragen zu Export, Notion- und Obsidian-Synchronisierung finden"
+  },
+  "help_page_title": {
+    "message": "Hilfezentrum"
+  },
+  "help_search_placeholder": {
+    "message": "Fragen durchsuchen..."
+  },
+  "popup_help_center": {
+    "message": "Hilfezentrum"
+  },
+  "toast_export_cancelled": {
+    "message": "Export abgebrochen."
+  },
+  "toast_export_context_invalidated": {
+    "message": "Erweiterung aktualisiert. Bitte Seite neu laden und erneut versuchen."
+  },
+  "toast_export_chatgpt_unavailable": {
+    "message": "Claude nicht erreichbar. Bitte Seite neu laden, anmelden und erneut versuchen."
+  },
+  "toast_export_network": {
+    "message": "Netzwerk- oder Anmeldeproblem. Bitte Seite neu laden und erneut versuchen."
+  },
+  "content_batch_select_all": {
+    "message": "Alle auswählen"
+  },
+  "content_batch_select_all_tooltip": {
+    "message": "Bis zu 10 sichtbare Chats auswählen"
+  },
+  "content_retry": {
+    "message": "Erneut versuchen"
   }
 }

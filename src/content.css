@@ -1117,11 +1117,15 @@
 
 /* 搜索过滤输入框 */
 .cv-batch-search-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding: 12px 24px 8px 24px;
 }
 
 .cv-batch-search-box {
-  width: 100%;
+  flex: 1 1 auto;
+  min-width: 0;
   height: 40px;
   background: #f1f5f9;
   border: 1px solid #e2e8f0;
@@ -1141,6 +1145,30 @@
   background: #ffffff;
   border-color: #d97706;
   box-shadow: 0 0 0 2px rgba(217, 119, 6, 0.15);
+}
+
+.cv-batch-select-all-btn {
+  flex: 0 0 auto;
+  height: 40px;
+  padding: 0 14px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: background 0.16s, border-color 0.16s, color 0.16s;
+}
+
+.cv-batch-select-all-btn:hover {
+  background: #fff7ed;
+  border-color: #fdba74;
+  color: #c2410c;
+}
+
+.cv-batch-select-all-btn:active {
+  transform: translateY(1px);
 }
 
 /* 加载更多指示器 */
@@ -1165,6 +1193,28 @@
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
   flex-shrink: 0;
+}
+
+.cv-batch-retry-btn {
+  margin-left: auto;
+  padding: 5px 12px;
+  background: #ffffff;
+  border: 1px solid #fdba74;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #c2410c;
+  cursor: pointer;
+  transition: background 0.16s, border-color 0.16s;
+}
+
+.cv-batch-retry-btn:hover {
+  background: #fff7ed;
+  border-color: #fb923c;
+}
+
+.cv-batch-retry-btn:active {
+  transform: translateY(1px);
 }
 
 /* 折叠设置段 */
@@ -1755,6 +1805,10 @@
 .cv-batch-theme-circle--oxford {
   background: #1e3a8a;
 }
+.cv-batch-theme-circle--midnight-rose {
+  background: linear-gradient(135deg, #1f1430 0%, #d4a5a5 100%);
+  box-shadow: 0 0 0 1px rgba(212, 165, 165, 0.3);
+}
 
 .cv-batch-theme-name {
   font-size: 11px;
@@ -1803,6 +1857,9 @@
 }
 
 .cv-batch-search-container {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
   padding: 12px 24px 8px 24px !important;
   box-sizing: border-box !important;
   width: 100% !important;
@@ -1810,7 +1867,8 @@
 
 .cv-batch-search-box {
   box-sizing: border-box !important;
-  width: 100% !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
   height: 40px !important;
   background: #f1f5f9 !important;
   border: 1px solid #e2e8f0 !important;

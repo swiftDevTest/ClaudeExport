@@ -274,6 +274,7 @@
     try {
       return Promise.all([
         import(resolveModulePath("src/modules/export/utils.js")),
+        import(resolveModulePath("src/modules/export/math.js")),
         import(resolveModulePath("src/modules/export/platform.js")),
         import(resolveModulePath("src/modules/export/parser-dom.js")),
         import(resolveModulePath("src/modules/export/selection.js")),
@@ -302,12 +303,12 @@
     if (!_ready) {
       _ready = loadSubmodules().then(function (arr) {
         _mods = {
-          utils: arr[0], platform: arr[1], parserDom: arr[2], selection: arr[3],
-          engine: arr[4], media: arr[5], zip: arr[6],
-          save: arr[7], docx: arr[8], image: arr[9], pdf: arr[10],
-          markdown: arr[11], uiController: arr[12], platformFetchers: arr[13], messageAdapter: arr[14],
-          txt: arr[15], json: arr[16], html: arr[17],
-          notionSyncEngine: arr[18]
+          utils: arr[0], math: arr[1], platform: arr[2], parserDom: arr[3], selection: arr[4],
+          engine: arr[5], media: arr[6], zip: arr[7],
+          save: arr[8], docx: arr[9], image: arr[10], pdf: arr[11],
+          markdown: arr[12], uiController: arr[13], platformFetchers: arr[14], messageAdapter: arr[15],
+          txt: arr[16], json: arr[17], html: arr[18],
+          notionSyncEngine: arr[19]
         };
       }).catch(function (err) {
         _ready = null;

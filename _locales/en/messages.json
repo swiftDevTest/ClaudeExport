@@ -1858,5 +1858,68 @@
   },
   "content_export_fail_reauth_fix": {
     "message": "Sign in again, then retry the export."
+  },
+  "popup_theme_preview": {
+    "message": "Preview"
+  },
+  "export_theme_midnightRose": {
+    "message": "Midnight Rose"
+  },
+  "help_category_export": {
+    "message": "Export Methods"
+  },
+  "help_category_general": {
+    "message": "General Questions"
+  },
+  "help_category_notion": {
+    "message": "Notion Sync"
+  },
+  "help_category_obsidian": {
+    "message": "Obsidian Sync"
+  },
+  "help_footer_contact": {
+    "message": "Still need help? Contact us:"
+  },
+  "help_load_failed": {
+    "message": "Failed to load help content."
+  },
+  "help_loading": {
+    "message": "Loading..."
+  },
+  "help_no_results": {
+    "message": "No matching questions found."
+  },
+  "help_page_subtitle": {
+    "message": "Find answers to common questions about exporting, Notion & Obsidian sync"
+  },
+  "help_page_title": {
+    "message": "Help Center"
+  },
+  "help_search_placeholder": {
+    "message": "Search questions..."
+  },
+  "popup_help_center": {
+    "message": "Help Center"
+  },
+  "toast_export_cancelled": {
+    "message": "Export cancelled."
+  },
+  "toast_export_context_invalidated": {
+    "message": "Extension updated. Please refresh the page and try again."
+  },
+  "toast_export_chatgpt_unavailable": {
+    "message": "Unable to reach Claude. Please refresh the page, sign in, then try again."
+  },
+  "toast_export_network": {
+    "message": "Network or sign-in issue. Please refresh the page and try again."
+  },
+  "content_batch_select_all": {
+    "message": "Select all"
+  },
+  "content_batch_select_all_tooltip": {
+    "message": "Select up to 10 visible chats"
+  },
+  "content_retry": {
+    "message": "Retry"
   }
 }

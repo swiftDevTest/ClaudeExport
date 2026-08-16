@@ -24,6 +24,7 @@ import {
 } from '../utils.js';
 import { preloadCanvasImages } from '../media.js';
 import { getPdfTheme } from '../themes/pdf.js';
+import { getMathAssetKey, mathFallbackText, preloadMathAssets } from '../math.js';
 
 var SEPARATOR_MARGIN_TOP = 25;
 var SEPARATOR_MARGIN_BOTTOM = 25;
@@ -152,26 +153,28 @@ export async function buildPdfBlob(messages, metadata, settingsInput, options) {
     throw abortErr;
   }
   var imageCache = await preloadCanvasImages(messages, options);
+  var mathAssets = await preloadMathAssets(messages, options, 15, true);
   notifyProgress(options, t("export_progress_paginating_doc", "Paginating export"), 0.04);
   var pages = await renderPdfPages(messages, metadata, settingsInput, {
     signal: options.signal,
     onProgress: function (progress) {
       notifyProgress(options, progress.message || t("export_progress_paginating_doc", "Paginating export"), 0.04 + 0.62 * (progress.progress || 0));
     }
-  }, imageCache);
+  }, imageCache, mathAssets);
   notifyProgress(options, t("export_progress_generating_pdf", "Generating PDF"), 0.68);
   var pdf = createPdfFromJpegs(pages, 3.0);
   notifyProgress(options, t("export_progress_ready_doc", "Export ready"), 1);
   return pdf;
 }
 
-export async function renderPdfPages(messages, metadata, settingsInput, options, imageCache) {
+export async function renderPdfPages(messages, metadata, settingsInput, options, imageCache, mathAssets) {
   options = options || {};
   var themeConfig = getPdfTheme(settingsInput);
   var settings = themeConfig.settings;
   var theme = themeConfig.theme;
   var DESIGN = themeConfig.design;
   var flatLayout = themeConfig.styleId === "natural";
+  mathAssets = mathAssets || new Map();
 
   var pageWidth = 794;
   var pageHeight = 1123;
@@ -199,9 +202,6 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
   var bodyFont = "15px " + DESIGN.font.body;
   var bodyLineHeight = 24;
   var MIN_FITTED_IMAGE_ROW_HEIGHT = 180;
-  var footerBranding = settings.show_chatvault_badge
-    ? t("export_pdf_footer_branding", "Exported by Claude Export")
-    : "";
 
   function newPage() {
       finalizeCurrentPage();
@@ -292,10 +292,10 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
   }
 
   function drawFooter() {
-    if (!footerBranding) return;
+    if (!settings.show_chatvault_badge) return;
     ctx.font = "10px " + DESIGN.font.body;
     ctx.fillStyle = DESIGN.color.muted;
-    ctx.fillText(footerBranding, margin, pageHeight - 36);
+    ctx.fillText(t("export_pdf_footer_branding", "Exported by Claude Export"), margin, pageHeight - 36);
   }
 
   function finalizeCurrentPage() {
@@ -312,6 +312,7 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
     var canvasWidth = canvas.width;
     var canvasHeight = canvas.height;
     var links = currentPageLinks.slice();
+    var finalizedPageNumber = totalPageCount;
     currentCanvas = null;
     currentPageLinks = [];
     pageJobs.push((async function () {
@@ -329,7 +330,30 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
           links: links
         };
       } catch (e) {
-        throw new Error(t("export_pdf_encode_failed", "PDF page rendering failed. Please try again."));
+        // 偶发编码失败（通常是内存压力）时，先以更低质量重试一次，避免单页失败导致整个导出丢失。
+        console.warn("[pdf] canvas encoding failed, retrying with lower quality", {
+          page: finalizedPageNumber,
+          error_type: e && e.name ? e.name : typeof e
+        });
+        try {
+          var fallbackBlob = await canvasToBlob(canvas, "image/jpeg", 0.7);
+          var fallbackBytes = new Uint8Array(await fallbackBlob.arrayBuffer());
+          encodedPageBytes += fallbackBytes.byteLength;
+          return {
+            width: canvasWidth,
+            height: canvasHeight,
+            bytes: fallbackBytes,
+            logicalWidth: pageWidth,
+            logicalHeight: pageHeight,
+            links: links
+          };
+        } catch (e2) {
+          console.warn("[pdf] canvas encoding retry also failed", {
+            page: finalizedPageNumber,
+            error_type: e2 && e2.name ? e2.name : typeof e2
+          });
+          throw new Error(t("export_pdf_encode_failed", "PDF page rendering failed. Please try again."));
+        }
       } finally {
         try {
           canvas.width = 1;
@@ -428,7 +452,7 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
     var maxCardWidth = alignRight ? contentWidth * 0.75 : contentWidth;
     var horizontalPadding = flatLayout ? 8 : 44;
     var maxInnerWidth = maxCardWidth - horizontalPadding;
-    var allBlocks = (message.contentBlocks || []).map(function (block) {
+    var allBlocks = expandInlineMathBlocks(message.contentBlocks).map(function (block) {
       return measurePdfBlock(getVisualMessageBlock(block, message.role), maxInnerWidth);
     }).filter(Boolean);
     
@@ -508,6 +532,41 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
       return Object.assign({}, block, { type: "paragraph" });
     }
     return block;
+  }
+
+  // Canvas cannot typeset MathML inline. Retain formula geometry by flowing a
+  // semantic inline equation as its own adjacent KaTeX image row, rather than
+  // flattening it to lossy Unicode text.
+  function expandInlineMathBlocks(blocks) {
+    var output = [];
+    (blocks || []).forEach(function (block) {
+      var segments = block && block.type === "paragraph" && Array.isArray(block.segments) ? block.segments : null;
+      var hasMath = segments && segments.some(function (segment) {
+        var marks = segment && segment.marks || {};
+        return Boolean(segment && (segment.math || marks.math));
+      });
+      if (!hasMath) {
+        output.push(block);
+        return;
+      }
+      var textSegments = [];
+      function flushText() {
+        if (!textSegments.length) return;
+        output.push({ ...block, type: "paragraph", text: textSegments.map(function (item) { return item.text || ""; }).join(""), segments: textSegments });
+        textSegments = [];
+      }
+      segments.forEach(function (segment) {
+        var marks = segment && segment.marks || {};
+        if (segment && (segment.math || marks.math)) {
+          flushText();
+          output.push({ type: "math", text: segment.text || "", display: false, inline: true });
+        } else if (segment) {
+          textSegments.push(segment);
+        }
+      });
+      flushText();
+    });
+    return output;
   }
 
   function buildPdfFlowSections(blocks, cardWidth) {
@@ -756,7 +815,6 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
     if (block.type === "heading") {
       var size = block.level === 1 ? 21 : block.level === 2 ? 18 : 16;
       var headingFont = "800 " + size + "px " + DESIGN.font.title;
-      var headingText = getInlinePlainText(block);
       var headingRichText = getInlineRichText(block);
       // 优化：从 richLines 派生 lines，省去一次完整 wrapText 调用。
       var richLines = wrapRichText(ctx, headingRichText, width, headingFont, DESIGN.font);
@@ -766,7 +824,6 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
       return { type: "heading", lines: headingLines, richLines: richLines, font: headingFont, lineHeight: size + 9, height: richLines.length * (size + 9) };
     }
     if (block.type === "paragraph") {
-      var paragraphText = getInlinePlainText(block);
       var paragraphRichText = getInlineRichText(block);
       // 优化：不再单独调用 wrapText（与 wrapRichText 计算量相当但结果 lines 仅用于测量）。
       // 改为从 richLines 派生 plain text lines，测量精度不变（chunks 求和等价于 measureText(整行)）。
@@ -776,10 +833,21 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
       }) : [""];
       return { type: "paragraph", lines: lines, richLines: richLines, font: bodyFont, lineHeight: bodyLineHeight, height: Math.max(1, richLines.length) * bodyLineHeight };
     }
+    if (block.type === "math") {
+      var mathAsset = mathAssets.get(getMathAssetKey(block, 15));
+      if (mathAsset) {
+        var mathWidth = Math.min(width, mathAsset.width);
+        var mathHeight = Math.max(1, mathAsset.height * (mathWidth / Math.max(1, mathAsset.width)));
+        return { type: "math", asset: mathAsset, width: mathWidth, height: mathHeight + 12, originalHeight: mathHeight };
+      }
+      var fallbackFont = "13px " + DESIGN.font.mono;
+      var fallbackLines = wrapText(ctx, mathFallbackText(block.text), width, fallbackFont);
+      return { type: "math", fallback: true, lines: fallbackLines.length ? fallbackLines : [""], font: fallbackFont, lineHeight: 20, height: Math.max(1, fallbackLines.length) * 20 + 8 };
+    }
     if (block.type === "code") {
       var codeFont = "12px " + DESIGN.font.mono;
       var codeFrame = getPdfCodeFrame(width);
-      var codeLines = wrapText(ctx, block.text, codeFrame.width - codeFrame.paddingX * 2, codeFont);
+      var codeLines = wrapText(ctx, block.text, codeFrame.width - codeFrame.paddingX * 2, codeFont, { preserveWhitespace: true });
       var codeHeader = getPdfCodeHeaderHeight(block, 0);
       var lineCount = Math.max(1, codeLines.length);
       return {
@@ -1699,6 +1767,20 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
       }
     }
 
+    if (block.type === "math") {
+      if (block.asset && block.asset.element) {
+        try {
+          var mathX = block.inline ? x : x + Math.max(0, (width - block.width) / 2);
+          ctx.drawImage(block.asset.element, mathX, cursor + 3, block.width, block.originalHeight);
+          return cursor + block.height;
+        } catch (error) {}
+      }
+      ctx.font = block.font || ("13px " + DESIGN.font.mono);
+      ctx.fillStyle = DESIGN.color.ink;
+      block.lines.forEach(function (line, index) { ctx.fillText(line, x, cursor + 2 + index * block.lineHeight); });
+      return cursor + block.height;
+    }
+
     if (block.type === "heading" || block.type === "paragraph") {
       var oldBaseline = ctx.textBaseline;
       ctx.textBaseline = "top";
@@ -1753,7 +1835,7 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
         ctx.font = block.font;
         ctx.fillStyle = DESIGN.color.codeText;
         block.lines.forEach(function (line) {
-          ctx.fillText(line, frameX + paddingX, codeY);
+          (ctx.fillTextPreservingWhitespace || ctx.fillText).call(ctx, line, frameX + paddingX, codeY);
           codeY += block.lineHeight;
         });
       } else {
@@ -1767,7 +1849,7 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
         ctx.font = block.font;
         ctx.fillStyle = DESIGN.color.codeText;
         block.lines.forEach(function (line) {
-          ctx.fillText(line, frameX + paddingX, codeY);
+          (ctx.fillTextPreservingWhitespace || ctx.fillText).call(ctx, line, frameX + paddingX, codeY);
           codeY += block.lineHeight;
         });
       }
@@ -1965,7 +2047,7 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
       ctx.font = block.font;
       ctx.fillStyle = DESIGN.color.codeText;
       lines.slice(lineIndex, lineIndex + take).forEach(function (line) {
-        ctx.fillText(line, frameX + paddingX, codeY);
+        (ctx.fillTextPreservingWhitespace || ctx.fillText).call(ctx, line, frameX + paddingX, codeY);
         codeY += block.lineHeight;
       });
 

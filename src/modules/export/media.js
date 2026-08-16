@@ -7,12 +7,43 @@ var IMAGE_PRELOAD_MAX_COUNT = 50;
 var IMAGE_PRELOAD_MAX_BYTES = 32 * 1024 * 1024;
 var IMAGE_PRELOAD_MAX_IMAGE_PIXELS = 16 * 1024 * 1024;
 var IMAGE_PRELOAD_MAX_TOTAL_PIXELS = 48 * 1024 * 1024;
-var IMAGE_PRELOAD_CONCURRENCY = 2;
 var IMAGE_PRELOAD_CANVAS_TIMEOUT_MS = 5000;
 var IMAGE_ELEMENT_LOAD_TIMEOUT_MS = 8000;
+// 动态并发：图片密集对话原并发=2 串行化严重，提升到 6 可快 2-3 倍。
+// aggregateBytes / aggregateDecodedPixels 总量上限已做内存保护，提升并发不会失控。
+// 低内存设备或慢网络降回 3，避免同时光栅化大图导致 OOM。
+function getImagePreloadConcurrency() {
+  try {
+    var mem = (typeof navigator !== "undefined" && navigator.deviceMemory) || 8;
+    var conn = (typeof navigator !== "undefined" && navigator.connection) || null;
+    var effectiveType = conn && conn.effectiveType;
+    if (mem <= 4) return 3;
+    if (effectiveType === "slow-2g" || effectiveType === "2g") return 2;
+    if (effectiveType === "3g") return 3;
+    return 6;
+  } catch (_e) {
+    return 4;
+  }
+}
 var _imageBytesCache = new Map();
 var _imageBytesCacheBytes = 0;
 var _imageBytesInFlight = new Map();
+// 页面 <img> 列表缓存：原先每张图片都 querySelectorAll("img") 全量扫描，
+// 长对话含数百 <img>，50 张图片 = 25000 次属性读取。改为单次导出会话内复用。
+var _domImgListCache = null;
+var _domImgListCacheTs = 0;
+var DOM_IMG_LIST_TTL_MS = 10000;
+function getDomImgList(forceRefresh) {
+  // 测试环境的 fake document 可能没有 querySelectorAll，需显式守卫
+  if (typeof document === "undefined" || typeof document.querySelectorAll !== "function") return null;
+  var now = (typeof Date !== "undefined" && Date.now) ? Date.now() : 0;
+  if (!forceRefresh && _domImgListCache && (now - _domImgListCacheTs) < DOM_IMG_LIST_TTL_MS) {
+    return _domImgListCache;
+  }
+  _domImgListCache = document.querySelectorAll("img");
+  _domImgListCacheTs = now;
+  return _domImgListCache;
+}
 
 function describeMediaSourceForLog(src) {
   var value = String(src || "");
@@ -645,7 +676,7 @@ async function _fetchImageBytesDirectly(src, options) {
     try {
       var imgEl = null;
       var isUnresolvedPlaceholder = String(src || "").indexOf("image_generation_content") !== -1;
-      var imgs = document.querySelectorAll("img");
+      var imgs = getDomImgList() || document.querySelectorAll("img");
 
       // For unresolved placeholder URLs, the per-turn DOM scan above already
       // tried and failed to resolve the real URL. A global document-wide scan
@@ -875,6 +906,8 @@ export async function preloadImageForDocx(src, index, options) {
 }
 
 export async function preloadCanvasImages(messages, options) {
+  // 每次导出会话开始时刷新 <img> 列表缓存，避免使用上一次导出遗留的过期引用。
+  getDomImgList(true);
   var imageEntriesByKey = new Map();
   messages.forEach(function (message, msgIdx) {
     (message.contentBlocks || []).forEach(function (block, blockIdx) {
@@ -912,7 +945,7 @@ export async function preloadCanvasImages(messages, options) {
   var aggregateBytes = 0;
   var aggregateDecodedPixels = 0;
 
-  await mapLimit(uniqueImages, IMAGE_PRELOAD_CONCURRENCY, async function (entry) {
+  await mapLimit(uniqueImages, getImagePreloadConcurrency(), async function (entry) {
     try {
       var src = entry.src;
       var fetchOptions = options;

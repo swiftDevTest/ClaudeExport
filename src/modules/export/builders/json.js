@@ -4,7 +4,6 @@ function stripHtmlPresentationFromSegment(segment) {
   if (!segment || typeof segment !== "object") return segment;
   var copy = { ...segment };
   delete copy.htmlStyle;
-  delete copy.mathMl;
   return copy;
 }
 

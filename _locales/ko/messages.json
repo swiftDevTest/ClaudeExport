@@ -1858,5 +1858,68 @@
   },
   "content_export_fail_reauth_fix": {
     "message": "다시 로그인한 후 내보내기를 다시 시도하세요."
+  },
+  "popup_theme_preview": {
+    "message": "미리보기"
+  },
+  "export_theme_midnightRose": {
+    "message": "미드나이트 로즈"
+  },
+  "help_category_export": {
+    "message": "내보내기 방법"
+  },
+  "help_category_general": {
+    "message": "일반 질문"
+  },
+  "help_category_notion": {
+    "message": "Notion 동기화"
+  },
+  "help_category_obsidian": {
+    "message": "Obsidian 동기화"
+  },
+  "help_footer_contact": {
+    "message": "아직 도움이 필요하신가요? 문의해 주세요:"
+  },
+  "help_load_failed": {
+    "message": "도움말 콘텐츠를 불러오지 못했습니다."
+  },
+  "help_loading": {
+    "message": "불러오는 중..."
+  },
+  "help_no_results": {
+    "message": "일치하는 질문을 찾을 수 없습니다."
+  },
+  "help_page_subtitle": {
+    "message": "내보내기 방법, Notion 및 Obsidian 동기화에 대한 자주 묻는 질문 답변 찾기"
+  },
+  "help_page_title": {
+    "message": "도움말 센터"
+  },
+  "help_search_placeholder": {
+    "message": "질문 검색..."
+  },
+  "popup_help_center": {
+    "message": "도움말 센터"
+  },
+  "toast_export_cancelled": {
+    "message": "내보내기가 취소되었습니다."
+  },
+  "toast_export_context_invalidated": {
+    "message": "확장 프로그램이 업데이트되었습니다. 페이지를 새로고침한 후 다시 시도해 주세요."
+  },
+  "toast_export_chatgpt_unavailable": {
+    "message": "Claude에 연결할 수 없습니다. 페이지를 새로고침하고 로그인한 후 다시 시도해 주세요."
+  },
+  "toast_export_network": {
+    "message": "네트워크 또는 로그인 문제입니다. 페이지를 새로고침한 후 다시 시도해 주세요."
+  },
+  "content_batch_select_all": {
+    "message": "모두 선택"
+  },
+  "content_batch_select_all_tooltip": {
+    "message": "표시된 대화를 최대 10개까지 선택"
+  },
+  "content_retry": {
+    "message": "다시 시도"
   }
 }

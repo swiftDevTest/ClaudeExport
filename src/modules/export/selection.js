@@ -137,11 +137,14 @@ function enterSelectionMode() {
     }
 
     clearVisibleControls();
-    newMessages.forEach(function (message, index) {
+    // 优化：使用 DocumentFragment 批量插入，减少 N 次 reflow → 1 次
+    var fragment = document.createDocumentFragment();
+    for (var mi = 0; mi < newMessages.length; mi++) {
+      var message = newMessages[mi];
       var turnEl = message.turnElement;
-      if (!turnEl || !(turnEl instanceof Element)) return;
+      if (!turnEl || !(turnEl instanceof Element)) continue;
       var anchorEl = message.contentElement instanceof Element ? message.contentElement : turnEl;
-      var key = getSelectionMessageKey(message, index);
+      var key = getSelectionMessageKey(message, mi);
       var selected = selectionSelectedKeys.has(key);
 
       turnEl.classList.add("chatvault-export-selectable");
@@ -151,7 +154,7 @@ function enterSelectionMode() {
 
       var wrapper = document.createElement("div");
       wrapper.className = "cv-export-checkbox-wrapper";
-      wrapper.dataset.index = String(index);
+      wrapper.dataset.index = String(mi);
       wrapper.dataset.role = message.role;
       wrapper.dataset.selectionKey = key;
       wrapper.__chatVaultAnchor = anchorEl;
@@ -164,7 +167,7 @@ function enterSelectionMode() {
       var checkbox = document.createElement("button");
       checkbox.className = "cv-export-checkbox";
       checkbox.type = "button";
-      checkbox.dataset.index = String(index);
+      checkbox.dataset.index = String(mi);
       checkbox.dataset.selectionKey = key;
       checkbox.dataset.selected = selected ? "true" : "false";
       checkbox.textContent = selected ? "✓" : "";
@@ -184,19 +187,39 @@ function enterSelectionMode() {
       wrapper.__chatVaultClickHandler = messageClickHandler;
       turnEl.addEventListener("click", messageClickHandler, true);
       wrapper.appendChild(checkbox);
-      document.body.appendChild(wrapper);
+      fragment.appendChild(wrapper);
       selectionWrappers.push(wrapper);
-    });
+    }
+    document.body.appendChild(fragment);
     updatePositions();
   }
 
   renderVisibleControls();
 
-  window.addEventListener("scroll", updatePositions, true);
-  window.addEventListener("resize", updatePositions, true);
+  // 滚动/缩放节流：updatePositions 对每个 wrapper 调 getBoundingClientRect（强制布局），
+  // 长对话数百条消息时每帧连续触发会卡顿。用 rAF 合并同帧多次事件为单次更新，
+  // 浏览器默认 scroll 也走 rAF 调度，对齐后无感知延迟。宿主无 rAF 时回退直接调用。
+  var positionRafScheduled = false;
+  var hasRequestAnimationFrame = typeof window !== "undefined" && typeof window.requestAnimationFrame === "function";
+  function scheduleUpdatePositions() {
+    if (positionRafScheduled) return;
+    positionRafScheduled = true;
+    if (hasRequestAnimationFrame) {
+      window.requestAnimationFrame(function () {
+        positionRafScheduled = false;
+        updatePositions();
+      });
+      return;
+    }
+    positionRafScheduled = false;
+    updatePositions();
+  }
+
+  window.addEventListener("scroll", scheduleUpdatePositions, true);
+  window.addEventListener("resize", scheduleUpdatePositions, true);
   selectionCleanup.push(function () {
-    window.removeEventListener("scroll", updatePositions, true);
-    window.removeEventListener("resize", updatePositions, true);
+    window.removeEventListener("scroll", scheduleUpdatePositions, true);
+    window.removeEventListener("resize", scheduleUpdatePositions, true);
     clearVisibleControls();
   });
 

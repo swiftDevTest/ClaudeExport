@@ -48,6 +48,11 @@
   let currentSession = null;
   let dailyUsage = { date: "", exportedChats: 0 };
   let usageStateLoaded = false;
+  // 登录后 storage.onChanged 与主动刷新可能并发恢复同一份状态。
+  // 复用同一个 Promise，entitlement 在途更新则完成后再补一次读取。
+  let applyStoredAuthStateInFlight = null;
+  let applyStoredAuthStatePendingReapply = false;
+  let refreshAuthStateInFlight = false;
   const ENTITLEMENT_SERVER_CHECK_TTL_MS = 5 * 60 * 1000;
   let lastEntitlementServerCheckAt = 0;
   // Session 失效冷却期：检测到 refresh token 失效后，短期内不再重复尝试刷新，
@@ -171,6 +176,28 @@
 
   function tx(key, englishText, chineseText, ...args) {
     return t(key, isChineseUi() ? chineseText : englishText, ...args);
+  }
+
+  // 把技术性报错（状态码、网络、会话失效、context invalidated 等）映射为友好双语提示。
+  // 已识别返回友好文案；未识别返回 null，由调用方保留原 message（多数已是友好文案，
+  // 如"图片超过 8MB 限制"）。避免把 "ChatGPT history request failed: 401" 直接抛给用户。
+  function friendlyExportError(error) {
+    if (!error) return null;
+    var name = error.name || "";
+    var msg = String(error.message || "");
+    if (name === "AbortError" || /^cancel/i.test(msg)) {
+      return tx("toast_export_cancelled", "Export cancelled.", "已取消导出。");
+    }
+    if (/context invalidated|Extension context invalidated/i.test(msg)) {
+      return tx("toast_export_context_invalidated", "Extension updated. Please refresh the page and try again.", "扩展已更新，请刷新页面后重试。");
+    }
+    if (/history request failed|session is not available|Open ChatGPT before/i.test(msg)) {
+      return tx("toast_export_chatgpt_unavailable", "Unable to reach ChatGPT. Please refresh the page, sign in, then try again.", "无法连接 ChatGPT，请刷新页面并确认已登录后重试。");
+    }
+    if (/\b(?:401|403)\b|Failed to fetch|NetworkError|network request failed|load failed/i.test(msg)) {
+      return tx("toast_export_network", "Network or sign-in issue. Please refresh the page and try again.", "网络或登录异常，请刷新页面后重试。");
+    }
+    return null;
   }
 
   // 根据内容动态生成同步进度文案，提升导出体验（不改动核心同步逻辑）
@@ -340,7 +367,7 @@
     pendingContextExportRequest = null;
     window.setTimeout(() => {
       executeContextExportRequest(request.format).catch((error) => {
-        showPageToast(error?.message || t("toast_export_failed", isChineseUi() ? "导出失败。" : "Export failed."));
+        showPageToast(friendlyExportError(error) || error?.message || t("toast_export_failed", isChineseUi() ? "导出失败。" : "Export failed."));
       });
     }, 0);
   }
@@ -597,7 +624,7 @@
       return null;
     }
     if (usageStore && typeof usageStore.setDailyUsage === "function") {
-      if (options.consume) {
+      if (options.consume && typeof usageStore.reconcileConsumedDailyUsage === "function") {
         // consume 路径：服务端返回的 exportedChats 已包含本次导出，
         // 而本地 local 此前并未为本次登录导出累加（recordSuccessfulExportUsage
         // 在 serverConsumed=true 时跳过 incrementDailyUsage）。
@@ -610,10 +637,7 @@
         //   local = max(local_anonymous, server_before_this_export) + amount
         // 这样本地始终反映"匿名导出 + 登录导出"的真实总量。
         const amount = Math.max(1, Number(options.amount || 1));
-        const serverCount = Math.max(0, Number(usage.exportedChats || usage.exported_chats || 0));
-        const adjustedUsage = { ...usage, exportedChats: Math.max(0, serverCount - amount) };
-        await usageStore.setDailyUsage(adjustedUsage);
-        dailyUsage = await usageStore.incrementDailyUsage(amount);
+        dailyUsage = await usageStore.reconcileConsumedDailyUsage(usage, amount);
       } else {
         dailyUsage = await usageStore.setDailyUsage(usage);
       }
@@ -625,30 +649,50 @@
     return dailyUsage;
   }
 
-  async function applyStoredAuthStateImmediately(sessionOverride) {
-    const session = await getStoredAuthSessionSnapshot(sessionOverride);
-    currentSession = session || null;
-    dailyUsage = await getLocalUsageSnapshot() || dailyUsage;
-    usageStateLoaded = true;
-
-    if (session?.access_token && entitlements) {
-      const cached = await getCachedProfileForSession(session);
-      currentUserProfile = cached?.profile || entitlements.normalizeProfile({
-        id: session.user?.id || "",
-        email: session.user?.email || "",
-        plan: "free"
-      });
-      isProUser = entitlements.isPro(currentUserProfile);
-      // 新 session 写入时清零 session 失效冷却期（用户已重新登录）
-      sessionRefreshFailedAt = 0;
-    } else {
-      currentUserProfile = null;
-      isProUser = false;
+  async function applyStoredAuthStateImmediately(sessionOverride, options) {
+    if (applyStoredAuthStateInFlight) {
+      if (options?.reapplyAfterInFlight) {
+        applyStoredAuthStatePendingReapply = true;
+      }
+      return applyStoredAuthStateInFlight;
     }
 
-    invalidatePopupStateCache();
-    updateUIState();
-    return Boolean(session?.access_token);
+    applyStoredAuthStateInFlight = (async () => {
+      const session = await getStoredAuthSessionSnapshot(sessionOverride);
+      currentSession = session || null;
+      dailyUsage = await getLocalUsageSnapshot() || dailyUsage;
+      usageStateLoaded = true;
+
+      if (session?.access_token && entitlements) {
+        const cached = await getCachedProfileForSession(session);
+        currentUserProfile = cached?.profile || entitlements.normalizeProfile({
+          id: session.user?.id || "",
+          email: session.user?.email || "",
+          plan: "free"
+        });
+        isProUser = entitlements.isPro(currentUserProfile);
+        sessionRefreshFailedAt = 0;
+      } else {
+        currentUserProfile = null;
+        isProUser = false;
+      }
+
+      invalidatePopupStateCache();
+      updateUIState();
+      return Boolean(session?.access_token);
+    })();
+
+    try {
+      return await applyStoredAuthStateInFlight;
+    } finally {
+      applyStoredAuthStateInFlight = null;
+      if (applyStoredAuthStatePendingReapply) {
+        applyStoredAuthStatePendingReapply = false;
+        applyStoredAuthStateImmediately().catch((error) => {
+          console.warn("Failed to reapply auth state after entitlement update:", error);
+        });
+      }
+    }
   }
 
   async function applySignedOutStateImmediately() {
@@ -663,12 +707,19 @@
   }
 
   function refreshAuthStateInBackground() {
+    // 登录后 CHATVAULT_REFRESH_AUTH_STATE 和 storage.onChanged 会并发触发本函数，
+    // 用 in-flight 标志去重：正在执行 loadState（含串行网络请求+加密）时跳过重复调用，
+    // 避免多轮 refreshEntitlements 网络往返叠加导致主线程微任务队列阻塞。
+    if (refreshAuthStateInFlight) return;
+    refreshAuthStateInFlight = true;
     loadState({ forceRefresh: true, skipVerify: true }).then(() => {
       invalidatePopupStateCache();
       updateUIState();
       notifyPopupEntitlementStateUpdated();
     }).catch((error) => {
       console.warn("Background auth state refresh failed:", error);
+    }).finally(() => {
+      refreshAuthStateInFlight = false;
     });
   }
 
@@ -711,7 +762,7 @@
           return;
         }
 
-        applyStoredAuthStateImmediately().catch((error) => {
+        applyStoredAuthStateImmediately(undefined, { reapplyAfterInFlight: true }).catch((error) => {
           console.warn("Failed to apply updated entitlement state:", error);
         });
       });
@@ -1118,6 +1169,7 @@
   }
 
   let batchModalOpen = false;
+  let batchExportInProgress = false;
   let batchList = [];
   let batchMode = "files";
   let batchSelectedFormat = "pdf";
@@ -1658,12 +1710,14 @@
           <!-- 搜索过滤输入框 -->
           <div class="cv-batch-search-container">
             <input type="text" class="cv-batch-search-box" id="cv-batch-search" placeholder="${tx("placeholder_batch_search", "Search by conversation title...", "搜索会话标题...")}">
+            <button type="button" class="cv-batch-select-all-btn" id="cv-batch-btn-select-all" title="${tx("content_batch_select_all_tooltip", "Select up to 10 visible chats", "选择至多 10 个可见会话")}">${tx("content_batch_select_all", "Select all", "全选")}</button>
           </div>
 
           <!-- 同步进度条 -->
           <div class="cv-batch-loading-bar" id="cv-batch-loading-indicator" style="display: none;">
             <div class="cv-batch-dot-spinner"></div>
             <span>${tx("content_syncing_sidebar", "Syncing sidebar history and loading more chats...", "正在同步侧边栏历史，加载更多聊天...")}</span>
+            <button type="button" class="cv-batch-retry-btn" id="cv-batch-sync-retry" hidden>${tx("content_retry", "Retry", "重试")}</button>
           </div>
 
           <!-- 折叠设置段 -->
@@ -1723,6 +1777,11 @@
                   <div class="cv-batch-theme-option" data-theme="oxford">
                     <span class="cv-batch-theme-circle cv-batch-theme-circle--oxford"></span>
                     <span class="cv-batch-theme-name">${t("export_theme_oxford", isChineseUi() ? "学术深青" : "Oxford")}</span>
+                    <span class="cv-batch-theme-pro-badge">PRO</span>
+                  </div>
+                  <div class="cv-batch-theme-option" data-theme="midnightRose">
+                    <span class="cv-batch-theme-circle cv-batch-theme-circle--midnight-rose"></span>
+                    <span class="cv-batch-theme-name">${t("export_theme_midnightRose", isChineseUi() ? "午夜玫瑰" : "Midnight Rose")}</span>
                     <span class="cv-batch-theme-pro-badge">PRO</span>
                   </div>
                 </div>
@@ -2096,10 +2155,45 @@
     // 保存（导出）按钮
     shadowRoot.getElementById("cv-batch-btn-export").addEventListener("click", startInPageBatchExport);
 
+    // 全选按钮：批量导出有 10 个上限，全选只勾选当前可见且未禁用的前 10 行，
+    // 避免一次性勾选超限触发禁用态闪烁。已全部勾选时改为清空选择（切换语义）。
+    const selectAllBtn = shadowRoot.getElementById("cv-batch-btn-select-all");
+    if (selectAllBtn) {
+      selectAllBtn.addEventListener("click", () => {
+        if (globalThis.CHATVAULT_IS_BATCH_EXPORT) return;
+        const visibleRows = Array.from(shadowRoot.querySelectorAll(".cv-batch-item-row"))
+          .filter(row => row.style.display !== "none" && !row.classList.contains("disabled"));
+        const selectedVisible = visibleRows.filter(row => row.classList.contains("selected"));
+        if (visibleRows.length && selectedVisible.length === visibleRows.length) {
+          visibleRows.forEach(row => {
+            row.classList.remove("selected");
+            row.setAttribute("aria-checked", "false");
+          });
+        } else {
+          visibleRows.slice(0, 10).forEach(row => {
+            row.classList.add("selected");
+            row.setAttribute("aria-checked", "true");
+          });
+        }
+        updateBatchSelectedCount();
+      });
+    }
+
     const batchOverlay = shadowRoot.getElementById("cv-batch-modal-overlay");
     if (batchOverlay) {
       batchOverlay.addEventListener("wheel", trapBatchModalWheel, { passive: false });
+      // 点击遮罩关闭：导出进行中阻止关闭避免误操作中断
+      batchOverlay.addEventListener("click", (e) => {
+        if (e.target === batchOverlay && !batchExportInProgress) closeBatchModal();
+      });
     }
+    // ESC 关闭批量导出弹窗（导出进行中忽略，避免中断）
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && batchModalOpen && !batchExportInProgress) {
+        e.stopPropagation();
+        closeBatchModal();
+      }
+    }, true);
 
     // Warm the local Notion destination cache while the picker is hidden so
     // opening the batch modal paints the user's last Database immediately.
@@ -3511,7 +3605,24 @@
 
     const loader = shadowRoot.getElementById("cv-batch-loading-indicator");
 
-    (async () => {
+    // 抽出为可重试函数：首次同步失败时在 loader 中显示"重试"按钮，
+    // 让用户无需关闭弹窗再打开即可恢复，避免重新触发整段 modal 初始化。
+    const retryBtn = shadowRoot.getElementById("cv-batch-sync-retry");
+    let batchSyncing = false;
+    const runInitialBatchSync = async () => {
+      if (batchSyncing) return;
+      batchSyncing = true;
+      if (retryBtn) retryBtn.hidden = true;
+      // 重试时必须重置列表状态：首次失败后 DOM 行和 batchList 可能已有部分数据，
+      // 直接重跑 appendBatchListItems 会产生重复行，loadNextPageOfConversations
+      // 也会因 displayedConversationsCount 未归零而请求错误偏移。
+      const itemsContainer = shadowRoot.getElementById("cv-batch-list-items");
+      if (itemsContainer) itemsContainer.innerHTML = "";
+      batchList = [];
+      batchActiveItems = [];
+      displayedConversationsCount = 0;
+      hasMoreConversations = true;
+      resetBatchChatGptHistoryState();
       try {
         const cached = await readBatchChatHistoryCache(platform);
         if (cached && Array.isArray(cached.chats) && cached.chats.length > 0) {
@@ -3554,9 +3665,14 @@
         if (loader) {
           loader.querySelector("span").textContent = tx("content_sidebar_sync_failed", "Sidebar sync failed. Please try again.", "同步侧边栏失败，请重试");
           loader.querySelector(".cv-batch-dot-spinner").style.display = "none";
+          if (retryBtn) retryBtn.hidden = false;
         }
+      } finally {
+        batchSyncing = false;
       }
-    })();
+    };
+    if (retryBtn) retryBtn.addEventListener("click", runInitialBatchSync);
+    runInitialBatchSync();
   }
 
   function updateBatchSelectedCount() {
@@ -3638,6 +3754,7 @@
   }
 
   function setBatchExportingUi(isExporting) {
+    batchExportInProgress = !!isExporting;
     const clearBtn = shadowRoot.getElementById("cv-batch-btn-clear");
     const exportBtn = shadowRoot.getElementById("cv-batch-btn-export");
     const closeBtn = shadowRoot.getElementById("cv-batch-btn-close");
@@ -4135,7 +4252,7 @@
           })
         });
       } else {
-        showPageToast(tx("content_export_failed_message", "Export failed: $1", "导出失败：$1", error.message || "Export failed."));
+        showPageToast(tx("content_export_failed_message", "Export failed: $1", "导出失败：$1", friendlyExportError(error) || error.message || "Export failed."));
         globalThis.CHATVAULT_ANALYTICS?.track("export_failed", {
           platform: getCurrentPlatformId() || "claude",
           properties: { format, source: "batch_export", error_category: "export_build" }
@@ -4628,7 +4745,7 @@
     } catch (error) {
       if (!preflightController.signal.aborted) {
         resetBatchPreflightUi();
-        showPageToast(tx("content_export_failed_message", "Export failed: $1", "导出失败：$1", error?.message || "Export failed."));
+        showPageToast(tx("content_export_failed_message", "Export failed: $1", "导出失败：$1", friendlyExportError(error) || error?.message || "Export failed."));
       }
     } finally {
       clearBatchPreflightController();
@@ -5165,13 +5282,11 @@
     }
 
     const session = await auth.signInWithGoogle();
-    if (!session) {
-      return false;
-    }
-
-    await applyStoredAuthStateImmediately(session);
-    refreshAuthStateInBackground();
-    return true;
+    // signInWithGoogle 内部已通过 CHATVAULT_REFRESH_AUTH_STATE 触发了
+    // applyStoredAuthStateImmediately + refreshAuthStateInBackground，
+    // 同时 storeSession 写入 storage 还会触发 storage.onChanged，
+    // 此处无需再重复调用，避免登录后 3 重并发状态恢复导致 UI 卡顿。
+    return Boolean(session);
   }
 
   // 购买跳转流程
@@ -6349,7 +6464,7 @@
           });
         } else {
           // 批量导出失败：保持简单 toast（批量有自己的失败聚合 UI，且 catch 会 re-throw）
-          showPageToast(tx("content_export_failed_message", "Export failed: $1", "导出失败：$1", e.message || t("toast_export_failed", isChineseUi() ? "导出失败。" : "Export failed.")));
+          showPageToast(tx("content_export_failed_message", "Export failed: $1", "导出失败：$1", friendlyExportError(e) || e.message || t("toast_export_failed", isChineseUi() ? "导出失败。" : "Export failed.")));
         }
 
         globalThis.CHATVAULT_ANALYTICS?.track("export_failed", {
@@ -6553,7 +6668,7 @@
         }
 
         executeContextExportRequest(format).catch((error) => {
-          showPageToast(error?.message || t("toast_export_failed", isChineseUi() ? "导出失败。" : "Export failed."));
+          showPageToast(friendlyExportError(error) || error?.message || t("toast_export_failed", isChineseUi() ? "导出失败。" : "Export failed."));
         });
         sendResponse({ ok: true });
         return true;

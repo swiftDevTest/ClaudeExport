@@ -1858,5 +1858,68 @@
   },
   "content_export_fail_reauth_fix": {
     "message": "Inicia sesión de nuevo y vuelve a intentar la exportación."
+  },
+  "popup_theme_preview": {
+    "message": "Vista previa"
+  },
+  "export_theme_midnightRose": {
+    "message": "Rosa de Medianoche"
+  },
+  "help_category_export": {
+    "message": "Métodos de exportación"
+  },
+  "help_category_general": {
+    "message": "Preguntas generales"
+  },
+  "help_category_notion": {
+    "message": "Sincronización con Notion"
+  },
+  "help_category_obsidian": {
+    "message": "Sincronización con Obsidian"
+  },
+  "help_footer_contact": {
+    "message": "¿Aún necesitas ayuda? Contáctanos:"
+  },
+  "help_load_failed": {
+    "message": "No se pudo cargar el contenido de ayuda."
+  },
+  "help_loading": {
+    "message": "Cargando..."
+  },
+  "help_no_results": {
+    "message": "No se encontraron preguntas coincidentes."
+  },
+  "help_page_subtitle": {
+    "message": "Encuentra respuestas a preguntas comunes sobre exportación y sincronización con Notion y Obsidian"
+  },
+  "help_page_title": {
+    "message": "Centro de ayuda"
+  },
+  "help_search_placeholder": {
+    "message": "Buscar preguntas..."
+  },
+  "popup_help_center": {
+    "message": "Centro de ayuda"
+  },
+  "toast_export_cancelled": {
+    "message": "Exportación cancelada."
+  },
+  "toast_export_context_invalidated": {
+    "message": "Extensión actualizada. Actualiza la página e inténtalo de nuevo."
+  },
+  "toast_export_chatgpt_unavailable": {
+    "message": "No se puede acceder a Claude. Actualiza la página, inicia sesión e inténtalo de nuevo."
+  },
+  "toast_export_network": {
+    "message": "Problema de red o de inicio de sesión. Actualiza la página e inténtalo de nuevo."
+  },
+  "content_batch_select_all": {
+    "message": "Seleccionar todo"
+  },
+  "content_batch_select_all_tooltip": {
+    "message": "Seleccionar hasta 10 chats visibles"
+  },
+  "content_retry": {
+    "message": "Reintentar"
   }
 }

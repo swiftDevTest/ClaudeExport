@@ -1,0 +1,132 @@
+{
+  "categories": [
+    {
+      "id": "export",
+      "title": "Exportmethoden",
+      "items": [
+        {
+          "q": "Wie exportiere ich die aktuelle Unterhaltung?",
+          "a": "<p>Klicken Sie auf das Erweiterungssymbol in der Browser-Symbolleiste, um das Popup zu öffnen. Wählen Sie im Bereich <strong>Ein-Klick-Export</strong> das gewünschte Format (PDF / Word / Markdown / HTML / Bild / TXT), um die gesamte Unterhaltung auf der aktuellen Seite zu exportieren.</p><div class=\"help-tip\"><strong>Tipp:</strong> Vor dem Export können Sie im Einstellungsfenster Layout-Themes und Inhaltsoptionen (Titel, Zeitstempel, Wasserzeichen usw.) anpassen. Themes gelten nur für PDF- und Bild-Exporte.</div>"
+        },
+        {
+          "q": "Wie exportiere ich mehrere Unterhaltungen im Batch?",
+          "a": "<p>Klicken Sie im Popup auf das Banner <strong>Batch-Export</strong>. Ein Batch-Export-Bedienfeld wird angezeigt und ruft automatisch die Unterhaltungsliste aus der Seitenleiste ab.</p><ol><li>Suchen oder markieren Sie die Unterhaltungen, die Sie exportieren möchten (max. 10)</li><li>Wählen Sie das Exportformat und das Theme</li><li>Klicken Sie auf die Schaltfläche Export — Dateien werden exportiert und automatisch gespeichert</li></ol><div class=\"help-tip\"><strong>Pro-Mitglieder</strong> erhalten unbegrenzte Batch-Exporte. Kostenlose Nutzer können es nach der Anmeldung <strong>einmal</strong> ausprobieren.</div>"
+        },
+        {
+          "q": "Wie exportiere ich nur ausgewählte Nachrichten?",
+          "a": "<p>Klicken Sie im Popup auf das Banner <strong>Benutzerdefinierter selektiver Export</strong>, um in den Nachrichtenauswahlmodus zu wechseln:</p><ol><li>Neben jeder Nachricht erscheint ein rundes Kontrollkästchen — klicken Sie, um die gewünschten Nachrichten auszuwählen</li><li>Verwenden Sie \"Alle KI auswählen\" in der schwebenden Leiste, um alle KI-Antworten schnell zu markieren</li><li>Wählen Sie ein Exportformat und klicken Sie auf Export</li><li>Klicken Sie nach Abschluss auf Beenden, um den Auswahlmodus zu verlassen</li></ol><p>Der Auswahlmodus unterstützt Scrollen und Zoomen — Kontrollkästchen folgen den Nachrichtenpositionen automatisch.</p>"
+        },
+        {
+          "q": "Wie exportiere ich schnell über das Kontextmenü?",
+          "a": "<p>Klicken Sie auf einer <strong>Claude</strong>-Unterhaltungsseite mit der rechten Maustaste, wählen Sie „Claude Export“ und anschließend das Exportformat.</p><div class=\"help-tip\"><strong>Unterstützte Formate:</strong> PDF, Word, Markdown, HTML, Bild, TXT, JSON.</div><p>Für einzelne Nachrichten verwenden Sie den selektiven Export im Popup.</p>"
+        },
+        {
+          "q": "Welche Exportformate werden unterstützt?",
+          "a": "<p>Insgesamt werden <strong>7 Formate</strong> unterstützt:</p><ul><li><strong>PDF</strong> — Ideal zum Teilen und Drucken, unterstützt Themes</li><li><strong>Word (docx)</strong> — Ideal für die weitere Bearbeitung</li><li><strong>Markdown</strong> — Ideal für Wissensmanagement und den Import in andere Tools</li><li><strong>HTML</strong> — Behält das vollständige Styling bei, öffnet sich in jedem Browser</li><li><strong>Bild (PNG)</strong> — Ideal für soziale Medien, unterstützt Themes</li><li><strong>TXT</strong> — Klartext, kompakte Größe</li><li><strong>JSON</strong> — Strukturierte Daten, ideal für programmatische Nutzung</li></ul>"
+        },
+        {
+          "q": "Wo werden exportierte Dateien gespeichert?",
+          "a": "<p>Alle exportierten Dateien werden über den Download-Mechanismus des Browsers im <strong>Standard-Downloadverzeichnis</strong> Ihres Browsers gespeichert. Sie können den Download-Pfad unter Chrome-Einstellungen → Downloads einsehen oder ändern.</p><p>Bei Batch-Exporten werden mehrere Dateien nacheinander heruntergeladen. Wenn Sie die Notion- oder Obsidian-Synchronisierung wählen, werden die Dateien direkt mit der jeweiligen Plattform synchronisiert statt lokal heruntergeladen.</p>"
+        }
+      ]
+    },
+    {
+      "id": "notion",
+      "title": "Notion-Autorisierung & Synchronisierung",
+      "items": [
+        {
+          "q": "Wie verbinde ich meinen Notion-Workspace?",
+          "a": "<p>Klicken Sie in der Karte \"In Notion speichern\" im Popup auf die Schaltfläche <strong>Notion verbinden</strong>:</p><ol><li>Sie werden zuerst aufgefordert, sich bei Ihrem Claude Export-Konto anzumelden (falls nicht angemeldet)</li><li>Nach der Anmeldung öffnet sich automatisch die Notion-Autorisierungsseite</li><li>Wählen Sie die zu autorisierenden Seiten/Datenbanken in Notion aus und klicken Sie auf \"Zugriff erlauben\"</li><li>Kehren Sie zum Popup zurück und wählen Sie die Ziel-Datenbank, um die Synchronisierung zu starten</li></ol><div class=\"help-tip\"><strong>Hinweis:</strong> Sie müssen während der Autorisierung mindestens eine Notion-Seite oder -Datenbank auswählen, damit Claude Export Inhalte schreiben kann.</div>"
+        },
+        {
+          "q": "Was bedeutet es, wenn nach dem Verbinden \"Keine autorisierte Datenbank gefunden\" angezeigt wird?",
+          "a": "<p>Das bedeutet, dass die Notion-Verbindung hergestellt wurde, aber keine Datenbank mit Claude Export geteilt wurde. Gehen Sie wie folgt vor:</p><ol><li>Öffnen Sie die Ziel-Datenbank in Notion</li><li>Klicken Sie auf das <code>⋯</code>-Menü oben rechts</li><li>Wählen Sie \"Verbindungen\" → suchen Sie nach \"Claude Export\" und fügen Sie es hinzu</li><li>Öffnen Sie das Erweiterungs-Popup erneut — die Datenbank sollte nun im Dropdown-Menü erscheinen</li></ol>"
+        },
+        {
+          "q": "Was soll ich tun, wenn die Notion-Verbindung abgelaufen ist?",
+          "a": "<p>Wenn das Notion-Zugriffstoken abläuft, erscheint ein orangefarbener Warnbalken: \"Der Notion-Zugriff ist abgelaufen. Bitte verbinden Sie sich erneut, um die Synchronisierung fortzusetzen.\"</p><ol><li>Klicken Sie auf die Schaltfläche <strong>Erneut verbinden</strong> im Warnbalken</li><li>Die Notion-Autorisierungsseite wird erneut geöffnet</li><li>Nach der Autorisierung wird die Synchronisierung normal fortgesetzt</li></ol><div class=\"help-tip\">Tokens laufen normalerweise nach langen Inaktivitätszeiträumen oder wenn Berechtigungen in Notion widerrufen wurden, ab. Ein erneutes Verbinden löscht keine vorhandenen Daten.</div>"
+        },
+        {
+          "q": "Was soll ich tun, wenn die Notion-Synchronisierung fehlschlägt?",
+          "a": "<p>Synchronisierungsfehler können verschiedene Ursachen haben — überprüfen Sie die Fehlermeldung:</p><ul><li><strong>Netzwerk oder Dienst ausgelastet:</strong> Das System führt automatisch bis zu 5 Wiederholungen aus, bitte warten Sie</li><li><strong>Berechtigung verweigert (403):</strong> Die Zielseite wurde nicht mit Claude Export geteilt — verbinden Sie sich erneut in Notion</li><li><strong>Seite nicht gefunden (404):</strong> Die zuvor zugeordnete Notion-Seite wurde möglicherweise gelöscht oder in den Papierkorb verschoben — wählen Sie ein neues Ziel</li><li><strong>Inhaltskonflikt:</strong> Vorhandener Seiteninhalt wurde geändert — wählen Sie den Modus \"Ersetzen\" und synchronisieren Sie erneut</li><li><strong>Ratenbegrenzung (429):</strong> Notion ist ausgelastet — versuchen Sie es später erneut</li></ul><div class=\"help-tip\">Wenn das Problem weiterhin besteht, aktualisieren Sie die Seite der KI-Plattform und versuchen Sie es erneut, oder trennen Sie die Notion-Verbindung und autorisieren Sie sie erneut. Wenn das Problem weiterhin besteht, versuchen Sie, sich von Ihrem Claude Export-Konto abzumelden und wieder anzumelden.</div>"
+        },
+        {
+          "q": "Was passiert, wenn Bilder während der Notion-Synchronisierung nicht hochgeladen werden können?",
+          "a": "<p>Notion legt Dateigrößenbeschränkungen für Bilder fest. Bilder, die das Limit überschreiten, werden durch Platzhalter ersetzt. Mögliche Ursachen:</p><ul><li>Bild überschreitet das Dateigrößenlimit Ihres Notion-Workspaces</li><li>Bildformat wird von Notion nicht unterstützt</li><li>Netzwerkproblem hat den Bilddownload verhindert</li></ul><p>Wenn einige Bilder nicht hochgeladen werden konnten, wird \"Mit teilweiser Beeinträchtigung zu Notion synchronisiert\" angezeigt. Öffnen Sie die Notion-Seite, um sie zu überprüfen und fehlende Bilder manuell hinzuzufügen.</p>"
+        },
+        {
+          "q": "Was passiert, wenn ich einen Fehler \"Berechtigung verweigert\" oder \"Seite nicht verfügbar\" erhalte?",
+          "a": "<p>Dies bedeutet normalerweise, dass die Notion-Zielseite oder -Datenbank nicht mit der Claude Export-Verbindung geteilt wurde oder die Freigabe widerrufen wurde. So beheben Sie das Problem:</p><ol><li>Öffnen Sie die Zielseite oder -Datenbank in Notion</li><li>Klicken Sie auf <code>⋯</code> → \"Verbindungen\" → bestätigen Sie, dass \"Claude Export\" hinzugefügt wurde</li><li>Wenn bereits hinzugefügt, aber trotzdem fehlerhaft, versuchen Sie, die Claude Export-Verbindung zu entfernen und erneut hinzuzufügen</li><li>Kehren Sie zum Erweiterungs-Popup zurück und synchronisieren Sie erneut</li></ol>"
+        },
+        {
+          "q": "Wie trenne ich die Notion-Verbindung?",
+          "a": "<p>Suchen Sie im Einstellungsfenster des Erweiterungs-Popups die Karte Verbindungen und klicken Sie in der Notion-Zeile auf die Schaltfläche <strong>Trennen</strong>.</p><p>Nach dem Trennen widerruft Claude Export das Notion-Zugriffstoken. Bereits nach Notion synchronisierte Inhalte werden nicht gelöscht. Wenn das Trennen fehlschlägt, werden lokale Daten beibehalten — Sie können es später erneut versuchen.</p>"
+        }
+      ]
+    },
+    {
+      "id": "obsidian",
+      "title": "Obsidian-Autorisierung & Synchronisierung",
+      "items": [
+        {
+          "q": "Wie verbinde ich einen Obsidian-Vault?",
+          "a": "<p>Die Obsidian-Synchronisierung verwendet die File System Access API des Browsers — <strong>keine OAuth erforderlich</strong>, alles läuft lokal.</p><ol><li>Klicken Sie auf die Schaltfläche Konfigurieren in der Karte \"In Obsidian speichern\" im Popup, um die Obsidian-Einstellungsseite zu öffnen</li><li>Klicken Sie auf \"Vault wählen\" und wählen Sie Ihr Obsidian-Vault-Stammverzeichnis (den Ordner, der den <code>.obsidian</code>-Ordner enthält)</li><li>Wählen Sie das Notizverzeichnis und optional das Assets-Verzeichnis</li><li>Klicken Sie auf \"Überprüfen und speichern\", um die Verbindung abzuschließen</li></ol><div class=\"help-tip\"><strong>Hinweis:</strong> Erfordert Chrome 86+ für die Unterstützung der File System Access API.</div>"
+        },
+        {
+          "q": "Wie wähle ich Notizen- und Assets-Verzeichnisse?",
+          "a": "<p>Auf der Obsidian-Einstellungsseite:</p><ul><li><strong>Notizverzeichnis:</strong> Hier werden synchronisierte Markdown-Dateien gespeichert — muss sich innerhalb des Vaults befinden</li><li><strong>Assets-Verzeichnis:</strong> Hier werden Bilder und andere Medien gespeichert — Standard ist das Notizverzeichnis, falls nicht festgelegt</li></ul><p>Pfade dürfen keine <code>..</code>, <code>.obsidian</code> oder ungültige Systemzeichen enthalten. Alle ausgewählten Verzeichnisse müssen sich im Vault-Stammverzeichnis befinden.</p>"
+        },
+        {
+          "q": "Was passiert, wenn die Vault-Berechtigungen abgelaufen sind?",
+          "a": "<p>Nach Browser-Neustarts oder langen Inaktivitätszeiträumen können die Vault-Schreibberechtigungen ablaufen. Beim Synchronisieren wird \"Vault-Berechtigung abgelaufen, erneute Autorisierung erforderlich\" angezeigt.</p><ol><li>Öffnen Sie das Einstellungsfenster des Erweiterungs-Popups</li><li>Klicken Sie in der Obsidian-Zeile auf die Schaltfläche <strong>Konfigurieren</strong>, um die Einstellungen zu öffnen</li><li>Klicken Sie erneut auf \"Überprüfen und speichern\" — der Browser wird erneut um Berechtigung bitten</li><li>Erlauben Sie den Zugriff, um die Synchronisierung fortzusetzen</li></ol><div class=\"help-tip\">Wenn Berechtigungen ständig ablaufen, überprüfen Sie, ob der Browser im Inkognito-Modus ausgeführt wird (Inkognito unterstützt keine persistenten Dateisystemberechtigungen).</div>"
+        },
+        {
+          "q": "Was soll ich tun, wenn die Obsidian-Synchronisierung fehlschlägt?",
+          "a": "<p>Häufige Fehlerursachen und Lösungen:</p><ul><li><strong>Vault nicht verbunden:</strong> Verbinden Sie zuerst einen Obsidian-Vault in den Einstellungen</li><li><strong>Verzeichnis fehlt:</strong> Das zuvor ausgewählte Notizverzeichnis wurde möglicherweise gelöscht oder umbenannt — wählen Sie es in den Einstellungen erneut aus</li><li><strong>Schreibkonflikt:</strong> Eine Notiz aus einer anderen Quelle existiert bereits unter demselben Pfad — benennen Sie die Notiz um oder löschen Sie die konfliktäre Datei</li><li><strong>Eine andere Synchronisierung läuft:</strong> Es ist jeweils nur eine Obsidian-Synchronisierungsaufgabe erlaubt — warten Sie, bis die aktuelle Aufgabe abgeschlossen ist</li></ul><p>Wenn die Synchronisierung fehlschlägt, wird die Notiz nicht erstellt oder geändert — ein erneuter Versuch ist sicher.</p>"
+        },
+        {
+          "q": "Was bedeutet es, wenn \"Kein Vault-Stammverzeichnis\" angezeigt wird?",
+          "a": "<p>Das bedeutet, dass der ausgewählte Ordner kein <code>.obsidian</code>-Verzeichnis enthält. Während die Auswahl eines Unterverzeichnisses weiterhin Dateischreibvorgänge ermöglicht, schlagen <code>obsidian://</code>-Links mit \"Vault nicht gefunden\" fehl.</p><p>Bitte klicken Sie erneut auf \"Vault wählen\" und wählen Sie den <strong>übergeordneten Ordner</strong>, der den <code>.obsidian</code>-Ordner enthält (d. h. den in Obsidian registrierten Vault-Stamm).</p>"
+        },
+        {
+          "q": "Was passiert, wenn einige Bilder während der Obsidian-Synchronisierung fehlen?",
+          "a": "<p>Aus Stabilitätsgründen behält jede Notiz maximal <strong>50 Bilder</strong> — zusätzliche werden übersprungen. Weitere mögliche Ursachen:</p><ul><li>Bild aus einer nicht unterstützten Domain oder einem nicht unterstützten Format</li><li>Bild überschreitet das 8MB-Sicherheitslimit und kann nicht komprimiert werden</li><li>Animiertes GIF oder SVG überschreitet die Komprimierungsfähigkeit</li></ul><p>Wenn nach der Synchronisierung Bildwarnungen vorliegen, zeigt der Status \"Mit Warnungen synchronisiert\" an. Öffnen Sie die Notiz, um sie zu überprüfen und fehlende Bilder manuell hinzuzufügen.</p>"
+        },
+        {
+          "q": "Wie trenne ich die Obsidian-Verbindung?",
+          "a": "<p>Suchen Sie im Einstellungsfenster des Erweiterungs-Popups die Karte Verbindungen und klicken Sie in der Obsidian-Zeile auf die Schaltfläche <strong>Trennen</strong>.</p><p>Nach dem Trennen wird das Vault-Handle aus dem lokalen Speicher entfernt. Notizen und Asset-Dateien, die bereits in den Vault synchronisiert wurden, werden nicht gelöscht. Sie müssen den Vault erneut auswählen und autorisieren, um ihn wieder zu verwenden.</p>"
+        }
+      ]
+    },
+    {
+      "id": "general",
+      "title": "Allgemeine Fragen",
+      "items": [
+        {
+          "q": "Was ist der Unterschied zwischen Free und Pro?",
+          "a": "<p>Der Free-Plan erlaubt <strong>3 Exporte pro Tag</strong>, 2 grundlegende Themes und 1 Batch-Export-Test.</p><p>Pro schaltet alle Funktionen frei:</p><ul><li>Unbegrenzte lokale Exporte</li><li>Unbegrenzte Batch-Exporte</li><li>8 veröffentlichungsreife Layout-Themes</li><li>Wasserzeichen ausblenden</li><li>Nahtlose Notion-/Obsidian-Auto-Synchronisierung</li><li>Szenariobasierte professionelle Vorlagen</li><li>Qualitätsprüfungen vor dem Export</li></ul><div class=\"help-tip\">Pro bietet Pläne für Monatlich (4,99 $), Jährlich (29,99 $) und Lebenslang (49,99 $).</div>"
+        },
+        {
+          "q": "Wie viele Exporte kann ich mit dem Free-Plan pro Tag durchführen?",
+          "a": "<p>Der Free-Plan erlaubt <strong>3 Exporte pro Tag</strong> (Zurücksetzung nach UTC-Datum).</p><p>Die Notion-Synchronisierung verbraucht ebenfalls das Exportkontingent (mit Ausnahme von Deduplizierungsaufgaben). Die Obsidian-Synchronisierung verbraucht kein Kontingent. Upgraden Sie auf Pro für unbegrenzte Exporte.</p>"
+        },
+        {
+          "q": "Was bewirken die Theme-Einstellungen?",
+          "a": "<p>Themes bestimmen den visuellen Layout-Stil exportierter Dokumente. <strong>Themes gelten nur für PDF- und Bild-Exporte</strong> — andere Formate sind nicht betroffen.</p><p>10 Themes verfügbar:</p><ul><li><strong>Free:</strong> Minimalistisch (Standard), Natürlich</li><li><strong>Pro:</strong> Midnight Dark, Editorial, Terminal, Newsprint, Aurora, McKinsey, Oxford, Mitternachtsrose</li></ul>"
+        },
+        {
+          "q": "Wie wird die Datensicherheit gewährleistet?",
+          "a": "<p>Alle Parsing- und Exportvorgänge erfolgen <strong>zu 100 % lokal im Browser</strong> — Chat-Inhalte werden nie auf Claude Export-Server hochgeladen.</p><ul><li>Dokumentgenerierung und Formatkonvertierung erfolgen lokal</li><li>Nur wenn Unterhaltungen Bilder enthalten, ruft die Erweiterung Bild-Bytes vom vertrauenswürdigen CDN der ursprünglichen KI-Plattform für das Layout ab</li><li>Nutzungszähler werden lokal gespeichert</li><li>Die Notion-Synchronisierung sendet nur Ihre ausgewählten Unterhaltungen direkt an Ihren Notion-Workspace</li><li>Die Obsidian-Synchronisierung erfolgt vollständig lokal — Dateien bleiben auf Ihrem Gerät</li><li>Zahlungen werden sicher von Paddle verarbeitet — es werden keine Kreditkartendaten erfasst</li></ul>"
+        },
+        {
+          "q": "Welche KI-Plattform wird unterstützt?",
+          "a": "<p><strong>Claude Export</strong> ist für <strong>Claude</strong>-Unterhaltungen auf <strong>claude.ai</strong> vorgesehen. Öffnen Sie dort eine Unterhaltung, um die Erweiterung zu verwenden.</p>"
+        },
+        {
+          "q": "Wie viele Unterhaltungen kann ich für den Batch-Export auswählen?",
+          "a": "<p>Der Batch-Export erlaubt maximal <strong>10 Unterhaltungen</strong> gleichzeitig. Bei Überschreitung wird angezeigt: \"Für das beste Export-Erlebnis wird ein Maximum von 10 pro Batch unterstützt. Bitte exportieren Sie in mehreren Chargen.\"</p><p>Wenn die Seitenleiste die Unterhaltungsliste nicht anzeigt, erweitern Sie die Seitenleiste oder aktualisieren Sie die Seite und versuchen Sie es erneut.</p>"
+        }
+      ]
+    }
+  ]
+}

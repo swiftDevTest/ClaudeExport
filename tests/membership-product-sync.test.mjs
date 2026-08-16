@@ -55,14 +55,41 @@ globalThis.CHATVAULT_I18N = {
 await import("../src/product-config.js");
 await import("../src/modules/entitlements.js");
 await import("../src/modules/billing.js");
+await import("../src/modules/usage-store.js");
 
 const productConfig = globalThis.CHATVAULT_PRODUCT_CONFIG;
 const entitlements = globalThis.CHATVAULT_ENTITLEMENTS;
 const billing = globalThis.CHATVAULT_BILLING;
+const usageStore = globalThis.CHATVAULT_USAGE_STORE;
 
 function readText(path) {
   return readFileSync(new URL(path, import.meta.url), "utf8");
 }
+
+test("consumed server usage does not double-count an already refreshed export", async () => {
+  await usageStore.resetDailyUsage();
+  const serverUsage = {
+    usage_date: usageStore.getTodayString(),
+    exportedChats: 1,
+    exportEvents: [{ at: "2026-08-16T00:00:00.000Z", count: 1 }]
+  };
+
+  const [consumed, refreshed] = await Promise.all([
+    usageStore.reconcileConsumedDailyUsage(serverUsage, 1),
+    usageStore.setDailyUsage(serverUsage)
+  ]);
+  assert.equal(consumed.exportedChats, 1);
+  assert.equal(refreshed.exportedChats, 1);
+  assert.equal((await usageStore.getDailyUsage()).exportedChats, 1);
+
+  await usageStore.resetDailyUsage();
+  await usageStore.setDailyUsage(serverUsage);
+  assert.equal((await usageStore.reconcileConsumedDailyUsage(serverUsage, 1)).exportedChats, 1);
+
+  await usageStore.resetDailyUsage();
+  await usageStore.incrementDailyUsage(1);
+  assert.equal((await usageStore.reconcileConsumedDailyUsage(serverUsage, 1)).exportedChats, 2);
+});
 
 test("product entitlement cache is namespaced, encrypted, and account-scoped", async () => {
   storageMap.clear();
@@ -192,7 +219,9 @@ test("auth and entitlement UI refresh mirrors the ChatVault fixed flow", () => {
   assert.match(contentSource, /if \(!sessionEmail && !sessionUserId\) return false;/);
   assert.ok(popupHookSource.indexOf("await showStoredAuthStateImmediately()") < popupHookSource.indexOf("refreshPopupState(true)"));
   assert.ok(contentHookSource.indexOf("await applyStoredAuthStateImmediately()") < contentHookSource.indexOf("refreshAuthStateInBackground()"));
-  assert.ok(contentSignInSource.indexOf("await applyStoredAuthStateImmediately(session)") < contentSignInSource.indexOf("refreshAuthStateInBackground()"));
+  assert.match(contentSignInSource, /await auth\.signInWithGoogle\(\)/);
+  assert.match(contentSignInSource, /CHATVAULT_REFRESH_AUTH_STATE/);
+  assert.match(contentSource, /applyStoredAuthStateImmediately\(sessionChange\.newValue\)/);
 });
 
 test("critical background imports are observable and storage fallbacks stay aligned", () => {

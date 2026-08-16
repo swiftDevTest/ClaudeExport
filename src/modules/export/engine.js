@@ -37,15 +37,6 @@ export async function createExportBlob(request) {
       scope: resolved.scope
     };
 
-    // 统一过滤系统警告消息（notice 前缀），不应作为内容出现在任何导出格式中
-    document.messages = (document.messages || []).filter(function (message) {
-      var blocks = message && message.contentBlocks || [];
-      return !blocks.some(function (block) {
-        return String(block && block.text || "").indexOf("notice:") !== -1 &&
-               String(block && block.text || "").indexOf("This export may be incomplete") !== -1;
-      });
-    });
-
     if (format === "word") {
       blob = await renderWordDocument(document, {
         onProgress: request && request.onProgress,

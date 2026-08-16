@@ -105,7 +105,15 @@ export function createZip(files) {
   ev.setUint32(12, centralSize, true);
   ev.setUint32(16, centralOffset, true);
 
-  return concatBytes(localParts.concat(centralParts, [eocd]));
+  // 用 Blob 直接组装，避免 concatBytes 分配单一连续巨型 Uint8Array。
+  // 批量导出 50 会话×4MB = 200MB 时，原实现要分配 200MB 连续内存并全量拷贝，
+  // 易因堆外内存碎片化分配失败。Blob 构造器对 ArrayBufferView 数组零拷贝引用。
+  // 宿主无 Blob（极旧环境）时回退到 concatBytes 保证可用性。
+  var parts = localParts.concat(centralParts, [eocd]);
+  if (typeof Blob !== "undefined") {
+    return new Blob(parts, { type: "application/zip" });
+  }
+  return concatBytes(parts);
 }
 
 var crcTable = null;
