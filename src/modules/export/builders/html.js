@@ -14,7 +14,7 @@ import {
   t,
   yieldToBrowser
 } from '../utils.js';
-import { fetchImageBytes } from '../media.js';
+import { fetchImageBytes, getImagePreloadConcurrency } from '../media.js';
 import { getExportTheme } from '../themes/tokens.js';
 import { isTransparentCssColor, serializeExportHtmlStyle } from '../html-style.js';
 import { getMathMl } from '../math.js';
@@ -306,7 +306,7 @@ async function buildEmbeddedImageMap(messages, options) {
     });
   });
   var imageMap = new Map();
-  await mapLimit(sources, 2, async function (src, index) {
+  await mapLimit(sources, getImagePreloadConcurrency(4), async function (src, index) {
     if (options.signal && options.signal.aborted) {
       var abortError = new Error("aborted");
       abortError.name = "AbortError";

@@ -22,6 +22,13 @@ function createMissingDependencyError(name) {
   const GEMINI_BATCH_RESPONSE_MAX_CHARS = 10 * 1024 * 1024;
   const PLATFORM_EXPORT_REQUEST_TIMEOUT_MS = 25000;
   const PLATFORM_EXPORT_RESPONSE_MAX_BYTES = 24 * 1024 * 1024;
+  // ChatGPT's conversation tree can be substantially larger than the final
+  // rendered document because the payload also contains inactive branches and
+  // tool metadata. Give full-conversation exports a larger, still bounded
+  // envelope instead of falling back to an incomplete DOM snapshot.
+  const CHATGPT_CONVERSATION_REQUEST_TIMEOUT_MS = 60000;
+  const CHATGPT_CONVERSATION_RESPONSE_MAX_BYTES = 64 * 1024 * 1024;
+  const CHATGPT_CONVERSATION_FETCH_ATTEMPTS = 2;
   const CLAUDE_ATTACHMENT_FETCH_TIMEOUT_MS = 4000;
   const CLAUDE_ATTACHMENT_MAX_BYTES = 12 * 1024 * 1024;
   const CLAUDE_ATTACHMENT_CONCURRENCY = 4;
@@ -2933,6 +2940,11 @@ function createMissingDependencyError(name) {
       const body = await readPlatformResponseBody(response, responseType, platformLabel, timeoutMs, maxResponseBytes);
       return { response, body };
     } catch (error) {
+      if (!timedOut && options.signal && options.signal.aborted) {
+        var cancelledError = new Error(`${platformLabel} conversation request was cancelled.`);
+        cancelledError.name = "AbortError";
+        throw cancelledError;
+      }
       if (timedOut || error?.name === "AbortError") {
         throw new Error(`${platformLabel} conversation request timed out. Refresh ${platformLabel} and try again.`);
       }
@@ -4147,10 +4159,119 @@ function createMissingDependencyError(name) {
       return headers;
     }
 
+    function isRetryableChatGptConversationStatus(status) {
+      var value = Number(status) || 0;
+      return value === 408 || value === 425 || value === 429 || value >= 500;
+    }
+
+    function isRetryableChatGptConversationError(error) {
+      if (!error || error.name === "AbortError" || error.code === "CHATGPT_CONVERSATION_AUTH") {
+        return false;
+      }
+      // Fetch rejects transport failures with TypeError in Chromium. Some
+      // browser/network layers use a plain Error instead, so accept only the
+      // narrow connection-failure messages below. Response-size, timeout,
+      // JSON/schema, and application errors must not download the payload a
+      // second time.
+      if (error.name === "TypeError") return true;
+      return /failed to fetch|network(?:error| request failed)|load failed|connection (?:failed|reset|closed)/i.test(String(error.message || ""));
+    }
+
+    async function waitForChatGptConversationRetry(attempt, signal) {
+      if (signal && signal.aborted) {
+        var abortError = new Error("Conversation export was cancelled.");
+        abortError.name = "AbortError";
+        throw abortError;
+      }
+      var delay = 700 * Math.pow(2, Math.max(0, attempt));
+      await new Promise(function (resolve, reject) {
+        var timeoutId = setTimeout(function () {
+          if (signal) signal.removeEventListener("abort", onAbort);
+          resolve();
+        }, delay);
+        function onAbort() {
+          clearTimeout(timeoutId);
+          if (signal) signal.removeEventListener("abort", onAbort);
+          var abortError = new Error("Conversation export was cancelled.");
+          abortError.name = "AbortError";
+          reject(abortError);
+        }
+        if (signal) signal.addEventListener("abort", onAbort, { once: true });
+      });
+    }
+
+    async function fetchChatGptConversationPayload(conversationId, session, options) {
+      var opts = options || {};
+      var url = window.location.origin + "/backend-api/conversation/" + conversationId;
+      var lastError = null;
+
+      for (var attempt = 0; attempt < CHATGPT_CONVERSATION_FETCH_ATTEMPTS; attempt += 1) {
+        try {
+          var result = await fetchPlatformConversationPayload(url, {
+            credentials: "include",
+            headers: getChatGptRequestHeaders(session),
+            signal: opts.signal,
+            timeoutMs: CHATGPT_CONVERSATION_REQUEST_TIMEOUT_MS,
+            maxResponseBytes: CHATGPT_CONVERSATION_RESPONSE_MAX_BYTES
+          }, "ChatGPT", "json");
+          var response = result.response;
+
+          if (response.ok) return result;
+          if (response.status === 401 || response.status === 403) {
+            if (session && session.accessToken && attempt < CHATGPT_CONVERSATION_FETCH_ATTEMPTS - 1) {
+              // A cached bearer token can expire while the first-party
+              // ChatGPT cookie is still valid. Retry once without the stale
+              // Authorization header before treating the chat as unavailable.
+              session = {};
+              lastError = new Error(getChatGptConversationUnavailableMessage(response.status));
+              continue;
+            }
+            var authError = new Error(getChatGptConversationUnavailableMessage(response.status));
+            authError.code = "CHATGPT_CONVERSATION_AUTH";
+            throw authError;
+          }
+
+          lastError = new Error("ChatGPT conversation request failed: " + response.status);
+          if (!isRetryableChatGptConversationStatus(response.status) || attempt >= CHATGPT_CONVERSATION_FETCH_ATTEMPTS - 1) {
+            throw lastError;
+          }
+        } catch (error) {
+          lastError = error;
+          if (error && error.name === "AbortError") throw error;
+          if (attempt >= CHATGPT_CONVERSATION_FETCH_ATTEMPTS - 1 || error && error.code === "CHATGPT_CONVERSATION_AUTH") {
+            throw error;
+          }
+          if (!isRetryableChatGptConversationError(error)) throw error;
+        }
+
+        await waitForChatGptConversationRetry(attempt, opts.signal);
+      }
+
+      throw lastError || new Error("ChatGPT conversation body could not be loaded.");
+    }
+
+    function assertCompleteChatGptConversationPath(payload, nodes) {
+      if (!Array.isArray(nodes) || !nodes.length) {
+        throw new Error("ChatGPT returned an empty conversation path.");
+      }
+      var firstParent = nodes[0] && nodes[0].parent;
+      if (firstParent !== null && firstParent !== undefined && String(firstParent) !== "") {
+        throw new Error("ChatGPT returned an incomplete conversation path. Refresh ChatGPT and try again.");
+      }
+    }
+
     async function fetchChatGptConversationMessages(chat, options) {
       options = options || {};
       requireFn(deps, "ensureCanReadChatBody")(chat);
-      var chatGptSession = await requireFn(deps, "getChatGptWebSession")();
+      var chatGptSession = {};
+      try {
+        chatGptSession = await requireFn(deps, "getChatGptWebSession")() || {};
+      } catch (sessionError) {
+        // The conversation endpoint also accepts ChatGPT's first-party cookie.
+        // A transient /api/auth/session failure must not force a partial DOM
+        // export before the authoritative endpoint has even been attempted.
+        chatGptSession = {};
+      }
       var rawConversationId = requireFn(deps, "getChatConversationId")(chat);
 
       if (!rawConversationId) {
@@ -4158,10 +4279,7 @@ function createMissingDependencyError(name) {
       }
 
       var conversationId = encodeURIComponent(rawConversationId);
-      var conversationResult = await fetchPlatformConversationPayload(window.location.origin + "/backend-api/conversation/" + conversationId, {
-        credentials: "include",
-        headers: getChatGptRequestHeaders(chatGptSession)
-      }, "ChatGPT", "json");
+      var conversationResult = await fetchChatGptConversationPayload(conversationId, chatGptSession, options);
       var response = conversationResult.response;
 
       if (!response.ok) {
@@ -4173,6 +4291,7 @@ function createMissingDependencyError(name) {
 
       var payload = conversationResult.body;
       var nodes = getChatGptConversationNodes(payload, options.pageMessages || []);
+      assertCompleteChatGptConversationPath(payload, nodes);
       var messages = [];
       var fileUrlPromises = new Map();
       var pageImageSourcesByFileId = new Map();
@@ -4278,10 +4397,11 @@ function createMissingDependencyError(name) {
       }
 
       // 收集本次 fetch 的完整性诊断：未知 content_type / 空消息 / 角色缺失等。
-      // 上游 fetchConversationMessagesForExport 会据此决定是否触发 DOM fallback。
+      // 上游必须先通过完整性检查，才能把消息交给任何导出构建器。
       var fetchDiagnostics = {
         hasUnknownContent: false,
         unknownTypes: [],
+        unknownOnlyMessageCount: 0,
         messageCount: 0,
         emptyContentBlockCount: 0,
         hasUserRole: false,
@@ -4297,6 +4417,19 @@ function createMissingDependencyError(name) {
         var partDiagnostics = { hasUnknownContent: false, unknownTypes: [] };
         var contentBlocks = chatGptMessageToExportBlocks(message, partDiagnostics);
         var role = normalizeChatGptExportRole(message, contentBlocks);
+
+        // Record unknown message shapes before filtering empty blocks. The old
+        // order returned early here, which meant a wholly unknown visible turn
+        // disappeared without setting any completeness-risk signal.
+        if (partDiagnostics.hasUnknownContent) {
+          fetchDiagnostics.hasUnknownContent = true;
+          (partDiagnostics.unknownTypes || []).forEach(function (typeLabel) {
+            if (fetchDiagnostics.unknownTypes.indexOf(typeLabel) === -1) {
+              fetchDiagnostics.unknownTypes.push(typeLabel);
+            }
+          });
+          if (!contentBlocks.length) fetchDiagnostics.unknownOnlyMessageCount += 1;
+        }
         if (!role || !contentBlocks.length) return;
 
         var msgObj = {
@@ -4313,14 +4446,10 @@ function createMissingDependencyError(name) {
         if (partDiagnostics.hasUnknownContent) {
           msgObj._chatVaultHasUnknownContent = true;
           msgObj._chatVaultUnknownTypes = partDiagnostics.unknownTypes.slice();
-          fetchDiagnostics.hasUnknownContent = true;
-          (partDiagnostics.unknownTypes || []).forEach(function (typeLabel) {
-            if (fetchDiagnostics.unknownTypes.indexOf(typeLabel) === -1) {
-              fetchDiagnostics.unknownTypes.push(typeLabel);
-            }
-          });
         }
-        if (!contentBlocks.some(function (block) { return block && block.text; })) {
+        if (!contentBlocks.some(function (block) {
+          return block && (block.text || block.type === "image" || block.generatedFile);
+        })) {
           fetchDiagnostics.emptyContentBlockCount += 1;
         }
         if (role === "user") fetchDiagnostics.hasUserRole = true;
@@ -4537,7 +4666,8 @@ function createMissingDependencyError(name) {
       return messages;
     }
 
-    // 检测 API 解析结果的完整性风险，决定是否需要 fallback 到 DOM。
+    // 检测 API 解析结果的完整性风险。完整会话导出应在风险存在时
+    // 中止；只有调用方明确请求可见页面模式时才允许 DOM fallback。
     // 风险信号：
     //   1. fetchChatGptConversationMessages 挂载的 _chatVaultFetchDiagnostics 中
     //      hasUnknownContent=true（出现 schema 未识别的 content_type）
@@ -4556,6 +4686,8 @@ function createMissingDependencyError(name) {
         diagnostics = messages && messages._chatVaultFetchDiagnostics;
       } catch (error) {}
       if (diagnostics && diagnostics.hasUnknownContent) {
+        // Unknown ChatGPT schemas are completeness risks even when the same
+        // message also contains known text: the unknown part may be visible.
         reasons.push("unknown_content_type");
         (diagnostics.unknownTypes || []).forEach(function (typeLabel) {
           if (unknownTypes.indexOf(typeLabel) === -1) unknownTypes.push(typeLabel);

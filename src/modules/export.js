@@ -97,14 +97,14 @@
     var searchTitle = "";
 
     if (platform === PLATFORM_CHATGPT) {
-      var match = pathname.match(/^\/c\/([^/?#]+)/);
+      var match = pathname.match(/(?:^|\/)c\/([^/?#]+)/);
       var chatId = match && match[1] ? decodeURIComponent(match[1]) : "";
       if (chatId) {
         var anchors = document.querySelectorAll('a[href^="/c/"], a[href*="chatgpt.com/c/"], a[href*="chat.openai.com/c/"]');
         for (var i = 0; i < anchors.length; i++) {
           var anchor = anchors[i];
           var href = anchor.getAttribute("href") || "";
-          var aMatch = href.match(/^\/c\/([^/?#]+)/);
+          var aMatch = href.match(/(?:^|\/)c\/([^/?#]+)/);
           var aChatId = aMatch && aMatch[1] ? decodeURIComponent(aMatch[1]) : "";
           if (aChatId === chatId) {
             var clone = anchor.cloneNode(true);
@@ -484,7 +484,7 @@
       sanitizeImageAlt: function (text) { assertMods(); return _mods.utils.sanitizeImageAlt(text); },
       ensureImageBlockMetadata: function (block, index) { assertMods(); return _mods.utils.ensureImageBlockMetadata(block, index); },
       canvasToBlob: function (canvas, type, quality, timeoutMs) { assertMods(); return _mods.utils.canvasToBlob(canvas, type, quality, timeoutMs); },
-      getFittedCanvasScale: function (width, height, preferredScale, minScale) { assertMods(); return _mods.utils.getFittedCanvasScale(width, height, preferredScale, minScale); }
+      getFittedCanvasScale: function (width, height, preferredScale, minScale, maxPixels) { assertMods(); return _mods.utils.getFittedCanvasScale(width, height, preferredScale, minScale, maxPixels); }
     }
   };
 

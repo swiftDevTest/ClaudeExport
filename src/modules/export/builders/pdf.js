@@ -33,6 +33,9 @@ var PDF_MAX_ENCODED_PAGE_BYTES = 150 * 1024 * 1024;
 var PDF_MAX_TABLE_ROW_LINES = 40;
 var PDF_FAST_PENDING_PAGE_JOBS = 5;
 var PDF_CONSERVATIVE_PENDING_PAGE_JOBS = 2;
+var PDF_DEFAULT_CANVAS_SCALE = 3;
+var PDF_CONSERVATIVE_CANVAS_SCALE = 2.5;
+var PDF_LOW_MEMORY_CANVAS_SCALE = 2.25;
 
 function getInlineValueLength(value) {
   if (typeof value === "string") return value.length;
@@ -55,7 +58,7 @@ function getExplicitLineCount(value) {
   return text ? text.split(/\r?\n/).length : 0;
 }
 
-function shouldUseConservativePdfEncoding(messages) {
+function shouldUseConservativePdfEncoding(messages, deviceMemoryInput) {
   var totalTextLength = 0;
   var totalBlocks = 0;
   var imageCount = 0;
@@ -105,16 +108,44 @@ function shouldUseConservativePdfEncoding(messages) {
     });
   });
 
-  var deviceMemory = 0;
-  try {
-    deviceMemory = Number(globalThis.navigator && globalThis.navigator.deviceMemory || 0);
-  } catch (error) {}
+  var deviceMemory = Number(deviceMemoryInput);
+  if (!Number.isFinite(deviceMemory) || deviceMemory <= 0) {
+    try {
+      deviceMemory = Number(globalThis.navigator && globalThis.navigator.deviceMemory || 0);
+    } catch (error) {
+      deviceMemory = 0;
+    }
+  }
 
   return oversizedStructure ||
     totalTextLength >= 120000 ||
     totalBlocks >= 600 ||
     imageCount >= 12 ||
     (Number.isFinite(deviceMemory) && deviceMemory > 0 && deviceMemory <= 4);
+}
+
+export function getPdfRenderProfile(messages, deviceMemoryInput) {
+  var deviceMemory = Number(deviceMemoryInput);
+  if (!Number.isFinite(deviceMemory) || deviceMemory <= 0) {
+    try {
+      deviceMemory = Number(globalThis.navigator && globalThis.navigator.deviceMemory || 0);
+    } catch (error) {
+      deviceMemory = 0;
+    }
+  }
+  var conservative = shouldUseConservativePdfEncoding(messages, deviceMemory);
+  var scale = deviceMemory > 0 && deviceMemory <= 4
+    ? PDF_LOW_MEMORY_CANVAS_SCALE
+    : conservative
+      ? PDF_CONSERVATIVE_CANVAS_SCALE
+      : PDF_DEFAULT_CANVAS_SCALE;
+  return {
+    conservative: conservative,
+    scale: scale,
+    maxPendingPageJobs: conservative
+      ? PDF_CONSERVATIVE_PENDING_PAGE_JOBS
+      : PDF_FAST_PENDING_PAGE_JOBS
+  };
 }
 
 function isPlainPdfRichLine(line) {
@@ -162,7 +193,7 @@ export async function buildPdfBlob(messages, metadata, settingsInput, options) {
     }
   }, imageCache, mathAssets);
   notifyProgress(options, t("export_progress_generating_pdf", "Generating PDF"), 0.68);
-  var pdf = createPdfFromJpegs(pages, 3.0);
+  var pdf = createPdfFromJpegs(pages, pages[0] && pages[0].canvasScale || PDF_DEFAULT_CANVAS_SCALE);
   notifyProgress(options, t("export_progress_ready_doc", "Export ready"), 1);
   return pdf;
 }
@@ -178,15 +209,14 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
 
   var pageWidth = 794;
   var pageHeight = 1123;
-  var scale = 3.0;
+  var renderProfile = getPdfRenderProfile(messages);
+  var scale = renderProfile.scale;
   var margin = 56;
   var topMargin = 54;
   var bottomMargin = 74;
   var contentWidth = pageWidth - margin * 2;
   var pageJobs = [];
-  var maxPendingPageJobs = shouldUseConservativePdfEncoding(messages)
-    ? PDF_CONSERVATIVE_PENDING_PAGE_JOBS
-    : PDF_FAST_PENDING_PAGE_JOBS;
+  var maxPendingPageJobs = renderProfile.maxPendingPageJobs;
   var encodedPages = [];
   var totalPageCount = 0;
   var encodedPageBytes = 0;
@@ -327,6 +357,7 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
           bytes: bytes,
           logicalWidth: pageWidth,
           logicalHeight: pageHeight,
+          canvasScale: scale,
           links: links
         };
       } catch (e) {
@@ -345,6 +376,7 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
             bytes: fallbackBytes,
             logicalWidth: pageWidth,
             logicalHeight: pageHeight,
+            canvasScale: scale,
             links: links
           };
         } catch (e2) {
@@ -2140,8 +2172,10 @@ export function createPdfFromJpegs(jpegPages, canvasScale) {
   pushObject("1 0 obj\n<< /Type /Catalog /Pages 2 0 R /Outlines [] >>\nendobj\n");
 
   var pageEntries = jpegPages.map(function (page, index) {
-    var pageW = Math.round(page.width / scale * 72 / 96);
-    var pageH = Math.round(page.height / scale * 72 / 96);
+    var logicalWidth = Number(page.logicalWidth) || page.width / scale;
+    var logicalHeight = Number(page.logicalHeight) || page.height / scale;
+    var pageW = Math.round(logicalWidth * 72 / 96);
+    var pageH = Math.round(logicalHeight * 72 / 96);
     var streamContent = "q\n" + pageW + " 0 0 " + pageH + " 0 0 cm\n/Im" + index + " Do\nQ";
     var streamBytes = encoder.encode(streamContent);
     return {
@@ -2150,8 +2184,8 @@ export function createPdfFromJpegs(jpegPages, canvasScale) {
       width: page.width,
       height: page.height,
       bytes: page.bytes,
-      logicalWidth: Number(page.logicalWidth) || page.width / scale,
-      logicalHeight: Number(page.logicalHeight) || page.height / scale,
+      logicalWidth: logicalWidth,
+      logicalHeight: logicalHeight,
       links: Array.isArray(page.links) ? page.links : [],
       streamContent: streamContent,
       streamLength: streamBytes.length

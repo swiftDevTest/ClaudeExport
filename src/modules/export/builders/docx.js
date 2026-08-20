@@ -1,5 +1,5 @@
 import { getPlatformLabel, t, formatDateDisplay, sanitizeFilename, notifyProgress, yieldToBrowser, sanitizeExportText, sanitizeInlineSegmentText, sanitizeImageAlt, normalizeExportLinkHref, mapLimit, formatLatexUnicode, ensureImageBlockMetadata, getImageDedupKey, parseInlineMarkdown, getPrefixedInlineSegments } from '../utils.js';
-import { preloadImageForDocx, calculateWordImageDimensions } from '../media.js';
+import { preloadImageForDocx, calculateWordImageDimensions, getImagePreloadConcurrency } from '../media.js';
 import { createZip } from '../zip.js';
 import { getWordTheme } from '../themes/word.js';
 import { getMathAssetKey, mathFallbackText, preloadMathAssets } from '../math.js';
@@ -512,7 +512,7 @@ export async function buildDocxBlob(messages, metadata, settingsInput, options) 
   if (uniqueImages.length > 0) {
     var loadedImages = 0;
     var aggregateImageBytes = 0;
-    var preloadedResults = await mapLimit(uniqueImages, 2, async function (entry, index) {
+    var preloadedResults = await mapLimit(uniqueImages, getImagePreloadConcurrency(4), async function (entry, index) {
       throwIfAborted();
       var result = await preloadImageForDocx(entry.src, index, options);
       throwIfAborted();

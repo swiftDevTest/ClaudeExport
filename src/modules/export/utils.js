@@ -180,14 +180,14 @@ export function getConversationTitle() {
   var searchTitle = "";
 
   if (platform === PLATFORM_CHATGPT) {
-    var match = pathname.match(/^\/c\/([^/?#]+)/);
+    var match = pathname.match(/(?:^|\/)c\/([^/?#]+)/);
     var chatId = match && match[1] ? decodeURIComponent(match[1]) : "";
     if (chatId) {
       var anchors = document.querySelectorAll('a[href^="/c/"], a[href*="chatgpt.com/c/"], a[href*="chat.openai.com/c/"]');
       for (var i = 0; i < anchors.length; i++) {
         var anchor = anchors[i];
         var href = anchor.getAttribute("href") || "";
-        var aMatch = href.match(/^\/c\/([^/?#]+)/);
+        var aMatch = href.match(/(?:^|\/)c\/([^/?#]+)/);
         var aChatId = aMatch && aMatch[1] ? decodeURIComponent(aMatch[1]) : "";
         if (aChatId === chatId) {
           var clone = anchor.cloneNode(true);
@@ -454,13 +454,17 @@ export function yieldToBrowser() {
   });
 }
 
-export function getFittedCanvasScale(width, height, preferredScale, minScale) {
+export function getFittedCanvasScale(width, height, preferredScale, minScale, maxPixels) {
   var safeWidth = Math.max(1, Number(width) || 1);
   var safeHeight = Math.max(1, Number(height) || 1);
   var targetScale = Number(preferredScale);
   if (!Number.isFinite(targetScale) || targetScale <= 0) targetScale = 1;
 
-  var maxByArea = Math.sqrt(IMAGE_MAX_CANVAS_PIXELS / (safeWidth * safeHeight));
+  var requestedPixelBudget = Number(maxPixels === undefined ? IMAGE_MAX_CANVAS_PIXELS : maxPixels);
+  var pixelBudget = Number.isFinite(requestedPixelBudget) && requestedPixelBudget > 0
+    ? Math.min(IMAGE_MAX_CANVAS_PIXELS, requestedPixelBudget)
+    : IMAGE_MAX_CANVAS_PIXELS;
+  var maxByArea = Math.sqrt(pixelBudget / (safeWidth * safeHeight));
   var maxByDimension = IMAGE_MAX_CANVAS_DIMENSION / Math.max(safeWidth, safeHeight);
   var fitted = Math.min(targetScale, maxByArea, maxByDimension);
   var floorScale = Number(minScale);
@@ -471,6 +475,29 @@ export function getFittedCanvasScale(width, height, preferredScale, minScale) {
   }
 
   return Math.max(floorScale, fitted);
+}
+
+// A 4x 1080px-wide long image can approach Chromium's 72 MP canvas ceiling,
+// which alone consumes about 275 MiB as RGBA. Keep full quality on capable
+// machines while reducing both scale and the pixel budget on lower-memory
+// devices. Passing a value makes this helper deterministic in tests.
+export function getAdaptiveImageExportProfile(deviceMemoryInput) {
+  var deviceMemory = Number(deviceMemoryInput);
+  if (!Number.isFinite(deviceMemory) || deviceMemory <= 0) {
+    try {
+      deviceMemory = Number(globalThis.navigator && globalThis.navigator.deviceMemory || 0);
+    } catch (error) {
+      deviceMemory = 0;
+    }
+  }
+
+  if (deviceMemory > 0 && deviceMemory <= 4) {
+    return { preferredScale: 2.5, maxCanvasPixels: 36 * 1000 * 1000 };
+  }
+  if (deviceMemory > 0 && deviceMemory <= 8) {
+    return { preferredScale: 3, maxCanvasPixels: 48 * 1000 * 1000 };
+  }
+  return { preferredScale: IMAGE_EXPORT_SCALE, maxCanvasPixels: IMAGE_MAX_CANVAS_PIXELS };
 }
 
 export async function mapLimit(array, limit, fn) {

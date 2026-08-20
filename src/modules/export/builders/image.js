@@ -3,7 +3,6 @@ import {
   t,
   formatDateDisplay,
   IMAGE_RENDER_WIDTH,
-  IMAGE_EXPORT_SCALE,
   IMAGE_PREVIEW_SCALE,
   IMAGE_MIN_EXPORT_SCALE,
   notifyProgress,
@@ -12,6 +11,7 @@ import {
   createCanvas,
   canvasToBlob,
   getFittedCanvasScale,
+  getAdaptiveImageExportProfile,
   wrapText,
   cleanInlineMarkdownText,
   getInlinePlainText,
@@ -102,7 +102,8 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
   var flatLayout = themeConfig.styleId === "natural";
   var messageBottomGap = flatLayout ? 20 : IMAGE_MESSAGE_BOTTOM_GAP;
   var width = IMAGE_RENDER_WIDTH;
-  var scale = options && options.preview ? IMAGE_PREVIEW_SCALE : IMAGE_EXPORT_SCALE;
+  var imageProfile = getAdaptiveImageExportProfile();
+  var scale = options && options.preview ? IMAGE_PREVIEW_SCALE : imageProfile.preferredScale;
   var pad = 64;
   var contentWidth = width - pad * 2;
   var measure = createCanvas(width, 10, 1);
@@ -568,7 +569,7 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
   var footerHeight = settings.show_chatvault_badge ? IMAGE_FOOTER_TOP_GAP + IMAGE_FOOTER_BOTTOM_GAP + 22 : 34;
   var height = Math.max(720, Math.ceil(y + footerHeight));
   if (!(options && options.preview)) {
-    var fittedScale = getFittedCanvasScale(width, height, scale, IMAGE_MIN_EXPORT_SCALE);
+    var fittedScale = getFittedCanvasScale(width, height, scale, IMAGE_MIN_EXPORT_SCALE, imageProfile.maxCanvasPixels);
     if (!fittedScale) {
       // 用 code 标记图片超限错误，让上层弹窗替代普通 toast
       var err = new Error(t("export_image_canvas_limit", "This conversation is too long for a high-quality image export because browsers limit canvas size. Export as PDF instead."));

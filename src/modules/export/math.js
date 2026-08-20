@@ -168,7 +168,15 @@ export async function renderMathPngAsset(block, options) {
     if (!context) return null;
     context.scale(2, 2);
     context.drawImage(image, 0, 0, width, height);
-    var dataUrl = canvas.toDataURL('image/png');
+    var dataUrl = '';
+    try {
+      dataUrl = canvas.toDataURL('image/png');
+    } finally {
+      // The data URL owns the encoded bytes; release the temporary RGBA
+      // backing store immediately instead of waiting for a later GC cycle.
+      canvas.width = 1;
+      canvas.height = 1;
+    }
     return { src: dataUrl, width: width, height: height, element: image, latex: expression };
   })().catch(function () {
     // Rendering is enhancement-only. A browser that blocks SVG foreignObject

@@ -6,12 +6,12 @@ import {
   IMAGE_MAX_MESSAGES,
   IMAGE_MAX_CODE_CHARS,
   IMAGE_RENDER_WIDTH,
-  IMAGE_EXPORT_SCALE,
   IMAGE_MIN_EXPORT_SCALE,
   IMAGE_MAX_RENDER_HEIGHT,
   normalizeExportSettings,
   t,
   getFittedCanvasScale,
+  getAdaptiveImageExportProfile,
   dedupeImageBlocksWithinMessage,
   getBlockText,
   getPlainText
@@ -20,7 +20,7 @@ import {
 import { compareElementsInDocument, pushDistinctDocumentElement } from './platforms/shared.js';
 import { parseMessagesForPlatform } from './platforms/registry.js';
 import { createExportDocument, normalizeExportBlocks, validateExportDocument } from './document.js';
-import { withExportHtmlStyleCapture } from './html-style.js';
+import { captureExportHtmlStyle, sanitizeExportHtmlStyle, withExportHtmlStyleCapture } from './html-style.js';
 
 var selectionSelectedMessages = new Map();
 var selectionOrderCounter = 0;
@@ -208,14 +208,18 @@ function orderUserImageBlocksFirst(role, blocks) {
 }
 
 function cloneExportMessage(message) {
-  var role = message && message.role || "assistant";
+  var rawRole = message && message.role;
+  var role = rawRole === "system" ? "system" : rawRole === "user" ? "user" : "assistant";
   var cloned = cloneContentBlocks(message && message.contentBlocks);
   var deduped = dedupeImageBlocksWithinMessage(cloned);
-  return {
+  var result = {
     role: role,
-    contentBlocks: orderUserImageBlocksFirst(role, deduped),
-    ...(message && message.htmlStyle ? { htmlStyle: { ...message.htmlStyle } } : {})
+    contentBlocks: orderUserImageBlocksFirst(role, deduped)
   };
+  var messageHtmlStyle = sanitizeExportHtmlStyle(message && message.htmlStyle) ||
+    captureExportHtmlStyle(message && message.contentElement);
+  if (messageHtmlStyle) result.htmlStyle = messageHtmlStyle;
+  return result;
 }
 
 function getSelectionDomKey(element) {
@@ -394,7 +398,12 @@ function resolveMessages(request) {
     });
   }
 
-
+  // createExportDocument receives the normalized fast-path marker below, so
+  // preserve the same filtered, contiguous indices that its former second
+  // normalization pass assigned.
+  messages.forEach(function (message, index) {
+    message.index = index;
+  });
 
   if (!messages.length) {
     return { ok: false, error: "No messages match this export scope." };
@@ -408,6 +417,10 @@ function resolveMessages(request) {
     scope: scope
   };
   var document = createExportDocument({
+    // cloneExportMessage already normalizes and sanitizes every block. Mark
+    // the document input so createExportDocument does not repeat the same
+    // full traversal for long conversations.
+    _normalized: true,
     platform: platform,
     scope: scope,
     messages: messages,
@@ -464,7 +477,14 @@ function getImageEligibility(input) {
 
   var settings = normalizeExportSettings(resolved.settings);
   var estimatedHeight = estimateImageHeight(messages, settings, resolved.metadata);
-  var fittedScale = getFittedCanvasScale(IMAGE_RENDER_WIDTH, estimatedHeight, IMAGE_EXPORT_SCALE, IMAGE_MIN_EXPORT_SCALE);
+  var imageProfile = getAdaptiveImageExportProfile();
+  var fittedScale = getFittedCanvasScale(
+    IMAGE_RENDER_WIDTH,
+    estimatedHeight,
+    imageProfile.preferredScale,
+    IMAGE_MIN_EXPORT_SCALE,
+    imageProfile.maxCanvasPixels
+  );
   if (!fittedScale) {
     return {
       ok: false,
@@ -477,7 +497,11 @@ function getImageEligibility(input) {
     };
   }
 
-  var requiresMultipage = estimatedHeight > IMAGE_MAX_RENDER_HEIGHT || messages.length > IMAGE_MAX_MESSAGES;
+  var adaptiveMaxRenderHeight = Math.floor(
+    imageProfile.maxCanvasPixels /
+    (IMAGE_RENDER_WIDTH * imageProfile.preferredScale * imageProfile.preferredScale)
+  );
+  var requiresMultipage = estimatedHeight > Math.min(IMAGE_MAX_RENDER_HEIGHT, adaptiveMaxRenderHeight) || messages.length > IMAGE_MAX_MESSAGES;
   var hasLongCode = messages.some(function (message) {
     return message.contentBlocks.some(function (block) {
       return block.type === "code" && String(block.text || "").length > IMAGE_MAX_CODE_CHARS;

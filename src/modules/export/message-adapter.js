@@ -373,7 +373,7 @@ function defaultPlatformLabel(platform) {
       if (diagnostics && diagnostics.hasUnknownContent) {
         // Preserve the existing source boundary: replace the API result with
         // one complete page snapshot, never merge individual DOM/API turns.
-        if (canUseWholePageForUnknownContent(messages, fallbackMessages)) {
+        if (options && options.allowPageFallback === true && canUseWholePageForUnknownContent(messages, fallbackMessages)) {
           return ensureCompleteConversationMessages(chat, fallbackMessages, options);
         }
         // 如果 API 消息有有效文本内容，即使存在未知 part 也直接使用，
@@ -385,7 +385,7 @@ function defaultPlatformLabel(platform) {
           return prependUnknownContentExportNotice(chat, messages);
         }
       }
-      if (shouldUsePageMessagesForIncompleteApi(messages, fallbackMessages)) {
+      if (options && options.allowPageFallback === true && shouldUsePageMessagesForIncompleteApi(messages, fallbackMessages)) {
         return ensureCompleteConversationMessages(chat, fallbackMessages, options);
       }
 
@@ -398,12 +398,14 @@ function defaultPlatformLabel(platform) {
         return ensureCompleteConversationMessages(chat, messages, options);
       }
 
-      return fallbackMessages.length
-        ? ensureCompleteConversationMessages(chat, fallbackMessages, options)
-        : messages;
+      if (options && options.allowPageFallback === true && fallbackMessages.length) {
+        return ensureCompleteConversationMessages(chat, fallbackMessages, options);
+      }
+      throw new Error("The platform returned no complete conversation messages.");
     }
 
     async function fetchConversationMessagesForExport(chat, options) {
+      options = options || {};
       if (deps.isProjectRecord && deps.isProjectRecord(chat)) {
         throw new Error("Projects do not have a single conversation body to export.");
       }
@@ -429,7 +431,7 @@ function defaultPlatformLabel(platform) {
             var geminiMessages = await deps.fetchGeminiConversationMessages(chat);
             return returnApiMessagesOrPageFallback(chat, geminiMessages, geminiPageMessages, options);
           } catch (geminiError) {
-            if (geminiPageMessages.length) {
+            if (options.allowPageFallback === true && geminiPageMessages.length) {
               return ensureCompleteConversationMessages(chat, geminiPageMessages, options);
             }
             throw geminiError;
@@ -442,7 +444,7 @@ function defaultPlatformLabel(platform) {
             return returnApiMessagesOrPageFallback(chat, claudeMessages, null, options);
           } catch (claudeError) {
             var claudePageMessages = getCurrentPageMessages(chat);
-            if (claudePageMessages.length) {
+            if (options.allowPageFallback === true && claudePageMessages.length) {
               return ensureCompleteConversationMessages(chat, claudePageMessages, options);
             }
             throw claudeError;
@@ -452,17 +454,20 @@ function defaultPlatformLabel(platform) {
         var chatGptPageMessages = [];
         try {
           chatGptPageMessages = getCurrentPageMessages(chat);
-          var chatGptMessages = await deps.fetchChatGptConversationMessages(chat, { pageMessages: chatGptPageMessages });
+          var chatGptMessages = await deps.fetchChatGptConversationMessages(chat, {
+            pageMessages: chatGptPageMessages,
+            signal: options.signal
+          });
           if (typeof deps.mergeChatGptExportMessages === "function" && chatGptPageMessages.length) {
             chatGptMessages = deps.mergeChatGptExportMessages(chatGptMessages, chatGptPageMessages);
           }
           return returnApiMessagesOrPageFallback(chat, chatGptMessages, chatGptPageMessages, options);
         } catch (chatGptError) {
-          if (chatGptPageMessages.length) {
+          if (options.allowPageFallback === true && chatGptPageMessages.length) {
             return ensureCompleteConversationMessages(chat, chatGptPageMessages, options);
           }
           var fallbackChatGptPageMessages = getCurrentPageMessages(chat);
-          if (fallbackChatGptPageMessages.length) {
+          if (options.allowPageFallback === true && fallbackChatGptPageMessages.length) {
             return ensureCompleteConversationMessages(chat, fallbackChatGptPageMessages, options);
           }
           throw chatGptError;
@@ -496,7 +501,10 @@ function defaultPlatformLabel(platform) {
         return request;
       }
 
-      var messages = await fetchConversationMessagesForExport(chat, { scope: request.scope });
+      var messages = await fetchConversationMessagesForExport(chat, {
+        scope: request.scope,
+        signal: request.signal
+      });
       return {
         ...request,
         messages: messages,

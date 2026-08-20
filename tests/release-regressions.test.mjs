@@ -161,8 +161,12 @@ test("reauthentication, OAuth cleanup, and batch save results preserve structure
   assert.match(contentSource, /entitlementPreflight\.reauthenticationRequired/);
   assert.match(contentSource, /preCheckError\.reauthenticationRequired = true/);
   assert.match(contentSource, /fixAction: "sign_in"/);
-  assert.match(contentSource, /const failedSavePaths = new Set/);
-  assert.match(contentSource, /\.filter\(\(file\) => !failedSavePaths\.has/);
+  assert.match(contentSource, /saveBatchPreparedFiles\(\[preparedFile\]/);
+  assert.ok(
+    contentSource.indexOf("saveBatchPreparedFiles([preparedFile]") < contentSource.indexOf("preparedFiles.push(preparedFile)"),
+    "only a successfully saved file may be recorded in the result"
+  );
+  assert.match(contentSource, /file\.blob = null/);
   assert.match(contentSource, /downloadPath: file\.downloadPath/);
   assert.match(popupSource, /current\.disabled = !isSupportedPage \|\| \(selectionMode && selectedCount < 1\)/);
 });

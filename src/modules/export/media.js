@@ -12,18 +12,22 @@ var IMAGE_ELEMENT_LOAD_TIMEOUT_MS = 8000;
 // 动态并发：图片密集对话原并发=2 串行化严重，提升到 6 可快 2-3 倍。
 // aggregateBytes / aggregateDecodedPixels 总量上限已做内存保护，提升并发不会失控。
 // 低内存设备或慢网络降回 3，避免同时光栅化大图导致 OOM。
-function getImagePreloadConcurrency() {
+export function getImagePreloadConcurrency(maxConcurrency) {
+  var concurrency = 4;
   try {
     var mem = (typeof navigator !== "undefined" && navigator.deviceMemory) || 8;
     var conn = (typeof navigator !== "undefined" && navigator.connection) || null;
     var effectiveType = conn && conn.effectiveType;
-    if (mem <= 4) return 3;
-    if (effectiveType === "slow-2g" || effectiveType === "2g") return 2;
-    if (effectiveType === "3g") return 3;
-    return 6;
+    if (effectiveType === "slow-2g" || effectiveType === "2g") concurrency = 2;
+    else if (mem <= 4 || effectiveType === "3g") concurrency = 3;
+    else concurrency = 6;
   } catch (_e) {
-    return 4;
+    concurrency = 4;
   }
+  var cap = Number(maxConcurrency);
+  return Number.isFinite(cap) && cap > 0
+    ? Math.max(1, Math.min(concurrency, Math.floor(cap)))
+    : concurrency;
 }
 var _imageBytesCache = new Map();
 var _imageBytesCacheBytes = 0;
@@ -172,6 +176,14 @@ function assertSafeCanvasDimensions(width, height) {
   if (!safeWidth || !safeHeight || safeWidth > IMAGE_MAX_CANVAS_DIMENSION || safeHeight > IMAGE_MAX_CANVAS_DIMENSION || safeWidth * safeHeight > IMAGE_MAX_CANVAS_PIXELS) {
     throw new Error("Image dimensions are too large to export safely.");
   }
+}
+
+function releaseCanvasBitmap(canvas) {
+  if (!canvas) return;
+  try {
+    canvas.width = 1;
+    canvas.height = 1;
+  } catch (error) {}
 }
 
 async function readResponseBytesWithinLimit(response, maxBytes) {
@@ -542,12 +554,8 @@ async function fetchImageBytesViaNetwork(src, options) {
     });
 
     if (bgResponse && bgResponse.ok && bgResponse.base64) {
-      var binaryStr = atob(bgResponse.base64);
-      var bytes = new Uint8Array(binaryStr.length);
+      var bytes = binaryStringToBytes(atob(bgResponse.base64));
       assertImageByteLength(bytes.byteLength);
-      for (var i = 0; i < binaryStr.length; i++) {
-        bytes[i] = binaryStr.charCodeAt(i);
-      }
       var detectedMimeType = detectImageMimeType(bytes, bgResponse.mimeType || "image/png");
       if (!detectedMimeType) {
         return null;
@@ -717,29 +725,35 @@ async function _fetchImageBytesDirectly(src, options) {
         canvas.height = imgEl.naturalHeight || imgEl.height || 400;
         var ctx = canvas.getContext("2d");
         ctx.drawImage(imgEl, 0, 0);
-        var blob = await canvasToBlob(canvas, "image/png", undefined, IMAGE_PRELOAD_CANVAS_TIMEOUT_MS);
-        var buffer = await blob.arrayBuffer();
         try {
-          assertImageByteLength(buffer.byteLength);
-        } catch (_byteErr) {
-          // PNG 光栅化结果超限时，回退到 JPEG 格式（照片类图片 PNG 体积远大于 JPEG）
-          var jpegBlob = await canvasToBlob(canvas, "image/jpeg", 0.92, IMAGE_PRELOAD_CANVAS_TIMEOUT_MS);
-          var jpegBuffer = await jpegBlob.arrayBuffer();
-          assertImageByteLength(jpegBuffer.byteLength);
+          var blob = await canvasToBlob(canvas, "image/png", undefined, IMAGE_PRELOAD_CANVAS_TIMEOUT_MS);
+          var buffer = await blob.arrayBuffer();
+          try {
+            assertImageByteLength(buffer.byteLength);
+          } catch (_byteErr) {
+            // PNG 光栅化结果超限时，回退到 JPEG 格式（照片类图片 PNG 体积远大于 JPEG）
+            var jpegBlob = await canvasToBlob(canvas, "image/jpeg", 0.92, IMAGE_PRELOAD_CANVAS_TIMEOUT_MS);
+            var jpegBuffer = await jpegBlob.arrayBuffer();
+            assertImageByteLength(jpegBuffer.byteLength);
+            return {
+              bytes: new Uint8Array(jpegBuffer),
+              mimeType: "image/jpeg",
+              width: imgEl.naturalWidth || imgEl.width || 600,
+              height: imgEl.naturalHeight || imgEl.height || 400
+            };
+          }
+          var bytes = new Uint8Array(buffer);
           return {
-            bytes: new Uint8Array(jpegBuffer),
-            mimeType: "image/jpeg",
+            bytes: bytes,
+            mimeType: "image/png",
             width: imgEl.naturalWidth || imgEl.width || 600,
             height: imgEl.naturalHeight || imgEl.height || 400
           };
+        } finally {
+          // Canvas backing stores are native memory and may otherwise survive
+          // until a later GC cycle while several image workers are active.
+          releaseCanvasBitmap(canvas);
         }
-        var bytes = new Uint8Array(buffer);
-        return {
-          bytes: bytes,
-          mimeType: "image/png",
-          width: imgEl.naturalWidth || imgEl.width || 600,
-          height: imgEl.naturalHeight || imgEl.height || 400
-        };
       } else {
       }
     } catch (canvasErr) {
@@ -800,6 +814,8 @@ async function _fetchImageBytesDirectly(src, options) {
                 });
               }
               return { bytes: new Uint8Array(buffer), mimeType: "image/png", width: img.naturalWidth || 600, height: img.naturalHeight || 400 };
+            }).finally(function () {
+              releaseCanvasBitmap(canvas);
             }).then(function (result) {
               finish(resolve, result);
             }).catch(function (error) {

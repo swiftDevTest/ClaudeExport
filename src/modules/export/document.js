@@ -477,7 +477,10 @@ export function createExportDocument(input) {
     exportedAt: normalizeExportDate(metadataInput.exportedAt || source.exportedAt),
     scope: scope
   };
-  if (!alreadyNormalized) makeGeneratedFileSegmentsPortable(messages);
+  // Generated-file links still need the portability pass when a caller uses
+  // the normalized fast path. The pass is idempotent and substantially
+  // cheaper than normalizing every block a second time.
+  makeGeneratedFileSegmentsPortable(messages);
 
   return {
     version: EXPORT_DOCUMENT_VERSION,
@@ -485,7 +488,10 @@ export function createExportDocument(input) {
     settings: settings,
     scope: scope,
     messages: messages,
-    contentBlocks: alreadyNormalized ? source.contentBlocks : flattenDocumentContentBlocks(messages),
+    // Always derive the flat view from the final message tree. Reusing a
+    // caller-supplied flat array could leave it out of sync after generated
+    // file links are made portable above.
+    contentBlocks: flattenDocumentContentBlocks(messages),
     _normalized: true
   };
 }
