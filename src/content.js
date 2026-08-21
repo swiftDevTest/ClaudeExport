@@ -5258,6 +5258,9 @@
   async function getCurrentConversationMessagesForExport(pageMessages, options = {}) {
     const chat = getCurrentConversationForExport();
     if (!chat) {
+      if (options.allowPageFallback === true && Array.isArray(pageMessages) && pageMessages.length > 0) {
+        return cloneExportMessages(pageMessages);
+      }
       throw createFullConversationUnavailableError(
         new Error("Conversation ID is missing for export."),
         getCurrentPlatformId()
@@ -5267,6 +5270,7 @@
       pageMessages,
       preserveHtmlPresentation: options.preserveHtmlPresentation === true,
       preserveMarkdownSemantics: options.preserveMarkdownSemantics === true,
+      allowPageFallback: options.allowPageFallback === true,
       signal: options.signal
     });
   }
@@ -6280,6 +6284,7 @@
         rawMessagesForExport = await getCurrentConversationMessagesForExport(pageMessagesForExport, {
           preserveHtmlPresentation: formatForExport === "html",
           preserveMarkdownSemantics: formatForExport === "markdown",
+          allowPageFallback: pageMessagesForExport.length > 0,
           signal
         });
         if (isCurrentExportCancelled()) return;

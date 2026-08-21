@@ -1,6 +1,95 @@
 import { isChatVaultNode, isIgnoredContentNode, isTrustedConversationImageSrc, isPlatformOrSystemIcon, isSubstantialSvg, convertSvgToDataUrl, isDalleMetadataText, isGeminiImagePlaceholderText, hasImageAttachment, cleanText, cleanInlineSegments, stripThoughtText, isIgnoredRoleLabel, isGeminiUINoiseText, isImageOrFileSignature, sanitizeExportText, decodeVisibleTextEscapes, getBlockText, getPlainText, dedupeImageBlocksWithinMessage } from './utils.js';
 import { captureExportHtmlStyle, getExportHtmlStyleDifference, isExportHtmlStyleCaptureEnabled, isTransparentCssColor } from './html-style.js';
 
+var KNOWN_CODE_LANGUAGE = /^(?:abap|arduino|bash|basic|c|c\+\+|cpp|c#|csharp|clojure|css|dart|diff|dockerfile?|elixir|elm|erlang|f#|fortran|go|graphql|groovy|haskell|html|java|javascript|js|json|julia|kotlin|latex|less|lisp|lua|makefile|markdown|matlab|mermaid|objective-c|ocaml|perl|php|plaintext|powershell|python|py|r|ruby|rust|sass|scala|scheme|scss|shell|sql|swift|text|typescript|ts|tsx|vb\.net|verilog|vhdl|xml|yaml|yml|zsh)$/i;
+
+function normalizeCodeLanguageLabel(value) {
+  var text = String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/^(?:language|lang|code)\s*:\s*/i, "");
+  return KNOWN_CODE_LANGUAGE.test(text) ? text : "";
+}
+
+function normalizeRenderedCodeCharacters(value) {
+  return String(value || "").replace(/\s+/g, "").toLowerCase();
+}
+
+function getRenderedCodeLanguageLabelFromText(value) {
+  var firstLine = String(value || "").replace(/\r\n?/g, "\n").split("\n").find(function (line) {
+    return String(line || "").trim();
+  });
+  return normalizeCodeLanguageLabel(firstLine);
+}
+
+function getRenderedCodeLanguageLabel(element) {
+  if (!element) return "";
+  var renderedText = element.innerText;
+  return typeof renderedText === "string" ? getRenderedCodeLanguageLabelFromText(renderedText) : "";
+}
+
+function getRenderedCodeBodyElement(element) {
+  if (!element || !element.querySelectorAll) return null;
+  // innerText can force a browser layout. Read it once for the outer editor,
+  // then use textContent while locating the body so a large syntax-highlighted
+  // block does not trigger one layout read per token node.
+  var rawRenderedText = element.innerText;
+  if (typeof rawRenderedText !== "string") return null;
+  var renderedText = rawRenderedText.replace(/\r\n?/g, "\n");
+  var languageLabel = getRenderedCodeLanguageLabelFromText(renderedText);
+  if (!languageLabel) return null;
+
+  var removedLanguageLabel = false;
+  var bodyCharacters = normalizeRenderedCodeCharacters(renderedText.split("\n").filter(function (line) {
+    var trimmed = String(line || "").trim();
+    if (!removedLanguageLabel && normalizeCodeLanguageLabel(trimmed)) {
+      removedLanguageLabel = true;
+      return false;
+    }
+    return !/^(?:copy|copy code|edit code)$/i.test(trimmed);
+  }).join("\n"));
+  if (!bodyCharacters) return null;
+
+  function findBestCandidate(selector) {
+    var candidates;
+    try {
+      candidates = element.querySelectorAll(selector);
+    } catch (error) {
+      return null;
+    }
+    var best = null;
+    // Walk deepest nodes first. When nested wrappers contain the same code,
+    // this selects the actual editor body instead of a broad shell.
+    for (var index = candidates.length - 1; index >= 0; index -= 1) {
+      var candidate = candidates[index];
+      if (candidate.matches && candidate.matches("button,[role='button'],svg,path")) continue;
+      var characters = normalizeRenderedCodeCharacters(candidate.textContent);
+      if (!characters || !bodyCharacters.includes(characters)) continue;
+      var exact = characters === bodyCharacters;
+      if (exact) return candidate;
+      if (!best || characters.length > best.length) {
+        best = { element: candidate, length: characters.length };
+      }
+    }
+    return best && best.element;
+  }
+
+  // Current ChatGPT, CodeMirror, and Monaco containers are covered by this
+  // narrow fast path. It keeps token spans out of the candidate scan.
+  var preferred = findBestCandidate(
+    "[class*='editor-body'],.cm-content,[class~='cm-content'],.view-lines,[class~='view-lines']," +
+    "[data-contents='true'],[role='textbox'],[contenteditable='true'],code"
+  );
+  if (preferred) return preferred;
+
+  // Generic fallback remains container-only. Unlike the previous `*` scan,
+  // it does not inspect every syntax token and never reads candidate innerText.
+  return findBestCandidate(
+    "div,section,article,main,code,textarea,[role='textbox'],[contenteditable='true']," +
+    "[class*='editor'],[class*='source'],[class*='body']"
+  );
+}
+
 export function getElementLabel(element) {
   if (!element) return "";
   return [
@@ -38,41 +127,203 @@ export function extractCodeLanguage(element) {
   // language (a prior broad "decoration span" selector caused that regression).
   var langEl = element.querySelector("[class*='code-lang'], [class*='code-language'], [class*='code-header'] [data-language], [class*='code-header'] span");
   if (langEl && langEl.textContent) {
-    var txt = String((langEl.getAttribute && langEl.getAttribute("data-language")) || langEl.textContent || "")
-      .trim()
-      .toLowerCase()
-      .replace(/^(?:language|lang|code)\s*:\s*/i, "");
-    var knownLanguage = /^(?:abap|arduino|bash|basic|c|c\+\+|cpp|c#|csharp|clojure|css|dart|diff|dockerfile?|elixir|elm|erlang|f#|fortran|go|graphql|groovy|haskell|html|java|javascript|js|json|julia|kotlin|latex|less|lisp|lua|makefile|markdown|matlab|mermaid|objective-c|ocaml|perl|php|plaintext|powershell|python|py|r|ruby|rust|sass|scala|scheme|scss|shell|sql|swift|text|typescript|ts|tsx|vb\.net|verilog|vhdl|xml|yaml|yml|zsh)$/i;
-    if (knownLanguage.test(txt)) {
-      return txt;
-    }
+    var txt = normalizeCodeLanguageLabel((langEl.getAttribute && langEl.getAttribute("data-language")) || langEl.textContent);
+    if (txt) return txt;
   }
 
-  return "";
+  // ChatGPT's current code editor places a plain language chip (for example
+  // "JSON") as the first rendered row inside <pre>, without a stable class or
+  // data-language attribute. Read only a known, standalone first row.
+  return getRenderedCodeLanguageLabel(element);
 }
 
-export function cleanCodeText(element) {
+export function cleanCodeText(element, resolvedTarget) {
   if (!element) return "";
-  var target = element;
-  if (element.querySelector) {
-    target = element.querySelector("pre code") || element.querySelector("pre") || element.querySelector("code") || element;
-  }
-  var clone = target.cloneNode ? target.cloneNode(true) : null;
+  var target = resolvedTarget || getCodeTextElement(element);
+  // Cloning a syntax-highlighted block duplicates thousands of token nodes.
+  // Clone only when cleanup must remove UI nodes or replace <br>; otherwise
+  // all reads below are non-mutating and can use the resolved body directly.
+  var needsMutableCopy = target && target.querySelector && target.querySelector(
+    "br,button,svg,path,[data-testid*='copy'],[class*='copy'],[class*='toolbar'],[data-testid*='toolbar']"
+  );
+  var clone = needsMutableCopy && target.cloneNode ? target.cloneNode(true) : null;
   if (clone && clone.querySelectorAll) {
     Array.prototype.forEach.call(clone.querySelectorAll("button,svg,path,[data-testid*='copy'],[class*='copy'],[class*='toolbar'],[data-testid*='toolbar']"), function (node) {
       node.remove();
     });
   }
-  return String((clone || target).textContent || "")
+  var source = clone || target;
+  var lineElements = getCodeLineElements(source);
+  var rawText;
+
+  // Syntax highlighters used by ChatGPT/Claude frequently render a code block
+  // as one element per visual line (for example, <span class="line">...</span>)
+  // without putting a literal newline between those elements. Reading
+  // textContent in that case turns a pretty-printed JSON object into one long
+  // line. Reconstruct the line separators before applying the normal code
+  // cleanup, while retaining every space inside each line.
+  if (lineElements.length >= 2) {
+    rawText = lineElements.map(function (line) {
+      return String(line.textContent || "")
+        .replace(/\r\n?/g, "\n")
+        // A few highlighters include a separator newline inside each line
+        // wrapper. The wrapper itself already supplies the boundary below;
+        // remove only newline characters, never indentation spaces.
+        .replace(/^\n+|\n+$/g, "");
+    }).join("\n");
+  } else {
+    // textContent does not include line breaks represented by <br>. Preserve
+    // them for code blocks as well as for ordinary preformatted diagrams.
+    if (source && source.querySelectorAll) {
+      Array.prototype.forEach.call(source.querySelectorAll("br"), function (node) {
+        if (node.ownerDocument && node.ownerDocument.createTextNode) {
+          node.replaceWith(node.ownerDocument.createTextNode("\n"));
+        }
+      });
+    }
+    rawText = String(source.textContent || "");
+
+    // Some syntax highlighters build visual rows with generic block elements
+    // rather than <br> or a recognizable `.line` class. textContent then
+    // concatenates every row, while innerText retains the author-visible line
+    // boundaries created by CSS layout. Prefer that rendered text only when it
+    // has more explicit rows and contains exactly the same non-whitespace
+    // characters, so soft wrapping or toolbar labels cannot change source.
+    var targetInnerText = target.innerText;
+    var renderedText = typeof targetInnerText === "string" ? targetInnerText : "";
+    var normalizedRenderedText = renderedText.replace(/\r\n?/g, "\n").replace(/\u00a0/g, " ");
+    var rawLineBreaks = (rawText.match(/\n/g) || []).length;
+    var renderedLineBreaks = (normalizedRenderedText.match(/\n/g) || []).length;
+    if (renderedLineBreaks > rawLineBreaks &&
+        normalizedRenderedText.replace(/\s+/g, "") === rawText.replace(/\s+/g, "")) {
+      rawText = normalizedRenderedText;
+    }
+  }
+
+  return rawText
     .replace(/\u00a0/g, " ")
     .replace(/\n{8,}/g, "\n\n\n")
-    .trim();
+    // Leading spaces on the first row are meaningful in code and diagrams.
+    .replace(/^\n+|\n+$/g, "");
+}
+
+function getCodeLineElements(root) {
+  if (!root || !root.querySelectorAll) return [];
+
+  var candidates = [];
+  // :scope is supported by modern browsers, but the fallback keeps the
+  // parser usable in older embedded WebViews and the JSDOM test environment.
+  try {
+    candidates = Array.prototype.slice.call(root.querySelectorAll(
+      ":scope > [data-line],:scope > [data-line-number],:scope > [role='line']," +
+      ":scope > .line,:scope > [class~='line'],:scope > .cm-line,:scope > [class~='cm-line']," +
+      ":scope > .view-line,:scope > [class~='view-line']"
+    ));
+  } catch (error) {}
+
+  if (candidates.length < 2) {
+    var descendants = [];
+    try {
+      descendants = Array.prototype.slice.call(root.querySelectorAll(
+        "[data-line],[data-line-number],[role='line'],.line,[class~='line']," +
+        ".cm-line,[class~='cm-line'],.view-line,[class~='view-line']"
+      ));
+    } catch (error) {}
+    var candidateSet = new Set(descendants);
+    candidates = descendants.filter(function (node) {
+      var parent = node.parentElement;
+      while (parent && parent !== root) {
+        if (candidateSet.has(parent)) return false;
+        parent = parent.parentElement;
+      }
+      return true;
+    });
+  }
+
+  return candidates.length >= 2 ? candidates : [];
+}
+
+function getPreservedText(element) {
+  if (!element) return "";
+  var target = element.cloneNode ? element.cloneNode(true) : element;
+  if (target && target.querySelectorAll) {
+    Array.prototype.forEach.call(target.querySelectorAll(".sr-only, [class*='sr-only'], button, svg, path"), function (node) {
+      node.remove();
+    });
+    // textContent does not include line breaks represented by <br>. Replace
+    // them before reading the DOM so diagrams keep their original rows.
+    Array.prototype.forEach.call(target.querySelectorAll("br"), function (node) {
+      node.replaceWith(target.ownerDocument.createTextNode("\n"));
+    });
+  }
+  // Do not use sanitizeExportText here: its prose-oriented punctuation
+  // cleanup intentionally collapses whitespace after symbols such as arrows.
+  return decodeVisibleTextEscapes(String(target && target.textContent || ""))
+    .replace(/\r\n?/g, "\n")
+    .replace(/\u00a0/g, " ")
+    .replace(/\n{8,}/g, "\n\n\n")
+    // Trim only empty rows, never indentation on the first/last diagram row.
+    .replace(/^\n+|\n+$/g, "");
+}
+
+function hasOnlyTextAndLineBreaks(element) {
+  if (!element || !element.querySelector) return true;
+  // A container with normal Markdown blocks should continue through the
+  // structural parser. This path is intentionally for a single text diagram.
+  return !element.querySelector("h1,h2,h3,h4,h5,h6,p,pre,ul,ol,table,blockquote,img,svg,figure");
+}
+
+function isPreformattedDiagramText(text) {
+  var value = String(text || "");
+  var lines = value.split("\n");
+  if (lines.filter(function (line) { return line.trim(); }).length < 2) return false;
+
+  // A response can contain pretty-printed JSON as plain pre-wrap text rather
+  // than a fenced <pre><code> block. Prose cleanup collapses its indentation,
+  // so treat valid multi-line JSON as preformatted code too.
+  if (isPrettyPrintedJsonText(value)) return true;
+
+  // Box drawing is an unambiguous diagram signal. The whitespace fallback
+  // also covers ASCII diagrams made with |, +, -, and arrows.
+  var hasDiagramGlyph = /[\u2500-\u257f\u2190-\u21ff]/u.test(value) ||
+    /(?:^|\n)\s*[+|]|[+|]\s*(?:\n|$)/.test(value);
+  var hasAlignmentWhitespace = /(?:^|\n)[ \t]{2,}\S/m.test(value) || /\S[ \t]{2,}\S/.test(value);
+  return hasDiagramGlyph && hasAlignmentWhitespace;
+}
+
+function isPrettyPrintedJsonText(value) {
+  var source = String(value || "").trim();
+  if (!/^[\[{]/.test(source) || !/[\]}]$/.test(source) || !/\n/.test(source)) return false;
+  try {
+    JSON.parse(source);
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+function getPreformattedDiagramText(element) {
+  if (!hasOnlyTextAndLineBreaks(element)) return "";
+  var text = getPreservedText(element);
+  return isPreformattedDiagramText(text) ? text : "";
+}
+
+function createPreformattedDiagramBlock(element, text) {
+  return attachCodeBlockPresentation({
+    type: "code",
+    language: isPrettyPrintedJsonText(text) ? "json" : "",
+    text: text,
+    // Mark the origin so future renderers can distinguish a text diagram from
+    // an author-written fenced code sample if their presentation needs differ.
+    preformatted: true
+  }, element);
 }
 
 function getCodeTextElement(element) {
   if (!element) return null;
   if (!element.querySelector) return element;
-  return element.querySelector("pre code") || element.querySelector("pre") || element.querySelector("code") || element;
+  var target = element.querySelector("pre code") || element.querySelector("pre") || element.querySelector("code") || element;
+  return getRenderedCodeBodyElement(target) || target;
 }
 
 function captureCodeBlockVisualStyle(element) {
@@ -117,14 +368,16 @@ function trimCodeSegments(segments) {
   while (result.length && /^\s*$/.test(result[0].text)) result.shift();
   while (result.length && /^\s*$/.test(result[result.length - 1].text)) result.pop();
   if (!result.length) return [];
-  result[0].text = result[0].text.replace(/^\s+/, "");
-  result[result.length - 1].text = result[result.length - 1].text.replace(/\s+$/, "");
+  // Only remove empty outer rows. Spaces at the beginning/end of a real code
+  // row are source content and must stay aligned with cleanCodeText().
+  result[0].text = result[0].text.replace(/^\n+/, "");
+  result[result.length - 1].text = result[result.length - 1].text.replace(/\n+$/, "");
   return result.filter(function (segment) { return segment.text !== ""; });
 }
 
-export function extractCodeSegments(element) {
+export function extractCodeSegments(element, resolvedTarget) {
   if (!isExportHtmlStyleCaptureEnabled()) return undefined;
-  var target = getCodeTextElement(element);
+  var target = resolvedTarget || getCodeTextElement(element);
   if (!target) return undefined;
   var segments = [];
   var baseStyle = captureExportHtmlStyle(target);
@@ -158,7 +411,15 @@ export function extractCodeSegments(element) {
     });
   }
 
-  walk(target, baseStyle);
+  var lineElements = getCodeLineElements(target);
+  if (lineElements.length >= 2) {
+    lineElements.forEach(function (line, index) {
+      walk(line, baseStyle);
+      if (index < lineElements.length - 1) push("\n", undefined);
+    });
+  } else {
+    walk(target, baseStyle);
+  }
   var result = trimCodeSegments(segments);
   return result.length ? result : undefined;
 }
@@ -335,19 +596,29 @@ export function walkElement(parent, blocks, structSet, depth) {
     return;
   }
   if (parentTag === "pre" || (isCodeLikeElement(parent) && !parent.querySelector("p,ul,ol,table,blockquote,img"))) {
-    var parentCodeText = cleanCodeText(parent);
+    var parentCodeTarget = getCodeTextElement(parent);
+    var parentCodeText = cleanCodeText(parent, parentCodeTarget);
     if (parentCodeText && (parentTag === "pre" || isSubstantialCodeText(parentCodeText))) {
       if (!isDalleMetadataText(parentCodeText) && !isGeminiImagePlaceholderText(parentCodeText)) {
         blocks.push(attachCodeBlockPresentation({
           type: "code",
           language: extractCodeLanguage(parent),
           text: parentCodeText,
-          codeSegments: extractCodeSegments(parent),
-          codeStyle: captureExportHtmlStyle(getCodeTextElement(parent))
+          codeSegments: extractCodeSegments(parent, parentCodeTarget),
+          codeStyle: captureExportHtmlStyle(parentCodeTarget)
         }, parent));
       }
       return;
     }
+  }
+
+  // ChatGPT can render pasted diagrams as ordinary paragraphs / pre-wrap
+  // containers rather than <pre>. cleanText intentionally normalizes prose,
+  // which used to collapse the spaces that carry a diagram's layout.
+  var preformattedDiagram = getPreformattedDiagramText(parent);
+  if (preformattedDiagram) {
+    blocks.push(createPreformattedDiagramBlock(parent, preformattedDiagram));
+    return;
   }
 
   // 优化：单循环替代链式 filter/map/filter，减少中间数组创建
@@ -411,6 +682,11 @@ export function walkElement(parent, blocks, structSet, depth) {
         blocks.push(displayMath);
         return;
       }
+      var paragraphDiagram = getPreformattedDiagramText(child);
+      if (paragraphDiagram) {
+        blocks.push(createPreformattedDiagramBlock(child, paragraphDiagram));
+        return;
+      }
       var paragraphText = cleanText(child);
       if (isIgnoredRoleLabel(paragraphText)) {
         return;
@@ -422,15 +698,16 @@ export function walkElement(parent, blocks, structSet, depth) {
     }
 
     if (tag === "pre" || (isCodeLikeElement(child) && !child.querySelector("pre") && !child.querySelector("p,ul,ol,table,blockquote,img"))) {
-      var codeText = cleanCodeText(child);
+      var codeTarget = getCodeTextElement(child);
+      var codeText = cleanCodeText(child, codeTarget);
       if (codeText && (tag === "pre" || isSubstantialCodeText(codeText))) {
         if (!isDalleMetadataText(codeText) && !isGeminiImagePlaceholderText(codeText)) {
           blocks.push(attachCodeBlockPresentation({
             type: "code",
             language: extractCodeLanguage(child),
             text: codeText,
-            codeSegments: extractCodeSegments(child),
-            codeStyle: captureExportHtmlStyle(getCodeTextElement(child))
+            codeSegments: extractCodeSegments(child, codeTarget),
+            codeStyle: captureExportHtmlStyle(codeTarget)
           }, child));
         }
         return;

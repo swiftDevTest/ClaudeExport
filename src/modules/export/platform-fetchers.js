@@ -463,12 +463,40 @@ function createMissingDependencyError(name) {
       // it even when a user has disabled captured HTML styles.
       if (source.mathMl) target.mathMl = source.mathMl;
     }
-    if (target.type === "code" && Array.isArray(source.codeSegments)) {
-      var pageCodeText = source.codeSegments.map(function (segment) {
-        return String(segment && segment.text || "");
-      }).join("");
+    if (target.type === "code" && source.type === "code") {
+      // Plain-text exports normally do not capture syntax-color segments.
+      // The page block's own text is still the authoritative source for
+      // visible line structure and must be considered during API/DOM merge.
+      var pageCodeText = Array.isArray(source.codeSegments)
+        ? source.codeSegments.map(function (segment) {
+            return String(segment && segment.text || "");
+          }).join("")
+        : String(source.text || "");
       if (pageCodeText && normalizePresentationMatchText(pageCodeText) === normalizePresentationMatchText(target.text)) {
-        target.text = pageCodeText;
+        var targetCodeText = normalizeCodeText(target.text);
+        var normalizedPageCodeText = normalizeCodeText(pageCodeText);
+        var targetLineBreaks = (targetCodeText.match(/\n/g) || []).length;
+        var pageLineBreaks = (normalizedPageCodeText.match(/\n/g) || []).length;
+        var getIndentationWeight = function (value) {
+          return String(value || "").split("\n").reduce(function (total, line) {
+            var leading = String(line || "").match(/^[ \t]*/);
+            return total + String(leading && leading[0] || "").replace(/\t/g, "    ").length;
+          }, 0);
+        };
+        var targetIndentation = getIndentationWeight(targetCodeText);
+        var pageIndentation = getIndentationWeight(normalizedPageCodeText);
+
+        // Conversation API Markdown is the semantic source. DOM syntax-color
+        // segments may omit separators between visual line wrappers, and a
+        // whitespace-insensitive match must never let that compact text erase
+        // valid API newlines or indentation. The page may replace the API text
+        // only when its layout is identical or demonstrably contains richer
+        // line/indentation structure.
+        if (normalizedPageCodeText === targetCodeText ||
+            pageLineBreaks > targetLineBreaks ||
+            (pageLineBreaks === targetLineBreaks && pageIndentation > targetIndentation)) {
+          target.text = normalizedPageCodeText;
+        }
       }
     }
     if (includeHtmlStyles) {
@@ -4417,11 +4445,12 @@ function createMissingDependencyError(name) {
         var partDiagnostics = { hasUnknownContent: false, unknownTypes: [] };
         var contentBlocks = chatGptMessageToExportBlocks(message, partDiagnostics);
         var role = normalizeChatGptExportRole(message, contentBlocks);
+        var declaredConversationRole = normalizeExportRole(message && (message.author && message.author.role || message.role));
 
-        // Record unknown message shapes before filtering empty blocks. The old
-        // order returned early here, which meant a wholly unknown visible turn
-        // disappeared without setting any completeness-risk signal.
-        if (partDiagnostics.hasUnknownContent) {
+        // Only user/assistant content can make the exported conversation
+        // incomplete. Ignore evolving private system/tool context nodes.
+        var unknownCanAffectExport = Boolean(declaredConversationRole || role);
+        if (partDiagnostics.hasUnknownContent && unknownCanAffectExport) {
           fetchDiagnostics.hasUnknownContent = true;
           (partDiagnostics.unknownTypes || []).forEach(function (typeLabel) {
             if (fetchDiagnostics.unknownTypes.indexOf(typeLabel) === -1) {
@@ -4443,7 +4472,7 @@ function createMissingDependencyError(name) {
         }
         // 把每条消息的 unknown 标记透传到 msgObj，方便 reconcile 阶段使用。
         // 注意：最终对外返回前会被 strip 掉，不会污染用户导出数据。
-        if (partDiagnostics.hasUnknownContent) {
+        if (partDiagnostics.hasUnknownContent && unknownCanAffectExport) {
           msgObj._chatVaultHasUnknownContent = true;
           msgObj._chatVaultUnknownTypes = partDiagnostics.unknownTypes.slice();
         }

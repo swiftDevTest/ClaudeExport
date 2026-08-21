@@ -331,7 +331,48 @@ test("an entirely unknown ChatGPT turn is reported as a blocking completeness ri
   }
 });
 
-test("content export recognizes Custom GPT chat URLs and forbids implicit page fallback", () => {
+test("unknown ChatGPT system context does not block an otherwise complete conversation", async () => {
+  const restoreDom = installChatGptDom();
+  const previousFetch = globalThis.fetch;
+  const payload = completePayload();
+  payload.mapping["root-node"].children = ["system-context-node"];
+  payload.mapping["system-context-node"] = {
+    id: "system-context-node",
+    parent: "root-node",
+    children: ["user-node"],
+    message: {
+      author: { role: "system" },
+      content: {
+        content_type: "future_model_editable_context",
+        model_set_context: "Private model context"
+      }
+    }
+  };
+  payload.mapping["user-node"].parent = "system-context-node";
+  globalThis.fetch = async () => new Response(JSON.stringify(payload), {
+    status: 200,
+    headers: { "content-type": "application/json" }
+  });
+
+  try {
+    const fetchers = createExportPlatformFetchers({
+      ensureCanReadChatBody() {},
+      async getChatGptWebSession() { return {}; },
+      getChatConversationId() { return "completeness-test"; }
+    });
+    const messages = await fetchers.fetchChatGptConversationMessages({ platform: "chatgpt" });
+    const risk = fetchers.detectApiCompletenessRisk(messages);
+    assert.deepEqual(messages.map((message) => message.role), ["user", "assistant"]);
+    assert.equal(risk.needsFallback, false);
+    assert.deepEqual(risk.reasons, []);
+    assert.deepEqual(risk.unknownTypes, []);
+  } finally {
+    globalThis.fetch = previousFetch;
+    restoreDom();
+  }
+});
+
+test("content export recognizes Custom GPT URLs and explicitly falls back for one-click export", () => {
   const source = read("src/content.js");
   const idStart = source.indexOf("function getPlatformChatIdFromUrl(");
   const idEnd = source.indexOf("\n  function getChatPlatform", idStart);
@@ -356,8 +397,8 @@ test("content export recognizes Custom GPT chat URLs and forbids implicit page f
   const performStart = source.indexOf("async function performExport(options = {})");
   const performEnd = source.indexOf("\n  \/\/ 取消或关闭导出提示罩", performStart);
   const performSource = source.slice(performStart, performEnd);
-  assert.match(performSource, /export stopped to prevent an incomplete file/);
-  assert.doesNotMatch(performSource, /using parsed page messages/);
+  assert.match(performSource, /allowPageFallback: pageMessagesForExport\.length > 0/);
+  assert.match(source, /options\.allowPageFallback === true && Array\.isArray\(pageMessages\)/);
 });
 
 test("ChatGPT missing-role-only risk remains exportable after path validation", () => {

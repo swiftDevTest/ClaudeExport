@@ -312,20 +312,33 @@ test("export entitlement verification falls back to local quota gates", () => {
   assert.ok(batchSource.indexOf("if (!canUseBatchExportLocally())") < batchSource.indexOf("runInPageBatchExport("));
 });
 
-test("popup export closes before long-running page export work", () => {
+test("popup export closes only after the page accepts the export request", () => {
   const popupSource = readText("../src/popup.js");
   const exportMessageIndex = popupSource.indexOf('type: "CHATVAULT_POPUP_EXPORT"');
-  const closeImmediatelyIndex = popupSource.indexOf("closeImmediately: true", exportMessageIndex);
   const sendMessageStart = popupSource.indexOf("function sendMessageToActivePage(payload, options)");
   const sendMessageEnd = popupSource.indexOf("\n  // 从页面获取状态", sendMessageStart);
   const sendMessageSource = popupSource.slice(sendMessageStart, sendMessageEnd);
 
   assert.notEqual(exportMessageIndex, -1);
-  assert.notEqual(closeImmediatelyIndex, -1);
   assert.notEqual(sendMessageStart, -1);
   assert.notEqual(sendMessageEnd, -1);
-  assert.match(sendMessageSource, /options\.closeImmediately/);
+  assert.doesNotMatch(sendMessageSource, /options\.closeImmediately/);
+  assert.match(sendMessageSource, /chrome\.tabs\.sendMessage/);
+  assert.match(sendMessageSource, /setRefreshRequired\(document\.getElementById\("quota-status-info"\)\)/);
   assert.match(sendMessageSource, /window\.close\(\)/);
+});
+
+test("popup always shows the refresh-required warning when page communication fails", () => {
+  const popupSource = readText("../src/popup.js");
+  const fetchStateStart = popupSource.indexOf("function fetchStateFromPage(forceRefresh)");
+  const fetchStateEnd = popupSource.indexOf("\n  // 向页面推送修改后的设置项", fetchStateStart);
+  const fetchStateSource = popupSource.slice(fetchStateStart, fetchStateEnd);
+
+  assert.notEqual(fetchStateStart, -1);
+  assert.notEqual(fetchStateEnd, -1);
+  assert.match(fetchStateSource, /hydrateCachedEntitlementState\(\)\.then\(function \(\) \{/);
+  assert.match(fetchStateSource, /setRefreshRequired\(document\.getElementById\("quota-status-info"\)\)/);
+  assert.doesNotMatch(fetchStateSource, /if \(!usedCache\)/);
 });
 
 test("checkout allows valid browser extension origins", () => {

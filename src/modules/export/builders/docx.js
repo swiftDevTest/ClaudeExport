@@ -34,12 +34,24 @@ export function wordRun(text, options) {
   if (opts.shading) props += '<w:shd w:val="clear" w:fill="' + xmlEscape(opts.shading) + '"/>';
 
   var sourceText = opts.formatLatex === false ? text : formatLatexUnicode(text);
-  var sanitizedText = opts.preserveSegmentSpace
-    ? sanitizeInlineSegmentText(sourceText)
-    : sanitizeExportText(sourceText);
+  // Code blocks have already passed through export-document normalization.
+  // Do not send their lines through the prose sanitizer: it intentionally
+  // collapses leading whitespace, which destroys indentation in DOCX output.
+  var sanitizedText = opts.preserveExactSpace
+    ? String(sourceText == null ? "" : sourceText)
+      .replace(/\r\n?/g, "\n")
+      .replace(/\u00a0/g, " ")
+    : opts.preserveSegmentSpace
+      ? sanitizeInlineSegmentText(sourceText)
+      : sanitizeExportText(sourceText);
   var chunks = sanitizedText.split("\n");
   var body = chunks.map(function (chunk, index) {
-    return (index ? "<w:br/>" : "") + '<w:t xml:space="preserve">' + xmlEscape(chunk) + "</w:t>";
+    var chunkBody = opts.preserveExactSpace
+      ? chunk.split("\t").map(function (part) {
+        return '<w:t xml:space="preserve">' + xmlEscape(part) + "</w:t>";
+      }).join("<w:tab/>")
+      : '<w:t xml:space="preserve">' + xmlEscape(chunk) + "</w:t>";
+    return (index ? "<w:br/>" : "") + chunkBody;
   }).join("");
 
   return "<w:r>" + (props ? "<w:rPr>" + props + "</w:rPr>" : "") + body + "</w:r>";
@@ -243,7 +255,7 @@ export function wordCodeBlock(block, alignRight, themeWord) {
   var lines = String(block.text || "").split("\n");
   var linesXml = lines.map(function (line, index) {
     var isLast = index === lines.length - 1;
-    return wordParagraph(line, { font: "Consolas", size: 10, color: themeWord.codeText, spacing: isLast ? 80 : 0, formatLatex: false, plainText: true });
+    return wordParagraph(line, { font: "Consolas", size: 10, color: themeWord.codeText, spacing: isLast ? 80 : 0, formatLatex: false, plainText: true, preserveExactSpace: true });
   }).join("");
 
   var tblPrAlign = alignRight ? '<w:jc w:val="right"/>' : '';
