@@ -1,5 +1,5 @@
-import { getPlatformLabel, t, formatDateDisplay, sanitizeFilename, notifyProgress, yieldToBrowser, sanitizeExportText, sanitizeInlineSegmentText, sanitizeImageAlt, normalizeExportLinkHref, mapLimit, formatLatexUnicode, ensureImageBlockMetadata, getImageDedupKey, parseInlineMarkdown, getPrefixedInlineSegments } from '../utils.js';
-import { preloadImageForDocx, calculateWordImageDimensions, getImagePreloadConcurrency } from '../media.js';
+import { getPlatformLabel, t, formatDateDisplay, sanitizeFilename, notifyProgress, notifyExportDiagnostic, yieldToBrowser, sanitizeExportText, sanitizeInlineSegmentText, sanitizeImageAlt, normalizeExportLinkHref, mapLimit, formatLatexUnicode, ensureImageBlockMetadata, getImageDedupKey, parseInlineMarkdown, getPrefixedInlineSegments } from '../utils.js';
+import { preloadImageForDocx, calculateWordImageDimensions, getImagePreloadConcurrency, imageBytesCache } from '../media.js';
 import { createZip } from '../zip.js';
 import { getWordTheme } from '../themes/word.js';
 import { getMathAssetKey, mathFallbackText, preloadMathAssets } from '../math.js';
@@ -461,7 +461,7 @@ export function wordBlocks(blocks, imageCache, alignRight, themeWord, role, hype
   return xml;
 }
 
-export async function buildDocxBlob(messages, metadata, settingsInput, options) {
+async function buildDocxBlobInternal(messages, metadata, settingsInput, options) {
   options = options || {};
   var signal = options.signal;
   var themeConfig = getWordTheme(settingsInput);
@@ -519,6 +519,12 @@ export async function buildDocxBlob(messages, metadata, settingsInput, options) 
       limit: DOCX_MAX_IMAGES,
       dropped: imageEntriesByKey.size - DOCX_MAX_IMAGES
     });
+    notifyExportDiagnostic(options, {
+      code: "IMAGE_COUNT_LIMIT",
+      message: "Only the first " + DOCX_MAX_IMAGES + " images can be embedded in Word safely; later images use placeholders.",
+      count: imageEntriesByKey.size - DOCX_MAX_IMAGES,
+      format: "word"
+    });
   }
   var imageCache = {};
   if (uniqueImages.length > 0) {
@@ -530,9 +536,21 @@ export async function buildDocxBlob(messages, metadata, settingsInput, options) 
       throwIfAborted();
       var resultBytes = Number(result && result.bytes && result.bytes.byteLength || 0);
       if (resultBytes && aggregateImageBytes + resultBytes > DOCX_MAX_AGGREGATE_IMAGE_BYTES) {
+        notifyExportDiagnostic(options, {
+          code: "IMAGE_BYTE_BUDGET",
+          message: "Some images exceed the Word export's safe image-byte budget and were replaced with placeholders.",
+          format: "word"
+        });
         result = null;
       } else {
         aggregateImageBytes += resultBytes;
+      }
+      if (!result) {
+        notifyExportDiagnostic(options, {
+          code: "IMAGE_UNAVAILABLE",
+          message: "An image could not be embedded in the Word document and was replaced with a placeholder.",
+          format: "word"
+        });
       }
       loadedImages += 1;
       notifyProgress(
@@ -691,6 +709,14 @@ export async function buildDocxBlob(messages, metadata, settingsInput, options) 
   return blob;
 }
 
+export async function buildDocxBlob(messages, metadata, settingsInput, options) {
+  try {
+    return await buildDocxBlobInternal(messages, metadata, settingsInput, options);
+  } finally {
+    imageBytesCache.clear();
+  }
+}
+
 export function getUniqueDocxImages(imageCache) {
   var seenPaths = new Set();
   return Object.values(imageCache || {}).filter(function (img) {
@@ -705,7 +731,7 @@ export function footerXml(themeWord) {
   var colorMuted = (themeWord && themeWord.colorMuted) || "64748B";
   var fontAscii = (themeWord && themeWord.fontAscii) || "Georgia";
   var fontEastAsia = (themeWord && themeWord.fontEastAsia) || "DengXian";
-  var footerText = t("export_pdf_footer_branding", "Exported by Claude Export");
+  var footerText = t("export_pdf_footer_branding", "Exported by AI Chat Export");
 
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
     '<w:ftr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
@@ -823,12 +849,12 @@ export function stylesXml(themeWord) {
 export function coreXml(title) {
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
     '<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">' +
-    "<dc:title>" + xmlEscape(title) + "</dc:title><dc:creator>Claude Export</dc:creator>" +
+    "<dc:title>" + xmlEscape(title) + "</dc:title><dc:creator>AI Chat Export</dc:creator>" +
     '<dcterms:created xsi:type="dcterms:W3CDTF">' + new Date().toISOString() + "</dcterms:created>" +
     "</cp:coreProperties>";
 }
 
 export function appXml() {
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
-    '<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>Claude Export</Application></Properties>';
+    '<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>AI Chat Export</Application></Properties>';
 }

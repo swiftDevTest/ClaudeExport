@@ -18,6 +18,7 @@ import {
 } from './utils.js';
 
 import { compareElementsInDocument, pushDistinctDocumentElement } from './platforms/shared.js';
+import { parseClaudeMessages as parseClaudeMessagesFromPlatform } from './platforms/claude/extractor.js';
 import { parseMessagesForPlatform } from './platforms/registry.js';
 import { createExportDocument, normalizeExportBlocks, validateExportDocument } from './document.js';
 import { captureExportHtmlStyle, sanitizeExportHtmlStyle, withExportHtmlStyleCapture } from './html-style.js';
@@ -83,7 +84,7 @@ function countCandidateTurns(platform) {
     }
 
     if (platform === "claude") {
-      return queryCollapsedCandidates(root, [
+      var claudeCandidates = queryCollapsedCandidates(root, [
         "[data-testid='human-message']",
         "[data-testid='user-message']",
         "[data-testid='assistant-message']",
@@ -97,7 +98,17 @@ function countCandidateTurns(platform) {
         "[class*='user-message']",
         "[class*='assistant-message']",
         "[data-is-streaming]"
-      ]).length;
+      ]);
+      // Claude renders per-message action controls (retry/edit/copy) as sibling
+      // buttons whose testids still contain "user-message". They are controls,
+      // never message turns; counting them inflated candidateTurnCount (e.g.
+      // 5 for a 2-message chat) and tripped a false message_count_mismatch in
+      // the API completeness check, blocking valid exports.
+      return claudeCandidates.filter(function (element) {
+        if (!element || element.tagName === "BUTTON") return false;
+        var testId = String(element.getAttribute("data-testid") || "");
+        return !/(?:^|[-_])(?:retry|edit|copy|react|feedback|thumbs?[-_]?up|thumbs?[-_]?down)(?:$|[-_])/i.test(testId);
+      }).length;
     }
 
     if (platform === "gemini") {
@@ -140,7 +151,7 @@ function getParseStats() {
 
 function parseChatGPTMessages(options) {
   return withExportHtmlStyleCapture(shouldCaptureHtmlStyles(options), function () {
-    return parseChatGPTMessagesFromPlatform();
+    return parseMessagesForPlatform("chatgpt");
   });
 }
 
@@ -154,7 +165,7 @@ function parseClaudeMessages(options) {
 
 function parseGeminiMessages(options) {
   return withExportHtmlStyleCapture(shouldCaptureHtmlStyles(options), function () {
-    return parseGeminiMessagesFromPlatform();
+    return parseMessagesForPlatform("gemini");
   });
 }
 

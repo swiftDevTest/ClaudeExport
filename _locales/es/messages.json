@@ -1565,6 +1565,12 @@
   "content_export_fail_unknown_reason": {
     "message": "Ocurrió un error inesperado durante la exportación."
   },
+  "content_export_fail_completeness_reason": {
+    "message": "No se pudo verificar la conversación completa."
+  },
+  "content_export_fail_completeness_fix": {
+    "message": "Actualice la página de conversación de IA e inténtelo de nuevo."
+  },
   "content_export_fail_unknown_fix": {
     "message": "Actualice la página e inténtelo de nuevo. Si el problema persiste, pruebe otro formato."
   },
@@ -1921,5 +1927,1253 @@
   },
   "content_retry": {
     "message": "Reintentar"
+  },
+  "billing_benefit_premium_styles": {
+    "message": "Estilos de informes premium (Oxford, McKinsey)"
+  },
+  "billing_benefit_shared": {
+    "message": "Estado VIP Pro compartido con Claude Export AI"
+  },
+  "billing_benefit_unlimited": {
+    "message": "Exportaciones de chat diarias ilimitadas"
+  },
+  "billing_benefit_watermark": {
+    "message": "Ocultar marca de agua Claude Export"
+  },
+  "billing_billed_yearly": {
+    "message": "Facturado anualmente: $$29.99"
+  },
+  "content_all_conversations_loaded": {
+    "message": "Todas las conversaciones cargadas"
+  },
+  "content_background_loading": {
+    "message": "Cargando más conversaciones en segundo plano..."
+  },
+  "content_background_syncing": {
+    "message": "Actualizando el historial de conversaciones en segundo plano..."
+  },
+  "content_batch_action_type": {
+    "message": "Tipo de acción por lotes"
+  },
+  "content_batch_already_running": {
+    "message": "Ya hay una sincronización por lotes en curso. Espere a que termine o cancélela primero."
+  },
+  "content_batch_export_files": {
+    "message": "Exportar archivos"
+  },
+  "content_batch_export_platform": {
+    "message": "Exportación por lotes <b>$1</b> chats"
+  },
+  "content_batch_exporting_count": {
+    "message": "Exportando chats <b>$1</b>"
+  },
+  "content_batch_item_failed_with_reason": {
+    "message": "Falló: $1"
+  },
+  "content_batch_no_files": {
+    "message": "No se exportaron conversaciones."
+  },
+  "content_batch_partial_failure": {
+    "message": "Algunos chats no se pudieron exportar: $1"
+  },
+  "content_batch_quota_exceeded": {
+    "message": "Se alcanzó el límite diario de exportación. Actualiza a Pro para exportaciones ilimitadas."
+  },
+  "content_batch_saving_zip": {
+    "message": "Preparando archivo guardado..."
+  },
+  "content_batch_sync_notion": {
+    "message": "Sincronizar con Notion"
+  },
+  "content_batch_sync_obsidian": {
+    "message": "Sincronizar con Obsidian"
+  },
+  "content_batch_trial_banner_available": {
+    "message": "Prueba gratuita disponible: 1 exportación por lote gratuita. Actualiza a Pro para uso ilimitado."
+  },
+  "content_batch_trial_banner_used": {
+    "message": "Prueba gratuita usada. Actualiza a Pro para exportaciones por lote ilimitadas."
+  },
+  "content_batch_trial_exhausted": {
+    "message": "Has agotado tu prueba gratuita de exportación por lotes. Actualiza a Pro para exportaciones por lotes ilimitadas."
+  },
+  "content_batch_trial_hint": {
+    "message": "Prueba gratuita: esta es tu única exportación por lotes gratuita. Actualiza a Pro para uso ilimitado."
+  },
+  "content_btn_clear": {
+    "message": "Limpiar"
+  },
+  "content_btn_close": {
+    "message": "Cerrar"
+  },
+  "content_btn_done": {
+    "message": "Listo"
+  },
+  "content_btn_exit": {
+    "message": "Salir"
+  },
+  "content_cancel_export": {
+    "message": "Cancelar exportación"
+  },
+  "content_completed_title": {
+    "message": "Completado: $1"
+  },
+  "content_context_export_this": {
+    "message": "Exportar esta conversación"
+  },
+  "content_continuing_chatgpt_history": {
+    "message": "Continuando sincronizando el historial de Claude..."
+  },
+  "content_continuing_sidebar_sync": {
+    "message": "Continuando cargando el historial de la barra lateral..."
+  },
+  "content_conversation_history": {
+    "message": "Historial de conversaciones"
+  },
+  "content_copy_failed_refresh": {
+    "message": "Error al copiar. Actualiza la página y vuelve a intentarlo."
+  },
+  "content_detail_toggles": {
+    "message": "Alternancias detalladas"
+  },
+  "content_entitlement_local_quota_exhausted": {
+    "message": "Se alcanzó el límite diario de exportación (verificado localmente). Inténtalo de nuevo más tarde o actualiza a Pro."
+  },
+  "content_entitlement_verify_failed": {
+    "message": "No se pudo verificar su derecho de exportación. Comprueba tu conexión y vuelve a intentarlo."
+  },
+  "content_export_already_running": {
+    "message": "Ya hay una exportación en curso. Espere a que termine o cancele primero."
+  },
+  "content_export_engine_load_failed": {
+    "message": "No se pudo cargar el motor de exportación. Actualiza la página e inténtalo de nuevo."
+  },
+  "content_export_fail_engine_reason": {
+    "message": "El motor de exportación de la extensión no está disponible."
+  },
+  "content_export_fail_engine_fix": {
+    "message": "Actualice la página e inténtelo de nuevo."
+  },
+  "content_export_failed_message": {
+    "message": "Error al exportar: $1"
+  },
+  "content_export_failed_title": {
+    "message": "Error de exportación: $1"
+  },
+  "content_export_options": {
+    "message": "Formato de exportación y configuración detallada"
+  },
+  "content_export_save_cancelled": {
+    "message": "Exportación cancelada."
+  },
+  "content_export_review_button": {
+    "message": "Calificar Claude Export"
+  },
+  "content_export_review_open_failed": {
+    "message": "No se pudo abrir Chrome Web Store."
+  },
+  "content_export_ui_not_ready": {
+    "message": "La interfaz de usuario de exportación aún se está cargando. Actualiza la página y vuelve a intentarlo."
+  },
+  "content_exporting_index_title": {
+    "message": "Exportando ($1/$2): <b style='color:#d97706;'>$3</b>"
+  },
+  "content_format_text": {
+    "message": "Texto"
+  },
+  "content_found_syncing": {
+    "message": "Se encontraron $1 conversaciones."
+  },
+  "content_generating_export_file": {
+    "message": "Generando archivo de exportación local..."
+  },
+  "content_generating_local_file": {
+    "message": "Generando archivo local..."
+  },
+  "content_guest_quota_mode": {
+    "message": "Modo de cuota gratuita para invitados"
+  },
+  "content_json_copied": {
+    "message": "JSON copiado al portapapeles."
+  },
+  "content_load_more": {
+    "message": "Cargar más"
+  },
+  "content_loading_conversation_data": {
+    "message": "Cargando datos de conversación: $1"
+  },
+  "content_loading_more": {
+    "message": "Cargando..."
+  },
+  "content_local_batch_export_starting": {
+    "message": "Iniciando exportación por lotes local..."
+  },
+  "content_login_failed_refresh": {
+    "message": "Error al iniciar sesión. Actualiza la página y vuelve a intentarlo."
+  },
+  "content_login_required_batch_export": {
+    "message": "Inicia sesión para usar la exportación por lotes."
+  },
+  "content_login_service_unavailable": {
+    "message": "El inicio de sesión no está disponible temporalmente. Actualiza la página y vuelve a intentarlo."
+  },
+  "content_no_copy_text": {
+    "message": "Esta conversación no tiene contenido de texto para copiar."
+  },
+  "content_no_messages_for_batch_item": {
+    "message": "No se encontraron mensajes exportables."
+  },
+  "content_notion_batch_in_progress": {
+    "message": "Sincronizando con Notion"
+  },
+  "content_notion_batch_progress": {
+    "message": "$1 de $2 completo"
+  },
+  "content_notion_batch_progress_with_detail": {
+    "message": "$1 · $2"
+  },
+  "content_notion_cancelled": {
+    "message": "Cancelado"
+  },
+  "content_notion_connect_helper": {
+    "message": "Abra la ventana emergente de extensión para conectar su espacio de trabajo Notion."
+  },
+  "content_notion_database": {
+    "message": "Notion Database"
+  },
+  "content_notion_destination_required": {
+    "message": "Elige primero una base de datos de Notion."
+  },
+  "content_notion_destination_unavailable": {
+    "message": "Conecte Notion desde la ventana emergente de extensión"
+  },
+  "content_notion_failed": {
+    "message": "Error"
+  },
+  "content_notion_no_database": {
+    "message": "No se encontró ninguna base de datos autorizada"
+  },
+  "content_notion_partial": {
+    "message": "Sincronizado con advertencias"
+  },
+  "content_notion_preparing": {
+    "message": "Preparando"
+  },
+  "content_notion_queued": {
+    "message": "En cola"
+  },
+  "content_notion_retrying": {
+    "message": "Reintentando"
+  },
+  "content_notion_share_database": {
+    "message": "Comparte una base de datos con la conexión de Notion y vuelve a abrir este panel."
+  },
+  "content_notion_synced": {
+    "message": "Sincronizado"
+  },
+  "content_notion_syncing": {
+    "message": "Sincronizando"
+  },
+  "content_notion_waiting": {
+    "message": "Esperando"
+  },
+  "content_open": {
+    "message": "Abierto"
+  },
+  "content_open_subscribe_panel": {
+    "message": "Abriendo planes Claude Export Pro..."
+  },
+  "content_open_subscribe_panel_failed": {
+    "message": "Abra la ventana emergente de la barra de herramientas Claude Export para suscribirse."
+  },
+  "content_opening_conversation_page": {
+    "message": "Abriendo página de conversación..."
+  },
+  "content_pro_quota_desc": {
+    "message": "Se encuentran disponibles exportaciones ilimitadas de PDF y Word con calidad de informe. Todos los temas comerciales premium están desbloqueados."
+  },
+  "content_progress_building": {
+    "message": "Creando el documento..."
+  },
+  "content_progress_checking_export_access": {
+    "message": "Preparando exportación..."
+  },
+  "content_progress_complete": {
+    "message": "Exportación completa."
+  },
+  "content_progress_copying_json": {
+    "message": "Copiando JSON..."
+  },
+  "content_progress_downloading": {
+    "message": "Preparando descarga segura..."
+  },
+  "content_progress_formatting": {
+    "message": "Aplicando formato de exportación..."
+  },
+  "content_progress_initializing": {
+    "message": "Exportando..."
+  },
+  "content_progress_loading_full_conversation": {
+    "message": "Cargando datos completos de la conversación..."
+  },
+  "content_progress_parsing": {
+    "message": "Analizando el contenido de la página..."
+  },
+  "content_progress_receipt": {
+    "message": "Generando recibo de exportación..."
+  },
+  "content_quota_loading_desc": {
+    "message": "Comprobando el uso de exportación local actual."
+  },
+  "content_quota_loading_title": {
+    "message": "Cargando cuota..."
+  },
+  "content_quota_remaining_prefix": {
+    "message": "Cuota restante de hoy:"
+  },
+  "content_quota_remaining_suffix": {
+    "message": "exportaciones."
+  },
+  "content_select_one_before_export": {
+    "message": "Seleccione al menos un mensaje antes de exportar."
+  },
+  "content_selected_batch_suffix": {
+    "message": "chats (máximo 10)"
+  },
+  "content_selected_prefix": {
+    "message": "Seleccionado"
+  },
+  "content_selected_short": {
+    "message": "Seleccionado"
+  },
+  "content_sidebar_sync_failed": {
+    "message": "Error en la sincronización de la barra lateral. Por favor inténtalo de nuevo."
+  },
+  "content_signing_in": {
+    "message": "Iniciando sesión..."
+  },
+  "content_sync_chat_count": {
+    "message": "Sincronizar $1 chats con Notion"
+  },
+  "content_syncing_chatgpt_history": {
+    "message": "Sincronizando conversaciones del historial de Claude..."
+  },
+  "content_syncing_sidebar": {
+    "message": "Sincronizando el historial de la barra lateral y cargando más chats..."
+  },
+  "content_toggle_watermark": {
+    "message": "Ocultar marca de agua del producto"
+  },
+  "content_untitled_database": {
+    "message": "Base de datos sin título"
+  },
+  "content_upgrade_appendix": {
+    "message": "Prompt El apéndice requiere Pro."
+  },
+  "content_upgrade_batch_export": {
+    "message": "La exportación por lotes es una función Pro. Actualiza para desbloquear la exportación de múltiples chats."
+  },
+  "content_upgrade_desc": {
+    "message": "Actualice a Claude Export Pro para eliminar los límites de cuota."
+  },
+  "content_upgrade_free_limit": {
+    "message": "Ha utilizado las 3 exportaciones gratuitas de hoy."
+  },
+  "content_upgrade_quota_hint": {
+    "message": "Actualice a Pro para eliminar límites de cuotas y marcas de agua."
+  },
+  "content_upgrade_template": {
+    "message": "La plantilla profesional seleccionada requiere Pro."
+  },
+  "content_upgrade_theme": {
+    "message": "Los temas de informes premium requieren Pro."
+  },
+  "content_upgrade_watermark": {
+    "message": "Ocultar la marca de agua Claude Export requiere Pro."
+  },
+  "export_image_large_tables": {
+    "message": "Esta conversación contiene tablas grandes que se exportan mejor como PDF o Word."
+  },
+  "export_image_placeholder": {
+    "message": "[Imagen]"
+  },
+  "export_pdf_encode_failed": {
+    "message": "Error al renderizar la página PDF. Por favor inténtalo de nuevo."
+  },
+  "export_pdf_too_large": {
+    "message": "Esta conversación es demasiado grande para exportarla de forma segura en un solo PDF. Exporta un intervalo más corto."
+  },
+  "export_pdf_too_many_pages": {
+    "message": "Esta conversación es demasiado grande para exportarla de forma segura en un solo PDF. Exporta un intervalo más corto."
+  },
+  "export_progress_building_json": {
+    "message": "Construyendo JSON exportar"
+  },
+  "export_progress_building_markdown": {
+    "message": "Edificio Markdown exportar"
+  },
+  "export_progress_building_text": {
+    "message": "Exportación de texto de construcción"
+  },
+  "export_progress_building_word": {
+    "message": "Edificio Word documento"
+  },
+  "export_progress_detail_conversations": {
+    "message": "$1 conversaciones"
+  },
+  "export_progress_detail_issue": {
+    "message": "$1 problema"
+  },
+  "export_progress_detail_issues": {
+    "message": "$1 problemas"
+  },
+  "export_progress_detail_ready": {
+    "message": "$1 listo"
+  },
+  "export_progress_loading_images": {
+    "message": "Cargando imágenes"
+  },
+  "export_progress_preparing_docx": {
+    "message": "Preparando documento Word"
+  },
+  "export_progress_preparing_json": {
+    "message": "Preparando exportación JSON"
+  },
+  "export_progress_preparing_markdown": {
+    "message": "Preparando la exportación Markdown"
+  },
+  "export_progress_preparing_text": {
+    "message": "Preparando exportación de texto"
+  },
+  "export_progress_ready_doc": {
+    "message": "Exportación lista"
+  },
+  "folders_load_more": {
+    "message": "Cargar más"
+  },
+  "format_markdown": {
+    "message": "Markdown"
+  },
+  "image_limit_modal_cancel": {
+    "message": "Cancelar"
+  },
+  "image_limit_modal_export_pdf": {
+    "message": "Exportar como PDF"
+  },
+  "image_limit_modal_title": {
+    "message": "Imagen demasiado grande"
+  },
+  "notion_cancel_task": {
+    "message": "Cancelar tarea"
+  },
+  "notion_clear_task": {
+    "message": "Borrar tarea local"
+  },
+  "notion_connected": {
+    "message": "Conectado"
+  },
+  "notion_connecting": {
+    "message": "Conectando..."
+  },
+  "notion_disconnect_server_retained": {
+    "message": "No se pudo desconectar en el servidor. Sus datos locales se conservaron. Inténtelo de nuevo más tarde."
+  },
+  "notion_disconnected": {
+    "message": "Notion desconectado."
+  },
+  "notion_fetch_failed": {
+    "message": "Error al obtener"
+  },
+  "notion_metadata_exported": {
+    "message": "Exportado"
+  },
+  "notion_metadata_from": {
+    "message": "Origen"
+  },
+  "notion_no_data_source": {
+    "message": "No se encontró ninguna Database autorizada"
+  },
+  "notion_not_connected": {
+    "message": "No conectado"
+  },
+  "notion_oauth_failed": {
+    "message": "Error de conexión Notion: $1"
+  },
+  "notion_oauth_opening": {
+    "message": "Abriendo autorización Notion..."
+  },
+  "notion_oauth_success": {
+    "message": "Notion conectado."
+  },
+  "notion_open_page_failed": {
+    "message": "No se pudo abrir la página Notion."
+  },
+  "notion_reconnect_action": {
+    "message": "Reconectar"
+  },
+  "notion_reconnect_required": {
+    "message": "Reconexión requerida"
+  },
+  "notion_reconnect_warning": {
+    "message": "El acceso a Notion ha expirado. Reconéctese para continuar la sincronización."
+  },
+  "notion_retry": {
+    "message": "Reintentar"
+  },
+  "notion_save": {
+    "message": "Guardar"
+  },
+  "notion_save_to": {
+    "message": "Guardar en Notion"
+  },
+  "notion_signin_again": {
+    "message": "Sesión iniciada. Pulsa de nuevo Conectar Notion para continuar."
+  },
+  "notion_signin_required": {
+    "message": "Inicia sesión primero. La autorización del espacio de trabajo de Notion se abrirá automáticamente después de iniciar sesión."
+  },
+  "notion_sync_cancelled": {
+    "message": "Sincronización cancelada."
+  },
+  "notion_sync_failed": {
+    "message": "Error de sincronización de Notion: $1"
+  },
+  "notion_sync_fetching_conversation": {
+    "message": "Obteniendo conversación..."
+  },
+  "notion_sync_no_messages": {
+    "message": "No se encontraron mensajes de conversación en esta página."
+  },
+  "notion_sync_partial_desc": {
+    "message": "La página fue creada exitosamente. Ábralo para revisar cualquier contenido que no se haya podido conservar exactamente."
+  },
+  "notion_sync_partial_title": {
+    "message": "Sincronizado con Notion con advertencias"
+  },
+  "notion_sync_preparing": {
+    "message": "Preparando conversación..."
+  },
+  "notion_sync_progress_title": {
+    "message": "Sincronizando con Notion"
+  },
+  "notion_sync_retrying": {
+    "message": "Notion está ocupado. Reintentando de forma segura..."
+  },
+  "notion_sync_success_desc": {
+    "message": "Esta conversación está lista en su Notion Database."
+  },
+  "notion_sync_success_title": {
+    "message": "Sincronizado con Notion"
+  },
+  "notion_thinking_process": {
+    "message": "Pensamiento Process (思考过程)"
+  },
+  "notion_untitled_conversation": {
+    "message": "Conversación sin título"
+  },
+  "obsidian_batch_all_failed": {
+    "message": "No se pudieron sincronizar conversaciones."
+  },
+  "obsidian_batch_cancelled": {
+    "message": "Obsidian sincronización por lotes cancelada."
+  },
+  "obsidian_batch_complete": {
+    "message": "Obsidian sincronización por lotes completada"
+  },
+  "obsidian_batch_complete_desc": {
+    "message": "Cada conversación exitosa se guardó como una nota separada."
+  },
+  "obsidian_batch_in_progress": {
+    "message": "Sincronizando con Obsidian"
+  },
+  "obsidian_batch_progress": {
+    "message": "$1 de $2 completo"
+  },
+  "obsidian_batch_progress_with_detail": {
+    "message": "$1 · $2"
+  },
+  "obsidian_batch_sync": {
+    "message": "Sincronizar a Obsidian"
+  },
+  "obsidian_batch_title": {
+    "message": "Sincronización por lotes con Obsidian"
+  },
+  "obsidian_cancelled": {
+    "message": "Cancelado"
+  },
+  "obsidian_change_folder": {
+    "message": "Cambiar carpetas"
+  },
+  "obsidian_checking_vault": {
+    "message": "Comprobando Vault"
+  },
+  "obsidian_connect": {
+    "message": "Conectar Obsidian"
+  },
+  "obsidian_connect_first": {
+    "message": "Conecte primero un Obsidian Vault."
+  },
+  "obsidian_connect_helper": {
+    "message": "Elige un Vault local para sincronización individual o por lotes."
+  },
+  "obsidian_directories_missing": {
+    "message": "Falta una carpeta configurada. Repárelo antes de sincronizar."
+  },
+  "obsidian_disconnect_failed": {
+    "message": "No se pudo desconectar Obsidian."
+  },
+  "obsidian_disconnected": {
+    "message": "Obsidian desconectado. Se mantuvieron los archivos existentes."
+  },
+  "obsidian_failed": {
+    "message": "Error"
+  },
+  "obsidian_fetching": {
+    "message": "Obteniendo conversación"
+  },
+  "obsidian_finishing": {
+    "message": "Finalizando sincronización..."
+  },
+  "obsidian_getting_conversation": {
+    "message": "Obteniendo conversación completa..."
+  },
+  "obsidian_getting_selected": {
+    "message": "Obteniendo mensajes seleccionados..."
+  },
+  "obsidian_getting_selected_count": {
+    "message": "Getting $1 selected messages..."
+  },
+  "obsidian_job_running": {
+    "message": "Ya se está ejecutando otra sincronización Obsidian."
+  },
+  "obsidian_configured": {
+    "message": "Configurado"
+  },
+  "obsidian_not_connected": {
+    "message": "La ruta de la carpeta no está configurada. Configúrala."
+  },
+  "obsidian_open_failed": {
+    "message": "No se pudo abrir Obsidian."
+  },
+  "obsidian_open_note": {
+    "message": "Abrir en Obsidian"
+  },
+  "obsidian_permission_required": {
+    "message": "Debes volver a conceder permiso al Vault."
+  },
+  "obsidian_preparing": {
+    "message": "Comprobando Vault"
+  },
+  "obsidian_ready": {
+    "message": "Listo"
+  },
+  "obsidian_reauthorize": {
+    "message": "Volver a autorizar Vault"
+  },
+  "obsidian_reauthorize_first": {
+    "message": "Vuelva a autorizar primero el Obsidian Vault."
+  },
+  "obsidian_retry_check": {
+    "message": "Reintentar"
+  },
+  "obsidian_save_to": {
+    "message": "Guardar en Obsidian"
+  },
+  "obsidian_select_message_first": {
+    "message": "Seleccione al menos un mensaje antes de sincronizar."
+  },
+  "obsidian_select_message_first_short": {
+    "message": "Seleccionar mensajes"
+  },
+  "obsidian_settings": {
+    "message": "Configuración"
+  },
+  "obsidian_settings_assets_folder": {
+    "message": "Carpeta de recursos (opcional)"
+  },
+  "obsidian_settings_assets_help": {
+    "message": "Si no se configura, se usa la carpeta de notas. Cada sincronización usa una carpeta de recursos aislada."
+  },
+  "obsidian_settings_assets_placeholder": {
+    "message": "Utiliza la carpeta de notas cuando no está configurada"
+  },
+  "obsidian_settings_choose": {
+    "message": "Elegir"
+  },
+  "obsidian_settings_choose_assets_failed": {
+    "message": "No se pudo elegir la carpeta de activos."
+  },
+  "obsidian_settings_choose_notes_failed": {
+    "message": "No se pudo elegir la carpeta de notas."
+  },
+  "obsidian_settings_choose_notes_first": {
+    "message": "Primero elija una carpeta de notas."
+  },
+  "obsidian_settings_choose_root_first": {
+    "message": "Elija primero su carpeta Obsidian Vault."
+  },
+  "obsidian_settings_choose_vault": {
+    "message": "Elegir Vault"
+  },
+  "obsidian_settings_choose_vault_failed": {
+    "message": "No se pudo elegir Vault."
+  },
+  "obsidian_settings_choose_vault_step": {
+    "message": "Elegir Vault"
+  },
+  "obsidian_settings_clear": {
+    "message": "Borrar"
+  },
+  "obsidian_settings_connection_ready": {
+    "message": "La conexión está lista."
+  },
+  "obsidian_settings_current_vault": {
+    "message": "Vault actual"
+  },
+  "obsidian_settings_failed": {
+    "message": "No se pudo abrir la configuración de Obsidian."
+  },
+  "obsidian_settings_folder_outside": {
+    "message": "Elija una carpeta dentro del Vault actual."
+  },
+  "obsidian_settings_folders_step": {
+    "message": "Elegir carpetas"
+  },
+  "obsidian_settings_folders_step_desc": {
+    "message": "Elige la carpeta de notas y, si quieres, la de recursos."
+  },
+  "obsidian_settings_heading": {
+    "message": "Guarda conversaciones directamente en tu base de conocimiento"
+  },
+  "obsidian_settings_history": {
+    "message": "Sincronizaciones recientes"
+  },
+  "obsidian_settings_history_desc": {
+    "message": "Solo se guardan rutas y estados, no el contenido del chat."
+  },
+  "obsidian_settings_history_failed": {
+    "message": "No se pudo cargar el historial de sincronización."
+  },
+  "obsidian_settings_image_count": {
+    "message": "$1 imágenes"
+  },
+  "obsidian_settings_init_failed": {
+    "message": "No se pudo inicializar la configuración de Obsidian."
+  },
+  "obsidian_settings_intro": {
+    "message": "Elige las carpetas una vez y sincroniza una o varias conversaciones. El texto y las imágenes permanecen en local."
+  },
+  "obsidian_settings_invalid_path": {
+    "message": "Las carpetas deben utilizar una ruta segura dentro de Vault y no pueden contener .., .obsidian o caracteres del sistema no válidos."
+  },
+  "obsidian_settings_local": {
+    "message": "Escritura local"
+  },
+  "obsidian_settings_no_history": {
+    "message": "Aún no hay historial de sincronización con Obsidian."
+  },
+  "obsidian_settings_not_selected": {
+    "message": "Sin seleccionar"
+  },
+  "obsidian_settings_notes_folder": {
+    "message": "Carpeta de notas"
+  },
+  "obsidian_settings_notes_help": {
+    "message": "Obligatorio. Las notas se guardan aquí sin carpetas raíz o de plataforma adicionales."
+  },
+  "obsidian_settings_notes_placeholder": {
+    "message": "Elija una carpeta de notas dentro de Vault"
+  },
+  "obsidian_settings_opened_background": {
+    "message": "Se abrió la configuración de Obsidian en una nueva pestaña. Cambia de pestaña para configurar y vuelve aquí."
+  },
+  "obsidian_settings_path_preview": {
+    "message": "Vista previa de la ruta"
+  },
+  "obsidian_settings_permission_denied": {
+    "message": "Vault no se concedió el permiso de escritura. Vuelva a autorizar el Vault y vuelva a intentarlo."
+  },
+  "obsidian_settings_picker_unsupported": {
+    "message": "Esta versión de Chrome no admite el acceso a carpetas. Actualiza Chrome e inténtalo de nuevo."
+  },
+  "obsidian_settings_preview_empty": {
+    "message": "Elige una carpeta de notas para ver la ruta"
+  },
+  "obsidian_settings_preview_title": {
+    "message": "Título de la conversación"
+  },
+  "obsidian_settings_ready": {
+    "message": "La conexión y las carpetas están listas."
+  },
+  "obsidian_settings_refresh": {
+    "message": "Actualizar"
+  },
+  "obsidian_settings_request_failed": {
+    "message": "La solicitud Obsidian falló."
+  },
+  "obsidian_settings_resolve_unsupported": {
+    "message": "Esta versión de Chrome no puede confirmar si la carpeta seleccionada está dentro de Vault."
+  },
+  "obsidian_settings_return": {
+    "message": "Volver a la conversación"
+  },
+  "obsidian_settings_save_permission_failed": {
+    "message": "No se pudo guardar el permiso Vault."
+  },
+  "obsidian_settings_saved": {
+    "message": "Vault verificado. Volviendo a la conversación..."
+  },
+  "obsidian_settings_steps_label": {
+    "message": "Vault pasos de configuración"
+  },
+  "obsidian_settings_storage_failed": {
+    "message": "No se pudo abrir el almacenamiento local Obsidian."
+  },
+  "obsidian_settings_title": {
+    "message": "Conectar Vault de Obsidian"
+  },
+  "obsidian_settings_vault_authorized": {
+    "message": "El acceso Vault está listo. Elija una carpeta de notas a continuación."
+  },
+  "obsidian_settings_verify_failed": {
+    "message": "Vault error en la verificación de escritura."
+  },
+  "obsidian_settings_verify_save": {
+    "message": "Verificar y guardar"
+  },
+  "obsidian_settings_verify_step": {
+    "message": "Verificar acceso"
+  },
+  "obsidian_settings_verify_step_desc": {
+    "message": "Crea y elimina un archivo temporal."
+  },
+  "obsidian_settings_verifying": {
+    "message": "Verificando..."
+  },
+  "obsidian_start_failed": {
+    "message": "No se pudo iniciar la sincronización de Obsidian. Actualiza la página y vuelve a intentarlo."
+  },
+  "obsidian_status_cancelled_short": {
+    "message": "Cancelado"
+  },
+  "obsidian_status_failed_short": {
+    "message": "Error"
+  },
+  "obsidian_status_partial": {
+    "message": "Advertencias"
+  },
+  "obsidian_status_success": {
+    "message": "Correcto"
+  },
+  "obsidian_sync_busy": {
+    "message": "Una tarea de sincronización está escribiendo en este Vault."
+  },
+  "obsidian_sync_cancelled": {
+    "message": "Obsidian sincronización cancelada."
+  },
+  "obsidian_sync_chat_count": {
+    "message": "Sincronizar chats de $1 con Obsidian"
+  },
+  "obsidian_sync_complete": {
+    "message": "Sincronizado con Obsidian"
+  },
+  "obsidian_sync_complete_desc": {
+    "message": "La nota y sus medios locales están listos en su Vault."
+  },
+  "obsidian_sync_current_short": {
+    "message": "Sincronizar"
+  },
+  "obsidian_sync_failed": {
+    "message": "Error de sincronización de Obsidian: $1"
+  },
+  "obsidian_sync_failed_desc": {
+    "message": "No se creó ninguna nota. Verifique el acceso a Vault e inténtelo nuevamente."
+  },
+  "obsidian_sync_failed_title": {
+    "message": "Error de sincronización Obsidian"
+  },
+  "obsidian_sync_no_messages": {
+    "message": "No se encontraron mensajes de conversación en esta página."
+  },
+  "obsidian_sync_partial_desc": {
+    "message": "La nota fue creada. Revise las advertencias a continuación para los medios que no se pudieron conservar."
+  },
+  "obsidian_sync_partial_title": {
+    "message": "Sincronización Obsidian completada con advertencias"
+  },
+  "obsidian_sync_progress_title": {
+    "message": "Sincronizando con Obsidian"
+  },
+  "obsidian_sync_running": {
+    "message": "Ya se está ejecutando una sincronización. Este panel se desbloqueará cuando finalice."
+  },
+  "obsidian_sync_selected_short": {
+    "message": "Sincronizar $1"
+  },
+  "obsidian_synced": {
+    "message": "Sincronizado"
+  },
+  "obsidian_synced_partial": {
+    "message": "Sincronizado con advertencias"
+  },
+  "obsidian_syncing": {
+    "message": "Sincronizando"
+  },
+  "obsidian_vault": {
+    "message": "Obsidian Vault"
+  },
+  "obsidian_vault_root": {
+    "message": "Vault raíz"
+  },
+  "obsidian_visible_content_fallback": {
+    "message": "La conversación completa no estaba disponible; Se utilizó contenido de página visible."
+  },
+  "obsidian_waiting": {
+    "message": "Esperando"
+  },
+  "obsidian_writing": {
+    "message": "Escribiendo a Vault"
+  },
+  "placeholder_batch_search": {
+    "message": "Buscar por título de conversación..."
+  },
+  "popup_benefit_batch_export": {
+    "message": "Exportación por lotes de conversaciones"
+  },
+  "popup_checking": {
+    "message": "Comprobando..."
+  },
+  "popup_checkout_rate_limited": {
+    "message": "El pago ya se está preparando. Espere un momento e inténtelo de nuevo."
+  },
+  "popup_checkout_temporarily_unavailable": {
+    "message": "El pago no está disponible temporalmente. Espera un momento e inténtalo de nuevo."
+  },
+  "popup_checkout_signed_in_retry": {
+    "message": "Iniciaste sesión. Selecciona tu plan y haz clic en Continuar nuevamente para abrir el proceso de pago."
+  },
+  "popup_checkout_signin_message": {
+    "message": "Inicie sesión con Google primero. Después de iniciar sesión, haga clic en Continuar nuevamente para abrir el pago seguro."
+  },
+  "popup_checkout_signin_ok": {
+    "message": "Iniciar sesión"
+  },
+  "popup_checkout_signin_title": {
+    "message": "Iniciar sesión antes de pagar"
+  },
+  "popup_close_aria": {
+    "message": "Cerrar"
+  },
+  "popup_connections_title": {
+    "message": "Conexiones"
+  },
+  "popup_free_quota_exhausted": {
+    "message": "Ha utilizado las 3 exportaciones gratuitas de hoy."
+  },
+  "popup_language_change_failed": {
+    "message": "No se pudo cambiar el idioma."
+  },
+  "popup_language_title": {
+    "message": "Idioma de la interfaz"
+  },
+  "popup_login_service_unavailable": {
+    "message": "El inicio de sesión no está disponible temporalmente. Actualice e inténtelo de nuevo."
+  },
+  "popup_notion_checking_connection": {
+    "message": "Comprobando conexión"
+  },
+  "notion_destination_changed": {
+    "message": "La base de datos seleccionada ya no está disponible. Revisa la selección actual y vuelve a pulsar Guardar."
+  },
+  "notion_destination_verify_failed": {
+    "message": "No se pudo verificar el espacio de trabajo y la base de datos de Notion. Comprueba la conexión e inténtalo de nuevo."
+  },
+  "popup_plan_yearly_detail": {
+    "message": "Facturado anualmente $$29.99"
+  },
+  "popup_pro_already_active": {
+    "message": "Pro ya está activo en esta cuenta."
+  },
+  "popup_entitlement_syncing": {
+    "message": "Sincronizando el estado de la membresía..."
+  },
+  "popup_subscribe_cta": {
+    "message": "Pagar $$29.99"
+  },
+  "role_user": {
+    "message": "Usuario"
+  },
+  "subscribe_badge_lifetime": {
+    "message": "Pro de por vida"
+  },
+  "subscribe_badge_monthly": {
+    "message": "Pro mensual"
+  },
+  "subscribe_badge_yearly": {
+    "message": "Pro anual"
+  },
+  "subscribe_cadence_lifetime": {
+    "message": "único"
+  },
+  "subscribe_cadence_month": {
+    "message": "/ mes"
+  },
+  "subscribe_cadence_year": {
+    "message": "/ año"
+  },
+  "subscribe_checkout_error": {
+    "message": "Error de pago: $1"
+  },
+  "subscribe_confirm_switch": {
+    "message": "¿Cerrar sesión de la cuenta actual y cambiar?"
+  },
+  "subscribe_discount_lifetime": {
+    "message": "Ahorra 38%"
+  },
+  "subscribe_discount_monthly": {
+    "message": "Ahorra 44%"
+  },
+  "subscribe_discount_yearly": {
+    "message": "Ahorra 50%"
+  },
+  "subscribe_early_bird_badge": {
+    "message": "Early bird limitado"
+  },
+  "subscribe_err_build_checkout": {
+    "message": "No se pudo crear la página de pago. Inténtalo de nuevo más tarde."
+  },
+  "subscribe_err_generic": {
+    "message": "Inténtalo de nuevo más tarde."
+  },
+  "subscribe_err_login_service": {
+    "message": "El servicio de inicio de sesión no está disponible temporalmente. Actualiza e inténtalo de nuevo."
+  },
+  "subscribe_err_open_checkout": {
+    "message": "No se pudo abrir la página de pago. Inténtalo de nuevo más tarde."
+  },
+  "subscribe_err_popup_blocked": {
+    "message": "El navegador bloqueó la página de pago. Permite las ventanas emergentes e inténtalo de nuevo."
+  },
+  "subscribe_err_schema_cache": {
+    "message": "El servicio de pago se está actualizando. Vuelve a abrir Claude Export e inténtalo de nuevo."
+  },
+  "subscribe_err_temporarily_unavailable": {
+    "message": "El pago no está disponible temporalmente. Espera un momento e inténtalo de nuevo."
+  },
+  "subscribe_faq_a1": {
+    "message": "Privacidad 100% local. Todo el análisis, estructuración y conversión ocurre en tu navegador. Claude Export nunca carga ni almacena tu contenido de chat, imágenes ni cookies."
+  },
+  "subscribe_faq_a2": {
+    "message": "Simplemente inicia sesión con la misma cuenta de Google en Claude Export AI y AI Chat Export. El estado Pro se sincroniza automáticamente."
+  },
+  "subscribe_faq_a3": {
+    "message": "El pago es procesado por Paddle, un procesador de pagos globalmente confiable. No recopilamos ni almacenamos los datos de tu tarjeta o pago."
+  },
+  "subscribe_faq_a4": {
+    "message": "El panel incluye una verificación de salud de exportación integrada. Para problemas difíciles o sugerencias de funciones, contacta con chatvaultaisupport@gmail.com."
+  },
+  "subscribe_faq_q1": {
+    "message": "¿Están seguros mis datos exportados localmente?"
+  },
+  "subscribe_faq_q2": {
+    "message": "¿Cómo obtengo los beneficios Pro compartidos?"
+  },
+  "subscribe_faq_q3": {
+    "message": "¿Es seguro y conforme el pago?"
+  },
+  "subscribe_faq_q4": {
+    "message": "¿Cómo obtengo ayuda con problemas de exportación?"
+  },
+  "subscribe_faq_title": {
+    "message": "Preguntas frecuentes"
+  },
+  "subscribe_feature_codepack_desc": {
+    "message": "Conserva los bloques de código y sus etiquetas de lenguaje en las conversaciones exportadas para facilitar su revisión y reutilización."
+  },
+  "subscribe_feature_codepack_title": {
+    "message": "Exportación compatible con código"
+  },
+  "subscribe_feature_qa_desc": {
+    "message": "Analiza contenido no cargado y riesgos de tamaño del lienzo antes de exportar, y recomienda un formato más seguro o pasos de reintento cuando encuentra problemas."
+  },
+  "subscribe_feature_qa_title": {
+    "message": "Verificación de calidad completa antes de exportar"
+  },
+  "subscribe_feature_shared_desc": {
+    "message": "Comparte la misma cuenta y estado Pro con Claude Export AI. Compra una vez, desbloquea todos los beneficios en ambos productos."
+  },
+  "subscribe_feature_shared_title": {
+    "message": "Pro compartido en ambos productos"
+  },
+  "subscribe_feature_templates_desc": {
+    "message": "Desbloquea Research Brief, Client Memo y más plantillas para documentos Word / PDF / HTML hermosamente estructurados."
+  },
+  "subscribe_feature_templates_title": {
+    "message": "Plantillas basadas en escenarios"
+  },
+  "subscribe_feature_themes_desc": {
+    "message": "Temas profesionales exclusivos: Academic Paper, McKinsey, Newsprint y más."
+  },
+  "subscribe_feature_themes_title": {
+    "message": "Temas de calidad publicación"
+  },
+  "subscribe_feature_unlimited_desc": {
+    "message": "Elimina el límite gratuito de 3 por día y exporta lo que necesites."
+  },
+  "subscribe_feature_unlimited_title": {
+    "message": "Exportaciones locales ilimitadas"
+  },
+  "subscribe_feature_watermark_desc": {
+    "message": "Oculta la firma y la marca de agua de Claude Export al final de los documentos para uso profesional."
+  },
+  "subscribe_feature_watermark_title": {
+    "message": "Ocultar marca de agua de Claude Export"
+  },
+  "subscribe_features_title": {
+    "message": "Desbloquea funciones avanzadas exclusivas de Pro"
+  },
+  "subscribe_logged_in_as": {
+    "message": "Sesión iniciada como: "
+  },
+  "subscribe_logged_in_user": {
+    "message": "Usuario con sesión iniciada"
+  },
+  "subscribe_login_failed": {
+    "message": "Error de inicio de sesión: $1"
+  },
+  "subscribe_login_now": {
+    "message": "Iniciar sesión"
+  },
+  "subscribe_login_required": {
+    "message": "Inicia sesión antes de suscribirte para vincular automáticamente los beneficios Pro."
+  },
+  "subscribe_not_signed_in": {
+    "message": "Aún no has iniciado sesión. Por favor"
+  },
+  "subscribe_opening_checkout": {
+    "message": "Abriendo el pago..."
+  },
+  "subscribe_page_title": {
+    "message": "Mejora a Claude Export Pro"
+  },
+  "subscribe_pay_lifetime": {
+    "message": "Pagar $$79.99"
+  },
+  "subscribe_pay_monthly": {
+    "message": "Pagar $$4.99"
+  },
+  "subscribe_pay_yearly": {
+    "message": "Pagar $$29.99"
+  },
+  "subscribe_plan_desc_lifetime": {
+    "message": "Oferta especial para early supporters. Actualizaciones gratuitas de por vida, sin facturación recurrente."
+  },
+  "subscribe_plan_desc_monthly": {
+    "message": "Ideal para probar Pro. Cancela cuando quieras, todos los formatos y plataformas soportados."
+  },
+  "subscribe_plan_desc_yearly": {
+    "message": "Óptimo para usuarios intensivos de IA. Exportaciones ilimitadas y formato premium todo el año."
+  },
+  "subscribe_plan_detail_lifetime": {
+    "message": "Paga una vez, conserva para siempre"
+  },
+  "subscribe_plan_detail_monthly": {
+    "message": "Cancela cuando quieras desde la gestión de suscripciones"
+  },
+  "subscribe_plan_detail_yearly": {
+    "message": "Facturado anualmente a $$29.99"
+  },
+  "subscribe_plan_title_lifetime": {
+    "message": "Plan de por vida"
+  },
+  "subscribe_plan_title_monthly": {
+    "message": "Plan Pro mensual"
+  },
+  "subscribe_plan_title_yearly": {
+    "message": "Plan Pro anual"
+  },
+  "subscribe_privacy_alert": {
+    "message": "Política de privacidad: nunca recopilamos, cargamos ni almacenamos ninguno de tus contenidos de conversación en nuestros servidores. Todo el análisis, formato y generación de archivos ocurre localmente en tu navegador."
+  },
+  "subscribe_privacy_link": {
+    "message": "Política de privacidad"
+  },
+  "subscribe_recommended_badge": {
+    "message": "Mejor valor"
+  },
+  "subscribe_signed_in_retry": {
+    "message": "Sesión iniciada. Haz clic de nuevo en el botón de suscripción para abrir el pago."
+  },
+  "subscribe_subtitle": {
+    "message": "Elimina los límites de cuota y desbloquea temas de calidad publicación además de beneficios Pro compartidos en ambos productos."
+  },
+  "subscribe_switch_account": {
+    "message": "Cambiar de cuenta"
+  },
+  "subscribe_terms_alert": {
+    "message": "Términos del servicio: Claude Export es solo para extracción y guardado diario personal de conversaciones de IA. El uso de esta herramienta para extraer datos sensibles, ilegales o protegidos por derechos de autor está estrictamente prohibido."
+  },
+  "subscribe_terms_link": {
+    "message": "Términos del servicio"
+  },
+  "subscribe_title": {
+    "message": "Mejora a Claude Export Pro"
+  },
+  "welcome_aria_toolbar_mock": {
+    "message": "Guía de la barra de herramientas de Chrome"
+  },
+  "welcome_look_up": {
+    "message": "Haz clic en el ícono del rompecabezas en la barra de herramientas de tu navegador (esquina superior derecha de la ventana, encima de esta página)."
+  },
+  "welcome_look_up_title": {
+    "message": "Haz clic aquí en Extensiones"
+  },
+  "welcome_open_hint": {
+    "message": "Claude Export se activa automáticamente cuando visitas una página de chat de IA compatible."
+  },
+  "welcome_pin_step_1": {
+    "message": "Haz clic en el ícono del rompecabezas en la barra de herramientas"
+  },
+  "welcome_pin_step_2": {
+    "message": "Busca Claude Export en la lista"
+  },
+  "welcome_pin_step_3": {
+    "message": "Haz clic en el ícono de pin al lado"
+  },
+  "welcome_step_1": {
+    "message": "Configuración recomendada"
+  },
+  "welcome_step_2": {
+    "message": "Paso 2"
+  },
+  "welcome_title_open": {
+    "message": "Abre una plataforma de IA para empezar a exportar."
+  },
+  "billing_trial_badge_yearly": {
+    "message": "Prueba gratuita de 3 días"
+  },
+  "billing_trial_cta_yearly": {
+    "message": "Iniciar prueba de 3 días"
+  },
+  "billing_trial_charge_after": {
+    "message": "Hoy $0; después $$29.99/año tras 3 días, salvo cancelación."
+  },
+  "billing_trial_not_eligible": {
+    "message": "Plan anual: $$29.99/año, cobrado hoy."
+  },
+  "billing_trial_confirm_charge": {
+    "message": "La prueba gratuita no está disponible para esta cuenta. ¿Continuar con el plan anual de $$29.99 cobrado hoy?"
+  },
+  "billing_trial_signin_check": {
+    "message": "Inicia sesión para confirmar la prueba gratuita."
+  },
+  "billing_trial_checking": {
+    "message": "Comprobando si puedes usar la prueba…"
+  },
+  "billing_trial_check_cta": {
+    "message": "Comprobar prueba de 3 días"
+  },
+  "billing_trial_used_badge": {
+    "message": "Prueba ya utilizada"
   }
 }

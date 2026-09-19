@@ -91,6 +91,7 @@
         "src/modules/export/themes/pdf.js",
         "src/modules/export/themes/word.js",
         "src/modules/export/themes/image.js",
+        "src/modules/export-errors.js",
         "src/modules/export/notion-sync-engine.js",
         "src/modules/obsidian/coordinator.js",
         "src/modules/obsidian/renderer.js",
@@ -123,6 +124,7 @@
         "src/modules/share-cards.js",
         "src/modules/billing.js",
         "src/modules/export-message-adapter.js",
+        "src/modules/export-errors.js",
         "src/modules/export.js",
         "src/content.js"
       ],

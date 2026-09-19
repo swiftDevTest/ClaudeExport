@@ -1,16 +1,17 @@
-import { isSubstantialSvg, convertSvgToDataUrl, mapLimit, yieldToBrowser, notifyProgress, isGoogleUserContentUrl, isGoogleAccountAvatarUrl, isTrustedConversationImageSrc, isPlatformOrSystemIcon, isTestEnv, canvasToBlob, ensureImageBlockMetadata, getImageDedupKey, IMAGE_MAX_CANVAS_PIXELS, IMAGE_MAX_CANVAS_DIMENSION } from './utils.js';
+import { isSubstantialSvg, convertSvgToDataUrl, mapLimit, yieldToBrowser, notifyProgress, notifyExportDiagnostic, isGoogleUserContentUrl, isGoogleAccountAvatarUrl, isTrustedConversationImageSrc, isPlatformOrSystemIcon, isTestEnv, canvasToBlob, ensureImageBlockMetadata, getImageDedupKey, IMAGE_MAX_CANVAS_PIXELS, IMAGE_MAX_CANVAS_DIMENSION } from './utils.js';
 
 var IMAGE_CACHE_MAX = 50;
 var IMAGE_CACHE_MAX_BYTES = 24 * 1024 * 1024;
 var IMAGE_FETCH_MAX_BYTES = 8 * 1024 * 1024;
-var IMAGE_PRELOAD_MAX_COUNT = 50;
-var IMAGE_PRELOAD_MAX_BYTES = 32 * 1024 * 1024;
+var IMAGE_PRELOAD_MAX_COUNT = 200;
 var IMAGE_PRELOAD_MAX_IMAGE_PIXELS = 16 * 1024 * 1024;
 var IMAGE_PRELOAD_MAX_TOTAL_PIXELS = 48 * 1024 * 1024;
+var IMAGE_PRELOAD_THUMBNAIL_LOGICAL_SIZE = 112;
+var IMAGE_PRELOAD_FULL_LOGICAL_WIDTH = 450;
 var IMAGE_PRELOAD_CANVAS_TIMEOUT_MS = 5000;
 var IMAGE_ELEMENT_LOAD_TIMEOUT_MS = 8000;
 // 动态并发：图片密集对话原并发=2 串行化严重，提升到 6 可快 2-3 倍。
-// aggregateBytes / aggregateDecodedPixels 总量上限已做内存保护，提升并发不会失控。
+// Encoded-byte LRU and scaled decoded-pixel budgets bound peak memory use.
 // 低内存设备或慢网络降回 3，避免同时光栅化大图导致 OOM。
 export function getImagePreloadConcurrency(maxConcurrency) {
   var concurrency = 4;
@@ -302,6 +303,17 @@ export var imageBytesCache = {
   has: function (key) {
     return _imageBytesCache.has(key);
   },
+  delete: function (key) {
+    if (!_imageBytesCache.has(key)) return false;
+    _imageBytesCacheBytes -= getCachedImageByteLength(_imageBytesCache.get(key));
+    return _imageBytesCache.delete(key);
+  },
+  clear: function () {
+    _imageBytesCache.clear();
+    _imageBytesCacheBytes = 0;
+    _domImgListCache = null;
+    _domImgListCacheTs = 0;
+  },
   get size() {
     return _imageBytesCache.size;
   },
@@ -309,6 +321,69 @@ export var imageBytesCache = {
     return Math.max(0, _imageBytesCacheBytes);
   }
 };
+
+export function getCanvasImageDecodePlan(naturalWidth, naturalHeight, options) {
+  options = options || {};
+  var width = Math.max(1, Math.floor(Number(naturalWidth) || 1));
+  var height = Math.max(1, Math.floor(Number(naturalHeight) || 1));
+  var renderScale = Math.max(1, Math.min(4, Number(options.renderScale) || 3));
+
+  if (options.thumbnailOnly) {
+    var squareSize = Math.max(1, Math.min(
+      Math.ceil(IMAGE_PRELOAD_THUMBNAIL_LOGICAL_SIZE * renderScale),
+      width,
+      height
+    ));
+    return {
+      width: squareSize,
+      height: squareSize,
+      cropSquare: true
+    };
+  }
+
+  var targetWidth = Math.min(width, Math.ceil(IMAGE_PRELOAD_FULL_LOGICAL_WIDTH * renderScale));
+  var targetHeight = Math.max(1, Math.round(height * targetWidth / width));
+  var targetPixels = targetWidth * targetHeight;
+  if (targetPixels > IMAGE_PRELOAD_MAX_IMAGE_PIXELS) {
+    var reduction = Math.sqrt(IMAGE_PRELOAD_MAX_IMAGE_PIXELS / targetPixels);
+    targetWidth = Math.max(1, Math.floor(targetWidth * reduction));
+    targetHeight = Math.max(1, Math.floor(targetHeight * reduction));
+  }
+  return {
+    width: targetWidth,
+    height: targetHeight,
+    cropSquare: false
+  };
+}
+
+function createCanvasImageCacheEntry(img, options) {
+  var naturalWidth = Math.max(1, Number(img && img.naturalWidth) || 600);
+  var naturalHeight = Math.max(1, Number(img && img.naturalHeight) || 400);
+  var plan = getCanvasImageDecodePlan(naturalWidth, naturalHeight, options);
+  var keepsOriginal = !plan.cropSquare && plan.width === naturalWidth && plan.height === naturalHeight;
+  if (keepsOriginal || typeof document === "undefined" || typeof document.createElement !== "function") {
+    return { element: img, width: naturalWidth, height: naturalHeight };
+  }
+
+  var canvas = document.createElement("canvas");
+  canvas.width = plan.width;
+  canvas.height = plan.height;
+  var ctx = canvas.getContext && canvas.getContext("2d", { alpha: true });
+  if (!ctx || typeof ctx.drawImage !== "function") {
+    return { element: img, width: naturalWidth, height: naturalHeight };
+  }
+  ctx.imageSmoothingEnabled = true;
+  try { ctx.imageSmoothingQuality = "high"; } catch (error) {}
+  if (plan.cropSquare) {
+    var side = Math.min(naturalWidth, naturalHeight);
+    var sx = Math.max(0, (naturalWidth - side) / 2);
+    var sy = Math.max(0, (naturalHeight - side) / 2);
+    ctx.drawImage(img, sx, sy, side, side, 0, 0, plan.width, plan.height);
+  } else {
+    ctx.drawImage(img, 0, 0, naturalWidth, naturalHeight, 0, 0, plan.width, plan.height);
+  }
+  return { element: canvas, width: plan.width, height: plan.height };
+}
 
 function createAbortError() {
   var err = new Error("aborted");
@@ -876,9 +951,16 @@ export async function preloadImageForDocx(src, index, options) {
       return;
     }
     var settled = false;
+    var objectUrl = "";
+    function revokeObjectUrl() {
+      if (!objectUrl) return;
+      URL.revokeObjectURL(objectUrl);
+      objectUrl = "";
+    }
     var timeoutId = setTimeout(function () {
       if (settled) return;
       settled = true;
+      revokeObjectUrl();
       resolve({ width: 600, height: 400 });
     }, 5000);
 
@@ -891,14 +973,14 @@ export async function preloadImageForDocx(src, index, options) {
 
     var img = new Image();
     var blob = new Blob([bytesInfo.bytes], { type: mimeType });
-    var objectUrl = URL.createObjectURL(blob);
+    objectUrl = URL.createObjectURL(blob);
     img.onload = function () {
+      revokeObjectUrl();
       finish({ width: img.naturalWidth || 600, height: img.naturalHeight || 400 });
-      URL.revokeObjectURL(objectUrl);
     };
     img.onerror = function () {
+      revokeObjectUrl();
       finish({ width: 600, height: 400 });
-      URL.revokeObjectURL(objectUrl);
     };
     img.src = objectUrl;
   });
@@ -926,10 +1008,15 @@ export async function preloadCanvasImages(messages, options) {
   getDomImgList(true);
   var imageEntriesByKey = new Map();
   messages.forEach(function (message, msgIdx) {
-    (message.contentBlocks || []).forEach(function (block, blockIdx) {
+    var messageBlocks = message.contentBlocks || [];
+    messageBlocks.forEach(function (block, blockIdx) {
       if (block.type === "image" && block.src) {
         var imageBlock = ensureImageBlockMetadata(block, blockIdx);
         var isPlaceholder = String(block.src || "").indexOf("image_generation_content") !== -1;
+        var thumbnailOnly = Boolean(
+          messageBlocks[blockIdx - 1] && messageBlocks[blockIdx - 1].type === "image" ||
+          messageBlocks[blockIdx + 1] && messageBlocks[blockIdx + 1].type === "image"
+        );
         // Unresolved Gemini placeholder URLs (image_generation_content/N) are
         // per-turn 0-based indices. Multiple turns can share the same
         // placeholder URL (e.g. .../0) but refer to different images.
@@ -946,9 +1033,14 @@ export async function preloadCanvasImages(messages, options) {
             src: block.src,
             aliases: new Set(),
             msgIdx: msgIdx,
-            blockIdx: blockIdx
+            blockIdx: blockIdx,
+            thumbnailOnly: thumbnailOnly
           };
           imageEntriesByKey.set(key, entry);
+        } else if (!thumbnailOnly) {
+          // A repeated image that is ever rendered alone needs the full-width
+          // decode plan even if another occurrence is part of a thumbnail grid.
+          entry.thumbnailOnly = false;
         }
         entry.aliases.add(block.src);
       }
@@ -957,8 +1049,14 @@ export async function preloadCanvasImages(messages, options) {
 
   var cache = {};
   var uniqueImages = Array.from(imageEntriesByKey.values()).filter(function (entry) { return entry.src; }).slice(0, IMAGE_PRELOAD_MAX_COUNT);
+  if (imageEntriesByKey.size > IMAGE_PRELOAD_MAX_COUNT) {
+    notifyExportDiagnostic(options, {
+      code: "IMAGE_COUNT_LIMIT",
+      message: "Only the first " + IMAGE_PRELOAD_MAX_COUNT + " images can be rendered safely; later images use placeholders.",
+      count: imageEntriesByKey.size - IMAGE_PRELOAD_MAX_COUNT
+    });
+  }
   if (uniqueImages.length === 0) return cache;
-  var aggregateBytes = 0;
   var aggregateDecodedPixels = 0;
 
   await mapLimit(uniqueImages, getImagePreloadConcurrency(), async function (entry) {
@@ -975,13 +1073,20 @@ export async function preloadCanvasImages(messages, options) {
       }
       var bytesInfo = await fetchImageBytes(src, fetchOptions);
       if (!bytesInfo) {
+        notifyExportDiagnostic(options, {
+          code: "IMAGE_UNAVAILABLE",
+          message: "An image could not be fetched and was replaced with a placeholder."
+        });
         return;
       }
       var byteLength = Number(bytesInfo.bytes && bytesInfo.bytes.byteLength || 0);
-      if (!byteLength || aggregateBytes + byteLength > IMAGE_PRELOAD_MAX_BYTES) {
+      if (!byteLength) {
+        notifyExportDiagnostic(options, {
+          code: "IMAGE_UNAVAILABLE",
+          message: "An empty image response was replaced with a placeholder."
+        });
         return;
       }
-      aggregateBytes += byteLength;
 
       var img = await new Promise(function (resolve, reject) {
         if (typeof Image === "undefined" || typeof URL === "undefined" || typeof Blob === "undefined") {
@@ -989,9 +1094,16 @@ export async function preloadCanvasImages(messages, options) {
           return;
         }
         var settled = false;
+        var objectUrl = "";
+        function revokeObjectUrl() {
+          if (!objectUrl) return;
+          URL.revokeObjectURL(objectUrl);
+          objectUrl = "";
+        }
         var timeoutId = setTimeout(function () {
           if (settled) return;
           settled = true;
+          revokeObjectUrl();
           reject(new Error("Image element load timed out"));
         }, 5000);
 
@@ -1005,28 +1117,31 @@ export async function preloadCanvasImages(messages, options) {
         var element = new Image();
         var mime = bytesInfo.mimeType || "image/png";
         var blob = new Blob([bytesInfo.bytes], { type: mime });
-        var objectUrl = URL.createObjectURL(blob);
+        objectUrl = URL.createObjectURL(blob);
 
         element.onload = function () {
+          revokeObjectUrl();
           finish(resolve, element);
-          URL.revokeObjectURL(objectUrl);
         };
         element.onerror = function () {
+          revokeObjectUrl();
           finish(reject, new Error("Failed to load image into element"));
-          URL.revokeObjectURL(objectUrl);
         };
         element.src = objectUrl;
       });
 
-      var cached = {
-        element: img,
-        width: img.naturalWidth || 600,
-        height: img.naturalHeight || 400
-      };
+      var cached = createCanvasImageCacheEntry(img, {
+        thumbnailOnly: entry.thumbnailOnly,
+        renderScale: options && options.imageRenderScale
+      });
       var decodedPixels = Number(cached.width) * Number(cached.height);
       if (!Number.isFinite(decodedPixels) || decodedPixels <= 0 ||
           decodedPixels > IMAGE_PRELOAD_MAX_IMAGE_PIXELS ||
           aggregateDecodedPixels + decodedPixels > IMAGE_PRELOAD_MAX_TOTAL_PIXELS) {
+        notifyExportDiagnostic(options, {
+          code: "IMAGE_PIXEL_BUDGET",
+          message: "Some images exceed the browser's safe decoded-pixel budget and were replaced with placeholders."
+        });
         return;
       }
       aggregateDecodedPixels += decodedPixels;
@@ -1039,7 +1154,18 @@ export async function preloadCanvasImages(messages, options) {
       if (err && err.name === "AbortError") {
         throw err;
       }
+      notifyExportDiagnostic(options, {
+        code: "IMAGE_UNAVAILABLE",
+        message: "An image could not be decoded and was replaced with a placeholder."
+      });
       warnMediaFailure("canvas-preload", entry.src, err);
+    } finally {
+      // Canvas/PDF rendering keeps the scaled CanvasImageSource. The original
+      // encoded response is no longer needed and would otherwise accumulate
+      // across image-heavy conversations.
+      if (!isTestEnv && entry && entry.src) {
+        imageBytesCache.delete(entry.src);
+      }
     }
   });
 

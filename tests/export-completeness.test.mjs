@@ -325,6 +325,48 @@ test("an entirely unknown ChatGPT turn is reported as a blocking completeness ri
     assert.equal(risk.needsFallback, true);
     assert.ok(risk.reasons.includes("unknown_content_type"));
     assert.ok(risk.reasons.includes("missing_assistant_role"));
+    assert.deepEqual(messages._chatVaultFetchDiagnostics.unknownRoles, ["assistant"]);
+  } finally {
+    globalThis.fetch = previousFetch;
+    restoreDom();
+  }
+});
+
+test("an all-unknown ChatGPT path keeps diagnostics on the empty parsed result", async () => {
+  const restoreDom = installChatGptDom();
+  const previousFetch = globalThis.fetch;
+  const payload = completePayload();
+  payload.mapping["user-node"].message.content = {
+    content_type: "multimodal_text",
+    parts: [{ content_type: "future_visible_prompt", payload: { value: "New prompt shape" } }]
+  };
+  payload.mapping["assistant-node"].message.content = {
+    content_type: "multimodal_text",
+    parts: [{ content_type: "future_visible_answer", payload: { value: "New answer shape" } }]
+  };
+  globalThis.fetch = async () => new Response(JSON.stringify(payload), {
+    status: 200,
+    headers: { "content-type": "application/json" }
+  });
+
+  try {
+    const fetchers = createExportPlatformFetchers({
+      ensureCanReadChatBody() {},
+      async getChatGptWebSession() { return {}; },
+      getChatConversationId() { return "completeness-test"; }
+    });
+    const messages = await fetchers.fetchChatGptConversationMessages({ platform: "chatgpt" });
+    const diagnostics = messages._chatVaultFetchDiagnostics;
+    const pageMessages = [
+      { role: "user", contentBlocks: [{ type: "paragraph", text: "New prompt shape" }] },
+      { role: "assistant", contentBlocks: [{ type: "paragraph", text: "New answer shape" }] }
+    ];
+
+    assert.equal(messages.length, 0);
+    assert.equal(diagnostics.hasUnknownContent, true);
+    assert.equal(diagnostics.unknownOnlyMessageCount, 2);
+    assert.deepEqual(diagnostics.unknownRoles, ["user", "assistant"]);
+    assert.equal(fetchers.canUseValidatedChatGptPageSnapshot(messages, pageMessages), true);
   } finally {
     globalThis.fetch = previousFetch;
     restoreDom();
@@ -390,8 +432,12 @@ test("content export recognizes Custom GPT URLs and explicitly falls back for on
   const fetchEnd = source.indexOf("\n  async function getCurrentConversationMessagesForExport", fetchStart);
   const fetchSource = source.slice(fetchStart, fetchEnd);
   assert.match(fetchSource, /options\.allowPageFallback === true/);
+  assert.match(fetchSource, /canUseValidatedChatGptPageSnapshot\(messages, pageMessages\)/);
+  assert.match(fetchSource, /detectApiCompletenessRisk\(pageMessages, \{ candidateCount: candidateCount \}\)/);
+  assert.match(fetchSource, /error\?\.code !== "CONVERSATION_COMPLETENESS_RISK"/);
   assert.match(fetchSource, /createFullConversationUnavailableError\(error, platform\)/);
   assert.doesNotMatch(fetchSource, /falling back to current page messages/);
+  assert.doesNotMatch(fetchSource, /console\.warn\("Full conversation fetch failed; explicit visible-page fallback/);
   assert.match(source, /completeError\.code = "FULL_CONVERSATION_UNAVAILABLE"/);
 
   const performStart = source.indexOf("async function performExport(options = {})");
@@ -424,6 +470,78 @@ test("ChatGPT missing-role-only risk remains exportable after path validation", 
   assert.deepEqual(
     Array.from(context.getReasons({ reasons: ["missing_assistant_role"] }, "claude")),
     ["missing_assistant_role"]
+  );
+});
+
+test("content export accepts only a completeness-checked whole-page snapshot for unknown ChatGPT content", async () => {
+  const source = read("src/content.js");
+  const helperStart = source.indexOf("function getBlockingConversationRiskReasons(");
+  const fetchEnd = source.indexOf("\n  async function getCurrentConversationMessagesForExport", helperStart);
+  const flowSource = source.slice(helperStart, fetchEnd);
+  const apiMessages = [
+    { role: "user", contentBlocks: [{ type: "paragraph", text: "Known prompt" }] }
+  ];
+  const pageMessages = [
+    { role: "user", contentBlocks: [{ type: "paragraph", text: "Known prompt" }] },
+    { role: "assistant", contentBlocks: [{ type: "paragraph", text: "Visible future answer" }] }
+  ];
+
+  function createContext(canUsePageSnapshot, fetchedMessages = apiMessages) {
+    const fetchers = {
+      async fetchChatGptConversationMessages() { return fetchedMessages; },
+      canUseValidatedChatGptPageSnapshot() { return canUsePageSnapshot; },
+      detectApiCompletenessRisk(messages) {
+        return messages === fetchedMessages
+          ? { needsFallback: true, reasons: ["unknown_content_type", "missing_assistant_role"], unknownTypes: ["future_visible_answer"] }
+          : { needsFallback: false, reasons: [], unknownTypes: [] };
+      }
+    };
+    const context = {
+      console: { info() {}, warn() {} },
+      exporter: { getParseStats() { return { candidateTurnCount: 2 }; } },
+      getChatPlatform(chat) { return chat.platform; },
+      getCurrentPageMessagesForChat(_chat, messages) { return messages; },
+      async getExportPlatformFetchers() { return fetchers; },
+      isCurrentConversation() { return true; },
+      cloneExportMessages(messages) { return JSON.parse(JSON.stringify(messages || [])); },
+      async fetchNavigatedChatGptConversationMessages() { throw new Error("unexpected navigation fallback"); },
+      createFullConversationUnavailableError(error) {
+        const wrapped = new Error("full conversation unavailable");
+        wrapped.cause = error;
+        return wrapped;
+      }
+    };
+    vm.runInNewContext(`${flowSource}\nthis.fetchForExport = fetchConversationMessagesForExport;`, context);
+    return context;
+  }
+
+  const accepted = await createContext(true).fetchForExport(
+    { platform: "chatgpt" },
+    { allowPageFallback: true, pageMessages }
+  );
+  assert.deepEqual(JSON.parse(JSON.stringify(accepted)), pageMessages);
+
+  const entirelyUnknownApiMessages = [];
+  const acceptedEntirelyUnknown = await createContext(true, entirelyUnknownApiMessages).fetchForExport(
+    { platform: "chatgpt" },
+    { allowPageFallback: true, pageMessages }
+  );
+  assert.deepEqual(JSON.parse(JSON.stringify(acceptedEntirelyUnknown)), pageMessages);
+
+  await assert.rejects(
+    createContext(false).fetchForExport(
+      { platform: "chatgpt" },
+      { allowPageFallback: true, pageMessages }
+    ),
+    (error) => error?.cause?.code === "CONVERSATION_COMPLETENESS_RISK"
+  );
+
+  await assert.rejects(
+    createContext(false, entirelyUnknownApiMessages).fetchForExport(
+      { platform: "chatgpt" },
+      { allowPageFallback: true, pageMessages }
+    ),
+    (error) => error?.cause?.code === "CONVERSATION_COMPLETENESS_RISK"
   );
 });
 
@@ -470,4 +588,169 @@ test("shared adapters reject Claude and Gemini API failures unless visible-page 
     });
     assert.deepEqual(explicitPageMessages, pageMessages);
   }
+});
+
+test("shared adapters forward cancellation to Claude and Gemini and never fall back after abort", async () => {
+  const pageMessages = [{ role: "assistant", contentBlocks: [{ type: "paragraph", text: "stale visible answer" }] }];
+
+  for (const platform of ["claude", "gemini"]) {
+    const controller = new AbortController();
+    let receivedSignal = null;
+    const cancelled = new Error(`${platform} cancelled`);
+    cancelled.name = "AbortError";
+    const adapter = createExportMessageAdapter({
+      getCurrentPlatformId() { return platform; },
+      getChatPlatform(chat) { return chat.platform; },
+      getChatConversationId(chat) { return chat.id; },
+      isCurrentConversation() { return true; },
+      getExportService() { return { parseMessages() { return pageMessages; } }; },
+      cloneExportMessages(messages) { return JSON.parse(JSON.stringify(messages)); },
+      async fetchClaudeConversationMessages(_chat, options) {
+        receivedSignal = options.signal;
+        controller.abort();
+        throw cancelled;
+      },
+      async fetchGeminiConversationMessages(_chat, options) {
+        receivedSignal = options.signal;
+        controller.abort();
+        throw cancelled;
+      }
+    });
+
+    await assert.rejects(
+      adapter.fetchConversationMessagesForExport({ id: `${platform}-cancel`, platform }, {
+        allowPageFallback: true,
+        signal: controller.signal
+      }),
+      (error) => error?.name === "AbortError"
+    );
+    assert.equal(receivedSignal, controller.signal);
+  }
+});
+
+test("platform response streaming has a bounded deadline and cancels a stalled reader", async () => {
+  const fetchers = createExportPlatformFetchers({});
+  let cancelled = false;
+  const reader = {
+    read() { return new Promise(() => {}); },
+    cancel() { cancelled = true; return Promise.resolve(); },
+    releaseLock() {}
+  };
+  const response = {
+    headers: { get() { return ""; } },
+    body: { getReader() { return reader; } }
+  };
+
+  await assert.rejects(
+    fetchers._test.readPlatformResponseBody(response, "text", "Stalled platform", 20, 1024),
+    /timed out/i
+  );
+  assert.equal(cancelled, true);
+});
+
+test("Claude requests and Gemini token waits stop when their export signal is aborted", async () => {
+  const previousWindow = globalThis.window;
+  const previousDocument = globalThis.document;
+  const previousFetch = globalThis.fetch;
+  try {
+    const claudeDom = new JSDOM("<!doctype html><main></main>", { url: "https://claude.ai/chat/test" });
+    globalThis.window = claudeDom.window;
+    globalThis.document = claudeDom.window.document;
+    let claudeFetchSawSignal = false;
+    globalThis.fetch = (_url, options) => new Promise((_resolve, reject) => {
+      claudeFetchSawSignal = Boolean(options.signal);
+      options.signal.addEventListener("abort", () => {
+        const error = new Error("aborted");
+        error.name = "AbortError";
+        reject(error);
+      }, { once: true });
+    });
+    const claudeController = new AbortController();
+    const claudeFetchers = createExportPlatformFetchers({
+      ensureCanReadChatBody() {},
+      getChatConversationId() { return "test"; }
+    });
+    const claudeRequest = claudeFetchers.fetchClaudeConversationMessages({ platform: "claude", id: "test" }, {
+      signal: claudeController.signal
+    });
+    claudeController.abort();
+    await assert.rejects(claudeRequest, (error) => error?.name === "AbortError");
+    assert.equal(claudeFetchSawSignal, true);
+
+    const geminiDom = new JSDOM("<!doctype html><main></main>", { url: "https://gemini.google.com/app/test" });
+    globalThis.window = geminiDom.window;
+    globalThis.document = geminiDom.window.document;
+    const geminiController = new AbortController();
+    const geminiFetchers = createExportPlatformFetchers({
+      ensureCanReadChatBody() {},
+      getChatConversationId() { return "test"; }
+    });
+    const startedAt = Date.now();
+    const geminiRequest = geminiFetchers.fetchGeminiConversationMessages({ platform: "gemini", id: "test" }, {
+      signal: geminiController.signal
+    });
+    setTimeout(() => geminiController.abort(), 10);
+    await assert.rejects(geminiRequest, (error) => error?.name === "AbortError");
+    assert.ok(Date.now() - startedAt < 250, "Gemini cancellation must not wait through the token retry loop");
+  } finally {
+    if (previousWindow === undefined) delete globalThis.window;
+    else globalThis.window = previousWindow;
+    if (previousDocument === undefined) delete globalThis.document;
+    else globalThis.document = previousDocument;
+    if (previousFetch === undefined) delete globalThis.fetch;
+    else globalThis.fetch = previousFetch;
+  }
+});
+
+test("Claude visible-page fallback removes circular DOM references before formatting", async () => {
+  const source = read("src/content.js");
+  const fetchStart = source.indexOf("async function fetchConversationMessagesForExport(");
+  const fetchEnd = source.indexOf("\n  async function getCurrentConversationMessagesForExport", fetchStart);
+  const fetchSource = source.slice(fetchStart, fetchEnd);
+
+  const circularTurn = { nodeName: "DIV" };
+  circularTurn.owner = circularTurn;
+  const pageMessages = [{
+    role: "user",
+    contentBlocks: [{ type: "paragraph", text: "Visible Claude question" }],
+    turnElement: circularTurn,
+    contentElement: circularTurn
+  }];
+  let cloneCalls = 0;
+  const context = {
+    console: { info() {}, warn() {} },
+    exporter: { getParseStats() { return { candidateTurnCount: 1 }; } },
+    getChatPlatform() { return "claude"; },
+    getCurrentPageMessagesForChat() { return pageMessages; },
+    async getExportPlatformFetchers() {
+      return {
+        async fetchClaudeConversationMessages() {
+          throw new Error("Claude API unavailable");
+        }
+      };
+    },
+    cloneExportMessages(messages) {
+      cloneCalls += 1;
+      return messages.map((message) => ({
+        role: message.role,
+        contentBlocks: JSON.parse(JSON.stringify(message.contentBlocks || []))
+      }));
+    },
+    createFullConversationUnavailableError(error) { return error; }
+  };
+  vm.runInNewContext(`${fetchSource}\nthis.fetchForExport = fetchConversationMessagesForExport;`, context);
+
+  const messages = await context.fetchForExport(
+    { id: "claude-conversation", platform: "claude" },
+    { allowPageFallback: true }
+  );
+
+  assert.equal(cloneCalls, 1);
+  assert.deepEqual(JSON.parse(JSON.stringify(messages)), [{
+    role: "user",
+    contentBlocks: [{ type: "paragraph", text: "Visible Claude question" }]
+  }]);
+  assert.doesNotThrow(() => JSON.stringify(messages));
+  assert.equal("turnElement" in messages[0], false);
+  assert.equal("contentElement" in messages[0], false);
 });

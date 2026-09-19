@@ -1565,6 +1565,12 @@
   "content_export_fail_unknown_reason": {
     "message": "エクスポート中に予期しないエラーが発生しました。"
   },
+  "content_export_fail_completeness_reason": {
+    "message": "会話の完全性を確認できませんでした。"
+  },
+  "content_export_fail_completeness_fix": {
+    "message": "AIとの会話ページを更新して、もう一度お試しください。"
+  },
   "content_export_fail_unknown_fix": {
     "message": "ページを更新して再試行してください。問題が続く場合は、別の形式をお試しください。"
   },
@@ -1921,5 +1927,1253 @@
   },
   "content_retry": {
     "message": "再試行"
+  },
+  "billing_benefit_premium_styles": {
+    "message": "プレミアムレポートスタイル (オックスフォード、マッキンゼー)"
+  },
+  "billing_benefit_shared": {
+    "message": "Pro VIP ステータスを Claude Export AI と共有しました"
+  },
+  "billing_benefit_unlimited": {
+    "message": "無制限の毎日のチャットのエクスポート"
+  },
+  "billing_benefit_watermark": {
+    "message": "Claude Export ウォーターマークを非表示にする"
+  },
+  "billing_billed_yearly": {
+    "message": "年額 $$29.99 で請求"
+  },
+  "content_all_conversations_loaded": {
+    "message": "すべての会話が読み込まれました"
+  },
+  "content_background_loading": {
+    "message": "バックグラウンドでさらに会話を読み込んでいます..."
+  },
+  "content_background_syncing": {
+    "message": "バックグラウンドで会話履歴を更新しています..."
+  },
+  "content_batch_action_type": {
+    "message": "バッチアクションタイプ"
+  },
+  "content_batch_already_running": {
+    "message": "バッチ同期が既に実行されています。完了を待つか、キャンセルしてください。"
+  },
+  "content_batch_export_files": {
+    "message": "ファイルをエクスポートする"
+  },
+  "content_batch_export_platform": {
+    "message": "バッチ エクスポート <b>$1</b> チャット"
+  },
+  "content_batch_exporting_count": {
+    "message": "<b>$1</b> チャットをエクスポートしています"
+  },
+  "content_batch_item_failed_with_reason": {
+    "message": "失敗：$1"
+  },
+  "content_batch_no_files": {
+    "message": "会話はエクスポートされませんでした。"
+  },
+  "content_batch_partial_failure": {
+    "message": "一部のチャットはエクスポートできませんでした: $1"
+  },
+  "content_batch_quota_exceeded": {
+    "message": "1日のエクスポート上限に達しました。Pro にアップグレードすると無制限にエクスポートできます。"
+  },
+  "content_batch_saving_zip": {
+    "message": "保存ファイルを準備しています..."
+  },
+  "content_batch_sync_notion": {
+    "message": "Notion に同期"
+  },
+  "content_batch_sync_obsidian": {
+    "message": "Obsidian に同期"
+  },
+  "content_batch_trial_banner_available": {
+    "message": "無料体験可能：1回の無料一括エクスポート、Pro にアップグレードで無制限利用。"
+  },
+  "content_batch_trial_banner_used": {
+    "message": "無料体験済み、Pro にアップグレードで無制限一括エクスポート。"
+  },
+  "content_batch_trial_exhausted": {
+    "message": "無料の一括エクスポート体験は既に使用済みです。Pro にアップグレードして無制限でご利用ください。"
+  },
+  "content_batch_trial_hint": {
+    "message": "無料体験：今回の一括エクスポートは無料体験枠です。Pro にアップグレードすると無制限でご利用いただけます。"
+  },
+  "content_btn_clear": {
+    "message": "クリア"
+  },
+  "content_btn_close": {
+    "message": "閉じる"
+  },
+  "content_btn_done": {
+    "message": "完了"
+  },
+  "content_btn_exit": {
+    "message": "終了"
+  },
+  "content_cancel_export": {
+    "message": "エクスポートをキャンセル"
+  },
+  "content_completed_title": {
+    "message": "完了: $1"
+  },
+  "content_context_export_this": {
+    "message": "この会話をエクスポート"
+  },
+  "content_continuing_chatgpt_history": {
+    "message": "Claude 履歴の同期を続けています..."
+  },
+  "content_continuing_sidebar_sync": {
+    "message": "サイドバー履歴の読み込みを続けています..."
+  },
+  "content_conversation_history": {
+    "message": "会話履歴"
+  },
+  "content_copy_failed_refresh": {
+    "message": "コピーに失敗しました。ページを更新して、もう一度お試しください。"
+  },
+  "content_detail_toggles": {
+    "message": "詳細トグル"
+  },
+  "content_entitlement_local_quota_exhausted": {
+    "message": "1日のエクスポート上限に達しました（ローカル検証）。後でもう一度試すか、Pro にアップグレードしてください。"
+  },
+  "content_entitlement_verify_failed": {
+    "message": "輸出資格を確認できませんでした。接続を確認して、もう一度試してください。"
+  },
+  "content_export_already_running": {
+    "message": "エクスポートが実行中です。完了までお待ちいただくか、先にキャンセルしてください。"
+  },
+  "content_export_engine_load_failed": {
+    "message": "エクスポートエンジンを読み込めませんでした。ページを再読み込みしてからもう一度お試しください。"
+  },
+  "content_export_fail_engine_reason": {
+    "message": "拡張機能のエクスポートエンジンを利用できません。"
+  },
+  "content_export_fail_engine_fix": {
+    "message": "ページを更新して、もう一度お試しください。"
+  },
+  "content_export_failed_message": {
+    "message": "エクスポートに失敗しました: $1"
+  },
+  "content_export_failed_title": {
+    "message": "エクスポートに失敗しました：$1"
+  },
+  "content_export_options": {
+    "message": "エクスポート形式と詳細設定"
+  },
+  "content_export_save_cancelled": {
+    "message": "エクスポートがキャンセルされました。"
+  },
+  "content_export_review_button": {
+    "message": "Claude Export を評価"
+  },
+  "content_export_review_open_failed": {
+    "message": "Chrome ウェブストアを開けませんでした。"
+  },
+  "content_export_ui_not_ready": {
+    "message": "エクスポート UI はまだ読み込み中です。ページを更新して、もう一度お試しください。"
+  },
+  "content_exporting_index_title": {
+    "message": "エクスポート中 ($1/$2): <b style='color:#d97706;'>$3</b>"
+  },
+  "content_format_text": {
+    "message": "テキスト"
+  },
+  "content_found_syncing": {
+    "message": "$1 の会話が見つかりました。"
+  },
+  "content_generating_export_file": {
+    "message": "ローカル エクスポート ファイルを生成しています..."
+  },
+  "content_generating_local_file": {
+    "message": "ローカル ファイルを生成しています..."
+  },
+  "content_guest_quota_mode": {
+    "message": "ゲスト無料割り当てモード"
+  },
+  "content_json_copied": {
+    "message": "JSONをクリップボードにコピーしました。"
+  },
+  "content_load_more": {
+    "message": "もっと読み込む"
+  },
+  "content_loading_conversation_data": {
+    "message": "会話データをロードしています: $1"
+  },
+  "content_loading_more": {
+    "message": "読み込み中..."
+  },
+  "content_local_batch_export_starting": {
+    "message": "ローカル バッチ エクスポートを開始しています..."
+  },
+  "content_login_failed_refresh": {
+    "message": "サインインに失敗しました。ページを更新して、もう一度お試しください。"
+  },
+  "content_login_required_batch_export": {
+    "message": "一括エクスポートを使用するにはサインインしてください。"
+  },
+  "content_login_service_unavailable": {
+    "message": "サインインは一時的に利用できません。ページを更新して、もう一度お試しください。"
+  },
+  "content_no_copy_text": {
+    "message": "この会話にはコピーするテキスト コンテンツがありません。"
+  },
+  "content_no_messages_for_batch_item": {
+    "message": "エクスポート可能なメッセージが見つかりません。"
+  },
+  "content_notion_batch_in_progress": {
+    "message": "Notion に同期中"
+  },
+  "content_notion_batch_progress": {
+    "message": "$1/$2 が完了しました"
+  },
+  "content_notion_batch_progress_with_detail": {
+    "message": "$1 · $2"
+  },
+  "content_notion_cancelled": {
+    "message": "キャンセル"
+  },
+  "content_notion_connect_helper": {
+    "message": "拡張機能ポップアップを開いて、Notion ワークスペースに接続します。"
+  },
+  "content_notion_database": {
+    "message": "Notion Database"
+  },
+  "content_notion_destination_required": {
+    "message": "まず、Notion Database を選択します。"
+  },
+  "content_notion_destination_unavailable": {
+    "message": "拡張機能ポップアップからNotion に接続します"
+  },
+  "content_notion_failed": {
+    "message": "失敗"
+  },
+  "content_notion_no_database": {
+    "message": "許可されたDatabase が見つかりません"
+  },
+  "content_notion_partial": {
+    "message": "警告と同期しました"
+  },
+  "content_notion_preparing": {
+    "message": "準備中"
+  },
+  "content_notion_queued": {
+    "message": "キューに登録されました"
+  },
+  "content_notion_retrying": {
+    "message": "再試行中"
+  },
+  "content_notion_share_database": {
+    "message": "Notion 接続で Database を共有し、このパネルを再度開きます。"
+  },
+  "content_notion_synced": {
+    "message": "同期しました"
+  },
+  "content_notion_syncing": {
+    "message": "同期中"
+  },
+  "content_notion_waiting": {
+    "message": "待っています"
+  },
+  "content_open": {
+    "message": "開く"
+  },
+  "content_open_subscribe_panel": {
+    "message": "Claude Export Pro 計画を開きます..."
+  },
+  "content_open_subscribe_panel_failed": {
+    "message": "Claude Export ツールバー ポップアップを開いて購読します。"
+  },
+  "content_opening_conversation_page": {
+    "message": "会話ページを開いています..."
+  },
+  "content_pro_quota_desc": {
+    "message": "レポートグレードのPDF および Word を無制限にエクスポートできます。すべてのプレミアム ビジネス テーマがロック解除されます。"
+  },
+  "content_progress_building": {
+    "message": "ドキュメントを作成しています..."
+  },
+  "content_progress_checking_export_access": {
+    "message": "エクスポートを準備しています..."
+  },
+  "content_progress_complete": {
+    "message": "エクスポートが完了しました。"
+  },
+  "content_progress_copying_json": {
+    "message": "JSONをコピー中..."
+  },
+  "content_progress_downloading": {
+    "message": "安全なダウンロードを準備しています..."
+  },
+  "content_progress_formatting": {
+    "message": "エクスポート形式を適用しています..."
+  },
+  "content_progress_initializing": {
+    "message": "エクスポート中..."
+  },
+  "content_progress_loading_full_conversation": {
+    "message": "完全な会話データをロードしています..."
+  },
+  "content_progress_parsing": {
+    "message": "ページのコンテンツを解析中..."
+  },
+  "content_progress_receipt": {
+    "message": "輸出受領書を生成しています..."
+  },
+  "content_quota_loading_desc": {
+    "message": "今日のローカルエクスポートの使用状況を確認しています。"
+  },
+  "content_quota_loading_title": {
+    "message": "クォータを読み込み中..."
+  },
+  "content_quota_remaining_prefix": {
+    "message": "今日の残りの割り当て:"
+  },
+  "content_quota_remaining_suffix": {
+    "message": "輸出。"
+  },
+  "content_select_one_before_export": {
+    "message": "エクスポートする前にメッセージを少なくとも 1 つ選択してください。"
+  },
+  "content_selected_batch_suffix": {
+    "message": "チャット (最大 10)"
+  },
+  "content_selected_prefix": {
+    "message": "選択済み"
+  },
+  "content_selected_short": {
+    "message": "選択済み"
+  },
+  "content_sidebar_sync_failed": {
+    "message": "サイドバーの同期に失敗しました。もう一度試してください。"
+  },
+  "content_signing_in": {
+    "message": "サインイン中..."
+  },
+  "content_sync_chat_count": {
+    "message": "$1 件のチャットを Notion に同期"
+  },
+  "content_syncing_chatgpt_history": {
+    "message": "Claude 履歴から会話を同期しています..."
+  },
+  "content_syncing_sidebar": {
+    "message": "サイドバー履歴を同期し、さらにチャットを読み込んでいます..."
+  },
+  "content_toggle_watermark": {
+    "message": "製品の透かしを非表示にする"
+  },
+  "content_untitled_database": {
+    "message": "無題のデータベース"
+  },
+  "content_upgrade_appendix": {
+    "message": "Prompt 付録には Pro が必要です。"
+  },
+  "content_upgrade_batch_export": {
+    "message": "バッチエクスポートは Pro の機能です。アップグレードして複数チャットのエクスポートを解放しましょう。"
+  },
+  "content_upgrade_desc": {
+    "message": "Claude Export Pro にアップグレードして、クォータ制限を削除します。"
+  },
+  "content_upgrade_free_limit": {
+    "message": "今日の 3 つの無料エクスポートを使用しました。"
+  },
+  "content_upgrade_quota_hint": {
+    "message": "​​Pro にアップグレードして、クォータとウォーターマークの制限を削除します。"
+  },
+  "content_upgrade_template": {
+    "message": "選択したプロフェッショナル テンプレートには Pro が必要です。"
+  },
+  "content_upgrade_theme": {
+    "message": "プレミアム レポート テーマには Pro が必要です。"
+  },
+  "content_upgrade_watermark": {
+    "message": "Claude Export ウォーターマークを非表示にするには、Pro が必要です。"
+  },
+  "export_image_large_tables": {
+    "message": "この会話には大きな表が含まれており、PDF または Word でのエクスポートをお勧めします。"
+  },
+  "export_image_placeholder": {
+    "message": "[画像]"
+  },
+  "export_pdf_encode_failed": {
+    "message": "PDF ページのレンダリングに失敗しました。もう一度試してください。"
+  },
+  "export_pdf_too_large": {
+    "message": "この会話は大きすぎるため、1 つの PDF として安全にエクスポートできません。範囲を短くしてください。"
+  },
+  "export_pdf_too_many_pages": {
+    "message": "この会話は大きすぎるため、1 つの PDF として安全にエクスポートできません。範囲を短くしてください。"
+  },
+  "export_progress_building_json": {
+    "message": "構築 JSON エクスポート"
+  },
+  "export_progress_building_markdown": {
+    "message": "Markdown エクスポートを作成しています"
+  },
+  "export_progress_building_text": {
+    "message": "建物テキストのエクスポート"
+  },
+  "export_progress_building_word": {
+    "message": "構築Word ドキュメント"
+  },
+  "export_progress_detail_conversations": {
+    "message": "$1 件の会話"
+  },
+  "export_progress_detail_issue": {
+    "message": "$1 問題"
+  },
+  "export_progress_detail_issues": {
+    "message": "$1 の問題"
+  },
+  "export_progress_detail_ready": {
+    "message": "$1 準備完了"
+  },
+  "export_progress_loading_images": {
+    "message": "画像の読み込み中"
+  },
+  "export_progress_preparing_docx": {
+    "message": "Word ドキュメントを準備しています"
+  },
+  "export_progress_preparing_json": {
+    "message": "JSON エクスポートを準備しています"
+  },
+  "export_progress_preparing_markdown": {
+    "message": "Markdown エクスポートを準備しています"
+  },
+  "export_progress_preparing_text": {
+    "message": "テキストのエクスポートを準備しています"
+  },
+  "export_progress_ready_doc": {
+    "message": "エクスポート完了"
+  },
+  "folders_load_more": {
+    "message": "さらに読み込む"
+  },
+  "format_markdown": {
+    "message": "Markdown"
+  },
+  "image_limit_modal_cancel": {
+    "message": "キャンセル"
+  },
+  "image_limit_modal_export_pdf": {
+    "message": "PDFとしてエクスポート"
+  },
+  "image_limit_modal_title": {
+    "message": "画像が大きすぎます"
+  },
+  "notion_cancel_task": {
+    "message": "タスクをキャンセル"
+  },
+  "notion_clear_task": {
+    "message": "ローカル タスクをクリアします"
+  },
+  "notion_connected": {
+    "message": "接続済み"
+  },
+  "notion_connecting": {
+    "message": "接続中..."
+  },
+  "notion_disconnect_server_retained": {
+    "message": "サーバー側で切断できませんでした。ローカルデータは保持されています。後でもう一度お試しください。"
+  },
+  "notion_disconnected": {
+    "message": "Notion を切断しました。"
+  },
+  "notion_fetch_failed": {
+    "message": "取得に失敗"
+  },
+  "notion_metadata_exported": {
+    "message": "エクスポート日時"
+  },
+  "notion_metadata_from": {
+    "message": "ソース"
+  },
+  "notion_no_data_source": {
+    "message": "承認された Database が見つかりません"
+  },
+  "notion_not_connected": {
+    "message": "未接続"
+  },
+  "notion_oauth_failed": {
+    "message": "Notion 接続に失敗しました: $1"
+  },
+  "notion_oauth_opening": {
+    "message": "Notion 認証を開いています..."
+  },
+  "notion_oauth_success": {
+    "message": "Notion が接続されました。"
+  },
+  "notion_open_page_failed": {
+    "message": "Notion ページを開けませんでした。"
+  },
+  "notion_reconnect_action": {
+    "message": "再接続"
+  },
+  "notion_reconnect_required": {
+    "message": "再接続が必要です"
+  },
+  "notion_reconnect_warning": {
+    "message": "Notion のアクセス期限が切れました。同期を続けるには再接続してください。"
+  },
+  "notion_retry": {
+    "message": "再試行"
+  },
+  "notion_save": {
+    "message": "保存"
+  },
+  "notion_save_to": {
+    "message": "Notion に保存"
+  },
+  "notion_signin_again": {
+    "message": "サインインしました。もう一度「Notion に接続」をクリックして続行してください。"
+  },
+  "notion_signin_required": {
+    "message": "最初にサインインしてください。サインイン後、Notion ワークスペースの認証が自動的に開きます。"
+  },
+  "notion_sync_cancelled": {
+    "message": "同期がキャンセルされました。"
+  },
+  "notion_sync_failed": {
+    "message": "Notion 同期が失敗しました: $1"
+  },
+  "notion_sync_fetching_conversation": {
+    "message": "会話を取得中..."
+  },
+  "notion_sync_no_messages": {
+    "message": "このページには会話メッセージが見つかりませんでした。"
+  },
+  "notion_sync_partial_desc": {
+    "message": "ページは正常に作成されました。これを開いて、正確に保存できなかったコンテンツを確認します。"
+  },
+  "notion_sync_partial_title": {
+    "message": "警告付きで Notion に同期されました"
+  },
+  "notion_sync_preparing": {
+    "message": "会話を準備しています..."
+  },
+  "notion_sync_progress_title": {
+    "message": "Notion に同期しています"
+  },
+  "notion_sync_retrying": {
+    "message": "Notion は忙しいです。安全に再試行しています..."
+  },
+  "notion_sync_success_desc": {
+    "message": "この会話は Notion Database で準備ができています。"
+  },
+  "notion_sync_success_title": {
+    "message": "Notion に同期しました"
+  },
+  "notion_thinking_process": {
+    "message": "思考プロセス"
+  },
+  "notion_untitled_conversation": {
+    "message": "無題の会話"
+  },
+  "obsidian_batch_all_failed": {
+    "message": "会話を同期できませんでした。"
+  },
+  "obsidian_batch_cancelled": {
+    "message": "Obsidian バッチ同期がキャンセルされました。"
+  },
+  "obsidian_batch_complete": {
+    "message": "Obsidian バッチ同期が完了しました"
+  },
+  "obsidian_batch_complete_desc": {
+    "message": "成功した会話はそれぞれ個別のメモとして保存されました。"
+  },
+  "obsidian_batch_in_progress": {
+    "message": "Obsidian に同期しています"
+  },
+  "obsidian_batch_progress": {
+    "message": "$1/$2 が完了しました"
+  },
+  "obsidian_batch_progress_with_detail": {
+    "message": "$1 · $2"
+  },
+  "obsidian_batch_sync": {
+    "message": "Obsidianへ同期"
+  },
+  "obsidian_batch_title": {
+    "message": "Obsidian へのバッチ同期"
+  },
+  "obsidian_cancelled": {
+    "message": "キャンセル"
+  },
+  "obsidian_change_folder": {
+    "message": "フォルダーを変更"
+  },
+  "obsidian_checking_vault": {
+    "message": "Vault をチェックしています"
+  },
+  "obsidian_connect": {
+    "message": "Obsidianに接続"
+  },
+  "obsidian_connect_first": {
+    "message": "最初に Obsidian Vault を接続します。"
+  },
+  "obsidian_connect_helper": {
+    "message": "ローカルVaultを選ぶと単体・一括同期を利用できます。"
+  },
+  "obsidian_directories_missing": {
+    "message": "設定されたフォルダーがありません。同期する前に修復してください。"
+  },
+  "obsidian_disconnect_failed": {
+    "message": "Obsidian を切断できませんでした。"
+  },
+  "obsidian_disconnected": {
+    "message": "を構成するObsidian が切断されました。既存のファイルは保持されました。"
+  },
+  "obsidian_failed": {
+    "message": "失敗"
+  },
+  "obsidian_fetching": {
+    "message": "会話を取得中"
+  },
+  "obsidian_finishing": {
+    "message": "同期を終了しています..."
+  },
+  "obsidian_getting_conversation": {
+    "message": "会話を完了しています..."
+  },
+  "obsidian_getting_selected": {
+    "message": "選択したメッセージを取得しています..."
+  },
+  "obsidian_getting_selected_count": {
+    "message": "Getting $1 selected messages..."
+  },
+  "obsidian_job_running": {
+    "message": "別の Obsidian 同期がすでに実行されています。"
+  },
+  "obsidian_configured": {
+    "message": "設定済み"
+  },
+  "obsidian_not_connected": {
+    "message": "フォルダパスが設定されていません。設定してください。"
+  },
+  "obsidian_open_failed": {
+    "message": "Obsidian を開けませんでした。"
+  },
+  "obsidian_open_note": {
+    "message": "Obsidian で開く"
+  },
+  "obsidian_permission_required": {
+    "message": "Vaultの権限を再度許可してください。"
+  },
+  "obsidian_preparing": {
+    "message": "Vault をチェックしています"
+  },
+  "obsidian_ready": {
+    "message": "準備完了"
+  },
+  "obsidian_reauthorize": {
+    "message": "Vaultを再認証"
+  },
+  "obsidian_reauthorize_first": {
+    "message": "最初に Obsidian Vault を再認証します。"
+  },
+  "obsidian_retry_check": {
+    "message": "再試行"
+  },
+  "obsidian_save_to": {
+    "message": "Obsidian に保存"
+  },
+  "obsidian_select_message_first": {
+    "message": "同期する前に少なくとも 1 つのメッセージを選択してください。"
+  },
+  "obsidian_select_message_first_short": {
+    "message": "メッセージを選択"
+  },
+  "obsidian_settings": {
+    "message": "設定"
+  },
+  "obsidian_settings_assets_folder": {
+    "message": "画像フォルダー（任意）"
+  },
+  "obsidian_settings_assets_help": {
+    "message": "未設定の場合はノートフォルダーを使用します。同期ごとに独立した画像処理フォルダーを使います。"
+  },
+  "obsidian_settings_assets_placeholder": {
+    "message": "内のメモ フォルダーを選択します。設定されていない場合はメモ フォルダーを使用します"
+  },
+  "obsidian_settings_choose": {
+    "message": "選択"
+  },
+  "obsidian_settings_choose_assets_failed": {
+    "message": "アセットフォルダーを選択できませんでした。"
+  },
+  "obsidian_settings_choose_notes_failed": {
+    "message": "メモフォルダーを選択できませんでした。"
+  },
+  "obsidian_settings_choose_notes_first": {
+    "message": "まずメモフォルダーを選択します。"
+  },
+  "obsidian_settings_choose_root_first": {
+    "message": "まず、Obsidian Vault フォルダーを選択します。"
+  },
+  "obsidian_settings_choose_vault": {
+    "message": "Vaultを選択"
+  },
+  "obsidian_settings_choose_vault_failed": {
+    "message": "Vault を選択できませんでした。"
+  },
+  "obsidian_settings_choose_vault_step": {
+    "message": "Vaultを選択"
+  },
+  "obsidian_settings_clear": {
+    "message": "クリア"
+  },
+  "obsidian_settings_connection_ready": {
+    "message": "接続の準備ができました。"
+  },
+  "obsidian_settings_current_vault": {
+    "message": "現在のVault"
+  },
+  "obsidian_settings_failed": {
+    "message": "Obsidian 設定を開けませんでした。"
+  },
+  "obsidian_settings_folder_outside": {
+    "message": "現在の Vault 内のフォルダーを選択します。"
+  },
+  "obsidian_settings_folders_step": {
+    "message": "フォルダーを選択"
+  },
+  "obsidian_settings_folders_step_desc": {
+    "message": "ノートフォルダーと任意の画像フォルダーを選択します。"
+  },
+  "obsidian_settings_heading": {
+    "message": "会話をナレッジベースへ直接保存"
+  },
+  "obsidian_settings_history": {
+    "message": "最近の同期"
+  },
+  "obsidian_settings_history_desc": {
+    "message": "パスと状態のみ保存し、会話本文は保存しません。"
+  },
+  "obsidian_settings_history_failed": {
+    "message": "同期履歴を読み込めませんでした。"
+  },
+  "obsidian_settings_image_count": {
+    "message": "画像 $1 件"
+  },
+  "obsidian_settings_init_failed": {
+    "message": "Obsidian 設定を初期化できませんでした。"
+  },
+  "obsidian_settings_intro": {
+    "message": "フォルダーを一度設定すれば、1件または複数の会話を同期できます。テキストと画像はローカルで処理されます。"
+  },
+  "obsidian_settings_invalid_path": {
+    "message": "フォルダーは Vault 内の安全なパスを使用する必要があり、..、.obsidian、または無効なシステム文字を含めることはできません。"
+  },
+  "obsidian_settings_local": {
+    "message": "ローカル書き込み"
+  },
+  "obsidian_settings_no_history": {
+    "message": "Obsidianの同期履歴はまだありません。"
+  },
+  "obsidian_settings_not_selected": {
+    "message": "未選択"
+  },
+  "obsidian_settings_notes_folder": {
+    "message": "ノートフォルダー"
+  },
+  "obsidian_settings_notes_help": {
+    "message": "必須。追加のルートやプラットフォームフォルダーを作らず、ここへ直接保存します。"
+  },
+  "obsidian_settings_notes_placeholder": {
+    "message": "Vault"
+  },
+  "obsidian_settings_opened_background": {
+    "message": "Obsidian 設定を新しいタブで開きました。タブを切り替えて設定し、こちらに戻ってください。"
+  },
+  "obsidian_settings_path_preview": {
+    "message": "パスのプレビュー"
+  },
+  "obsidian_settings_permission_denied": {
+    "message": "Vault 書き込み権限が付与されませんでした。 Vault を再認証して、再試行してください。"
+  },
+  "obsidian_settings_picker_unsupported": {
+    "message": "この Chrome バージョンはフォルダー アクセスをサポートしていません。 Chrome を更新して、もう一度お試しください。"
+  },
+  "obsidian_settings_preview_empty": {
+    "message": "ノートフォルダーを選ぶとパスを確認できます"
+  },
+  "obsidian_settings_preview_title": {
+    "message": "会話のタイトル"
+  },
+  "obsidian_settings_ready": {
+    "message": "接続とフォルダーの準備ができました。"
+  },
+  "obsidian_settings_refresh": {
+    "message": "更新"
+  },
+  "obsidian_settings_request_failed": {
+    "message": "Obsidian リクエストが失敗しました。"
+  },
+  "obsidian_settings_resolve_unsupported": {
+    "message": "この Chrome バージョンでは、選択したフォルダーが Vault 内にあるかどうかを確認できません。"
+  },
+  "obsidian_settings_return": {
+    "message": "会話に戻る"
+  },
+  "obsidian_settings_save_permission_failed": {
+    "message": "Vault 権限を保存できませんでした。"
+  },
+  "obsidian_settings_saved": {
+    "message": "Vaultを確認しました。会話に戻ります..."
+  },
+  "obsidian_settings_steps_label": {
+    "message": "Vault セットアップ手順"
+  },
+  "obsidian_settings_storage_failed": {
+    "message": "Obsidian ローカル ストレージを開けませんでした。"
+  },
+  "obsidian_settings_title": {
+    "message": "Obsidian Vaultに接続"
+  },
+  "obsidian_settings_vault_authorized": {
+    "message": "Vault アクセスの準備ができました。次にメモフォルダーを選択します。"
+  },
+  "obsidian_settings_verify_failed": {
+    "message": "Vault 書き込み検証に失敗しました。"
+  },
+  "obsidian_settings_verify_save": {
+    "message": "確認して保存"
+  },
+  "obsidian_settings_verify_step": {
+    "message": "アクセスを確認"
+  },
+  "obsidian_settings_verify_step_desc": {
+    "message": "一時ファイルを作成して削除します。"
+  },
+  "obsidian_settings_verifying": {
+    "message": "確認中..."
+  },
+  "obsidian_start_failed": {
+    "message": "Obsidian 同期を開始できませんでした。ページを更新して、もう一度お試しください。"
+  },
+  "obsidian_status_cancelled_short": {
+    "message": "キャンセル"
+  },
+  "obsidian_status_failed_short": {
+    "message": "失敗"
+  },
+  "obsidian_status_partial": {
+    "message": "警告あり"
+  },
+  "obsidian_status_success": {
+    "message": "成功"
+  },
+  "obsidian_sync_busy": {
+    "message": "同期タスクがこの Vault に書き込んでいます。"
+  },
+  "obsidian_sync_cancelled": {
+    "message": "Obsidian 同期がキャンセルされました。"
+  },
+  "obsidian_sync_chat_count": {
+    "message": "$1 チャットを Obsidian に同期します"
+  },
+  "obsidian_sync_complete": {
+    "message": "Obsidian に同期しました"
+  },
+  "obsidian_sync_complete_desc": {
+    "message": "メモとそのローカル メディアは Vault で準備が整いました。"
+  },
+  "obsidian_sync_current_short": {
+    "message": "同期"
+  },
+  "obsidian_sync_failed": {
+    "message": "Obsidian 同期が失敗しました: $1"
+  },
+  "obsidian_sync_failed_desc": {
+    "message": "メモは作成されませんでした。 Vault アクセスを確認して、再試行してください。"
+  },
+  "obsidian_sync_failed_title": {
+    "message": "Obsidian 同期が失敗しました"
+  },
+  "obsidian_sync_no_messages": {
+    "message": "このページには会話メッセージが見つかりませんでした。"
+  },
+  "obsidian_sync_partial_desc": {
+    "message": "ノートが作成されました。保存できなかったメディアについては、以下の警告を確認してください。"
+  },
+  "obsidian_sync_partial_title": {
+    "message": "Obsidian 同期は警告付きで完了しました"
+  },
+  "obsidian_sync_progress_title": {
+    "message": "Obsidian に同期しています"
+  },
+  "obsidian_sync_running": {
+    "message": "同期はすでに実行されています。完了すると、このパネルのロックが解除されます。"
+  },
+  "obsidian_sync_selected_short": {
+    "message": "$1件を同期"
+  },
+  "obsidian_synced": {
+    "message": "同期済み"
+  },
+  "obsidian_synced_partial": {
+    "message": "警告と同期しました"
+  },
+  "obsidian_syncing": {
+    "message": "同期中"
+  },
+  "obsidian_vault": {
+    "message": "Obsidian Vault"
+  },
+  "obsidian_vault_root": {
+    "message": "Vault ルート"
+  },
+  "obsidian_visible_content_fallback": {
+    "message": "完全な会話は入手できませんでした。表示されているページのコンテンツが使用されました。"
+  },
+  "obsidian_waiting": {
+    "message": "待機中"
+  },
+  "obsidian_writing": {
+    "message": "Vault に書き込み中"
+  },
+  "placeholder_batch_search": {
+    "message": "会話のタイトルで検索..."
+  },
+  "popup_benefit_batch_export": {
+    "message": "会話の集中一括エクスポート"
+  },
+  "popup_checking": {
+    "message": "確認中..."
+  },
+  "popup_checkout_rate_limited": {
+    "message": "チェックアウトはすでに準備中です。しばらく待ってから、もう一度試してください。"
+  },
+  "popup_checkout_temporarily_unavailable": {
+    "message": "チェックアウトは一時的に利用できません。しばらくしてから再試行してください。"
+  },
+  "popup_checkout_signed_in_retry": {
+    "message": "サインインしました。プランを選択し、もう一度 [続行] をクリックしてチェックアウトを開きます。"
+  },
+  "popup_checkout_signin_message": {
+    "message": "まず、Google でサインインします。サインインした後、もう一度 [続行] をクリックして安全なチェックアウトを開きます。"
+  },
+  "popup_checkout_signin_ok": {
+    "message": "サインイン"
+  },
+  "popup_checkout_signin_title": {
+    "message": "チェックアウト前にサインインしてください"
+  },
+  "popup_close_aria": {
+    "message": "閉じる"
+  },
+  "popup_connections_title": {
+    "message": "接続"
+  },
+  "popup_free_quota_exhausted": {
+    "message": "今日の 3 つの無料エクスポートを使用しました。"
+  },
+  "popup_language_change_failed": {
+    "message": "言語を変更できませんでした。"
+  },
+  "popup_language_title": {
+    "message": "表示言語"
+  },
+  "popup_login_service_unavailable": {
+    "message": "サインインは一時的に利用できません。更新してもう一度お試しください。"
+  },
+  "popup_notion_checking_connection": {
+    "message": "接続を確認中"
+  },
+  "notion_destination_changed": {
+    "message": "以前選択したデータベースは利用できません。現在の選択を確認して、もう一度保存をクリックしてください。"
+  },
+  "notion_destination_verify_failed": {
+    "message": "Notion ワークスペースとデータベースを確認できませんでした。接続を確認して再試行してください。"
+  },
+  "popup_plan_yearly_detail": {
+    "message": "年額 $$29.99"
+  },
+  "popup_pro_already_active": {
+    "message": "このアカウントでは Pro がすでに有効です。"
+  },
+  "popup_entitlement_syncing": {
+    "message": "メンバーシップ状態を同期しています..."
+  },
+  "popup_subscribe_cta": {
+    "message": "$$29.99 を支払う"
+  },
+  "role_user": {
+    "message": "ユーザー"
+  },
+  "subscribe_badge_lifetime": {
+    "message": "ライフタイム Pro"
+  },
+  "subscribe_badge_monthly": {
+    "message": "月額 Pro"
+  },
+  "subscribe_badge_yearly": {
+    "message": "年額 Pro"
+  },
+  "subscribe_cadence_lifetime": {
+    "message": "一括"
+  },
+  "subscribe_cadence_month": {
+    "message": "/ 月"
+  },
+  "subscribe_cadence_year": {
+    "message": "/ 年"
+  },
+  "subscribe_checkout_error": {
+    "message": "決済エラー：$1"
+  },
+  "subscribe_confirm_switch": {
+    "message": "現在のアカウントからサインアウトして切り替えますか？"
+  },
+  "subscribe_discount_lifetime": {
+    "message": "38% オフ"
+  },
+  "subscribe_discount_monthly": {
+    "message": "44% オフ"
+  },
+  "subscribe_discount_yearly": {
+    "message": "50% オフ"
+  },
+  "subscribe_early_bird_badge": {
+    "message": "期間限定アーリーバード"
+  },
+  "subscribe_err_build_checkout": {
+    "message": "決済ページを構築できませんでした。後でもう一度お試しください。"
+  },
+  "subscribe_err_generic": {
+    "message": "後でもう一度お試しください。"
+  },
+  "subscribe_err_login_service": {
+    "message": "サインインサービスは一時的に利用できません。更新して再試行してください。"
+  },
+  "subscribe_err_open_checkout": {
+    "message": "決済ページを開けませんでした。後でもう一度お試しください。"
+  },
+  "subscribe_err_popup_blocked": {
+    "message": "ブラウザが決済ページをブロックしました。ポップアップを許可して再試行してください。"
+  },
+  "subscribe_err_schema_cache": {
+    "message": "決済サービスが更新中です。Claude Export を開き直して再試行してください。"
+  },
+  "subscribe_err_temporarily_unavailable": {
+    "message": "チェックアウトは一時的に利用できません。しばらくしてから再試行してください。"
+  },
+  "subscribe_faq_a1": {
+    "message": "100% ローカルプライバシー。すべての解析・構造化・変換はブラウザ内で完結します。Claude Export はチャット内容・画像・Cookie をアップロード・保存しません。"
+  },
+  "subscribe_faq_a2": {
+    "message": "Claude Export AI と AI Chat Export の両方で同じ Google アカウントでサインインするだけです。Pro ステータスが自動的に同期されます。"
+  },
+  "subscribe_faq_a3": {
+    "message": "決済は世界的に信頼される決済代行業者 Paddle が処理します。カードや支払い情報を収集・保存することはありません。"
+  },
+  "subscribe_faq_a4": {
+    "message": "パネルにはエクスポートヘルスチェックが内蔵されています。問題や機能のご提案は、chatvaultaisupport@gmail.com までご連絡ください。"
+  },
+  "subscribe_faq_q1": {
+    "message": "ローカルにエクスポートしたデータは安全ですか？"
+  },
+  "subscribe_faq_q2": {
+    "message": "共有 Pro 特典を利用するには？"
+  },
+  "subscribe_faq_q3": {
+    "message": "支払いは安全で法令準拠ですか？"
+  },
+  "subscribe_faq_q4": {
+    "message": "エクスポートの問題でサポートを受けるには？"
+  },
+  "subscribe_faq_title": {
+    "message": "よくある質問"
+  },
+  "subscribe_feature_codepack_desc": {
+    "message": "エクスポートした会話にコードブロックと言語ラベルを保持し、確認や再利用をしやすくします。"
+  },
+  "subscribe_feature_codepack_title": {
+    "message": "コードに適したエクスポート"
+  },
+  "subscribe_feature_qa_desc": {
+    "message": "エクスポート前に未読込コンテンツやキャンバスサイズのリスクを確認し、問題がある場合はより安全な形式や再試行手順を案内します。"
+  },
+  "subscribe_feature_qa_title": {
+    "message": "エクスポート前の完全品質チェック"
+  },
+  "subscribe_feature_shared_desc": {
+    "message": "Claude Export AI と同じアカウントと Pro ステータスを共有。一度の購入で両製品の全特典をアンロック。"
+  },
+  "subscribe_feature_shared_title": {
+    "message": "両製品で Pro を共有"
+  },
+  "subscribe_feature_templates_desc": {
+    "message": "リサーチブリーフ、クライアントメモなど、より多くのテンプレートをアンロック。美しく構造化された Word / PDF / HTML 文書を作成。"
+  },
+  "subscribe_feature_templates_title": {
+    "message": "シナリオ別テンプレート"
+  },
+  "subscribe_feature_themes_desc": {
+    "message": "学術論文、McKinsey、Newsprint などプロフェッショナルな専用テーマ。"
+  },
+  "subscribe_feature_themes_title": {
+    "message": "出版グレードのテーマ"
+  },
+  "subscribe_feature_unlimited_desc": {
+    "message": "1日3回の無料制限を解除し、必要なだけエクスポート。"
+  },
+  "subscribe_feature_unlimited_title": {
+    "message": "無制限のローカルエクスポート"
+  },
+  "subscribe_feature_watermark_desc": {
+    "message": "プロ用途向けに、文書末尾の Claude Export 署名とウォーターマークを非表示にします。"
+  },
+  "subscribe_feature_watermark_title": {
+    "message": "Claude Export ウォーターマークを非表示"
+  },
+  "subscribe_features_title": {
+    "message": "Pro 専用の高度な機能をアンロック"
+  },
+  "subscribe_logged_in_as": {
+    "message": "サインイン中："
+  },
+  "subscribe_logged_in_user": {
+    "message": "サインイン済みユーザー"
+  },
+  "subscribe_login_failed": {
+    "message": "サインイン失敗：$1"
+  },
+  "subscribe_login_now": {
+    "message": "サインイン"
+  },
+  "subscribe_login_required": {
+    "message": "Pro 特典を自動的にバインドするには、サブスクリプション前にサインインしてください。"
+  },
+  "subscribe_not_signed_in": {
+    "message": "まだサインインしていません。"
+  },
+  "subscribe_opening_checkout": {
+    "message": "決済ページを開いています..."
+  },
+  "subscribe_page_title": {
+    "message": "Claude Export Pro にアップグレード"
+  },
+  "subscribe_pay_lifetime": {
+    "message": "$$79.99 を支払う"
+  },
+  "subscribe_pay_monthly": {
+    "message": "$$4.99 を支払う"
+  },
+  "subscribe_pay_yearly": {
+    "message": "$$29.99 を支払う"
+  },
+  "subscribe_plan_desc_lifetime": {
+    "message": "アーリーサポーター特典。ライフタイムの無料アップデート、定期課金なし。"
+  },
+  "subscribe_plan_desc_monthly": {
+    "message": "Pro をまず試すのに最適。すべての形式とプラットフォームに対応、いつでもキャンセル可。"
+  },
+  "subscribe_plan_desc_yearly": {
+    "message": "ヘビーな AI ユーザーに最適。年間無制限のエクスポートとプレミアム形式。"
+  },
+  "subscribe_plan_detail_lifetime": {
+    "message": "一度の支払いで永久に利用可能"
+  },
+  "subscribe_plan_detail_monthly": {
+    "message": "サブスクリプション管理からいつでもキャンセル可"
+  },
+  "subscribe_plan_detail_yearly": {
+    "message": "年額 $$29.99 の請求"
+  },
+  "subscribe_plan_title_lifetime": {
+    "message": "ライフタイムプラン"
+  },
+  "subscribe_plan_title_monthly": {
+    "message": "Pro 月額プラン"
+  },
+  "subscribe_plan_title_yearly": {
+    "message": "Pro 年額プラン"
+  },
+  "subscribe_privacy_alert": {
+    "message": "プライバシーポリシー：チャットの内容をサーバーに収集・アップロード・保存することは一切ありません。すべての解析・フォーマット・ファイル生成はブラウザ内で完結します。"
+  },
+  "subscribe_privacy_link": {
+    "message": "プライバシーポリシー"
+  },
+  "subscribe_recommended_badge": {
+    "message": "おすすめ"
+  },
+  "subscribe_signed_in_retry": {
+    "message": "サインイン済みです。サブスクリプションボタンを再度クリックして決済を開いてください。"
+  },
+  "subscribe_subtitle": {
+    "message": "枠組み制限を解除し、出版グレードのテーマと両製品の共有 Pro 特典をアンロック。"
+  },
+  "subscribe_switch_account": {
+    "message": "アカウントを切り替え"
+  },
+  "subscribe_terms_alert": {
+    "message": "利用規約：Claude Export は AI 対話の個人向け日常抽出・保存のみに使用します。機密性・違法・著作権保護データのスクレイピングは厳禁されています。"
+  },
+  "subscribe_terms_link": {
+    "message": "利用規約"
+  },
+  "subscribe_title": {
+    "message": "Claude Export Pro にアップグレード"
+  },
+  "welcome_aria_toolbar_mock": {
+    "message": "Chrome ツールバーガイド"
+  },
+  "welcome_look_up": {
+    "message": "ブラウザのツールバーにあるパズルアイコンをクリックしてください（ブラウザウィンドウの右上、このページの上です）。"
+  },
+  "welcome_look_up_title": {
+    "message": "ここで拡張機能をクリック"
+  },
+  "welcome_open_hint": {
+    "message": "対応する AI チャットページを開くと、Claude Export が自動的に有効になります。"
+  },
+  "welcome_pin_step_1": {
+    "message": "ツールバーのパズルアイコンをクリック"
+  },
+  "welcome_pin_step_2": {
+    "message": "リストから Claude Export を見つける"
+  },
+  "welcome_pin_step_3": {
+    "message": "その横のピンアイコンをクリック"
+  },
+  "welcome_step_1": {
+    "message": "おすすめの設定"
+  },
+  "welcome_step_2": {
+    "message": "ステップ 2"
+  },
+  "welcome_title_open": {
+    "message": "AI プラットフォームを開いてエクスポートを開始。"
+  },
+  "billing_trial_badge_yearly": {
+    "message": "3日間無料トライアル"
+  },
+  "billing_trial_cta_yearly": {
+    "message": "3日間無料で試す"
+  },
+  "billing_trial_charge_after": {
+    "message": "本日 $0、3日後に年額 $$29.99（事前キャンセル可）"
+  },
+  "billing_trial_not_eligible": {
+    "message": "年額プラン：$$29.99、本日請求されます。"
+  },
+  "billing_trial_confirm_charge": {
+    "message": "このアカウントでは無料トライアルを利用できません。$$29.99の年額プランを今すぐ購入しますか？"
+  },
+  "billing_trial_signin_check": {
+    "message": "ログイン後に無料トライアルの対象か確認します"
+  },
+  "billing_trial_checking": {
+    "message": "トライアル対象を確認中…"
+  },
+  "billing_trial_check_cta": {
+    "message": "3日間無料トライアルを確認"
+  },
+  "billing_trial_used_badge": {
+    "message": "トライアル使用済み"
   }
 }

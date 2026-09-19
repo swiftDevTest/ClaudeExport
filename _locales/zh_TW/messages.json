@@ -1589,6 +1589,12 @@
   "content_export_fail_unknown_reason": {
     "message": "匯出過程中發生未知錯誤。"
   },
+  "content_export_fail_completeness_reason": {
+    "message": "無法確認會話內容完整性。"
+  },
+  "content_export_fail_completeness_fix": {
+    "message": "請重新整理目前 AI 會話頁面後再試。"
+  },
   "content_export_fail_unknown_fix": {
     "message": "請重新整理頁面後重試。若問題持續，請嘗試其他匯出格式。"
   },
@@ -1921,5 +1927,1253 @@
   },
   "content_retry": {
     "message": "重試"
+  },
+  "billing_benefit_premium_styles": {
+    "message": "進階報告樣式（牛津、麥肯錫）"
+  },
+  "billing_benefit_shared": {
+    "message": "與 Claude Export AI 共享 Pro VIP 身份"
+  },
+  "billing_benefit_unlimited": {
+    "message": "無限每日聊天匯出"
+  },
+  "billing_benefit_watermark": {
+    "message": "隱藏Claude Export浮水印"
+  },
+  "billing_billed_yearly": {
+    "message": "按年支付 $$29.99"
+  },
+  "content_all_conversations_loaded": {
+    "message": "已加載全部會話"
+  },
+  "content_background_loading": {
+    "message": "正在後臺加載更多會話..."
+  },
+  "content_background_syncing": {
+    "message": "正在後臺更新會話歷史..."
+  },
+  "content_batch_action_type": {
+    "message": "批量操作類型"
+  },
+  "content_batch_already_running": {
+    "message": "已有批次同步任務正在執行，請等待完成或先取消。"
+  },
+  "content_batch_export_files": {
+    "message": "導出文件"
+  },
+  "content_batch_export_platform": {
+    "message": "批量導出 <b>$1</b> 會話"
+  },
+  "content_batch_exporting_count": {
+    "message": "正在批量導出 <b>$1</b> 個會話"
+  },
+  "content_batch_item_failed_with_reason": {
+    "message": "失敗：$1"
+  },
+  "content_batch_no_files": {
+    "message": "沒有成功導出的會話。"
+  },
+  "content_batch_partial_failure": {
+    "message": "部分會話導出失敗：$1"
+  },
+  "content_batch_quota_exceeded": {
+    "message": "已達每日匯出上限，升級 Pro 可無限匯出。"
+  },
+  "content_batch_saving_zip": {
+    "message": "正在準備保存文件..."
+  },
+  "content_batch_sync_notion": {
+    "message": "同步到 Notion"
+  },
+  "content_batch_sync_obsidian": {
+    "message": "同步到 Obsidian"
+  },
+  "content_batch_trial_banner_available": {
+    "message": "免費體驗可用：1 次免費批次匯出，升級 Pro 可無限使用。"
+  },
+  "content_batch_trial_banner_used": {
+    "message": "免費體驗已使用，升級 Pro 可無限批次匯出。"
+  },
+  "content_batch_trial_exhausted": {
+    "message": "您已用過免費批次匯出體驗，升級 Pro 可無限使用批次匯出。"
+  },
+  "content_batch_trial_hint": {
+    "message": "免費體驗：本次為批次匯出免費試用機會，升級 Pro 可無限使用。"
+  },
+  "content_btn_clear": {
+    "message": "清除"
+  },
+  "content_btn_close": {
+    "message": "關閉"
+  },
+  "content_btn_done": {
+    "message": "完成"
+  },
+  "content_btn_exit": {
+    "message": "退出"
+  },
+  "content_cancel_export": {
+    "message": "取消導出"
+  },
+  "content_completed_title": {
+    "message": "已完成：$1"
+  },
+  "content_context_export_this": {
+    "message": "匯出這一則"
+  },
+  "content_continuing_chatgpt_history": {
+    "message": "正在繼續同步 Claude 歷史..."
+  },
+  "content_continuing_sidebar_sync": {
+    "message": "正在繼續加載側邊欄歷史..."
+  },
+  "content_conversation_history": {
+    "message": "會話歷史"
+  },
+  "content_copy_failed_refresh": {
+    "message": "複製失敗，請刷新頁面後重試。"
+  },
+  "content_detail_toggles": {
+    "message": "詳細開關"
+  },
+  "content_entitlement_local_quota_exhausted": {
+    "message": "已達每日匯出上限（本地校驗），請稍後重試或升級 Pro。"
+  },
+  "content_entitlement_verify_failed": {
+    "message": "無法驗證您的導出權益，請檢查網絡後重試。"
+  },
+  "content_export_already_running": {
+    "message": "已有匯出工作正在執行，請等待完成或先取消。"
+  },
+  "content_export_engine_load_failed": {
+    "message": "匯出引擎載入失敗，請重新整理頁面後再試。"
+  },
+  "content_export_fail_engine_reason": {
+    "message": "擴充功能匯出引擎暫時無法使用。"
+  },
+  "content_export_fail_engine_fix": {
+    "message": "請重新整理頁面後再試。"
+  },
+  "content_export_failed_message": {
+    "message": "導出失敗：$1"
+  },
+  "content_export_failed_title": {
+    "message": "匯出失敗：$1"
+  },
+  "content_export_options": {
+    "message": "導出格式與詳細設置"
+  },
+  "content_export_save_cancelled": {
+    "message": "導出已取消。"
+  },
+  "content_export_review_button": {
+    "message": "給 Claude Export 好評"
+  },
+  "content_export_review_open_failed": {
+    "message": "無法開啟 Chrome 線上應用程式商店。"
+  },
+  "content_export_ui_not_ready": {
+    "message": "導出界面仍在加載，請刷新頁面後重試。"
+  },
+  "content_exporting_index_title": {
+    "message": "正在導出 ($1/$2)：<b style='color:#d97706;'>$3</b>"
+  },
+  "content_format_text": {
+    "message": "文本"
+  },
+  "content_found_syncing": {
+    "message": "已發現 $1 個會話。"
+  },
+  "content_generating_export_file": {
+    "message": "正在生成本地導出文件..."
+  },
+  "content_generating_local_file": {
+    "message": "正在生成本地文件..."
+  },
+  "content_guest_quota_mode": {
+    "message": "Guest 免登錄額度模式"
+  },
+  "content_json_copied": {
+    "message": "JSON 已複製到剪貼簿。"
+  },
+  "content_load_more": {
+    "message": "加載更多"
+  },
+  "content_loading_conversation_data": {
+    "message": "正在加載會話數據：$1"
+  },
+  "content_loading_more": {
+    "message": "正在加載..."
+  },
+  "content_local_batch_export_starting": {
+    "message": "正在啟動本地批量導出..."
+  },
+  "content_login_failed_refresh": {
+    "message": "登錄失敗，請刷新頁面後重試。"
+  },
+  "content_login_required_batch_export": {
+    "message": "請先登入後再使用批量匯出。"
+  },
+  "content_login_service_unavailable": {
+    "message": "登錄服務暫時不可用，請刷新頁面後重試。"
+  },
+  "content_no_copy_text": {
+    "message": "當前對話沒有可複製的文本內容。"
+  },
+  "content_no_messages_for_batch_item": {
+    "message": "未找到可導出的消息。"
+  },
+  "content_notion_batch_in_progress": {
+    "message": "正在同步到 Notion"
+  },
+  "content_notion_batch_progress": {
+    "message": "已完成 $1 / $2"
+  },
+  "content_notion_batch_progress_with_detail": {
+    "message": "$1 · $2"
+  },
+  "content_notion_cancelled": {
+    "message": "已取消"
+  },
+  "content_notion_connect_helper": {
+    "message": "請打開插件彈窗連接你的 Notion 工作區。"
+  },
+  "content_notion_database": {
+    "message": "Notion Database"
+  },
+  "content_notion_destination_required": {
+    "message": "請先選擇 Notion Database。"
+  },
+  "content_notion_destination_unavailable": {
+    "message": "請先在插件彈窗中連接 Notion"
+  },
+  "content_notion_failed": {
+    "message": "失敗"
+  },
+  "content_notion_no_database": {
+    "message": "未找到已授權的 Database"
+  },
+  "content_notion_partial": {
+    "message": "已同步，有降級"
+  },
+  "content_notion_preparing": {
+    "message": "準備中"
+  },
+  "content_notion_queued": {
+    "message": "已排隊"
+  },
+  "content_notion_retrying": {
+    "message": "重試中"
+  },
+  "content_notion_share_database": {
+    "message": "請先向 Notion 連接授權一個 Database，然後重新打開此面板。"
+  },
+  "content_notion_synced": {
+    "message": "已同步"
+  },
+  "content_notion_syncing": {
+    "message": "同步中"
+  },
+  "content_notion_waiting": {
+    "message": "等待中"
+  },
+  "content_open": {
+    "message": "打開"
+  },
+  "content_open_subscribe_panel": {
+    "message": "正在打開 Claude Export Pro 訂閱方案..."
+  },
+  "content_open_subscribe_panel_failed": {
+    "message": "請打開瀏覽器工具欄中的 Claude Export 彈窗完成訂閱。"
+  },
+  "content_opening_conversation_page": {
+    "message": "正在打開會話頁面..."
+  },
+  "content_pro_quota_desc": {
+    "message": "擁有無限次出版級 PDF、Word 導出額度，已解鎖全部高級商業排版主題。"
+  },
+  "content_progress_building": {
+    "message": "正在產生文件..."
+  },
+  "content_progress_checking_export_access": {
+    "message": "正在準備匯出..."
+  },
+  "content_progress_complete": {
+    "message": "導出完成。"
+  },
+  "content_progress_copying_json": {
+    "message": "正在複製 JSON..."
+  },
+  "content_progress_downloading": {
+    "message": "正在準備安全下載..."
+  },
+  "content_progress_formatting": {
+    "message": "正在應用導出格式..."
+  },
+  "content_progress_initializing": {
+    "message": "正在匯出..."
+  },
+  "content_progress_loading_full_conversation": {
+    "message": "正在加載完整會話數據..."
+  },
+  "content_progress_parsing": {
+    "message": "正在解析頁面內容..."
+  },
+  "content_progress_receipt": {
+    "message": "正在生成導出憑證..."
+  },
+  "content_quota_loading_desc": {
+    "message": "正在讀取今日本地導出次數。"
+  },
+  "content_quota_loading_title": {
+    "message": "正在讀取額度..."
+  },
+  "content_quota_remaining_prefix": {
+    "message": "今日剩餘額度："
+  },
+  "content_quota_remaining_suffix": {
+    "message": "次保存機會。"
+  },
+  "content_select_one_before_export": {
+    "message": "請先選擇至少一條對話後再導出。"
+  },
+  "content_selected_batch_suffix": {
+    "message": " 個會話（最多 10 個）"
+  },
+  "content_selected_prefix": {
+    "message": "已選擇 "
+  },
+  "content_selected_short": {
+    "message": "已選"
+  },
+  "content_sidebar_sync_failed": {
+    "message": "同步側邊欄失敗，請重試"
+  },
+  "content_signing_in": {
+    "message": "正在登入..."
+  },
+  "content_sync_chat_count": {
+    "message": "同步 $1 個對話到 Notion"
+  },
+  "content_syncing_chatgpt_history": {
+    "message": "正在從 Claude 歷史同步會話..."
+  },
+  "content_syncing_sidebar": {
+    "message": "正在同步側邊欄歷史，加載更多聊天..."
+  },
+  "content_toggle_watermark": {
+    "message": "隱藏產品水印"
+  },
+  "content_untitled_database": {
+    "message": "未命名 Database"
+  },
+  "content_upgrade_appendix": {
+    "message": "附帶 Prompt 提問附錄功能需要 Pro 權限。"
+  },
+  "content_upgrade_batch_export": {
+    "message": "批量導出是 Pro 會員功能，升級後即可解鎖多會話批量導出。"
+  },
+  "content_upgrade_desc": {
+    "message": "升級到 Pro 可解除額度限制。"
+  },
+  "content_upgrade_free_limit": {
+    "message": "您今日已使用完 3 次免費導出額度限制。"
+  },
+  "content_upgrade_quota_hint": {
+    "message": "升級到 Pro 可解除全部額度及水印限制。"
+  },
+  "content_upgrade_template": {
+    "message": "所選的場景化專業模板需要 Pro 權限。"
+  },
+  "content_upgrade_theme": {
+    "message": "高級商務排版主題（如 Oxford、McKinsey）需要 Pro 權限。"
+  },
+  "content_upgrade_watermark": {
+    "message": "隱藏 Claude Export 水印簽名需要 Pro 權限。"
+  },
+  "export_image_large_tables": {
+    "message": "此對話包含大表格，建議匯出為 PDF 或 Word。"
+  },
+  "export_image_placeholder": {
+    "message": "[圖]"
+  },
+  "export_pdf_encode_failed": {
+    "message": "PDF 頁面渲染失敗。請再試一次。"
+  },
+  "export_pdf_too_large": {
+    "message": "此對話過大，無法安全匯出為單一 PDF。請縮短匯出範圍。"
+  },
+  "export_pdf_too_many_pages": {
+    "message": "此對話過長，無法安全匯出為單一 PDF。請縮短匯出範圍。"
+  },
+  "export_progress_building_json": {
+    "message": "建構 JSON 導出"
+  },
+  "export_progress_building_markdown": {
+    "message": "建築Markdown 導出"
+  },
+  "export_progress_building_text": {
+    "message": "建構文字導出"
+  },
+  "export_progress_building_word": {
+    "message": "建築Word 文檔"
+  },
+  "export_progress_detail_conversations": {
+    "message": "$1 個對話"
+  },
+  "export_progress_detail_issue": {
+    "message": "$1問題"
+  },
+  "export_progress_detail_issues": {
+    "message": "$1 問題"
+  },
+  "export_progress_detail_ready": {
+    "message": "$1準備就緒"
+  },
+  "export_progress_loading_images": {
+    "message": "載入圖像"
+  },
+  "export_progress_preparing_docx": {
+    "message": "準備Word文檔"
+  },
+  "export_progress_preparing_json": {
+    "message": "準備JSON 導出"
+  },
+  "export_progress_preparing_markdown": {
+    "message": "準備Markdown 導出"
+  },
+  "export_progress_preparing_text": {
+    "message": "準備文本導出"
+  },
+  "export_progress_ready_doc": {
+    "message": "匯出完成"
+  },
+  "folders_load_more": {
+    "message": "載入更多"
+  },
+  "format_markdown": {
+    "message": "Markdown"
+  },
+  "image_limit_modal_cancel": {
+    "message": "取消"
+  },
+  "image_limit_modal_export_pdf": {
+    "message": "匯出為 PDF"
+  },
+  "image_limit_modal_title": {
+    "message": "圖片過大"
+  },
+  "notion_cancel_task": {
+    "message": "取消任務"
+  },
+  "notion_clear_task": {
+    "message": "清除本地任務"
+  },
+  "notion_connected": {
+    "message": "已連接"
+  },
+  "notion_connecting": {
+    "message": "連接中..."
+  },
+  "notion_disconnect_server_retained": {
+    "message": "伺服器端斷開失敗，本地資料已保留，請稍後重試。"
+  },
+  "notion_disconnected": {
+    "message": "Notion 已中斷連接。"
+  },
+  "notion_fetch_failed": {
+    "message": "拉取失敗"
+  },
+  "notion_metadata_exported": {
+    "message": "匯出時間"
+  },
+  "notion_metadata_from": {
+    "message": "來源"
+  },
+  "notion_no_data_source": {
+    "message": "未找到授權的 Database"
+  },
+  "notion_not_connected": {
+    "message": "尚未連接"
+  },
+  "notion_oauth_failed": {
+    "message": "Notion 連接失敗：$1"
+  },
+  "notion_oauth_opening": {
+    "message": "正在打開 Notion 授權..."
+  },
+  "notion_oauth_success": {
+    "message": "Notion 已連接。"
+  },
+  "notion_open_page_failed": {
+    "message": "無法打開 Notion 頁面。"
+  },
+  "notion_reconnect_action": {
+    "message": "重新連接"
+  },
+  "notion_reconnect_required": {
+    "message": "需要重新連接"
+  },
+  "notion_reconnect_warning": {
+    "message": "Notion 存取已過期，請重新連接以繼續同步。"
+  },
+  "notion_retry": {
+    "message": "重試"
+  },
+  "notion_save": {
+    "message": "儲存"
+  },
+  "notion_save_to": {
+    "message": "儲存到 Notion"
+  },
+  "notion_signin_again": {
+    "message": "登入成功，請再次點擊「連接 Notion」繼續。"
+  },
+  "notion_signin_required": {
+    "message": "請先登入，登入後將自動開啟 Notion 工作區授權。"
+  },
+  "notion_sync_cancelled": {
+    "message": "同步已取消。"
+  },
+  "notion_sync_failed": {
+    "message": "Notion 同步失敗：$1"
+  },
+  "notion_sync_fetching_conversation": {
+    "message": "正在取得對話內容..."
+  },
+  "notion_sync_no_messages": {
+    "message": "當前頁面沒有找到可同步的會話消息。"
+  },
+  "notion_sync_partial_desc": {
+    "message": "Notion 頁面已成功創建，請打開頁面檢查未能完全保留的內容。"
+  },
+  "notion_sync_partial_title": {
+    "message": "已同步到 Notion，但有部分內容降級"
+  },
+  "notion_sync_preparing": {
+    "message": "正在準備會話..."
+  },
+  "notion_sync_progress_title": {
+    "message": "正在同步到 Notion"
+  },
+  "notion_sync_retrying": {
+    "message": "Notion 當前繁忙，正在安全重試..."
+  },
+  "notion_sync_success_desc": {
+    "message": "當前對話已寫入你選擇的 Notion Database。"
+  },
+  "notion_sync_success_title": {
+    "message": "已成功同步到 Notion"
+  },
+  "notion_thinking_process": {
+    "message": "Thinking Process (思考過程)"
+  },
+  "notion_untitled_conversation": {
+    "message": "未命名會話"
+  },
+  "obsidian_batch_all_failed": {
+    "message": "沒有會話同步成功。"
+  },
+  "obsidian_batch_cancelled": {
+    "message": "Obsidian 批量同步已取消。"
+  },
+  "obsidian_batch_complete": {
+    "message": "Obsidian 批量同步完成"
+  },
+  "obsidian_batch_complete_desc": {
+    "message": "每個成功的會話都已保存為獨立筆記。"
+  },
+  "obsidian_batch_in_progress": {
+    "message": "正在同步到 Obsidian"
+  },
+  "obsidian_batch_progress": {
+    "message": "已完成 $1 / $2"
+  },
+  "obsidian_batch_progress_with_detail": {
+    "message": "$1 · $2"
+  },
+  "obsidian_batch_sync": {
+    "message": "同步到 Obsidian"
+  },
+  "obsidian_batch_title": {
+    "message": "批量同步到 Obsidian"
+  },
+  "obsidian_cancelled": {
+    "message": "已取消"
+  },
+  "obsidian_change_folder": {
+    "message": "更換資料夾"
+  },
+  "obsidian_checking_vault": {
+    "message": "正在檢查 Vault"
+  },
+  "obsidian_connect": {
+    "message": "連接 Obsidian"
+  },
+  "obsidian_connect_first": {
+    "message": "請先連接 Obsidian Vault。"
+  },
+  "obsidian_connect_helper": {
+    "message": "選擇本機 Vault 後即可使用單個與批次同步。"
+  },
+  "obsidian_directories_missing": {
+    "message": "設定的資料夾已遺失，請修復後再同步。"
+  },
+  "obsidian_disconnect_failed": {
+    "message": "無法中斷 Obsidian 連接。"
+  },
+  "obsidian_disconnected": {
+    "message": "已中斷 Obsidian 連接，現有檔案不會被刪除。"
+  },
+  "obsidian_failed": {
+    "message": "失敗"
+  },
+  "obsidian_fetching": {
+    "message": "獲取會話"
+  },
+  "obsidian_finishing": {
+    "message": "正在完成同步..."
+  },
+  "obsidian_getting_conversation": {
+    "message": "正在獲取完整會話..."
+  },
+  "obsidian_getting_selected": {
+    "message": "正在獲取已選消息..."
+  },
+  "obsidian_getting_selected_count": {
+    "message": "正在獲取 $1 條已選訊息..."
+  },
+  "obsidian_job_running": {
+    "message": "已有 Obsidian 同步任務正在運行。"
+  },
+  "obsidian_configured": {
+    "message": "已配置"
+  },
+  "obsidian_not_connected": {
+    "message": "尚未設定資料夾路徑，請先設定"
+  },
+  "obsidian_open_failed": {
+    "message": "無法打開 Obsidian。"
+  },
+  "obsidian_open_note": {
+    "message": "在 Obsidian 中打開"
+  },
+  "obsidian_permission_required": {
+    "message": "Vault 權限已失效，需要重新授權。"
+  },
+  "obsidian_preparing": {
+    "message": "檢查 Vault"
+  },
+  "obsidian_ready": {
+    "message": "可同步"
+  },
+  "obsidian_reauthorize": {
+    "message": "重新授權 Vault"
+  },
+  "obsidian_reauthorize_first": {
+    "message": "請先重新授權 Obsidian Vault。"
+  },
+  "obsidian_retry_check": {
+    "message": "重試"
+  },
+  "obsidian_save_to": {
+    "message": "儲存到 Obsidian"
+  },
+  "obsidian_select_message_first": {
+    "message": "請先選擇至少一條消息後再同步。"
+  },
+  "obsidian_select_message_first_short": {
+    "message": "請選擇訊息"
+  },
+  "obsidian_settings": {
+    "message": "設置"
+  },
+  "obsidian_settings_assets_folder": {
+    "message": "資源資料夾（可選）"
+  },
+  "obsidian_settings_assets_help": {
+    "message": "未設定時使用筆記資料夾。每次同步使用獨立的資源交易資料夾。"
+  },
+  "obsidian_settings_assets_placeholder": {
+    "message": "未設定時使用筆記資料夾"
+  },
+  "obsidian_settings_choose": {
+    "message": "選擇"
+  },
+  "obsidian_settings_choose_assets_failed": {
+    "message": "無法選擇資產資料夾。"
+  },
+  "obsidian_settings_choose_notes_failed": {
+    "message": "無法選擇筆記資料夾。"
+  },
+  "obsidian_settings_choose_notes_first": {
+    "message": "請先選擇筆記資料夾。"
+  },
+  "obsidian_settings_choose_root_first": {
+    "message": "首先選擇您的 Obsidian Vault 資料夾。"
+  },
+  "obsidian_settings_choose_vault": {
+    "message": "選擇 Vault"
+  },
+  "obsidian_settings_choose_vault_failed": {
+    "message": "無法選擇 Vault。"
+  },
+  "obsidian_settings_choose_vault_step": {
+    "message": "選擇 Vault"
+  },
+  "obsidian_settings_clear": {
+    "message": "清除"
+  },
+  "obsidian_settings_connection_ready": {
+    "message": "連接有效。"
+  },
+  "obsidian_settings_current_vault": {
+    "message": "目前 Vault"
+  },
+  "obsidian_settings_failed": {
+    "message": "無法打開 Obsidian 設置。"
+  },
+  "obsidian_settings_folder_outside": {
+    "message": "選擇目前 Vault 內的資料夾。"
+  },
+  "obsidian_settings_folders_step": {
+    "message": "選擇資料夾"
+  },
+  "obsidian_settings_folders_step_desc": {
+    "message": "選擇筆記資料夾，資源資料夾可選。"
+  },
+  "obsidian_settings_heading": {
+    "message": "將對話直接儲存到你的知識庫"
+  },
+  "obsidian_settings_history": {
+    "message": "最近同步"
+  },
+  "obsidian_settings_history_desc": {
+    "message": "此處只儲存路徑和狀態，不儲存聊天內容。"
+  },
+  "obsidian_settings_history_failed": {
+    "message": "無法載入同步歷史記錄。"
+  },
+  "obsidian_settings_image_count": {
+    "message": "$1 張圖片"
+  },
+  "obsidian_settings_init_failed": {
+    "message": "無法初始化 Obsidian 設定。"
+  },
+  "obsidian_settings_intro": {
+    "message": "只需設定一次資料夾，之後即可同步單個或多個對話。文字和圖片都保留在本機。"
+  },
+  "obsidian_settings_invalid_path": {
+    "message": "資料夾必須使用 Vault 內的安全路徑，且不能包含 ..、.obsidian 或無效的系統字元。"
+  },
+  "obsidian_settings_local": {
+    "message": "本機寫入"
+  },
+  "obsidian_settings_no_history": {
+    "message": "尚無 Obsidian 同步記錄。"
+  },
+  "obsidian_settings_not_selected": {
+    "message": "尚未選擇"
+  },
+  "obsidian_settings_notes_folder": {
+    "message": "筆記資料夾"
+  },
+  "obsidian_settings_notes_help": {
+    "message": "必選。筆記直接儲存在這裡，不會額外建立根目錄或平台目錄。"
+  },
+  "obsidian_settings_notes_placeholder": {
+    "message": "選擇 Vault 內的筆記資料夾"
+  },
+  "obsidian_settings_opened_background": {
+    "message": "Obsidian 設置已在背景新分頁打開，切換到該分頁完成配置後返回此處即可。"
+  },
+  "obsidian_settings_path_preview": {
+    "message": "路徑預覽"
+  },
+  "obsidian_settings_permission_denied": {
+    "message": "未授予 Vault 寫入權限。重新授權 Vault 並重試。"
+  },
+  "obsidian_settings_picker_unsupported": {
+    "message": "此 Chrome 版本不支援資料夾存取。更新 Chrome 並重試。"
+  },
+  "obsidian_settings_preview_empty": {
+    "message": "選擇筆記資料夾後預覽路徑"
+  },
+  "obsidian_settings_preview_title": {
+    "message": "對話標題"
+  },
+  "obsidian_settings_ready": {
+    "message": "連接和資料夾有效，可以同步單個或多個對話。"
+  },
+  "obsidian_settings_refresh": {
+    "message": "重新整理"
+  },
+  "obsidian_settings_request_failed": {
+    "message": "Obsidian 請求失敗。"
+  },
+  "obsidian_settings_resolve_unsupported": {
+    "message": "此 Chrome 版本無法確認所選資料夾是否位於 Vault 內。"
+  },
+  "obsidian_settings_return": {
+    "message": "返回目前對話"
+  },
+  "obsidian_settings_save_permission_failed": {
+    "message": "無法儲存 Vault 權限。"
+  },
+  "obsidian_settings_saved": {
+    "message": "Vault 驗證成功，正在返回目前對話..."
+  },
+  "obsidian_settings_steps_label": {
+    "message": "Vault 設定步驟"
+  },
+  "obsidian_settings_storage_failed": {
+    "message": "無法開啟 Obsidian 本地儲存。"
+  },
+  "obsidian_settings_title": {
+    "message": "連接 Obsidian Vault"
+  },
+  "obsidian_settings_vault_authorized": {
+    "message": "Vault 授權完成，請繼續選擇筆記資料夾。"
+  },
+  "obsidian_settings_verify_failed": {
+    "message": "Vault 寫入驗證失敗。"
+  },
+  "obsidian_settings_verify_save": {
+    "message": "驗證並儲存"
+  },
+  "obsidian_settings_verify_step": {
+    "message": "驗證權限"
+  },
+  "obsidian_settings_verify_step_desc": {
+    "message": "建立並刪除暫存檔案。"
+  },
+  "obsidian_settings_verifying": {
+    "message": "正在驗證..."
+  },
+  "obsidian_start_failed": {
+    "message": "無法啟動 Obsidian 同步。刷新頁面並重試。"
+  },
+  "obsidian_status_cancelled_short": {
+    "message": "已取消"
+  },
+  "obsidian_status_failed_short": {
+    "message": "失敗"
+  },
+  "obsidian_status_partial": {
+    "message": "有警告"
+  },
+  "obsidian_status_success": {
+    "message": "成功"
+  },
+  "obsidian_sync_busy": {
+    "message": "已有同步工作正在寫入此 Vault。"
+  },
+  "obsidian_sync_cancelled": {
+    "message": "Obsidian 同步已取消。"
+  },
+  "obsidian_sync_chat_count": {
+    "message": "同步 $1 個會話到 Obsidian"
+  },
+  "obsidian_sync_complete": {
+    "message": "已同步到 Obsidian"
+  },
+  "obsidian_sync_complete_desc": {
+    "message": "筆記和本地圖片已寫入你的 Vault。"
+  },
+  "obsidian_sync_current_short": {
+    "message": "同步"
+  },
+  "obsidian_sync_failed": {
+    "message": "Obsidian 同步失敗：$1"
+  },
+  "obsidian_sync_failed_desc": {
+    "message": "未創建筆記，請檢查 Vault 權限後重試。"
+  },
+  "obsidian_sync_failed_title": {
+    "message": "同步到 Obsidian 失敗"
+  },
+  "obsidian_sync_no_messages": {
+    "message": "當前頁面沒有找到可同步的會話消息。"
+  },
+  "obsidian_sync_partial_desc": {
+    "message": "筆記已創建，請查看下方未能完整保留的媒體警告。"
+  },
+  "obsidian_sync_partial_title": {
+    "message": "Obsidian 同步完成，但有部分警告"
+  },
+  "obsidian_sync_progress_title": {
+    "message": "正在同步到 Obsidian"
+  },
+  "obsidian_sync_running": {
+    "message": "已有同步任務運行，完成後此面板會自動可用。"
+  },
+  "obsidian_sync_selected_short": {
+    "message": "同步 $1 則"
+  },
+  "obsidian_synced": {
+    "message": "已同步"
+  },
+  "obsidian_synced_partial": {
+    "message": "已同步，有警告"
+  },
+  "obsidian_syncing": {
+    "message": "同步中"
+  },
+  "obsidian_vault": {
+    "message": "Obsidian Vault"
+  },
+  "obsidian_vault_root": {
+    "message": "Vault 根目錄"
+  },
+  "obsidian_visible_content_fallback": {
+    "message": "完整會話獲取失敗，已使用頁面可見內容。"
+  },
+  "obsidian_waiting": {
+    "message": "等待中"
+  },
+  "obsidian_writing": {
+    "message": "寫入 Vault"
+  },
+  "placeholder_batch_search": {
+    "message": "搜索會話標題..."
+  },
+  "popup_benefit_batch_export": {
+    "message": "批量匯出對話"
+  },
+  "popup_checking": {
+    "message": "檢查中..."
+  },
+  "popup_checkout_rate_limited": {
+    "message": "結帳已在準備中。請稍等片刻，然後重試。"
+  },
+  "popup_checkout_temporarily_unavailable": {
+    "message": "結帳服務暫時無法使用，請稍候再試。"
+  },
+  "popup_checkout_signed_in_retry": {
+    "message": "已登入。選擇您的計劃，然後再次按一下「繼續」以開啟結帳。"
+  },
+  "popup_checkout_signin_message": {
+    "message": "首先使用Google 登入。登入後，再次按一下「繼續」以開啟安全結帳。"
+  },
+  "popup_checkout_signin_ok": {
+    "message": "登錄"
+  },
+  "popup_checkout_signin_title": {
+    "message": "結帳前登入"
+  },
+  "popup_close_aria": {
+    "message": "關閉"
+  },
+  "popup_connections_title": {
+    "message": "連接管理"
+  },
+  "popup_free_quota_exhausted": {
+    "message": "今日免費導出次數已用完。"
+  },
+  "popup_language_change_failed": {
+    "message": "無法切換語言。"
+  },
+  "popup_language_title": {
+    "message": "介面語言"
+  },
+  "popup_login_service_unavailable": {
+    "message": "暫時無法登入。請刷新並重試。"
+  },
+  "popup_notion_checking_connection": {
+    "message": "檢查連接中"
+  },
+  "notion_destination_changed": {
+    "message": "之前選擇的 Database 已不可用，請確認目前選項後再次點擊儲存。"
+  },
+  "notion_destination_verify_failed": {
+    "message": "無法驗證 Notion 工作區和 Database，請檢查連接後重試。"
+  },
+  "popup_plan_yearly_detail": {
+    "message": "按年計費 $$29.99"
+  },
+  "popup_pro_already_active": {
+    "message": "此帳號已開通 Pro。"
+  },
+  "popup_entitlement_syncing": {
+    "message": "正在同步會員狀態..."
+  },
+  "popup_subscribe_cta": {
+    "message": "支付 $$29.99"
+  },
+  "role_user": {
+    "message": "用戶"
+  },
+  "subscribe_badge_lifetime": {
+    "message": "終身 Pro"
+  },
+  "subscribe_badge_monthly": {
+    "message": "月度 Pro"
+  },
+  "subscribe_badge_yearly": {
+    "message": "年度 Pro"
+  },
+  "subscribe_cadence_lifetime": {
+    "message": "一次性"
+  },
+  "subscribe_cadence_month": {
+    "message": "/ 月"
+  },
+  "subscribe_cadence_year": {
+    "message": "/ 年"
+  },
+  "subscribe_checkout_error": {
+    "message": "結帳出錯：$1"
+  },
+  "subscribe_confirm_switch": {
+    "message": "登出目前帳號並切換？"
+  },
+  "subscribe_discount_lifetime": {
+    "message": "節省 38%"
+  },
+  "subscribe_discount_monthly": {
+    "message": "節省 44%"
+  },
+  "subscribe_discount_yearly": {
+    "message": "節省 50%"
+  },
+  "subscribe_early_bird_badge": {
+    "message": "限時早鳥"
+  },
+  "subscribe_err_build_checkout": {
+    "message": "無法建立結帳頁面，請稍後重試。"
+  },
+  "subscribe_err_generic": {
+    "message": "請稍後重試。"
+  },
+  "subscribe_err_login_service": {
+    "message": "登入服務暫時不可用，請重新整理後重試。"
+  },
+  "subscribe_err_open_checkout": {
+    "message": "無法開啟結帳頁面，請稍後重試。"
+  },
+  "subscribe_err_popup_blocked": {
+    "message": "瀏覽器攔截了結帳頁面，請允許彈出視窗後重試。"
+  },
+  "subscribe_err_schema_cache": {
+    "message": "結帳服務正在更新，請重新開啟 Claude Export 後重試。"
+  },
+  "subscribe_err_temporarily_unavailable": {
+    "message": "結帳服務暫時無法使用，請稍候再試。"
+  },
+  "subscribe_faq_a1": {
+    "message": "100% 本地隱私。所有解析、結構化和轉換都在你的瀏覽器中完成。Claude Export 不會上傳或儲存你的聊天內容、圖片或 Cookie。"
+  },
+  "subscribe_faq_a2": {
+    "message": "只需在 Claude Export AI 和 AI Chat Export 中使用同一個 Google 帳號登入，Pro 狀態會自動同步。"
+  },
+  "subscribe_faq_a3": {
+    "message": "結帳由全球可信支付服務商 Paddle 處理，我們不收集或儲存你的卡片或支付資訊。"
+  },
+  "subscribe_faq_a4": {
+    "message": "面板內建匯出健康檢查。遇到棘手問題或功能建議，可隨時聯絡 chatvaultaisupport@gmail.com。"
+  },
+  "subscribe_faq_q1": {
+    "message": "本地匯出的資料安全嗎？"
+  },
+  "subscribe_faq_q2": {
+    "message": "如何取得共享 Pro 權益？"
+  },
+  "subscribe_faq_q3": {
+    "message": "支付安全合規嗎？"
+  },
+  "subscribe_faq_q4": {
+    "message": "遇到匯出問題如何取得協助？"
+  },
+  "subscribe_faq_title": {
+    "message": "常見問題"
+  },
+  "subscribe_feature_codepack_desc": {
+    "message": "在匯出的對話中保留程式碼區塊及其語言標記，方便檢閱與重複使用。"
+  },
+  "subscribe_feature_codepack_title": {
+    "message": "程式碼友善匯出"
+  },
+  "subscribe_feature_qa_desc": {
+    "message": "匯出前掃描未載入內容與畫布尺寸風險，並在發現問題時建議更穩妥的匯出格式或重試步驟。"
+  },
+  "subscribe_feature_qa_title": {
+    "message": "完整匯出前品質檢查"
+  },
+  "subscribe_feature_shared_desc": {
+    "message": "與 Claude Export AI 共享同一帳號和 Pro 狀態。一次購買，解鎖兩個產品的全部權益。"
+  },
+  "subscribe_feature_shared_title": {
+    "message": "雙產品共享 Pro"
+  },
+  "subscribe_feature_templates_desc": {
+    "message": "解鎖研究簡報、客戶備忘等更多範本，生成結構精美的 Word / PDF / HTML 文件。"
+  },
+  "subscribe_feature_templates_title": {
+    "message": "情境化範本"
+  },
+  "subscribe_feature_themes_desc": {
+    "message": "專屬學術論文、麥肯錫、新聞紙等專業主題。"
+  },
+  "subscribe_feature_themes_title": {
+    "message": "出版級主題"
+  },
+  "subscribe_feature_unlimited_desc": {
+    "message": "取消每日 3 次免費限制，按需無限匯出。"
+  },
+  "subscribe_feature_unlimited_title": {
+    "message": "無限本地匯出"
+  },
+  "subscribe_feature_watermark_desc": {
+    "message": "為專業用途隱藏文件結尾的 Claude Export 簽名和浮水印。"
+  },
+  "subscribe_feature_watermark_title": {
+    "message": "隱藏 Claude Export 浮水印"
+  },
+  "subscribe_features_title": {
+    "message": "解鎖 Pro 專屬進階功能"
+  },
+  "subscribe_logged_in_as": {
+    "message": "已登入："
+  },
+  "subscribe_logged_in_user": {
+    "message": "已登入使用者"
+  },
+  "subscribe_login_failed": {
+    "message": "登入失敗：$1"
+  },
+  "subscribe_login_now": {
+    "message": "登入"
+  },
+  "subscribe_login_required": {
+    "message": "訂閱前請先登入，以便自動綁定 Pro 權益。"
+  },
+  "subscribe_not_signed_in": {
+    "message": "尚未登入，請"
+  },
+  "subscribe_opening_checkout": {
+    "message": "正在開啟結帳..."
+  },
+  "subscribe_page_title": {
+    "message": "升級到 Claude Export Pro"
+  },
+  "subscribe_pay_lifetime": {
+    "message": "支付 $$79.99"
+  },
+  "subscribe_pay_monthly": {
+    "message": "支付 $$4.99"
+  },
+  "subscribe_pay_yearly": {
+    "message": "支付 $$29.99"
+  },
+  "subscribe_plan_desc_lifetime": {
+    "message": "早鳥支持者專屬，終身免費更新，無訂閱費用。"
+  },
+  "subscribe_plan_desc_monthly": {
+    "message": "適合先體驗 Pro，支援所有格式和平台，可隨時取消。"
+  },
+  "subscribe_plan_desc_yearly": {
+    "message": "重度 AI 使用者首選，全年無限匯出和進階格式。"
+  },
+  "subscribe_plan_detail_lifetime": {
+    "message": "一次付費，永久保留"
+  },
+  "subscribe_plan_detail_monthly": {
+    "message": "可從訂閱管理隨時取消"
+  },
+  "subscribe_plan_detail_yearly": {
+    "message": "按年計費 $$29.99"
+  },
+  "subscribe_plan_title_lifetime": {
+    "message": "終身方案"
+  },
+  "subscribe_plan_title_monthly": {
+    "message": "Pro 月度方案"
+  },
+  "subscribe_plan_title_yearly": {
+    "message": "Pro 年度方案"
+  },
+  "subscribe_privacy_alert": {
+    "message": "隱私政策：我們絕不會收集、上傳或儲存你的任何聊天內容到伺服器。所有分析、格式化和文件生成都在瀏覽器本地完成。"
+  },
+  "subscribe_privacy_link": {
+    "message": "隱私政策"
+  },
+  "subscribe_recommended_badge": {
+    "message": "超值之選"
+  },
+  "subscribe_signed_in_retry": {
+    "message": "已登入，請再次點擊訂閱按鈕開啟結帳。"
+  },
+  "subscribe_subtitle": {
+    "message": "解除配額限制，解鎖出版級主題以及跨兩個產品的共享 Pro 權益。"
+  },
+  "subscribe_switch_account": {
+    "message": "切換帳號"
+  },
+  "subscribe_terms_alert": {
+    "message": "服務條款：Claude Export 僅用於個人日常提取和儲存 AI 對話。嚴禁使用本工具抓取敏感、違法或受版權保護的資料。"
+  },
+  "subscribe_terms_link": {
+    "message": "服務條款"
+  },
+  "subscribe_title": {
+    "message": "升級到 Claude Export Pro"
+  },
+  "welcome_aria_toolbar_mock": {
+    "message": "Chrome 工具列指南"
+  },
+  "welcome_look_up": {
+    "message": "使用本頁面上方瀏覽器工具列中的拼圖按鈕。"
+  },
+  "welcome_look_up_title": {
+    "message": "點選這裡的擴充功能"
+  },
+  "welcome_open_hint": {
+    "message": "造訪受支援的 AI 對話頁面時，Claude Export 會自動啟用。"
+  },
+  "welcome_pin_step_1": {
+    "message": "從瀏覽器工具列開啟擴充功能"
+  },
+  "welcome_pin_step_2": {
+    "message": "在選單中找到 Claude Export"
+  },
+  "welcome_pin_step_3": {
+    "message": "點選名稱旁邊的固定圖示"
+  },
+  "welcome_step_1": {
+    "message": "推薦設定"
+  },
+  "welcome_step_2": {
+    "message": "步驟 2"
+  },
+  "welcome_title_open": {
+    "message": "開啟 AI 平台，開始匯出。"
+  },
+  "billing_trial_badge_yearly": {
+    "message": "3 天免費試用"
+  },
+  "billing_trial_cta_yearly": {
+    "message": "免費試用 3 天"
+  },
+  "billing_trial_charge_after": {
+    "message": "今天 $0；3 天後按年收取 $$29.99（可提前取消）"
+  },
+  "billing_trial_not_eligible": {
+    "message": "年包 $$29.99/年，今天扣款。"
+  },
+  "billing_trial_confirm_charge": {
+    "message": "此帳號無法使用免費試用。是否繼續購買年包並立即支付 $$29.99？"
+  },
+  "billing_trial_signin_check": {
+    "message": "登入後確認免費試用資格"
+  },
+  "billing_trial_checking": {
+    "message": "正在確認你的試用資格…"
+  },
+  "billing_trial_check_cta": {
+    "message": "確認 3 天免費試用"
+  },
+  "billing_trial_used_badge": {
+    "message": "試用已使用"
   }
 }

@@ -164,7 +164,7 @@ function enterSelectionMode() {
       wrapper.__chatVaultRole = message.role;
       wrapper.__chatVaultMessage = message;
 
-      var checkbox = document.createElement("button");
+      let checkbox = document.createElement("button");
       checkbox.className = "cv-export-checkbox";
       checkbox.type = "button";
       checkbox.dataset.index = String(mi);

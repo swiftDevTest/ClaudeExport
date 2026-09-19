@@ -1,10 +1,8 @@
 import {
-  hasInternalVisibilityMarker as hasSharedInternalVisibilityMarker,
-  isThoughtLikeContentValue as isSharedThoughtLikeContentValue,
-  sanitizeStructuredLinkText as sanitizeSharedStructuredLinkText
+  isThoughtStatusLine,
+  sanitizeStructuredLinkText as sanitizeSharedStructuredLinkText,
+  stripThoughtText
 } from "./utils.js";
-
-"use strict";
 
 function createMissingDependencyError(name) {
     return new Error("ChatVault export platform fetcher dependency is missing: " + name);
@@ -29,10 +27,12 @@ function createMissingDependencyError(name) {
   const CHATGPT_CONVERSATION_REQUEST_TIMEOUT_MS = 60000;
   const CHATGPT_CONVERSATION_RESPONSE_MAX_BYTES = 64 * 1024 * 1024;
   const CHATGPT_CONVERSATION_FETCH_ATTEMPTS = 2;
+  const CHATGPT_PATH_PAGE_CANDIDATE_LIMIT = 20;
+  const CHATGPT_PATH_PAGE_PREFILTER_MESSAGE_LIMIT = 3;
+  const CHATGPT_PATH_PAGE_PREFILTER_PATH_LIMIT = 12;
   const CLAUDE_ATTACHMENT_FETCH_TIMEOUT_MS = 4000;
   const CLAUDE_ATTACHMENT_MAX_BYTES = 12 * 1024 * 1024;
   const CLAUDE_ATTACHMENT_CONCURRENCY = 4;
-  const THOUGHT_LINE_PATTERN = /^\s*(?:已\s*(?:思考|推理)|思考中|推理中|思考(?:了)?|推理(?:了)?|(?:Thought|Reasoned|Worked)\s+(?:for|about)|Thinking|Reasoning|Working)(?:\b|[\s:：,，。.·-]|$)[\s\S]{0,160}$/i;
   const THOUGHT_ATTR_PATTERN = /\b(?:reasoning|thought|thinking|chain[-_ ]?of[-_ ]?thought|model[-_ ]?thought|oai[-_ ]?reasoning)\b/i;
 
   async function mapLimit(array, limit, fn) {
@@ -342,28 +342,59 @@ function createMissingDependencyError(name) {
       : stripInlineMarkdownForPresentationMatch(text));
   }
 
-  function getConversationMessageMatchKey(message) {
-    var role = String(message && message.role || "").toLowerCase();
-    var text = normalizePresentationMatchText(stripInlineMarkdownForPresentationMatch(
-      getPresentationMessageText(message)
-    ));
-    return role && text ? role + "\n" + text : "";
+  function getConversationMessageMatchProfile(message, cache) {
+    const canCache = Boolean(cache && message && typeof message === "object");
+    if (canCache && cache.has(message)) return cache.get(message);
+
+    const role = String(message && message.role || "").toLowerCase();
+    const rawPresentationText = getPresentationMessageText(message);
+    const presentationText = normalizePresentationMatchText(rawPresentationText);
+    const strippedText = stripInlineMarkdownForPresentationMatch(rawPresentationText);
+    const normalizedText = normalizePresentationMatchText(strippedText);
+    const compactText = strippedText.replace(/\s+/g, "");
+    const profile = {
+      role,
+      presentationText,
+      presentationCompactLength: presentationText.replace(/\s+/g, "").length,
+      normalizedText,
+      compactText,
+      matchKey: role && normalizedText ? role + "\n" + normalizedText : "",
+      characterBagKey: undefined,
+      gramsBySize: new Map()
+    };
+    if (canCache) cache.set(message, profile);
+    return profile;
   }
 
-  function getConversationMessageCharacterBagKey(message) {
-    var role = String(message && message.role || "").toLowerCase();
-    var text = stripInlineMarkdownForPresentationMatch(getPresentationMessageText(message))
-      .replace(/\s+/g, "");
-    if (!role || !text || text.length > 20000) return "";
-    return role + "\n" + Array.from(text).sort().join("");
+  function getConversationMessageMatchKey(message, cache) {
+    return getConversationMessageMatchProfile(message, cache).matchKey;
   }
 
-  function getConversationMessageSimilarity(left, right) {
-    if (String(left && left.role || "").toLowerCase() !== String(right && right.role || "").toLowerCase()) {
-      return 0;
+  function getConversationMessageCharacterBagKey(message, cache) {
+    const profile = getConversationMessageMatchProfile(message, cache);
+    if (profile.characterBagKey !== undefined) return profile.characterBagKey;
+    profile.characterBagKey = !profile.role || !profile.compactText || profile.compactText.length > 20000
+      ? ""
+      : profile.role + "\n" + Array.from(profile.compactText).sort().join("");
+    return profile.characterBagKey;
+  }
+
+  function getConversationMessageGrams(profile, gramSize) {
+    if (profile.gramsBySize.has(gramSize)) return profile.gramsBySize.get(gramSize);
+    const result = new Set();
+    for (let index = 0; index <= profile.compactText.length - gramSize; index += 1) {
+      result.add(profile.compactText.slice(index, index + gramSize));
     }
-    const leftText = normalizePresentationMatchText(stripInlineMarkdownForPresentationMatch(getPresentationMessageText(left))).replace(/\s+/g, "");
-    const rightText = normalizePresentationMatchText(stripInlineMarkdownForPresentationMatch(getPresentationMessageText(right))).replace(/\s+/g, "");
+    profile.gramsBySize.set(gramSize, result);
+    return result;
+  }
+
+  function getConversationMessageSimilarity(left, right, cache) {
+    const leftProfile = getConversationMessageMatchProfile(left, cache);
+    const rightProfile = getConversationMessageMatchProfile(right, cache);
+    if (leftProfile.role !== rightProfile.role) return 0;
+    const leftText = leftProfile.compactText;
+    const rightText = rightProfile.compactText;
     if (!leftText || !rightText) return 0;
     if (leftText === rightText) return 1;
     const shorter = leftText.length <= rightText.length ? leftText : rightText;
@@ -374,18 +405,13 @@ function createMissingDependencyError(name) {
 
     const gramSize = Math.min(3, shorter.length);
     if (gramSize < 2) return 0;
-    function grams(value) {
-      const result = new Set();
-      for (let index = 0; index <= value.length - gramSize; index += 1) {
-        result.add(value.slice(index, index + gramSize));
-      }
-      return result;
-    }
-    const leftGrams = grams(leftText);
-    const rightGrams = grams(rightText);
+    const leftGrams = getConversationMessageGrams(leftProfile, gramSize);
+    const rightGrams = getConversationMessageGrams(rightProfile, gramSize);
+    const smallerGrams = leftGrams.size <= rightGrams.size ? leftGrams : rightGrams;
+    const largerGrams = leftGrams.size > rightGrams.size ? leftGrams : rightGrams;
     let intersection = 0;
-    leftGrams.forEach((value) => {
-      if (rightGrams.has(value)) intersection += 1;
+    smallerGrams.forEach((value) => {
+      if (largerGrams.has(value)) intersection += 1;
     });
     const union = leftGrams.size + rightGrams.size - intersection;
     return union ? intersection / union : 0;
@@ -397,10 +423,10 @@ function createMissingDependencyError(name) {
     });
   }
 
-  function getMonotonicConversationMatches(apiMessages, pageMessages) {
+  function getMonotonicConversationMatches(apiMessages, pageMessages, cache) {
     var apiIndexesByKey = new Map();
     apiMessages.forEach(function (message, index) {
-      var key = getConversationMessageMatchKey(message);
+      var key = getConversationMessageMatchKey(message, cache);
       if (!key) return;
       if (!apiIndexesByKey.has(key)) apiIndexesByKey.set(key, []);
       apiIndexesByKey.get(key).push(index);
@@ -409,7 +435,7 @@ function createMissingDependencyError(name) {
     var lastApiIndex = -1;
     var matches = [];
     pageMessages.forEach(function (message, pageIndex) {
-      var key = getConversationMessageMatchKey(message);
+      var key = getConversationMessageMatchKey(message, cache);
       var candidates = key ? apiIndexesByKey.get(key) || [] : [];
       var apiIndex = candidates.find(function (candidate) {
         return candidate > lastApiIndex;
@@ -1118,15 +1144,6 @@ function createMissingDependencyError(name) {
     return "";
   }
 
-  function stripThoughtText(value) {
-    return String(value || "")
-      .split("\n")
-      .filter((line) => !THOUGHT_LINE_PATTERN.test(line.trim()))
-      .join("\n")
-      .replace(/\n{4,}/g, "\n\n\n")
-      .trim();
-  }
-
   function isInternalTurnMarker(prefix, target) {
     prefix = String(prefix || "").toLowerCase();
     target = String(target || "").toLowerCase();
@@ -1165,7 +1182,24 @@ function createMissingDependencyError(name) {
   }
 
   function isThoughtContentValue(value) {
-    return isSharedThoughtLikeContentValue(value);
+    if (!value || typeof value !== "object" || Array.isArray(value)) {
+      return false;
+    }
+
+    const type = String(value.type || value.content_type || value.kind || value.name || value.role || "").trim();
+    if (/^(analysis|reasoning|thinking|thought|chain_of_thought|model_thought)$/i.test(type)) {
+      return true;
+    }
+
+    const label = [
+      value.title,
+      value.label,
+      value.summary,
+      value.status,
+      value.display_name
+    ].map((item) => String(item || "")).join(" ");
+
+    return THOUGHT_ATTR_PATTERN.test(label) || isThoughtStatusLine(label);
   }
 
   function stripInvisibleTextControls(value) {
@@ -1310,7 +1344,7 @@ function createMissingDependencyError(name) {
     while ((match = markerPattern.exec(source)) !== null) {
       const jsonStart = source.indexOf("{", markerPattern.lastIndex - 1);
       const parsed = parseJsonObjectAt(source, jsonStart);
-      if (!parsed || !isStructuredUiPayloadValue(parsed.value, 0, true)) {
+      if (!parsed) {
         continue;
       }
       output += source.slice(cursor, match.index).replace(/[ \t]+$/g, "");
@@ -1515,17 +1549,12 @@ function createMissingDependencyError(name) {
     // ChatGPT uses those links for user-facing generated files.
     if (/^\/mnt\/data\/[^\s)\]}]+$/i.test(trimmed)) return true;
     if (/\(\s*wxh\s*=/.test(trimmed)) return true;
-    if (/exact aspect ratio/.test(trimmed)) return true;
-    if (/visually inspect the generated image/.test(trimmed)) return true;
     if (/ghostwriter_images/.test(trimmed)) return true;
     if (/^\S+\.png\s*\(/.test(trimmed)) return true;
     // Filter DALL-E model captions / internal prompt text and watermark tokens
     if (/\<\|has_watermark\|\>/.test(trimmed)) return true;
     if (/\<\|no_watermark\|\>/.test(trimmed)) return true;
     if (/^Model caption\s*:/i.test(trimmed)) return true;
-    if (/close to aspect ratio/i.test(trimmed)) return true;
-    if (/^I'll create\b.*\bimage\b/i.test(trimmed) && trimmed.length < 200) return true;
-    if (/^I'll generate\b.*\bimage\b/i.test(trimmed) && trimmed.length < 200) return true;
     return false;
   }
 
@@ -2214,21 +2243,20 @@ function createMissingDependencyError(name) {
     }).filter(Boolean);
   }
 
-  function getChatGptPathPageScore(path, pageMessages, cache) {
-    const pathMessages = getChatGptPathExportMessages(path, cache);
-    const page = cloneExportMessages(pageMessages || []);
+  function getChatGptPathPageScore(path, page, nodeMessageCache, matchProfileCache) {
+    const pathMessages = getChatGptPathExportMessages(path, nodeMessageCache);
     if (!pathMessages.length || !page.length) {
       return { score: 0, matches: 0, strongMatches: 0 };
     }
 
-    const matches = getMonotonicConversationMatches(pathMessages, page);
+    const matches = getMonotonicConversationMatches(pathMessages, page, matchProfileCache);
     let score = matches.length * 100;
     let strongMatches = 0;
     matches.forEach((match) => {
-      const text = normalizePresentationMatchText(getPresentationMessageText(page[match.pageIndex]));
-      if (text.replace(/\s+/g, "").length >= 8) {
+      const profile = getConversationMessageMatchProfile(page[match.pageIndex], matchProfileCache);
+      if (profile.presentationCompactLength >= 8) {
         strongMatches += 1;
-        score += Math.min(240, text.length);
+        score += Math.min(240, profile.presentationText.length);
       }
       const pageDistanceFromTail = page.length - 1 - match.pageIndex;
       const pathDistanceFromTail = pathMessages.length - 1 - match.apiIndex;
@@ -2242,15 +2270,15 @@ function createMissingDependencyError(name) {
       let bestIndex = -1;
       let bestSimilarity = 0;
       for (let pathIndex = lastPathIndex + 1; pathIndex < pathMessages.length; pathIndex += 1) {
-        const similarity = getConversationMessageSimilarity(pathMessages[pathIndex], pageMessage);
+        const similarity = getConversationMessageSimilarity(pathMessages[pathIndex], pageMessage, matchProfileCache);
         if (similarity > bestSimilarity) {
           bestSimilarity = similarity;
           bestIndex = pathIndex;
         }
       }
       if (bestIndex < 0) return;
-      const pageTextLength = normalizePresentationMatchText(getPresentationMessageText(pageMessage)).replace(/\s+/g, "").length;
-      const pathTextLength = normalizePresentationMatchText(getPresentationMessageText(pathMessages[bestIndex])).replace(/\s+/g, "").length;
+      const pageTextLength = getConversationMessageMatchProfile(pageMessage, matchProfileCache).presentationCompactLength;
+      const pathTextLength = getConversationMessageMatchProfile(pathMessages[bestIndex], matchProfileCache).presentationCompactLength;
       const similarityThreshold = Math.min(pageTextLength, pathTextLength) >= 60 ? 0.55 : 0.72;
       if (bestSimilarity < similarityThreshold) return;
       lastPathIndex = bestIndex;
@@ -2263,6 +2291,38 @@ function createMissingDependencyError(name) {
       if (pageDistanceFromTail === 0 && pathDistanceFromTail === 0) score += 240;
     });
     return { score, matches: Math.max(matches.length, fuzzyMatches), strongMatches };
+  }
+
+  function getChatGptPathPagePrefilterScore(path, page, nodeMessageCache, matchProfileCache) {
+    const pathMessages = getChatGptPathExportMessages(path, nodeMessageCache);
+    if (!pathMessages.length || !page.length) return 0;
+
+    const exactMatches = getMonotonicConversationMatches(pathMessages, page, matchProfileCache);
+    const pageStart = Math.max(0, page.length - CHATGPT_PATH_PAGE_PREFILTER_MESSAGE_LIMIT);
+    const pathStart = Math.max(0, pathMessages.length - CHATGPT_PATH_PAGE_PREFILTER_PATH_LIMIT);
+    let recentSimilarity = 0;
+
+    for (let pageIndex = pageStart; pageIndex < page.length; pageIndex += 1) {
+      let bestSimilarity = 0;
+      for (let pathIndex = pathStart; pathIndex < pathMessages.length; pathIndex += 1) {
+        bestSimilarity = Math.max(
+          bestSimilarity,
+          getConversationMessageSimilarity(pathMessages[pathIndex], page[pageIndex], matchProfileCache)
+        );
+      }
+      recentSimilarity += bestSimilarity;
+    }
+
+    const terminalSimilarity = getConversationMessageSimilarity(
+      pathMessages[pathMessages.length - 1],
+      page[page.length - 1],
+      matchProfileCache
+    );
+    const recentExactMatches = exactMatches.filter((match) => match.pageIndex >= pageStart).length;
+    return exactMatches.length * 300 +
+      recentExactMatches * 360 +
+      Math.round(recentSimilarity * 220) +
+      Math.round(terminalSimilarity * 520);
   }
 
   function getChatGptConversationNodes(payload, pageMessages = []) {
@@ -2283,10 +2343,10 @@ function createMissingDependencyError(name) {
       let node = leaf;
       while (node && !seen.has(node)) {
         seen.add(node);
-        path.unshift(node);
+        path.push(node);
         node = resolveNode(node.parent);
       }
-      return path;
+      return path.reverse();
     }
 
     const parentNodes = new Set();
@@ -2300,24 +2360,53 @@ function createMissingDependencyError(name) {
 
     const currentNode = resolveNode(payload?.current_node);
     const currentPath = currentNode ? buildPath(currentNode) : [];
-    const exportCache = new WeakMap();
+    const currentPathTail = currentPath[currentPath.length - 1] || null;
+    const nodeMessageCache = new WeakMap();
+    const matchProfileCache = new WeakMap();
+    const leafDescriptors = leaves.map((leaf) => ({
+      leaf,
+      timestamp: getChatGptNodeTimestamp(leaf),
+      path: null,
+      prefilterScore: 0
+    }));
+    const getLeafPath = (descriptor) => {
+      if (!descriptor.path) descriptor.path = buildPath(descriptor.leaf);
+      return descriptor.path;
+    };
     let bestPagePath = [];
     let bestPageScore = { score: 0, matches: 0, strongMatches: 0 };
+    let bestPageTimestamp = 0;
 
     if (Array.isArray(pageMessages) && pageMessages.length) {
-      leaves.forEach((leaf) => {
-        const candidatePath = buildPath(leaf);
-        const candidateScore = getChatGptPathPageScore(candidatePath, pageMessages, exportCache);
+      const page = cloneExportMessages(pageMessages);
+      const currentScore = currentPath.length && page.length
+        ? getChatGptPathPageScore(currentPath, page, nodeMessageCache, matchProfileCache)
+        : { score: 0, matches: 0, strongMatches: 0 };
+      const candidates = leafDescriptors
+        .filter((descriptor) => descriptor.leaf !== currentPathTail)
+        .map((descriptor) => {
+          descriptor.prefilterScore = getChatGptPathPagePrefilterScore(
+            getLeafPath(descriptor),
+            page,
+            nodeMessageCache,
+            matchProfileCache
+          );
+          return descriptor;
+        })
+        .sort((left, right) => right.prefilterScore - left.prefilterScore || right.timestamp - left.timestamp)
+        .slice(0, CHATGPT_PATH_PAGE_CANDIDATE_LIMIT);
+
+      candidates.forEach((descriptor) => {
+        const candidatePath = getLeafPath(descriptor);
+        const candidateScore = getChatGptPathPageScore(candidatePath, page, nodeMessageCache, matchProfileCache);
         if (candidateScore.score > bestPageScore.score ||
-            (candidateScore.score === bestPageScore.score && getChatGptNodeTimestamp(leaf) > getChatGptNodeTimestamp(bestPagePath[bestPagePath.length - 1]))) {
+            (candidateScore.score === bestPageScore.score && descriptor.timestamp > bestPageTimestamp)) {
           bestPagePath = candidatePath;
           bestPageScore = candidateScore;
+          bestPageTimestamp = descriptor.timestamp;
         }
       });
 
-      const currentScore = currentPath.length
-        ? getChatGptPathPageScore(currentPath, pageMessages, exportCache)
-        : { score: 0, matches: 0, strongMatches: 0 };
       const hasReliablePageMatch = bestPageScore.strongMatches > 0 || bestPageScore.matches >= 2;
       if (hasReliablePageMatch && bestPageScore.score > currentScore.score) {
         return bestPagePath;
@@ -2329,8 +2418,10 @@ function createMissingDependencyError(name) {
       return bestPagePath;
     }
 
-    const latestLeaf = leaves.slice().sort((left, right) => getChatGptNodeTimestamp(right) - getChatGptNodeTimestamp(left))[0];
-    return latestLeaf ? buildPath(latestLeaf) : [];
+    const latestLeaf = leafDescriptors.reduce((latest, descriptor) => (
+      !latest || descriptor.timestamp > latest.timestamp ? descriptor : latest
+    ), null);
+    return latestLeaf ? getLeafPath(latestLeaf) : [];
   }
 
   function appendTextExportBlocks(blocks, text, options = {}) {
@@ -2618,7 +2709,9 @@ function createMissingDependencyError(name) {
     system_message: { handler: "skip" },
     analysis: { handler: "skip" },
     reasoning: { handler: "skip" },
+    reasoning_recap: { handler: "skip" },
     thought: { handler: "skip" },
+    thoughts: { handler: "skip" },
     thinking: { handler: "skip" },
     widget: { handler: "skip" },
     component: { handler: "skip" },
@@ -2842,36 +2935,96 @@ function createMissingDependencyError(name) {
     };
   }
 
-  function withPlatformTimeout(promise, timeoutMs, timeoutMessage) {
-    if (!Number.isFinite(Number(timeoutMs)) || Number(timeoutMs) <= 0) {
+  function createPlatformAbortError(platformLabel) {
+    var error = new Error(`${platformLabel || "Platform"} conversation request was cancelled.`);
+    error.name = "AbortError";
+    return error;
+  }
+
+  function throwIfPlatformAborted(signal, platformLabel) {
+    if (signal && signal.aborted) {
+      throw createPlatformAbortError(platformLabel);
+    }
+  }
+
+  function withPlatformTimeout(promise, timeoutMs, timeoutMessage, options = {}) {
+    const signal = options && options.signal;
+    if ((!Number.isFinite(Number(timeoutMs)) || Number(timeoutMs) <= 0) && !signal) {
       return promise;
     }
 
     return new Promise((resolve, reject) => {
       let settled = false;
       const timerApi = getPlatformTimerApi();
-      const timeoutId = timerApi.set(() => {
+      let timeoutId = null;
+      let abortListener = null;
+
+      function cleanup() {
+        if (timeoutId !== null) timerApi.clear(timeoutId);
+        if (abortListener && signal) signal.removeEventListener("abort", abortListener);
+      }
+
+      function rejectOnce(error, reason) {
         if (settled) return;
         settled = true;
-        reject(new Error(timeoutMessage));
-      }, Number(timeoutMs));
+        try { options.onInterrupt?.(reason); } catch (interruptError) {}
+        cleanup();
+        reject(error);
+      }
 
+      if (Number.isFinite(Number(timeoutMs)) && Number(timeoutMs) > 0) {
+        timeoutId = timerApi.set(() => {
+          rejectOnce(new Error(timeoutMessage), "timeout");
+        }, Number(timeoutMs));
+      }
+
+      // Always observe the underlying operation, including when the caller's
+      // signal was already aborted before this wrapper was created.
       promise.then((value) => {
         if (settled) return;
         settled = true;
-        timerApi.clear(timeoutId);
+        cleanup();
         resolve(value);
       }).catch((error) => {
         if (settled) return;
         settled = true;
-        timerApi.clear(timeoutId);
+        cleanup();
         reject(error);
       });
+
+      if (signal) {
+        abortListener = () => rejectOnce(createPlatformAbortError(options.platformLabel), "abort");
+        if (signal.aborted) {
+          abortListener();
+          return;
+        }
+        signal.addEventListener("abort", abortListener, { once: true });
+      }
     });
   }
 
-  async function readPlatformResponseBody(response, bodyType, platformLabel, timeoutMs = PLATFORM_EXPORT_REQUEST_TIMEOUT_MS, maxBytes = PLATFORM_EXPORT_RESPONSE_MAX_BYTES) {
+  function waitForPlatformDelay(delayMs, signal, platformLabel) {
+    var delayId = null;
+    var delayPromise = new Promise(function (resolve) {
+      delayId = setTimeout(resolve, Math.max(0, Number(delayMs) || 0));
+    });
+    return withPlatformTimeout(
+      delayPromise,
+      0,
+      "",
+      {
+        signal,
+        platformLabel,
+        onInterrupt: function () {
+          if (delayId !== null) clearTimeout(delayId);
+        }
+      }
+    );
+  }
+
+  async function readPlatformResponseBody(response, bodyType, platformLabel, timeoutMs = PLATFORM_EXPORT_REQUEST_TIMEOUT_MS, maxBytes = PLATFORM_EXPORT_RESPONSE_MAX_BYTES, signal = null) {
     const label = platformLabel || "Platform";
+    throwIfPlatformAborted(signal, label);
     const normalizedMaxBytes = Number.isFinite(Number(maxBytes)) && Number(maxBytes) > 0
       ? Math.floor(Number(maxBytes))
       : PLATFORM_EXPORT_RESPONSE_MAX_BYTES;
@@ -2885,14 +3038,37 @@ function createMissingDependencyError(name) {
       const streamReader = response.body.getReader();
       const chunks = [];
       let total = 0;
+      const deadline = Number.isFinite(Number(timeoutMs)) && Number(timeoutMs) > 0
+        ? Date.now() + Number(timeoutMs)
+        : 0;
+      let readerCancelled = false;
+      function cancelReader() {
+        if (readerCancelled) return;
+        readerCancelled = true;
+        try {
+          var cancellation = streamReader.cancel();
+          if (cancellation && typeof cancellation.catch === "function") cancellation.catch(function () {});
+        } catch (error) {}
+      }
       try {
         while (true) {
-          const next = await streamReader.read();
+          throwIfPlatformAborted(signal, label);
+          const remainingMs = deadline ? Math.max(0, deadline - Date.now()) : 0;
+          if (deadline && remainingMs <= 0) {
+            cancelReader();
+            throw new Error(`${label} response timed out. Refresh ${label} and try again.`);
+          }
+          const next = await withPlatformTimeout(
+            streamReader.read(),
+            remainingMs,
+            `${label} response timed out. Refresh ${label} and try again.`,
+            { signal, platformLabel: label, onInterrupt: cancelReader }
+          );
           if (next.done) break;
           const chunk = next.value instanceof Uint8Array ? next.value : new Uint8Array(next.value || 0);
           total += chunk.byteLength;
           if (total > normalizedMaxBytes) {
-            try { await streamReader.cancel(); } catch (error) {}
+            cancelReader();
             throw new Error(`${label} returned too much data to export safely. Try exporting a shorter conversation.`);
           }
           chunks.push(chunk);
@@ -2910,7 +3086,8 @@ function createMissingDependencyError(name) {
       const fallback = await withPlatformTimeout(
         response.arrayBuffer(),
         timeoutMs,
-        `${label} response timed out. Refresh ${label} and try again.`
+        `${label} response timed out. Refresh ${label} and try again.`,
+        { signal, platformLabel: label }
       );
       if (fallback.byteLength > normalizedMaxBytes) {
         throw new Error(`${label} returned too much data to export safely. Try exporting a shorter conversation.`);
@@ -2965,7 +3142,7 @@ function createMissingDependencyError(name) {
         return { response, body: null };
       }
 
-      const body = await readPlatformResponseBody(response, responseType, platformLabel, timeoutMs, maxResponseBytes);
+      const body = await readPlatformResponseBody(response, responseType, platformLabel, timeoutMs, maxResponseBytes, controller?.signal || options.signal || null);
       return { response, body };
     } catch (error) {
       if (!timedOut && options.signal && options.signal.aborted) {
@@ -3003,12 +3180,13 @@ function createMissingDependencyError(name) {
     return active?.uuid || active?.id || active?.organization_uuid || active?.organizationId || "";
   }
 
-  async function getClaudeOrganizationIdForExport() {
+  async function getClaudeOrganizationIdForExport(options = {}) {
     const { response, body } = await fetchPlatformConversationPayload(`${window.location.origin}/api/organizations`, {
       credentials: "include",
       headers: {
         Accept: "application/json"
-      }
+      },
+      signal: options.signal
     }, "Claude", "json");
 
     if (!response.ok) {
@@ -3166,7 +3344,7 @@ function createMissingDependencyError(name) {
     return Number.isFinite(size) && size > 0 ? size : 0;
   }
 
-  async function readClaudeImageResponse(response, label = "Claude attachment") {
+  async function readClaudeImageResponse(response, label = "Claude attachment", options = {}) {
     const contentType = String(response && response.headers && response.headers.get("content-type") || "");
     if (!isClaudeImageContentType(contentType)) {
       return null;
@@ -3177,7 +3355,7 @@ function createMissingDependencyError(name) {
       return null;
     }
 
-    const blob = await readPlatformResponseBody(response, "blob", label, CLAUDE_ATTACHMENT_FETCH_TIMEOUT_MS, CLAUDE_ATTACHMENT_MAX_BYTES);
+    const blob = await readPlatformResponseBody(response, "blob", label, CLAUDE_ATTACHMENT_FETCH_TIMEOUT_MS, CLAUDE_ATTACHMENT_MAX_BYTES, options.signal);
     const blobSize = Number(blob && blob.size || 0);
     if (blobSize <= 100 || blobSize > CLAUDE_ATTACHMENT_MAX_BYTES) {
       return null;
@@ -3186,21 +3364,23 @@ function createMissingDependencyError(name) {
     const buffer = await withPlatformTimeout(
       blob.arrayBuffer(),
       CLAUDE_ATTACHMENT_FETCH_TIMEOUT_MS,
-      label + " response timed out. Refresh Claude and try again."
+      label + " response timed out. Refresh Claude and try again.",
+      { signal: options.signal, platformLabel: label }
     );
     return { buffer, mimeType: contentType.indexOf("image/") !== -1 ? contentType : "image/png" };
   }
 
-  async function fetchClaudeImageResource(url, label = "Claude attachment") {
+  async function fetchClaudeImageResource(url, label = "Claude attachment", options = {}) {
     const result = await fetchPlatformConversationPayload(url, {
       credentials: "include",
       headers: { Accept: "image/*,*/*" },
+      signal: options.signal,
       timeoutMs: CLAUDE_ATTACHMENT_FETCH_TIMEOUT_MS
     }, label, "none");
     if (!result.response.ok) {
       return null;
     }
-    return readClaudeImageResponse(result.response, label);
+    return readClaudeImageResponse(result.response, label, options);
   }
 
   function claudeMessageToExportBlocks(message, organizationId = "", rawConversationId = "") {
@@ -3219,6 +3399,9 @@ function createMissingDependencyError(name) {
 
     if (Array.isArray(content)) {
       content.forEach((item) => {
+        if (!item) return;
+        if (item.type === "thinking") return;
+        if (item.metadata && (item.metadata.is_thinking || item.metadata.is_thinking_preamble_message)) return;
         const contentImages = extractImagesFromClaudeMessage({ content: [item] }, organizationId, rawConversationId);
         if (contentImages.length) {
           appendClaudeImageBlocks(blocks, contentImages, seenImages);
@@ -3256,7 +3439,7 @@ function createMissingDependencyError(name) {
     return orderedBlocks;
   }
 
-  async function tryFetchClaudeAttachment(organizationId, conversationId, attachmentId) {
+  async function tryFetchClaudeAttachment(organizationId, conversationId, attachmentId, options = {}) {
     const origin = window.location.origin;
     const orgEnc = encodeURIComponent(organizationId);
     const convEnc = encodeURIComponent(conversationId);
@@ -3278,6 +3461,7 @@ function createMissingDependencyError(name) {
         const result = await fetchPlatformConversationPayload(url, {
           credentials: "include",
           headers: { Accept: "image/*,*/*" },
+          signal: options.signal,
           timeoutMs: CLAUDE_ATTACHMENT_FETCH_TIMEOUT_MS
         }, "Claude attachment", "none");
         const response = result.response;
@@ -3287,29 +3471,31 @@ function createMissingDependencyError(name) {
         const contentType = response.headers.get("content-type") || "";
         // If the response is JSON, it might be metadata rather than the image itself
         if (contentType.indexOf("application/json") !== -1) {
-          const json = await readPlatformResponseBody(response, "json", "Claude attachment", CLAUDE_ATTACHMENT_FETCH_TIMEOUT_MS);
+          const json = await readPlatformResponseBody(response, "json", "Claude attachment", CLAUDE_ATTACHMENT_FETCH_TIMEOUT_MS, PLATFORM_EXPORT_RESPONSE_MAX_BYTES, options.signal);
           // Check if JSON contains a URL to the actual image
           const imageUrl = json.url || json.download_url || json.presigned_url || json.content_url || "";
           if (imageUrl) {
-            const imageResult = await fetchClaudeImageResource(imageUrl, "Claude attachment image");
+            const imageResult = await fetchClaudeImageResource(imageUrl, "Claude attachment image", options);
             if (imageResult) return imageResult;
           }
           continue;
         }
         // Response is binary image data
-        const binaryResult = await readClaudeImageResponse(response, "Claude attachment");
+        const binaryResult = await readClaudeImageResponse(response, "Claude attachment", options);
         if (binaryResult) return binaryResult;
       } catch (err) {
+        if (err?.name === "AbortError" || options.signal?.aborted) throw err;
       }
     }
     return null;
   }
 
-  async function fetchDirectImageUrl(url) {
+  async function fetchDirectImageUrl(url, options = {}) {
     try {
       const result = await fetchPlatformConversationPayload(url, {
         credentials: "include",
         headers: { Accept: "image/*,*/*" },
+        signal: options.signal,
         timeoutMs: CLAUDE_ATTACHMENT_FETCH_TIMEOUT_MS
       }, "Claude attachment", "none");
       const response = result.response;
@@ -3318,15 +3504,16 @@ function createMissingDependencyError(name) {
       }
       const contentType = response.headers.get("content-type") || "";
       if (contentType.indexOf("application/json") !== -1) {
-        const json = await readPlatformResponseBody(response, "json", "Claude attachment", CLAUDE_ATTACHMENT_FETCH_TIMEOUT_MS);
+        const json = await readPlatformResponseBody(response, "json", "Claude attachment", CLAUDE_ATTACHMENT_FETCH_TIMEOUT_MS, PLATFORM_EXPORT_RESPONSE_MAX_BYTES, options.signal);
         const imageUrl = json.url || json.download_url || json.presigned_url || json.content_url || "";
         if (imageUrl) {
-          return fetchClaudeImageResource(imageUrl, "Claude attachment image");
+          return fetchClaudeImageResource(imageUrl, "Claude attachment image", options);
         }
         return null;
       }
-      return readClaudeImageResponse(response, "Claude attachment");
+      return readClaudeImageResponse(response, "Claude attachment", options);
     } catch (err) {
+      if (err?.name === "AbortError" || options.signal?.aborted) throw err;
     }
     return null;
   }
@@ -3345,7 +3532,7 @@ function createMissingDependencyError(name) {
     return btoa(binary);
   }
 
-  async function resolveClaudeImageBlocks(messages) {
+  async function resolveClaudeImageBlocks(messages, options = {}) {
     const downloadJobs = [];
 
     function pushClaudeImageJob(block, loader) {
@@ -3372,14 +3559,14 @@ function createMissingDependencyError(name) {
           const convId = parts[1] || "";
           const attId = parts[2] || "";
           pushClaudeImageJob(block, function () {
-            return tryFetchClaudeAttachment(orgId, convId, attId);
+            return tryFetchClaudeAttachment(orgId, convId, attId, options);
           });
         }
         // 2. Check direct /api/ images URLs
         else if (block.src && block.src.includes("/api/") && block.src.startsWith("http")) {
           const src = block.src;
           pushClaudeImageJob(block, function () {
-            return fetchDirectImageUrl(src);
+            return fetchDirectImageUrl(src, options);
           });
         }
         // 3. Fallback when there's an api path but is relative or needs parameters resolved
@@ -3389,7 +3576,7 @@ function createMissingDependencyError(name) {
           const convId = block._claudeConvId;
           if (orgId && convId && attId) {
             pushClaudeImageJob(block, function () {
-              return tryFetchClaudeAttachment(orgId, convId, attId);
+              return tryFetchClaudeAttachment(orgId, convId, attId, options);
             });
           }
         }
@@ -3398,6 +3585,7 @@ function createMissingDependencyError(name) {
 
     if (downloadJobs.length > 0) {
       await mapLimit(downloadJobs, CLAUDE_ATTACHMENT_CONCURRENCY, function (job) {
+        throwIfPlatformAborted(options.signal, "Claude");
         return job();
       });
     }
@@ -3413,37 +3601,15 @@ function createMissingDependencyError(name) {
     });
   }
 
-  function isClaudeMessageHiddenFromConversation(message) {
-    if (hasSharedInternalVisibilityMarker(message)) return true;
-    // If the message content is an array and ALL non-image items are
-    // thought-like, treat the entire message as hidden thinking.
-    const content = message?.content;
-    if (Array.isArray(content) && content.length > 0) {
-      let hasThought = false;
-      let hasNonThought = false;
-      content.forEach((item) => {
-        if (item && typeof item === "object") {
-          if (isSharedThoughtLikeContentValue(item)) {
-            hasThought = true;
-          } else if (item.type === "image" || item.type === "image_url" || item.images) {
-            // images don't count
-          } else if (item.text || item.content || item.value || item.markdown) {
-            hasNonThought = true;
-          }
-        }
-      });
-      if (hasThought && !hasNonThought) return true;
-    }
-    return false;
-  }
-
   function parseClaudeConversationPayload(payload, organizationId = "", rawConversationId = "") {
     const rawMessages = getClaudeMessagesFromPayload(payload);
     const messages = rawMessages
+      .filter((message) => {
+        if (!message) return false;
+        if (message.metadata && (message.metadata.is_thinking_preamble_message || message.metadata.is_visually_hidden)) return false;
+        return true;
+      })
       .map((message) => {
-        if (isClaudeMessageHiddenFromConversation(message)) {
-          return null;
-        }
         const role = message?.sender || message?.role || message?.author || message?.type;
         const normalizedRole = normalizeExportRole(role);
         const contentBlocks = orderUserImageBlocksFirst(normalizedRole, claudeMessageToExportBlocks(message, organizationId, rawConversationId));
@@ -4259,6 +4425,17 @@ function createMissingDependencyError(name) {
             throw authError;
           }
 
+          if (response.status === 404) {
+            // ChatGPT no longer exposes every conversation through the
+            // legacy JSON endpoint. Keep this status distinguishable so the
+            // content orchestrator can use an authoritative page-navigation
+            // fallback instead of reporting a generic completeness failure.
+            var notFoundError = new Error("ChatGPT conversation endpoint is unavailable for this chat (404).");
+            notFoundError.code = "CHATGPT_CONVERSATION_NOT_FOUND";
+            notFoundError.status = 404;
+            throw notFoundError;
+          }
+
           lastError = new Error("ChatGPT conversation request failed: " + response.status);
           if (!isRetryableChatGptConversationStatus(response.status) || attempt >= CHATGPT_CONVERSATION_FETCH_ATTEMPTS - 1) {
             throw lastError;
@@ -4380,48 +4557,70 @@ function createMissingDependencyError(name) {
         return "";
       }
 
-      function getFileDownloadUrl(fileId) {
-        if (!fileUrlPromises.has(fileId)) {
-          fileUrlPromises.set(fileId, (async function () {
-            try {
-              var fileEndpoint = window.location.origin + "/backend-api/files/" + encodeURIComponent(fileId) + "/download";
-              var fileResult = await fetchPlatformConversationPayload(fileEndpoint, {
-                credentials: "include",
-                timeoutMs: 4000,
-                headers: getChatGptRequestHeaders(chatGptSession)
-              }, "ChatGPT file", "none");
-              var fileResp = fileResult.response;
-              if (!fileResp.ok) {
-                return "";
-              }
-              var contentType = String(fileResp.headers.get("content-type") || "").toLowerCase();
-              if (contentType.indexOf("application/json") !== -1 || contentType.indexOf("+json") !== -1) {
-                var fileData = await readPlatformResponseBody(fileResp, "json", "ChatGPT file", 4000);
-                return normalizeChatGptDownloadUrl(getChatGptDownloadUrlFromPayload(fileData));
-              }
-              if (fileResp.redirected && fileResp.url) {
-                return fileResp.url;
-              }
-              if (contentType.indexOf("image/") !== -1 || contentType.indexOf("application/octet-stream") !== -1 || contentType.indexOf("text/markdown") !== -1) {
-                return fileResp.url || fileEndpoint;
-              }
-              if (contentType.indexOf("text/") !== -1) {
-                var text = await readPlatformResponseBody(fileResp, "text", "ChatGPT file", 4000);
-                return normalizeChatGptDownloadUrl(getChatGptDownloadUrlFromPayload(text));
-              }
-              try {
-                var jsonData = await readPlatformResponseBody(fileResp.clone(), "json", "ChatGPT file", 4000);
-                return normalizeChatGptDownloadUrl(getChatGptDownloadUrlFromPayload(jsonData));
-              } catch (jsonErr) {
-                var fallbackBlob = await readPlatformResponseBody(fileResp, "blob", "ChatGPT file", 4000);
-                return fallbackBlob.size ? trackObjectUrl(URL.createObjectURL(fallbackBlob)) : "";
-              }
-            } catch (err) {
-              return "";
+      async function getChatGptAssetUrlFromEndpoint(endpoint) {
+        try {
+          var fileResult = await fetchPlatformConversationPayload(endpoint, {
+            credentials: "include",
+            timeoutMs: 4000,
+            headers: getChatGptRequestHeaders(chatGptSession)
+          }, "ChatGPT file", "none");
+          var fileResp = fileResult.response;
+          if (!fileResp.ok) {
+            return "";
+          }
+          var contentType = String(fileResp.headers.get("content-type") || "").toLowerCase();
+          if (contentType.indexOf("application/json") !== -1 || contentType.indexOf("+json") !== -1) {
+            var fileData = await readPlatformResponseBody(fileResp, "json", "ChatGPT file", 4000);
+            return normalizeChatGptDownloadUrl(getChatGptDownloadUrlFromPayload(fileData));
+          }
+          if (fileResp.redirected && fileResp.url) {
+            return fileResp.url;
+          }
+          if (contentType.indexOf("image/") !== -1 || contentType.indexOf("application/octet-stream") !== -1 || contentType.indexOf("text/markdown") !== -1) {
+            return fileResp.url || endpoint;
+          }
+          if (contentType.indexOf("text/") !== -1) {
+            var text = await readPlatformResponseBody(fileResp, "text", "ChatGPT file", 4000);
+            return normalizeChatGptDownloadUrl(getChatGptDownloadUrlFromPayload(text));
+          }
+          try {
+            var jsonData = await readPlatformResponseBody(fileResp.clone(), "json", "ChatGPT file", 4000);
+            return normalizeChatGptDownloadUrl(getChatGptDownloadUrlFromPayload(jsonData));
+          } catch (jsonErr) {
+            var fallbackBlob = await readPlatformResponseBody(fileResp, "blob", "ChatGPT file", 4000);
+            return fallbackBlob.size ? trackObjectUrl(URL.createObjectURL(fallbackBlob)) : "";
+          }
+        } catch (err) {
+          return "";
+        }
+      }
+
+      function getFileDownloadUrl(fileId, options = {}) {
+        var assetKind = options.assetKind === "image" ? "image" : "file";
+        var sourceKind = String(options.sourceKind || "").toLowerCase();
+        var cacheKey = assetKind + ":" + sourceKind + ":" + fileId;
+        if (!fileUrlPromises.has(cacheKey)) {
+          fileUrlPromises.set(cacheKey, (async function () {
+            var encodedFileId = encodeURIComponent(fileId);
+            var fileEndpoint = window.location.origin + "/backend-api/files/" + encodedFileId + "/download";
+            var estuaryEndpoint = window.location.origin + "/backend-api/estuary/content?id=" + encodedFileId;
+            // image_asset_pointer is ChatGPT's generated-image representation.
+            // Generated images live in Estuary, while uploaded images and
+            // generated documents continue to use the files download route.
+            var endpoints = assetKind === "image" && sourceKind === "generated"
+              ? [estuaryEndpoint, fileEndpoint]
+              : assetKind === "image"
+                ? [fileEndpoint, estuaryEndpoint]
+                : [fileEndpoint];
+
+            for (var endpoint of endpoints) {
+              var resolvedUrl = await getChatGptAssetUrlFromEndpoint(endpoint);
+              if (resolvedUrl) return resolvedUrl;
             }
+            return "";
           })());
         }
-        return fileUrlPromises.get(fileId);
+        return fileUrlPromises.get(cacheKey);
       }
 
       // 收集本次 fetch 的完整性诊断：未知 content_type / 空消息 / 角色缺失等。
@@ -4429,6 +4628,7 @@ function createMissingDependencyError(name) {
       var fetchDiagnostics = {
         hasUnknownContent: false,
         unknownTypes: [],
+        unknownRoles: [],
         unknownOnlyMessageCount: 0,
         messageCount: 0,
         emptyContentBlockCount: 0,
@@ -4452,6 +4652,9 @@ function createMissingDependencyError(name) {
         var unknownCanAffectExport = Boolean(declaredConversationRole || role);
         if (partDiagnostics.hasUnknownContent && unknownCanAffectExport) {
           fetchDiagnostics.hasUnknownContent = true;
+          if (declaredConversationRole && fetchDiagnostics.unknownRoles.indexOf(declaredConversationRole) === -1) {
+            fetchDiagnostics.unknownRoles.push(declaredConversationRole);
+          }
           (partDiagnostics.unknownTypes || []).forEach(function (typeLabel) {
             if (fetchDiagnostics.unknownTypes.indexOf(typeLabel) === -1) {
               fetchDiagnostics.unknownTypes.push(typeLabel);
@@ -4533,7 +4736,13 @@ function createMissingDependencyError(name) {
         await mapLimit(fileEntries, 6, async function (entry) {
           var fileId = entry[0];
           var blockEntries = entry[1];
-          var downloadUrl = consumePageImageSourceByFileId(fileId) || await getFileDownloadUrl(fileId);
+          var sourceKind = blockEntries.find(function (blockEntry) {
+            return blockEntry && blockEntry.block && blockEntry.block.sourceKind;
+          })?.block?.sourceKind || "";
+          var downloadUrl = consumePageImageSourceByFileId(fileId) || await getFileDownloadUrl(fileId, {
+            assetKind: "image",
+            sourceKind: sourceKind
+          });
           if (!downloadUrl && blockEntries.length) {
             downloadUrl = consumePageImageSourceForBlock(blockEntries[0].block, blockEntries[0].role);
           }
@@ -4583,9 +4792,11 @@ function createMissingDependencyError(name) {
       return finalMessages;
     }
 
-    async function fetchClaudeConversationMessages(chat) {
+    async function fetchClaudeConversationMessages(chat, options = {}) {
+      var opts = options || {};
+      throwIfPlatformAborted(opts.signal, "Claude");
       requireFn(deps, "ensureCanReadChatBody")(chat);
-      var organizationId = await getClaudeOrganizationIdForExport();
+      var organizationId = await getClaudeOrganizationIdForExport(opts);
       var rawConversationId = requireFn(deps, "getChatConversationId")(chat);
 
       if (!rawConversationId) {
@@ -4605,7 +4816,8 @@ function createMissingDependencyError(name) {
             credentials: "include",
             headers: {
               Accept: "application/json"
-            }
+            },
+            signal: opts.signal
           }, "Claude", "json");
 
           if (!result.response.ok) {
@@ -4615,10 +4827,11 @@ function createMissingDependencyError(name) {
 
           var messages = parseClaudeConversationPayload(result.body, organizationId, rawConversationId);
           if (messages.length) {
-            await resolveClaudeImageBlocks(messages);
+            await resolveClaudeImageBlocks(messages, opts);
             return messages;
           }
         } catch (error) {
+          if (error?.name === "AbortError" || opts.signal?.aborted) throw error;
           lastError = error;
         }
       }
@@ -4626,7 +4839,9 @@ function createMissingDependencyError(name) {
       throw lastError || new Error("Claude conversation body could not be loaded.");
     }
 
-    async function fetchGeminiConversationMessages(chat) {
+    async function fetchGeminiConversationMessages(chat, options = {}) {
+      var opts = options || {};
+      throwIfPlatformAborted(opts.signal, "Gemini");
       requireFn(deps, "ensureCanReadChatBody")(chat);
       var rawConversationId = requireFn(deps, "getChatConversationId")(chat);
 
@@ -4643,7 +4858,7 @@ function createMissingDependencyError(name) {
           break;
         }
         if (attempt < maxRetries) {
-          await new Promise(function (resolve) { setTimeout(resolve, retryDelayMs); });
+          await waitForPlatformDelay(retryDelayMs, opts.signal, "Gemini");
         }
       }
 
@@ -4673,6 +4888,7 @@ function createMissingDependencyError(name) {
           "X-Same-Domain": "1"
         },
         method: "POST",
+        signal: opts.signal,
         maxResponseBytes: GEMINI_BATCH_RESPONSE_MAX_CHARS
       }, "Gemini", "text");
 
@@ -4764,6 +4980,48 @@ function createMissingDependencyError(name) {
       };
     }
 
+    function canUseValidatedChatGptPageSnapshot(messages, pageMessages) {
+      if (!Array.isArray(messages) || !Array.isArray(pageMessages) || !pageMessages.length) {
+        return false;
+      }
+
+      var diagnostics = null;
+      try {
+        diagnostics = messages._chatVaultFetchDiagnostics;
+      } catch (error) {}
+      if (!diagnostics || diagnostics.hasUnknownContent !== true) {
+        return false;
+      }
+
+      // messageCount excludes turns made entirely from an unknown content
+      // type. Add those turns back before deciding that the DOM represents
+      // the same complete conversation path.
+      var expectedMessageCount = Math.max(
+        messages.length,
+        Math.max(0, Number(diagnostics.messageCount) || 0) +
+          Math.max(0, Number(diagnostics.unknownOnlyMessageCount) || 0)
+      );
+      if (pageMessages.length < expectedMessageCount) {
+        return false;
+      }
+
+      var expectedRoles = [];
+      if (diagnostics.hasUserRole) expectedRoles.push("user");
+      if (diagnostics.hasAssistantRole) expectedRoles.push("assistant");
+      (Array.isArray(diagnostics.unknownRoles) ? diagnostics.unknownRoles : []).forEach(function (role) {
+        role = String(role || "").toLowerCase();
+        if ((role === "user" || role === "assistant") && expectedRoles.indexOf(role) === -1) {
+          expectedRoles.push(role);
+        }
+      });
+
+      return expectedRoles.length > 0 && expectedRoles.every(function (role) {
+        return pageMessages.some(function (message) {
+          return String(message && message.role || "").toLowerCase() === role;
+        });
+      });
+    }
+
     return {
       fetchChatGptConversationMessages: fetchChatGptConversationMessages,
       fetchClaudeConversationMessages: fetchClaudeConversationMessages,
@@ -4776,11 +5034,13 @@ function createMissingDependencyError(name) {
       parseGeminiBatchExecutePayloads: parseGeminiBatchExecutePayloads,
       parseGeminiConversationPayloads: parseGeminiConversationPayloads,
       detectApiCompletenessRisk: detectApiCompletenessRisk,
+      canUseValidatedChatGptPageSnapshot: canUseValidatedChatGptPageSnapshot,
       revokePlatformObjectUrls: revokePlatformObjectUrls,
       _test: {
         chatGptMessageToExportBlocks: chatGptMessageToExportBlocks,
         classifyChatGptContentPart: classifyChatGptContentPart,
         plainTextToExportBlocks: plainTextToExportBlocks,
+        readPlatformResponseBody: readPlatformResponseBody,
         CHATGPT_KNOWN_CONTENT_TYPES: CHATGPT_KNOWN_CONTENT_TYPES
       }
     };

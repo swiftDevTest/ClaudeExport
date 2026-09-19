@@ -1565,6 +1565,12 @@
   "content_export_fail_unknown_reason": {
     "message": "내보내기 중 예기치 않은 오류가 발생했습니다."
   },
+  "content_export_fail_completeness_reason": {
+    "message": "전체 대화를 확인할 수 없습니다."
+  },
+  "content_export_fail_completeness_fix": {
+    "message": "AI 대화 페이지를 새로고침한 후 다시 시도하세요."
+  },
   "content_export_fail_unknown_fix": {
     "message": "페이지를 새로고침하고 다시 시도하세요. 문제가 지속되면 다른 형식을 시도해 보세요."
   },
@@ -1921,5 +1927,1253 @@
   },
   "content_retry": {
     "message": "다시 시도"
+  },
+  "billing_benefit_premium_styles": {
+    "message": "프리미엄 보고서 스타일(Oxford, McKinsey)"
+  },
+  "billing_benefit_shared": {
+    "message": "Claude Export AI와 Pro VIP 상태를 공유함"
+  },
+  "billing_benefit_unlimited": {
+    "message": "일일 채팅 무제한 내보내기"
+  },
+  "billing_benefit_watermark": {
+    "message": "Claude Export 워터마크 숨기기"
+  },
+  "billing_billed_yearly": {
+    "message": "연간 $$29.99 결제"
+  },
+  "content_all_conversations_loaded": {
+    "message": "모든 대화가 로드되었습니다."
+  },
+  "content_background_loading": {
+    "message": "백그라운드에서 더 많은 대화를 로드하는 중..."
+  },
+  "content_background_syncing": {
+    "message": "백그라운드에서 대화 기록을 업데이트하는 중..."
+  },
+  "content_batch_action_type": {
+    "message": "일괄 작업 유형"
+  },
+  "content_batch_already_running": {
+    "message": "일괄 동기화가 이미 실행 중입니다. 완료될 때까지 기다리거나 취소하세요."
+  },
+  "content_batch_export_files": {
+    "message": "파일 내보내기"
+  },
+  "content_batch_export_platform": {
+    "message": "일괄 내보내기 <b>$1</b> 채팅"
+  },
+  "content_batch_exporting_count": {
+    "message": "<b>$1</b> 채팅 내보내기"
+  },
+  "content_batch_item_failed_with_reason": {
+    "message": "실패: $1"
+  },
+  "content_batch_no_files": {
+    "message": "내보낸 대화가 없습니다."
+  },
+  "content_batch_partial_failure": {
+    "message": "일부 채팅을 내보내지 못했습니다. $1"
+  },
+  "content_batch_quota_exceeded": {
+    "message": "일일 내보내기 한도에 도달했습니다. 무제한 내보내기를 위해 Pro로 업그레이드하세요."
+  },
+  "content_batch_saving_zip": {
+    "message": "저장 파일 준비 중..."
+  },
+  "content_batch_sync_notion": {
+    "message": "Notion에 동기화"
+  },
+  "content_batch_sync_obsidian": {
+    "message": "Obsidian에 동기화"
+  },
+  "content_batch_trial_banner_available": {
+    "message": "무료 체험 가능: 1회 무료 일괄 내보내기, Pro로 업그레이드 시 무제한 사용."
+  },
+  "content_batch_trial_banner_used": {
+    "message": "무료 체험 사용됨, Pro로 업그레이드하여 무제한 일괄 내보내기."
+  },
+  "content_batch_trial_exhausted": {
+    "message": "무료 일괄 내보내기 체험을 이미 사용하셨습니다. Pro로 업그레이드하여 무제한으로 사용하세요."
+  },
+  "content_batch_trial_hint": {
+    "message": "무료 체험: 이번 일괄 내보내기는 무료 체험 기회입니다. Pro로 업그레이드하여 무제한으로 사용하세요."
+  },
+  "content_btn_clear": {
+    "message": "지우기"
+  },
+  "content_btn_close": {
+    "message": "닫기"
+  },
+  "content_btn_done": {
+    "message": "완료"
+  },
+  "content_btn_exit": {
+    "message": "종료"
+  },
+  "content_cancel_export": {
+    "message": "내보내기 취소"
+  },
+  "content_completed_title": {
+    "message": "완료: $1"
+  },
+  "content_context_export_this": {
+    "message": "이 대화 내보내기"
+  },
+  "content_continuing_chatgpt_history": {
+    "message": "Claude 기록 동기화를 계속하는 중..."
+  },
+  "content_continuing_sidebar_sync": {
+    "message": "사이드바 기록을 계속 로드하는 중..."
+  },
+  "content_conversation_history": {
+    "message": "대화 기록"
+  },
+  "content_copy_failed_refresh": {
+    "message": "복사에 실패했습니다. 페이지를 새로 고치고 다시 시도하세요."
+  },
+  "content_detail_toggles": {
+    "message": "세부 토글"
+  },
+  "content_entitlement_local_quota_exhausted": {
+    "message": "일일 내보내기 한도에 도달했습니다(로컬에서 확인). 나중에 다시 시도하거나 Pro로 업그레이드하세요."
+  },
+  "content_entitlement_verify_failed": {
+    "message": "수출 자격을 확인할 수 없습니다. 연결을 확인하고 다시 시도하세요."
+  },
+  "content_export_already_running": {
+    "message": "내보내기가 이미 실행 중입니다. 완료될 때까지 기다리거나 먼저 취소하세요."
+  },
+  "content_export_engine_load_failed": {
+    "message": "내보내기 엔진을 불러오지 못했습니다. 페이지를 새로고침한 후 다시 시도하세요."
+  },
+  "content_export_fail_engine_reason": {
+    "message": "확장 프로그램 내보내기 엔진을 사용할 수 없습니다."
+  },
+  "content_export_fail_engine_fix": {
+    "message": "페이지를 새로고침한 후 다시 시도하세요."
+  },
+  "content_export_failed_message": {
+    "message": "내보내기 실패: $1"
+  },
+  "content_export_failed_title": {
+    "message": "내보내기 실패: $1"
+  },
+  "content_export_options": {
+    "message": "내보내기 형식 및 세부 설정"
+  },
+  "content_export_save_cancelled": {
+    "message": "내보내기가 취소되었습니다."
+  },
+  "content_export_review_button": {
+    "message": "Claude Export 평가하기"
+  },
+  "content_export_review_open_failed": {
+    "message": "Chrome 웹 스토어를 열 수 없습니다."
+  },
+  "content_export_ui_not_ready": {
+    "message": "내보내기 UI가 아직 로드 중입니다. 페이지를 새로 고치고 다시 시도하세요."
+  },
+  "content_exporting_index_title": {
+    "message": "내보내기($1/$2): <b style='color:#d97706;'>$3</b>"
+  },
+  "content_format_text": {
+    "message": "텍스트"
+  },
+  "content_found_syncing": {
+    "message": "$1 대화를 찾았습니다."
+  },
+  "content_generating_export_file": {
+    "message": "로컬 내보내기 파일 생성 중..."
+  },
+  "content_generating_local_file": {
+    "message": "로컬 파일 생성 중..."
+  },
+  "content_guest_quota_mode": {
+    "message": "게스트 무료 할당량 모드"
+  },
+  "content_json_copied": {
+    "message": "JSON을 클립보드에 복사했습니다."
+  },
+  "content_load_more": {
+    "message": "더 로드"
+  },
+  "content_loading_conversation_data": {
+    "message": "대화 데이터 로드 중: $1"
+  },
+  "content_loading_more": {
+    "message": "로드 중..."
+  },
+  "content_local_batch_export_starting": {
+    "message": "로컬 일괄 내보내기 시작 중..."
+  },
+  "content_login_failed_refresh": {
+    "message": "로그인에 실패했습니다. 페이지를 새로 고치고 다시 시도하세요."
+  },
+  "content_login_required_batch_export": {
+    "message": "일괄 내보내기를 사용하려면 로그인하세요."
+  },
+  "content_login_service_unavailable": {
+    "message": "로그인이 일시적으로 불가능합니다. 페이지를 새로 고치고 다시 시도하세요."
+  },
+  "content_no_copy_text": {
+    "message": "이 대화에는 복사할 텍스트 내용이 없습니다."
+  },
+  "content_no_messages_for_batch_item": {
+    "message": "내보낼 수 있는 메시지가 없습니다."
+  },
+  "content_notion_batch_in_progress": {
+    "message": "Notion에 동기화 중"
+  },
+  "content_notion_batch_progress": {
+    "message": "$1/$2 완료"
+  },
+  "content_notion_batch_progress_with_detail": {
+    "message": "$1 · $2"
+  },
+  "content_notion_cancelled": {
+    "message": "취소됨"
+  },
+  "content_notion_connect_helper": {
+    "message": "확장 팝업을 열어 Notion 작업 공간을 연결하세요."
+  },
+  "content_notion_database": {
+    "message": "Notion Database"
+  },
+  "content_notion_destination_required": {
+    "message": "먼저 Notion Database를 선택하세요."
+  },
+  "content_notion_destination_unavailable": {
+    "message": "확장 팝업에서 Notion 연결"
+  },
+  "content_notion_failed": {
+    "message": "실패"
+  },
+  "content_notion_no_database": {
+    "message": "승인된 Database를 찾을 수 없습니다."
+  },
+  "content_notion_partial": {
+    "message": "경고와 동기화됨"
+  },
+  "content_notion_preparing": {
+    "message": "준비 중"
+  },
+  "content_notion_queued": {
+    "message": "대기 중"
+  },
+  "content_notion_retrying": {
+    "message": "재시도 중"
+  },
+  "content_notion_share_database": {
+    "message": "Notion 연결과 Database를 공유한 후 이 패널을 다시 엽니다."
+  },
+  "content_notion_synced": {
+    "message": "동기화됨"
+  },
+  "content_notion_syncing": {
+    "message": "동기화 중"
+  },
+  "content_notion_waiting": {
+    "message": "대기 중"
+  },
+  "content_open": {
+    "message": "공개"
+  },
+  "content_open_subscribe_panel": {
+    "message": "오프닝 Claude Export Pro 계획..."
+  },
+  "content_open_subscribe_panel_failed": {
+    "message": "Claude Export 툴바 팝업을 열어 구독하세요."
+  },
+  "content_opening_conversation_page": {
+    "message": "대화 페이지를 여는 중..."
+  },
+  "content_pro_quota_desc": {
+    "message": "무제한 보고서급 PDF 및 Word 내보내기가 가능합니다. 모든 프리미엄 비즈니스 테마가 잠금 해제되었습니다."
+  },
+  "content_progress_building": {
+    "message": "문서를 생성하는 중..."
+  },
+  "content_progress_checking_export_access": {
+    "message": "내보내기를 준비하는 중..."
+  },
+  "content_progress_complete": {
+    "message": "내보내기가 완료되었습니다."
+  },
+  "content_progress_copying_json": {
+    "message": "JSON 복사 중..."
+  },
+  "content_progress_downloading": {
+    "message": "안전한 다운로드 준비 중..."
+  },
+  "content_progress_formatting": {
+    "message": "내보내기 형식 적용 중..."
+  },
+  "content_progress_initializing": {
+    "message": "내보내는 중..."
+  },
+  "content_progress_loading_full_conversation": {
+    "message": "전체 대화 데이터 로드 중..."
+  },
+  "content_progress_parsing": {
+    "message": "페이지 콘텐츠를 구문 분석하는 중..."
+  },
+  "content_progress_receipt": {
+    "message": "수출 영수증 생성 중..."
+  },
+  "content_quota_loading_desc": {
+    "message": "오늘의 현지 수출 사용량을 확인하는 중입니다."
+  },
+  "content_quota_loading_title": {
+    "message": "할당량 로드 중..."
+  },
+  "content_quota_remaining_prefix": {
+    "message": "오늘 남은 할당량:"
+  },
+  "content_quota_remaining_suffix": {
+    "message": "수출."
+  },
+  "content_select_one_before_export": {
+    "message": "내보내기 전에 메시지를 하나 이상 선택하세요."
+  },
+  "content_selected_batch_suffix": {
+    "message": "채팅(최대 10개)"
+  },
+  "content_selected_prefix": {
+    "message": "선택됨"
+  },
+  "content_selected_short": {
+    "message": "선택됨"
+  },
+  "content_sidebar_sync_failed": {
+    "message": "사이드바 동기화에 실패했습니다. 다시 시도해 주세요."
+  },
+  "content_signing_in": {
+    "message": "로그인 중..."
+  },
+  "content_sync_chat_count": {
+    "message": "$1개 채팅을 Notion에 동기화"
+  },
+  "content_syncing_chatgpt_history": {
+    "message": "Claude 기록에서 대화를 동기화하는 중..."
+  },
+  "content_syncing_sidebar": {
+    "message": "사이드바 기록을 동기화하고 더 많은 채팅을 로드하는 중..."
+  },
+  "content_toggle_watermark": {
+    "message": "제품 워터마크 숨기기"
+  },
+  "content_untitled_database": {
+    "message": "제목 없음 Database"
+  },
+  "content_upgrade_appendix": {
+    "message": "Prompt 부록에는 Pro가 필요합니다."
+  },
+  "content_upgrade_batch_export": {
+    "message": "일괄 내보내기는 Pro 기능입니다. 업그레이드하여 다중 채팅 내보내기를 잠금 해제하세요."
+  },
+  "content_upgrade_desc": {
+    "message": "할당량 제한을 제거하려면 Claude Export Pro로 업그레이드하세요."
+  },
+  "content_upgrade_free_limit": {
+    "message": "오늘의 무료 내보내기 3개를 사용하셨습니다."
+  },
+  "content_upgrade_quota_hint": {
+    "message": "Pro로 업그레이드하여 할당량 및 워터마크 제한을 제거하세요."
+  },
+  "content_upgrade_template": {
+    "message": "선택한 전문 템플릿에는 Pro가 필요합니다."
+  },
+  "content_upgrade_theme": {
+    "message": "프리미엄 보고서 테마에는 Pro가 필요합니다."
+  },
+  "content_upgrade_watermark": {
+    "message": "Claude Export 워터마크를 숨기려면 Pro가 필요합니다."
+  },
+  "export_image_large_tables": {
+    "message": "이 대화에는 큰 표가 포함되어 있어 PDF 또는 Word로 내보내는 것을 권장합니다."
+  },
+  "export_image_placeholder": {
+    "message": "[이미지]"
+  },
+  "export_pdf_encode_failed": {
+    "message": "PDF 페이지 렌더링에 실패했습니다. 다시 시도해 주세요."
+  },
+  "export_pdf_too_large": {
+    "message": "이 대화는 너무 커서 하나의 PDF로 안전하게 내보낼 수 없습니다. 더 짧은 범위를 내보내세요."
+  },
+  "export_pdf_too_many_pages": {
+    "message": "이 대화는 너무 커서 하나의 PDF로 안전하게 내보낼 수 없습니다. 더 짧은 범위를 내보내세요."
+  },
+  "export_progress_building_json": {
+    "message": "건물 JSON 내보내기"
+  },
+  "export_progress_building_markdown": {
+    "message": "건물 Markdown 내보내기"
+  },
+  "export_progress_building_text": {
+    "message": "건물 텍스트 내보내기"
+  },
+  "export_progress_building_word": {
+    "message": "건물 Word 문서"
+  },
+  "export_progress_detail_conversations": {
+    "message": "대화 $1개"
+  },
+  "export_progress_detail_issue": {
+    "message": "$1 문제"
+  },
+  "export_progress_detail_issues": {
+    "message": "$1 문제"
+  },
+  "export_progress_detail_ready": {
+    "message": "$1 준비됨"
+  },
+  "export_progress_loading_images": {
+    "message": "이미지 로딩 중"
+  },
+  "export_progress_preparing_docx": {
+    "message": "Word 문서 준비 중"
+  },
+  "export_progress_preparing_json": {
+    "message": "JSON 내보내기 준비 중"
+  },
+  "export_progress_preparing_markdown": {
+    "message": "Markdown 내보내기 준비 중"
+  },
+  "export_progress_preparing_text": {
+    "message": "텍스트 내보내기 준비 중"
+  },
+  "export_progress_ready_doc": {
+    "message": "내보내기 완료"
+  },
+  "folders_load_more": {
+    "message": "더 보기"
+  },
+  "format_markdown": {
+    "message": "Markdown"
+  },
+  "image_limit_modal_cancel": {
+    "message": "취소"
+  },
+  "image_limit_modal_export_pdf": {
+    "message": "PDF로 내보내기"
+  },
+  "image_limit_modal_title": {
+    "message": "이미지가 너무 큼"
+  },
+  "notion_cancel_task": {
+    "message": "작업 취소"
+  },
+  "notion_clear_task": {
+    "message": "로컬 작업 지우기"
+  },
+  "notion_connected": {
+    "message": "연결됨"
+  },
+  "notion_connecting": {
+    "message": "연결 중..."
+  },
+  "notion_disconnect_server_retained": {
+    "message": "서버 측에서 연결을 끊을 수 없습니다. 로컬 데이터는 보관되었습니다. 나중에 다시 시도해 주세요."
+  },
+  "notion_disconnected": {
+    "message": "Notion 연결이 해제되었습니다."
+  },
+  "notion_fetch_failed": {
+    "message": "가져오기 실패"
+  },
+  "notion_metadata_exported": {
+    "message": "내보낸 시간"
+  },
+  "notion_metadata_from": {
+    "message": "출처"
+  },
+  "notion_no_data_source": {
+    "message": "승인된 Database을(를) 찾을 수 없습니다."
+  },
+  "notion_not_connected": {
+    "message": "연결되지 않음"
+  },
+  "notion_oauth_failed": {
+    "message": "Notion 연결 실패: $1"
+  },
+  "notion_oauth_opening": {
+    "message": "Notion 인증을 여는 중..."
+  },
+  "notion_oauth_success": {
+    "message": "Notion이 연결되었습니다."
+  },
+  "notion_open_page_failed": {
+    "message": "Notion 페이지를 열 수 없습니다."
+  },
+  "notion_reconnect_action": {
+    "message": "재연결"
+  },
+  "notion_reconnect_required": {
+    "message": "재연결 필요"
+  },
+  "notion_reconnect_warning": {
+    "message": "Notion 액세스가 만료되었습니다. 동기화를 계속하려면 재연결하세요."
+  },
+  "notion_retry": {
+    "message": "재시도"
+  },
+  "notion_save": {
+    "message": "저장"
+  },
+  "notion_save_to": {
+    "message": "Notion에 저장"
+  },
+  "notion_signin_again": {
+    "message": "로그인했습니다. 계속하려면 Notion 연결을 다시 클릭하세요."
+  },
+  "notion_signin_required": {
+    "message": "먼저 로그인하세요. 로그인 후 Notion 워크스페이스 인증이 자동으로 열립니다."
+  },
+  "notion_sync_cancelled": {
+    "message": "동기화가 취소되었습니다."
+  },
+  "notion_sync_failed": {
+    "message": "Notion 동기화 실패: $1"
+  },
+  "notion_sync_fetching_conversation": {
+    "message": "대화 가져오는 중..."
+  },
+  "notion_sync_no_messages": {
+    "message": "이 페이지에서 대화 메시지를 찾을 수 없습니다."
+  },
+  "notion_sync_partial_desc": {
+    "message": "페이지가 성공적으로 생성되었습니다. 이를 열어서 정확하게 보존할 수 없는 콘텐츠를 검토하세요."
+  },
+  "notion_sync_partial_title": {
+    "message": "경고와 함께 Notion에 동기화됨"
+  },
+  "notion_sync_preparing": {
+    "message": "대화 준비 중..."
+  },
+  "notion_sync_progress_title": {
+    "message": "Notion에 동기화 중"
+  },
+  "notion_sync_retrying": {
+    "message": "Notion은(는) 통화 중입니다. 안전하게 다시 시도하는 중..."
+  },
+  "notion_sync_success_desc": {
+    "message": "이 대화는 Notion Database에 준비되어 있습니다."
+  },
+  "notion_sync_success_title": {
+    "message": "Notion에 동기화됨"
+  },
+  "notion_thinking_process": {
+    "message": "사고 과정"
+  },
+  "notion_untitled_conversation": {
+    "message": "제목 없는 대화"
+  },
+  "obsidian_batch_all_failed": {
+    "message": "대화를 동기화할 수 없습니다."
+  },
+  "obsidian_batch_cancelled": {
+    "message": "Obsidian 일괄 동기화가 취소되었습니다."
+  },
+  "obsidian_batch_complete": {
+    "message": "Obsidian 일괄 동기화 완료"
+  },
+  "obsidian_batch_complete_desc": {
+    "message": "성공한 각 대화는 별도의 메모로 저장되었습니다."
+  },
+  "obsidian_batch_in_progress": {
+    "message": "Obsidian에 동기화 중"
+  },
+  "obsidian_batch_progress": {
+    "message": "$2 중 $1 완료"
+  },
+  "obsidian_batch_progress_with_detail": {
+    "message": "$1 · $2"
+  },
+  "obsidian_batch_sync": {
+    "message": "Obsidian으로 동기화"
+  },
+  "obsidian_batch_title": {
+    "message": "Obsidian에 대한 일괄 동기화"
+  },
+  "obsidian_cancelled": {
+    "message": "취소됨"
+  },
+  "obsidian_change_folder": {
+    "message": "폴더 변경"
+  },
+  "obsidian_checking_vault": {
+    "message": "Vault 확인 중"
+  },
+  "obsidian_connect": {
+    "message": "Obsidian 연결"
+  },
+  "obsidian_connect_first": {
+    "message": "먼저 Obsidian Vault를 연결하세요."
+  },
+  "obsidian_connect_helper": {
+    "message": "로컬 Vault를 선택하면 단일 및 일괄 동기화를 사용할 수 있습니다."
+  },
+  "obsidian_directories_missing": {
+    "message": "구성된 폴더가 누락되었습니다. 동기화하기 전에 복구하세요."
+  },
+  "obsidian_disconnect_failed": {
+    "message": "Obsidian의 연결을 끊을 수 없습니다."
+  },
+  "obsidian_disconnected": {
+    "message": "Obsidian 연결이 끊어졌습니다. 기존 파일은 유지되었습니다."
+  },
+  "obsidian_failed": {
+    "message": "실패"
+  },
+  "obsidian_fetching": {
+    "message": "대화 중"
+  },
+  "obsidian_finishing": {
+    "message": "동기화를 완료하는 중..."
+  },
+  "obsidian_getting_conversation": {
+    "message": "완전한 대화를 얻는 중..."
+  },
+  "obsidian_getting_selected": {
+    "message": "선택한 메시지를 가져오는 중..."
+  },
+  "obsidian_getting_selected_count": {
+    "message": "Getting $1 selected messages..."
+  },
+  "obsidian_job_running": {
+    "message": "다른 Obsidian 동기화가 이미 실행 중입니다."
+  },
+  "obsidian_configured": {
+    "message": "구성됨"
+  },
+  "obsidian_not_connected": {
+    "message": "폴더 경로가 구성되지 않았습니다. 먼저 구성하세요."
+  },
+  "obsidian_open_failed": {
+    "message": "Obsidian을 열 수 없습니다."
+  },
+  "obsidian_open_note": {
+    "message": "Obsidian에서 열기"
+  },
+  "obsidian_permission_required": {
+    "message": "Vault 권한을 다시 허용해야 합니다."
+  },
+  "obsidian_preparing": {
+    "message": "Vault 확인 중"
+  },
+  "obsidian_ready": {
+    "message": "준비됨"
+  },
+  "obsidian_reauthorize": {
+    "message": "Vault 재인증"
+  },
+  "obsidian_reauthorize_first": {
+    "message": "먼저 Obsidian Vault을 재승인하세요."
+  },
+  "obsidian_retry_check": {
+    "message": "재시도"
+  },
+  "obsidian_save_to": {
+    "message": "Obsidian에 저장"
+  },
+  "obsidian_select_message_first": {
+    "message": "동기화하기 전에 메시지를 하나 이상 선택하세요."
+  },
+  "obsidian_select_message_first_short": {
+    "message": "메시지 선택"
+  },
+  "obsidian_settings": {
+    "message": "설정"
+  },
+  "obsidian_settings_assets_folder": {
+    "message": "자산 폴더(선택)"
+  },
+  "obsidian_settings_assets_help": {
+    "message": "설정하지 않으면 노트 폴더를 사용합니다. 동기화마다 독립 자산 처리 폴더를 사용합니다."
+  },
+  "obsidian_settings_assets_placeholder": {
+    "message": "설정되지 않은 경우 메모 폴더를 사용합니다."
+  },
+  "obsidian_settings_choose": {
+    "message": "선택"
+  },
+  "obsidian_settings_choose_assets_failed": {
+    "message": "자산 폴더를 선택할 수 없습니다."
+  },
+  "obsidian_settings_choose_notes_failed": {
+    "message": "메모 폴더를 선택할 수 없습니다."
+  },
+  "obsidian_settings_choose_notes_first": {
+    "message": "먼저 메모 폴더를 선택하세요."
+  },
+  "obsidian_settings_choose_root_first": {
+    "message": "먼저 Obsidian Vault 폴더를 선택하세요."
+  },
+  "obsidian_settings_choose_vault": {
+    "message": "Vault 선택"
+  },
+  "obsidian_settings_choose_vault_failed": {
+    "message": "Vault을 선택할 수 없습니다."
+  },
+  "obsidian_settings_choose_vault_step": {
+    "message": "Vault 선택"
+  },
+  "obsidian_settings_clear": {
+    "message": "지우기"
+  },
+  "obsidian_settings_connection_ready": {
+    "message": "연결이 준비되었습니다."
+  },
+  "obsidian_settings_current_vault": {
+    "message": "현재 Vault"
+  },
+  "obsidian_settings_failed": {
+    "message": "Obsidian 설정을 열 수 없습니다."
+  },
+  "obsidian_settings_folder_outside": {
+    "message": "현재 Vault 내의 폴더를 선택하세요."
+  },
+  "obsidian_settings_folders_step": {
+    "message": "폴더 선택"
+  },
+  "obsidian_settings_folders_step_desc": {
+    "message": "노트 폴더와 선택적 자산 폴더를 고릅니다."
+  },
+  "obsidian_settings_heading": {
+    "message": "대화를 지식 저장소에 바로 저장"
+  },
+  "obsidian_settings_history": {
+    "message": "최근 동기화"
+  },
+  "obsidian_settings_history_desc": {
+    "message": "경로와 상태만 저장하며 채팅 본문은 저장하지 않습니다."
+  },
+  "obsidian_settings_history_failed": {
+    "message": "동기화 기록을 로드할 수 없습니다."
+  },
+  "obsidian_settings_image_count": {
+    "message": "이미지 $1개"
+  },
+  "obsidian_settings_init_failed": {
+    "message": "Obsidian 설정을 초기화할 수 없습니다."
+  },
+  "obsidian_settings_intro": {
+    "message": "폴더를 한 번 설정한 뒤 하나 또는 여러 대화를 동기화하세요. 텍스트와 이미지는 로컬에서 처리됩니다."
+  },
+  "obsidian_settings_invalid_path": {
+    "message": "폴더는 Vault 내의 안전한 경로를 사용해야 하며 .., .obsidian 또는 잘못된 시스템 문자를 포함할 수 없습니다."
+  },
+  "obsidian_settings_local": {
+    "message": "로컬 쓰기"
+  },
+  "obsidian_settings_no_history": {
+    "message": "아직 Obsidian 동기화 기록이 없습니다."
+  },
+  "obsidian_settings_not_selected": {
+    "message": "선택 안 함"
+  },
+  "obsidian_settings_notes_folder": {
+    "message": "노트 폴더"
+  },
+  "obsidian_settings_notes_help": {
+    "message": "필수입니다. 추가 루트나 플랫폼 폴더 없이 여기에 바로 저장합니다."
+  },
+  "obsidian_settings_notes_placeholder": {
+    "message": "Vault"
+  },
+  "obsidian_settings_opened_background": {
+    "message": "Obsidian 설정이 새 탭에서 열렸습니다. 탭을 전환하여 설정한 후 이곳으로 돌아오세요."
+  },
+  "obsidian_settings_path_preview": {
+    "message": "경로 미리보기"
+  },
+  "obsidian_settings_permission_denied": {
+    "message": "Vault 쓰기 권한이 부여되지 않았습니다. Vault을 재인증하고 다시 시도하세요."
+  },
+  "obsidian_settings_picker_unsupported": {
+    "message": "이 Chrome 버전은 폴더 액세스를 지원하지 않습니다. Chrome을 업데이트하고 다시 시도해 보세요."
+  },
+  "obsidian_settings_preview_empty": {
+    "message": "노트 폴더를 선택하면 경로가 표시됩니다"
+  },
+  "obsidian_settings_preview_title": {
+    "message": "대화 제목"
+  },
+  "obsidian_settings_ready": {
+    "message": "연결과 폴더가 준비되었습니다."
+  },
+  "obsidian_settings_refresh": {
+    "message": "새로고침"
+  },
+  "obsidian_settings_request_failed": {
+    "message": "Obsidian 요청이 실패했습니다."
+  },
+  "obsidian_settings_resolve_unsupported": {
+    "message": "이 Chrome 버전에서는 선택한 폴더가 Vault 내에 있는지 확인할 수 없습니다."
+  },
+  "obsidian_settings_return": {
+    "message": "대화로 돌아가기"
+  },
+  "obsidian_settings_save_permission_failed": {
+    "message": "Vault 권한을 저장할 수 없습니다."
+  },
+  "obsidian_settings_saved": {
+    "message": "Vault 확인 완료. 대화로 돌아갑니다..."
+  },
+  "obsidian_settings_steps_label": {
+    "message": "Vault 설정 단계"
+  },
+  "obsidian_settings_storage_failed": {
+    "message": "Obsidian 로컬 저장소를 열 수 없습니다."
+  },
+  "obsidian_settings_title": {
+    "message": "Obsidian Vault 연결"
+  },
+  "obsidian_settings_vault_authorized": {
+    "message": "Vault 액세스가 준비되었습니다. 다음으로 메모 폴더를 선택하세요."
+  },
+  "obsidian_settings_verify_failed": {
+    "message": "Vault 쓰기 확인에 실패했습니다."
+  },
+  "obsidian_settings_verify_save": {
+    "message": "확인 후 저장"
+  },
+  "obsidian_settings_verify_step": {
+    "message": "접근 확인"
+  },
+  "obsidian_settings_verify_step_desc": {
+    "message": "임시 파일을 만들고 삭제합니다."
+  },
+  "obsidian_settings_verifying": {
+    "message": "확인 중..."
+  },
+  "obsidian_start_failed": {
+    "message": "Obsidian 동기화를 시작할 수 없습니다. 페이지를 새로 고치고 다시 시도하세요."
+  },
+  "obsidian_status_cancelled_short": {
+    "message": "취소됨"
+  },
+  "obsidian_status_failed_short": {
+    "message": "실패"
+  },
+  "obsidian_status_partial": {
+    "message": "경고 있음"
+  },
+  "obsidian_status_success": {
+    "message": "성공"
+  },
+  "obsidian_sync_busy": {
+    "message": "동기화 작업이 이 Vault에 쓰고 있습니다."
+  },
+  "obsidian_sync_cancelled": {
+    "message": "Obsidian 동기화가 취소되었습니다."
+  },
+  "obsidian_sync_chat_count": {
+    "message": "$1 채팅을 Obsidian에 동기화"
+  },
+  "obsidian_sync_complete": {
+    "message": "Obsidian에 동기화됨"
+  },
+  "obsidian_sync_complete_desc": {
+    "message": "메모와 해당 로컬 미디어는 Vault에 준비되어 있습니다."
+  },
+  "obsidian_sync_current_short": {
+    "message": "동기화"
+  },
+  "obsidian_sync_failed": {
+    "message": "Obsidian 동기화 실패: $1"
+  },
+  "obsidian_sync_failed_desc": {
+    "message": "생성된 메모가 없습니다. Vault 액세스를 확인하고 다시 시도하세요."
+  },
+  "obsidian_sync_failed_title": {
+    "message": "Obsidian 동기화 실패"
+  },
+  "obsidian_sync_no_messages": {
+    "message": "이 페이지에서 대화 메시지를 찾을 수 없습니다."
+  },
+  "obsidian_sync_partial_desc": {
+    "message": "메모가 생성되었습니다. 보존할 수 없는 미디어에 대한 아래 경고를 검토하세요."
+  },
+  "obsidian_sync_partial_title": {
+    "message": "Obsidian 동기화가 경고와 함께 완료됨"
+  },
+  "obsidian_sync_progress_title": {
+    "message": "Obsidian에 동기화 중"
+  },
+  "obsidian_sync_running": {
+    "message": "동기화가 이미 실행 중입니다. 이 패널은 완료되면 잠금이 해제됩니다."
+  },
+  "obsidian_sync_selected_short": {
+    "message": "$1개 동기화"
+  },
+  "obsidian_synced": {
+    "message": "동기화됨"
+  },
+  "obsidian_synced_partial": {
+    "message": "경고와 동기화됨"
+  },
+  "obsidian_syncing": {
+    "message": "동기화 중"
+  },
+  "obsidian_vault": {
+    "message": "Obsidian Vault"
+  },
+  "obsidian_vault_root": {
+    "message": "Vault 루트"
+  },
+  "obsidian_visible_content_fallback": {
+    "message": "전체 대화를 이용할 수 없습니다. 보이는 페이지 콘텐츠가 사용되었습니다."
+  },
+  "obsidian_waiting": {
+    "message": "대기 중"
+  },
+  "obsidian_writing": {
+    "message": "Vault에 쓰기"
+  },
+  "placeholder_batch_search": {
+    "message": "대화 제목으로 검색..."
+  },
+  "popup_benefit_batch_export": {
+    "message": "대화 일괄 내보내기"
+  },
+  "popup_checking": {
+    "message": "확인 중..."
+  },
+  "popup_checkout_rate_limited": {
+    "message": "결제가 이미 준비 중입니다. 잠시 후에 다시 시도해 주세요."
+  },
+  "popup_checkout_temporarily_unavailable": {
+    "message": "결제 서비스를 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도하세요."
+  },
+  "popup_checkout_signed_in_retry": {
+    "message": "로그인했습니다. 요금제를 선택하고 계속을 다시 클릭하여 결제를 시작하세요."
+  },
+  "popup_checkout_signin_message": {
+    "message": "먼저 Google로 로그인하세요. 로그인한 후 계속을 다시 클릭하여 보안 체크아웃을 엽니다."
+  },
+  "popup_checkout_signin_ok": {
+    "message": "로그인"
+  },
+  "popup_checkout_signin_title": {
+    "message": "결제 전 로그인"
+  },
+  "popup_close_aria": {
+    "message": "닫기"
+  },
+  "popup_connections_title": {
+    "message": "연결"
+  },
+  "popup_free_quota_exhausted": {
+    "message": "오늘의 무료 내보내기 3개를 사용하셨습니다."
+  },
+  "popup_language_change_failed": {
+    "message": "언어를 변경할 수 없습니다."
+  },
+  "popup_language_title": {
+    "message": "인터페이스 언어"
+  },
+  "popup_login_service_unavailable": {
+    "message": "로그인이 일시적으로 불가능합니다. 새로고침한 후 다시 시도해 주세요."
+  },
+  "popup_notion_checking_connection": {
+    "message": "연결 확인 중"
+  },
+  "notion_destination_changed": {
+    "message": "이전에 선택한 데이터베이스를 사용할 수 없습니다. 현재 선택을 확인한 후 저장을 다시 클릭하세요."
+  },
+  "notion_destination_verify_failed": {
+    "message": "Notion 워크스페이스와 데이터베이스를 확인할 수 없습니다. 연결을 확인한 후 다시 시도하세요."
+  },
+  "popup_plan_yearly_detail": {
+    "message": "연간 결제 $$29.99"
+  },
+  "popup_pro_already_active": {
+    "message": "이 계정에는 이미 Pro가 활성화되어 있습니다."
+  },
+  "popup_entitlement_syncing": {
+    "message": "멤버십 상태를 동기화하는 중..."
+  },
+  "popup_subscribe_cta": {
+    "message": "$$29.99 결제"
+  },
+  "role_user": {
+    "message": "사용자"
+  },
+  "subscribe_badge_lifetime": {
+    "message": "평생 Pro"
+  },
+  "subscribe_badge_monthly": {
+    "message": "월간 Pro"
+  },
+  "subscribe_badge_yearly": {
+    "message": "연간 Pro"
+  },
+  "subscribe_cadence_lifetime": {
+    "message": "1회"
+  },
+  "subscribe_cadence_month": {
+    "message": "/ 월"
+  },
+  "subscribe_cadence_year": {
+    "message": "/ 년"
+  },
+  "subscribe_checkout_error": {
+    "message": "결제 오류: $1"
+  },
+  "subscribe_confirm_switch": {
+    "message": "현재 계정에서 로그아웃하고 전환하시겠습니까?"
+  },
+  "subscribe_discount_lifetime": {
+    "message": "62% 할인"
+  },
+  "subscribe_discount_monthly": {
+    "message": "44% 할인"
+  },
+  "subscribe_discount_yearly": {
+    "message": "50% 할인"
+  },
+  "subscribe_early_bird_badge": {
+    "message": "한정 얼리버드"
+  },
+  "subscribe_err_build_checkout": {
+    "message": "결제 페이지를 만들 수 없습니다. 나중에 다시 시도해주세요."
+  },
+  "subscribe_err_generic": {
+    "message": "나중에 다시 시도해주세요."
+  },
+  "subscribe_err_login_service": {
+    "message": "로그인 서비스를 일시적으로 사용할 수 없습니다. 새로고침 후 다시 시도해주세요."
+  },
+  "subscribe_err_open_checkout": {
+    "message": "결제 페이지를 열 수 없습니다. 나중에 다시 시도해주세요."
+  },
+  "subscribe_err_popup_blocked": {
+    "message": "브라우저가 결제 페이지를 차단했습니다. 팝업을 허용한 후 다시 시도해주세요."
+  },
+  "subscribe_err_schema_cache": {
+    "message": "결제 서비스가 업데이트 중입니다. Claude Export를 다시 열어 시도해주세요."
+  },
+  "subscribe_err_temporarily_unavailable": {
+    "message": "결제 서비스를 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도하세요."
+  },
+  "subscribe_faq_a1": {
+    "message": "100% 로컬 프라이버시. 모든 파싱, 구조화, 변환은 브라우저 안에서 이루어집니다. Claude Export는 채팅 내용, 이미지, 쿠키를 업로드하거나 저장하지 않습니다."
+  },
+  "subscribe_faq_a2": {
+    "message": "Claude Export AI와 AI Chat Export에서 동일한 Google 계정으로 로그인하기만 하면 Pro 상태가 자동으로 동기화됩니다."
+  },
+  "subscribe_faq_a3": {
+    "message": "결제는 전 세계적으로 신뢰받는 결제 대행사 Paddle이 처리합니다. 카드나 결제 정보를 수집하거나 저장하지 않습니다."
+  },
+  "subscribe_faq_a4": {
+    "message": "패널에 내장된 내보내기 상태 검사가 있습니다. 문제나 기능 제안은 chatvaultaisupport@gmail.com으로 연락해 주세요."
+  },
+  "subscribe_faq_q1": {
+    "message": "로컬로 내보낸 데이터는 안전한가요?"
+  },
+  "subscribe_faq_q2": {
+    "message": "공유 Pro 혜택을 받는 방법은?"
+  },
+  "subscribe_faq_q3": {
+    "message": "결제가 안전하고 규정을 준수하나요?"
+  },
+  "subscribe_faq_q4": {
+    "message": "내보내기 문제로 도움을 받으려면?"
+  },
+  "subscribe_faq_title": {
+    "message": "자주 묻는 질문"
+  },
+  "subscribe_feature_codepack_desc": {
+    "message": "내보낸 대화에 코드 블록과 언어 레이블을 유지하여 검토하고 재사용하기 쉽게 합니다."
+  },
+  "subscribe_feature_codepack_title": {
+    "message": "코드 친화적 내보내기"
+  },
+  "subscribe_feature_qa_desc": {
+    "message": "내보내기 전에 로드되지 않은 콘텐츠와 캔버스 크기 위험을 검사하고, 문제가 발견되면 더 안전한 형식이나 재시도 단계를 안내합니다."
+  },
+  "subscribe_feature_qa_title": {
+    "message": "내보내기 전 완전한 품질 검사"
+  },
+  "subscribe_feature_shared_desc": {
+    "message": "Claude Export AI와 동일한 계정과 Pro 상태를 공유합니다. 한 번 구매하면 두 제품의 모든 혜택을 잠금 해제합니다."
+  },
+  "subscribe_feature_shared_title": {
+    "message": "두 제품에 Pro 공유"
+  },
+  "subscribe_feature_templates_desc": {
+    "message": "연구 브리프, 클라이언트 메모 등 더 많은 템플릿을 잠금 해제하여 구조화된 Word / PDF / HTML 문서를 만듭니다."
+  },
+  "subscribe_feature_templates_title": {
+    "message": "시나리오 기반 템플릿"
+  },
+  "subscribe_feature_themes_desc": {
+    "message": "학술 논문, McKinsey, Newsprint 등 전문적인 독점 테마."
+  },
+  "subscribe_feature_themes_title": {
+    "message": "출판 등급 테마"
+  },
+  "subscribe_feature_unlimited_desc": {
+    "message": "하루 3회 무료 한도를 제거하고 원하는 만큼 내보내세요."
+  },
+  "subscribe_feature_unlimited_title": {
+    "message": "무제한 로컬 내보내기"
+  },
+  "subscribe_feature_watermark_desc": {
+    "message": "전문 용도로 문서 끝의 Claude Export 서명과 워터마크를 숨깁니다."
+  },
+  "subscribe_feature_watermark_title": {
+    "message": "Claude Export 워터마크 숨기기"
+  },
+  "subscribe_features_title": {
+    "message": "Pro 전용 고급 기능 잠금 해제"
+  },
+  "subscribe_logged_in_as": {
+    "message": "로그인됨: "
+  },
+  "subscribe_logged_in_user": {
+    "message": "로그인된 사용자"
+  },
+  "subscribe_login_failed": {
+    "message": "로그인 실패: $1"
+  },
+  "subscribe_login_now": {
+    "message": "로그인"
+  },
+  "subscribe_login_required": {
+    "message": "Pro 혜택을 자동으로 바인딩하려면 구독 전에 로그인하세요."
+  },
+  "subscribe_not_signed_in": {
+    "message": "아직 로그인하지 않았습니다."
+  },
+  "subscribe_opening_checkout": {
+    "message": "결제를 여는 중..."
+  },
+  "subscribe_page_title": {
+    "message": "Claude Export Pro로 업그레이드"
+  },
+  "subscribe_pay_lifetime": {
+    "message": "$$79.99 결제"
+  },
+  "subscribe_pay_monthly": {
+    "message": "$$4.99 결제"
+  },
+  "subscribe_pay_yearly": {
+    "message": "$$29.99 결제"
+  },
+  "subscribe_plan_desc_lifetime": {
+    "message": "얼리 서포터 특별가. 평생 무료 업데이트, 반복 결제 없음."
+  },
+  "subscribe_plan_desc_monthly": {
+    "message": "Pro를 먼저 체험하기에 적합. 모든 형식과 플랫폼 지원, 언제든 취소 가능."
+  },
+  "subscribe_plan_desc_yearly": {
+    "message": "헤비 AI 사용자에게 최적. 연중 무제한 내보내기와 프리미엄 서식."
+  },
+  "subscribe_plan_detail_lifetime": {
+    "message": "한 번 결제로 영구 사용"
+  },
+  "subscribe_plan_detail_monthly": {
+    "message": "구독 관리에서 언제든 취소 가능"
+  },
+  "subscribe_plan_detail_yearly": {
+    "message": "연간 $$29.99 청구"
+  },
+  "subscribe_plan_title_lifetime": {
+    "message": "평생 플랜"
+  },
+  "subscribe_plan_title_monthly": {
+    "message": "Pro 월간 플랜"
+  },
+  "subscribe_plan_title_yearly": {
+    "message": "Pro 연간 플랜"
+  },
+  "subscribe_privacy_alert": {
+    "message": "개인정보 보호정책: 당사는 채팅 콘텐츠를 서버에 수집, 업로드, 저장하지 않습니다. 모든 분석, 서식 지정, 파일 생성은 브라우저에서 로컬로 이루어집니다."
+  },
+  "subscribe_privacy_link": {
+    "message": "개인정보 보호정책"
+  },
+  "subscribe_recommended_badge": {
+    "message": "최고의 가치"
+  },
+  "subscribe_signed_in_retry": {
+    "message": "로그인되었습니다. 결제를 열려면 구독 버튼을 다시 클릭하세요."
+  },
+  "subscribe_subtitle": {
+    "message": "할당량 제한을 해제하고 출판 등급 테마와 두 제품의 공유 Pro 혜택을 잠금 해제합니다."
+  },
+  "subscribe_switch_account": {
+    "message": "계정 전환"
+  },
+  "subscribe_terms_alert": {
+    "message": "서비스 약관: Claude Export는 AI 대화의 개인 일일 추출 및 저장에만 사용됩니다. 이 도구를 사용하여 민감, 불법 또는 저작권 보호 데이터를 스크랩하는 것은 엄격히 금지됩니다."
+  },
+  "subscribe_terms_link": {
+    "message": "서비스 약관"
+  },
+  "subscribe_title": {
+    "message": "Claude Export Pro로 업그레이드"
+  },
+  "welcome_aria_toolbar_mock": {
+    "message": "Chrome 툴바 가이드"
+  },
+  "welcome_look_up": {
+    "message": "브라우저 툴바의 퍼즐 아이콘을 클릭하세요 (브라우저 창의 오른쪽 위, 이 페이지 위쪽)."
+  },
+  "welcome_look_up_title": {
+    "message": "여기서 확장 프로그램 클릭"
+  },
+  "welcome_open_hint": {
+    "message": "지원되는 AI 채팅 페이지를 방문하면 Claude Export가 자동으로 활성화됩니다."
+  },
+  "welcome_pin_step_1": {
+    "message": "툴바에서 퍼즐 아이콘을 클릭하세요"
+  },
+  "welcome_pin_step_2": {
+    "message": "목록에서 Claude Export를 찾으세요"
+  },
+  "welcome_pin_step_3": {
+    "message": "그 옆의 고정 아이콘을 클릭하세요"
+  },
+  "welcome_step_1": {
+    "message": "권장 설정"
+  },
+  "welcome_step_2": {
+    "message": "2단계"
+  },
+  "welcome_title_open": {
+    "message": "AI 플랫폼을 열어 내보내기를 시작하세요."
+  },
+  "billing_trial_badge_yearly": {
+    "message": "3일 무료 체험"
+  },
+  "billing_trial_cta_yearly": {
+    "message": "3일 무료 체험 시작"
+  },
+  "billing_trial_charge_after": {
+    "message": "오늘 $0, 3일 후 연 $$29.99 청구(언제든 취소 가능)"
+  },
+  "billing_trial_not_eligible": {
+    "message": "연간 플랜: 연 $$29.99, 오늘 청구됩니다."
+  },
+  "billing_trial_confirm_charge": {
+    "message": "이 계정에서는 무료 체험을 이용할 수 없습니다. 오늘 $$29.99가 청구되는 연간 플랜을 계속 진행할까요?"
+  },
+  "billing_trial_signin_check": {
+    "message": "로그인 후 무료 체험 자격 확인"
+  },
+  "billing_trial_checking": {
+    "message": "체험 자격 확인 중…"
+  },
+  "billing_trial_check_cta": {
+    "message": "3일 무료 체험 확인"
+  },
+  "billing_trial_used_badge": {
+    "message": "체험 사용 완료"
   }
 }

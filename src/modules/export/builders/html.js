@@ -4,6 +4,7 @@ import {
   formatLatexUnicode,
   getExportFooterSegments,
   mapLimit,
+  notifyExportDiagnostic,
   notifyProgress,
   sanitizeExportText,
   sanitizeExportMathMl,
@@ -18,6 +19,9 @@ import { fetchImageBytes, getImagePreloadConcurrency } from '../media.js';
 import { getExportTheme } from '../themes/tokens.js';
 import { isTransparentCssColor, serializeExportHtmlStyle } from '../html-style.js';
 import { getMathMl } from '../math.js';
+
+var HTML_MAX_EMBEDDED_IMAGES = 50;
+var HTML_MAX_AGGREGATE_IMAGE_BYTES = 48 * 1024 * 1024;
 
 function escapeHtml(value) {
   return String(value == null ? "" : value)
@@ -295,6 +299,7 @@ function renderTable(block) {
 }
 
 async function buildEmbeddedImageMap(messages, options) {
+  var opts = options || {};
   var sources = [];
   var seen = new Set();
   (messages || []).forEach(function (message) {
@@ -305,25 +310,69 @@ async function buildEmbeddedImageMap(messages, options) {
       }
     });
   });
+  var requestedImageLimit = Number(opts.maxEmbeddedImageCount);
+  var requestedByteLimit = Number(opts.maxEmbeddedImageBytes);
+  var imageLimit = Number.isFinite(requestedImageLimit) && requestedImageLimit > 0
+    ? Math.min(HTML_MAX_EMBEDDED_IMAGES, Math.floor(requestedImageLimit))
+    : HTML_MAX_EMBEDDED_IMAGES;
+  var byteLimit = Number.isFinite(requestedByteLimit) && requestedByteLimit > 0
+    ? Math.min(HTML_MAX_AGGREGATE_IMAGE_BYTES, Math.floor(requestedByteLimit))
+    : HTML_MAX_AGGREGATE_IMAGE_BYTES;
+  var eligibleSources = sources.slice(0, imageLimit);
+  if (sources.length > imageLimit) {
+    notifyExportDiagnostic(opts, {
+      code: "HTML_IMAGE_COUNT_LIMIT",
+      message: "Only the first " + imageLimit + " images can be embedded in offline HTML safely; later images use placeholders.",
+      count: sources.length - imageLimit,
+      format: "html"
+    });
+  }
   var imageMap = new Map();
-  await mapLimit(sources, getImagePreloadConcurrency(4), async function (src, index) {
-    if (options.signal && options.signal.aborted) {
+  var aggregateImageBytes = 0;
+  var byteLimitReported = false;
+  await mapLimit(eligibleSources, getImagePreloadConcurrency(4), async function (src, index) {
+    if (opts.signal && opts.signal.aborted) {
       var abortError = new Error("aborted");
       abortError.name = "AbortError";
       throw abortError;
     }
     try {
-      var result = await fetchImageBytes(src, options);
+      var result = await fetchImageBytes(src, opts);
       if (result && result.bytes && result.bytes.byteLength) {
-        var blob = new Blob([result.bytes], { type: result.mimeType || "image/png" });
-        imageMap.set(src, await blobToDataUrl(blob));
+        var imageByteLength = Number(result.bytes.byteLength) || 0;
+        if (aggregateImageBytes + imageByteLength > byteLimit) {
+          if (!byteLimitReported) {
+            byteLimitReported = true;
+            notifyExportDiagnostic(opts, {
+              code: "HTML_IMAGE_BYTES_LIMIT",
+              message: "The offline HTML image budget was reached; remaining images use placeholders.",
+              count: 1,
+              format: "html"
+            });
+          }
+        } else {
+          aggregateImageBytes += imageByteLength;
+          var blob = new Blob([result.bytes], { type: result.mimeType || "image/png" });
+          imageMap.set(src, await blobToDataUrl(blob));
+        }
+      } else {
+        notifyExportDiagnostic(opts, {
+          code: "IMAGE_UNAVAILABLE",
+          message: "An image could not be embedded in the offline HTML export and was replaced with a placeholder.",
+          format: "html"
+        });
       }
     } catch (error) {
       if (error && error.name === "AbortError") throw error;
+      notifyExportDiagnostic(opts, {
+        code: "IMAGE_UNAVAILABLE",
+        message: "An image could not be embedded in the offline HTML export and was replaced with a placeholder.",
+        format: "html"
+      });
       // 非 Abort 错误静默吞掉会使用户无法区分"图片不可用"与"瞬时获取失败"，这里记录一条诊断日志
       console.warn("[ChatVault] HTML export: image embedding failed", { src: src, error: error && error.message });
     }
-    notifyProgress(options, t("export_progress_embedding_images", "Embedding images"), 0.05 + 0.2 * ((index + 1) / Math.max(1, sources.length)));
+    notifyProgress(opts, t("export_progress_embedding_images", "Embedding images"), 0.05 + 0.2 * ((index + 1) / Math.max(1, eligibleSources.length)));
   });
   return imageMap;
 }
@@ -380,12 +429,17 @@ function buildCss(theme, styleId, settings) {
   var color = theme.color || {};
   var natural = styleId === "natural";
   var flat = styleId === "default" || natural;
+  var inkHex = String(color.ink || "").match(/^#?([0-9a-f]{6})$/i);
+  var inkBrightness = inkHex
+    ? (parseInt(inkHex[1].slice(0, 2), 16) * 299 + parseInt(inkHex[1].slice(2, 4), 16) * 587 + parseInt(inkHex[1].slice(4, 6), 16) * 114) / 1000
+    : 0;
+  var dark = !natural && inkBrightness > 160;
   var userAlign = settings.align_user_messages_right ? "width:fit-content;max-width:88%;margin-left:auto;margin-right:0" : "width:auto;max-width:100%;margin-left:0";
   return `
-    :root{color-scheme:light;--ink:${color.ink || "#17202a"};--muted:${color.muted || "#64748b"};--accent:${color.accent || "#16869a"};--line:${color.line || "#d9e2ec"};--code-bg:${color.codeBg || "#162334"};--code-text:${color.codeText || "#e5eef8"};--quote-bg:${color.quoteBg || "#f8fafc"};--quote-border:${color.quoteBorder || color.accent || "#16869a"}}
+    :root{color-scheme:${dark ? "dark" : "light"};--ink:${color.ink || "#17202a"};--muted:${color.muted || "#64748b"};--accent:${color.accent || "#16869a"};--line:${color.line || "#d9e2ec"};--code-bg:${color.codeBg || "#162334"};--code-text:${color.codeText || "#e5eef8"};--quote-bg:${color.quoteBg || "#f8fafc"};--quote-border:${color.quoteBorder || color.accent || "#16869a"}}
     *{box-sizing:border-box}html{background:#fff}body{margin:0;background:${natural ? "#fff" : pageBackground(theme)};color:var(--ink);font:16px/1.72 ${theme.font && theme.font.body || "sans-serif"};overflow-wrap:anywhere}
     main{width:min(920px,calc(100% - 32px));margin:0 auto;padding:56px 0 40px}header{padding-bottom:24px;border-bottom:1px solid var(--line);margin-bottom:30px}h1,h2,h3,h4,h5,h6{font-family:${theme.font && theme.font.title || "sans-serif"};line-height:1.3;margin:1.35em 0 .55em}h1{font-size:2rem;margin:0 0 12px}.meta{display:flex;flex-wrap:wrap;gap:8px 18px;color:var(--muted);font-size:.9rem}
-    .message{max-width:100%;margin:0 0 22px;padding:${flat ? "4px 0 22px" : "22px 24px"};background:transparent;border:${flat ? "0" : "1px solid"};border-bottom:${flat ? "1px solid var(--line)" : "1px solid"};border-radius:${flat ? "0" : "16px"};box-shadow:none}.message.user{${userAlign};background:${flat ? "transparent" : color.cardBgUser || "#eef8fb"};border-color:${flat ? "var(--line)" : color.cardBorderUser || "#bfe6ee"}}.message.assistant{background:${flat ? "transparent" : color.cardBgAssistant || "#fff"};border-color:${flat ? "var(--line)" : color.cardBorderAssistant || "#dbe7ef"}}
+    .message{max-width:100%;margin:0 0 22px;padding:${flat ? "4px 0 22px" : "22px 24px"};background:transparent;border:${flat ? "0" : "1px solid"};border-bottom:${flat ? "1px solid var(--line)" : "1px solid"};border-radius:${flat ? "0" : "16px"};box-shadow:none}.message.user{${userAlign};background:${flat ? "transparent" : color.cardBgUser || "#eef8fb"};border-color:${flat ? "var(--line)" : color.cardBorderUser || "#bfe6ee"}}.message.assistant{background:${flat ? "transparent" : color.cardBgAssistant || "#fff"};border-color:${flat ? "var(--line)" : color.cardBorderAssistant || "#dbe7ef"}}${flat ? "main>.message:last-of-type{border-bottom:0}" : ""}
     .message p{margin:.35em 0 1em}.message> :last-child{margin-bottom:0}a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:2px}code{font-family:${theme.font && theme.font.mono || "monospace"};background:${natural ? "#f3f4f6" : color.tagBgAssistant || "#f1f5f9"};padding:.12em .35em;border-radius:5px}.math-inline{display:inline-block;max-width:100%;vertical-align:middle;white-space:nowrap;overflow-x:auto;font-family:${theme.font && theme.font.body || "serif"}}.math-inline math{font-size:1em}.math-display{display:block;max-width:100%;overflow-x:auto;margin:1.1em 0;text-align:center;font-family:${theme.font && theme.font.body || "serif"}}.math-display math{font-size:1.15em}.math-fallback{white-space:pre-wrap;font-family:${theme.font && theme.font.mono || "monospace"}}mark{color:inherit;border-radius:3px;padding:0 .08em}.code-block{margin:18px 0;background:var(--code-bg);color:var(--code-text);border-radius:10px;overflow:hidden}.code-label{padding:8px 14px;border-bottom:1px solid rgba(255,255,255,.15);font:700 .72rem ${theme.font && theme.font.mono || "monospace"};opacity:.8}.code-block pre{margin:0;padding:16px;overflow:auto;white-space:pre}.code-block code{padding:0;background:transparent;color:inherit}
     blockquote{margin:18px 0;padding:12px 16px;background:var(--quote-bg);border-left:4px solid var(--quote-border);border-radius:0 8px 8px 0}hr{height:0;margin:24px 0;border:0;border-top:1px solid var(--line)}.table-wrap{overflow-x:auto;margin:18px 0}table{width:100%;border-collapse:collapse;font-size:.92rem}th,td{padding:10px 12px;border:1px solid var(--line);text-align:left;vertical-align:top}th{background:${natural ? "#f8fafc" : color.tagBgAssistant || "#f1f5f9"}}figure{margin:20px 0}img{display:block;max-width:100%;height:auto;border-radius:8px}figcaption{margin-top:6px;color:var(--muted);font-size:.8rem}.image-placeholder{margin:16px 0;padding:14px;border:1px dashed var(--line);color:var(--muted);text-align:center}footer{display:flex;justify-content:space-between;gap:18px;margin-top:34px;padding-top:16px;border-top:${natural ? "0" : "1px solid var(--line)"};color:var(--muted);font-size:.8rem}footer span:last-child{text-align:right}
     @media(max-width:640px){main{width:min(100% - 24px,920px);padding-top:28px}.message{max-width:100%;padding:${flat ? "4px 0 18px" : "18px"}}footer{display:block}footer span{display:block;margin-top:6px}footer span:last-child{text-align:left}}
@@ -397,7 +451,7 @@ export async function buildHtmlBlob(messages, metadata, settings, options) {
   var opts = options || {};
   notifyProgress(opts, t("export_progress_preparing_html", "Preparing HTML export"), 0.03);
   var imageMap = await buildEmbeddedImageMap(messages, opts);
-  var styleId = "natural"; // HTML export does not use custom themes; force native web presentation
+  var styleId = settings && settings.export_style || "natural";
   var theme = getExportTheme(styleId);
   var flat = styleId === "default" || styleId === "natural";
   var body = [];

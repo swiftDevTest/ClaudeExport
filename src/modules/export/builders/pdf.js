@@ -22,7 +22,7 @@ import {
   wrapRichText,
   getFontsForStyle
 } from '../utils.js';
-import { preloadCanvasImages } from '../media.js';
+import { preloadCanvasImages, imageBytesCache } from '../media.js';
 import { getPdfTheme } from '../themes/pdf.js';
 import { getMathAssetKey, mathFallbackText, preloadMathAssets } from '../math.js';
 
@@ -176,14 +176,17 @@ function getCenteredTextBaseline(ctx, top, height) {
   return top + height / 2 + 4;
 }
 
-export async function buildPdfBlob(messages, metadata, settingsInput, options) {
+async function buildPdfBlobInternal(messages, metadata, settingsInput, options) {
   options = options || {};
   if (options.signal && options.signal.aborted) {
     var abortErr = new Error("aborted");
     abortErr.name = "AbortError";
     throw abortErr;
   }
-  var imageCache = await preloadCanvasImages(messages, options);
+  var renderProfile = getPdfRenderProfile(messages);
+  var imageCache = await preloadCanvasImages(messages, Object.assign({}, options, {
+    imageRenderScale: renderProfile.scale
+  }));
   var mathAssets = await preloadMathAssets(messages, options, 15, true);
   notifyProgress(options, t("export_progress_paginating_doc", "Paginating export"), 0.04);
   var pages = await renderPdfPages(messages, metadata, settingsInput, {
@@ -196,6 +199,14 @@ export async function buildPdfBlob(messages, metadata, settingsInput, options) {
   var pdf = createPdfFromJpegs(pages, pages[0] && pages[0].canvasScale || PDF_DEFAULT_CANVAS_SCALE);
   notifyProgress(options, t("export_progress_ready_doc", "Export ready"), 1);
   return pdf;
+}
+
+export async function buildPdfBlob(messages, metadata, settingsInput, options) {
+  try {
+    return await buildPdfBlobInternal(messages, metadata, settingsInput, options);
+  } finally {
+    imageBytesCache.clear();
+  }
 }
 
 export async function renderPdfPages(messages, metadata, settingsInput, options, imageCache, mathAssets) {
@@ -325,7 +336,7 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
     if (!settings.show_chatvault_badge) return;
     ctx.font = "10px " + DESIGN.font.body;
     ctx.fillStyle = DESIGN.color.muted;
-    ctx.fillText(t("export_pdf_footer_branding", "Exported by Claude Export"), margin, pageHeight - 36);
+    ctx.fillText(t("export_pdf_footer_branding", "Exported by AI Chat Export"), margin, pageHeight - 36);
   }
 
   function finalizeCurrentPage() {
@@ -414,6 +425,32 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
     await yieldToBrowser();
   }
 
+  async function settlePendingPageJobs() {
+    if (!pageJobs.length) return;
+    var jobs = pageJobs;
+    pageJobs = [];
+    await Promise.allSettled(jobs);
+  }
+
+  function releaseUnfinalizedPage() {
+    if (contentClipActive && ctx) {
+      try {
+        ctx.restore();
+      } catch (error) {}
+      contentClipActive = false;
+    }
+    if (currentCanvas) {
+      try {
+        currentCanvas.width = 1;
+        currentCanvas.height = 1;
+      } catch (error) {}
+    }
+    current = null;
+    currentCanvas = null;
+    currentPageLinks = [];
+    ctx = null;
+  }
+
   function drawLines(lines, font, color, lineHeight, x) {
     ctx.font = font;
     ctx.fillStyle = color;
@@ -424,58 +461,64 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
     });
   }
 
-  newPage();
+  try {
+    newPage();
 
-  if (settings.show_conversation_title) {
-    var titleFont = "800 30px " + DESIGN.font.title;
-    var titleLines = wrapText(ctx, cleanInlineMarkdownText(metadata.title || "Untitled Chat"), contentWidth, titleFont).slice(0, 4);
-    drawLines(titleLines, titleFont, DESIGN.color.ink, 37);
-    y += 8;
-  }
+    if (settings.show_conversation_title) {
+      var titleFont = "800 30px " + DESIGN.font.title;
+      var titleLines = wrapText(ctx, cleanInlineMarkdownText(metadata.title || "Untitled Chat"), contentWidth, titleFont).slice(0, 4);
+      drawLines(titleLines, titleFont, DESIGN.color.ink, 37);
+      y += 8;
+    }
 
-  var meta = [];
-  if (settings.show_platform_name) meta.push(getPlatformLabel(metadata.platform));
-  if (settings.show_export_time) meta.push(formatDateDisplay(metadata.exportedAt));
-  if (settings.include_source_url && metadata.sourceUrl) meta.push(metadata.sourceUrl);
-  if (meta.length) {
-    var metaFont = "700 12px " + DESIGN.font.body;
-    var metaLines = wrapText(ctx, meta.join(" · "), contentWidth - 26, metaFont);
-    var metaHeight = metaLines.length * 17 + 16;
-    drawRoundRect(ctx, margin, y, contentWidth, metaHeight, 11, DESIGN.color.cardBgUser, DESIGN.color.cardBorderUser);
-    ctx.font = metaFont;
-    ctx.fillStyle = DESIGN.color.accentDark;
-    var metaStartY = y + (metaHeight - metaLines.length * 17) / 2;
-    metaLines.forEach(function (line, index) {
-      ctx.fillText(line, margin + 13, getCenteredTextBaseline(ctx, metaStartY + index * 17, 17));
-    });
-    y += metaHeight;
-  }
-  y += 26;
+    var meta = [];
+    if (settings.show_platform_name) meta.push(getPlatformLabel(metadata.platform));
+    if (settings.show_export_time) meta.push(formatDateDisplay(metadata.exportedAt));
+    if (settings.include_source_url && metadata.sourceUrl) meta.push(metadata.sourceUrl);
+    if (meta.length) {
+      var metaFont = "700 12px " + DESIGN.font.body;
+      var metaLines = wrapText(ctx, meta.join(" · "), contentWidth - 26, metaFont);
+      var metaHeight = metaLines.length * 17 + 16;
+      drawRoundRect(ctx, margin, y, contentWidth, metaHeight, 11, DESIGN.color.cardBgUser, DESIGN.color.cardBorderUser);
+      ctx.font = metaFont;
+      ctx.fillStyle = DESIGN.color.accentDark;
+      var metaStartY = y + (metaHeight - metaLines.length * 17) / 2;
+      metaLines.forEach(function (line, index) {
+        ctx.fillText(line, margin + 13, getCenteredTextBaseline(ctx, metaStartY + index * 17, 17));
+      });
+      y += metaHeight;
+    }
+    y += 26;
 
-  for (var mi = 0; mi < messages.length; mi++) {
-    if (options && options.signal && options.signal.aborted) {
-      var err = new Error("aborted");
-      err.name = "AbortError";
-      throw err;
+    for (var mi = 0; mi < messages.length; mi++) {
+      if (options && options.signal && options.signal.aborted) {
+        var err = new Error("aborted");
+        err.name = "AbortError";
+        throw err;
+      }
+      var message = messages[mi];
+      var layout = measurePdfMessage(message);
+      await renderPdfMessageCard(layout);
+      if (mi > 0 && mi % 20 === 0) {
+        notifyProgress(options, t("export_progress_paginating_doc", "Paginating export"), 0.08 + 0.64 * ((mi + 1) / Math.max(1, messages.length)));
+        await new Promise(function (resolve) { setTimeout(resolve, 0); });
+      }
+      if (pageJobs.length >= maxPendingPageJobs) {
+        await drainPageJobs();
+      }
     }
-    var message = messages[mi];
-    var layout = measurePdfMessage(message);
-    await renderPdfMessageCard(layout);
-    if (mi > 0 && mi % 20 === 0) {
-      notifyProgress(options, t("export_progress_paginating_doc", "Paginating export"), 0.08 + 0.64 * ((mi + 1) / Math.max(1, messages.length)));
-      await new Promise(function (resolve) { setTimeout(resolve, 0); });
+    notifyProgress(options, t("export_progress_paginating_doc", "Paginating export"), 0.74);
+    finalizeCurrentPage();
+    await drainPageJobs();
+    if (!encodedPages.length) {
+      throw new Error(t("export_pdf_encode_failed", "PDF page rendering failed. Please try again."));
     }
-    if (pageJobs.length >= maxPendingPageJobs) {
-      await drainPageJobs();
-    }
+    return encodedPages;
+  } catch (error) {
+    releaseUnfinalizedPage();
+    await settlePendingPageJobs();
+    throw error;
   }
-  notifyProgress(options, t("export_progress_paginating_doc", "Paginating export"), 0.74);
-  finalizeCurrentPage();
-  await drainPageJobs();
-  if (!encodedPages.length) {
-    throw new Error(t("export_pdf_encode_failed", "PDF page rendering failed. Please try again."));
-  }
-  return encodedPages;
 
   function measurePdfMessage(message) {
     var isUser = message.role === "user";

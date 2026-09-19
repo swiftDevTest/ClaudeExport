@@ -12,6 +12,7 @@
   const usageStore = globalThis.CHATVAULT_USAGE_STORE;
   const privacyProof = globalThis.CHATVAULT_PRIVACY_PROOF;
   const exportHealth = globalThis.CHATVAULT_EXPORT_HEALTH;
+  const exportErrors = globalThis.CHATVAULT_EXPORT_ERRORS;
   const templatePresets = globalThis.CHATVAULT_TEMPLATE_PRESETS;
   const developerExport = globalThis.CHATVAULT_DEVELOPER_EXPORT;
   const shareCards = globalThis.CHATVAULT_SHARE_CARDS;
@@ -198,6 +199,15 @@
       return tx("toast_export_network", "Network or sign-in issue. Please refresh the page and try again.", "网络或登录异常，请刷新页面后重试。");
     }
     return null;
+  }
+
+  function buildStructuredErrorResponse(error, fallbackMessage, context = {}) {
+    const details = exportErrors?.serialize?.(error, context) || {};
+    return {
+      ok: false,
+      error: friendlyExportError(error) || String(fallbackMessage || error?.message || tx("content_export_failed_message", "Export failed.", "导出失败。")),
+      ...details
+    };
   }
 
   // 根据内容动态生成同步进度文案，提升导出体验（不改动核心同步逻辑）
@@ -1170,6 +1180,8 @@
 
   let batchModalOpen = false;
   let batchExportInProgress = false;
+  let batchInitialSyncPromise = null;
+  let batchInitialSyncRunner = null;
   let batchList = [];
   let batchMode = "files";
   let batchSelectedFormat = "pdf";
@@ -3604,14 +3616,11 @@
     `;
 
     const loader = shadowRoot.getElementById("cv-batch-loading-indicator");
+    const retryBtn = shadowRoot.getElementById("cv-batch-sync-retry");
 
     // 抽出为可重试函数：首次同步失败时在 loader 中显示"重试"按钮，
     // 让用户无需关闭弹窗再打开即可恢复，避免重新触发整段 modal 初始化。
-    const retryBtn = shadowRoot.getElementById("cv-batch-sync-retry");
-    let batchSyncing = false;
-    const runInitialBatchSync = async () => {
-      if (batchSyncing) return;
-      batchSyncing = true;
+    const performInitialBatchSync = async () => {
       if (retryBtn) retryBtn.hidden = true;
       // 重试时必须重置列表状态：首次失败后 DOM 行和 batchList 可能已有部分数据，
       // 直接重跑 appendBatchListItems 会产生重复行，loadNextPageOfConversations
@@ -3667,11 +3676,22 @@
           loader.querySelector(".cv-batch-dot-spinner").style.display = "none";
           if (retryBtn) retryBtn.hidden = false;
         }
-      } finally {
-        batchSyncing = false;
       }
     };
-    if (retryBtn) retryBtn.addEventListener("click", runInitialBatchSync);
+    const runInitialBatchSync = () => {
+      if (batchInitialSyncPromise) return batchInitialSyncPromise;
+      batchInitialSyncPromise = performInitialBatchSync().finally(() => {
+        batchInitialSyncPromise = null;
+      });
+      return batchInitialSyncPromise;
+    };
+    batchInitialSyncRunner = runInitialBatchSync;
+    if (retryBtn && retryBtn.dataset.chatVaultBound !== "true") {
+      retryBtn.dataset.chatVaultBound = "true";
+      retryBtn.addEventListener("click", function () {
+        if (batchInitialSyncRunner) batchInitialSyncRunner();
+      });
+    }
     runInitialBatchSync();
   }
 
@@ -5191,28 +5211,69 @@
         });
       }
 
-      if (Array.isArray(messages) && messages.length > 0) {
-        // Validate the authoritative response before any renderer sees it.
-        // Unknown visible content, missing roles, many empty turns, or a large
-        // API/DOM count mismatch must stop a full export instead of silently
-        // replacing it with a potentially virtualized page snapshot.
-        var candidateCount = 0;
-        if (isCurrentConversation(chat) && typeof exporter.getParseStats === "function") {
-          try {
-            candidateCount = Number(exporter.getParseStats().candidateTurnCount) || 0;
-          } catch (error) {}
-        }
-        var risk = typeof fetchers.detectApiCompletenessRisk === "function"
-          ? fetchers.detectApiCompletenessRisk(messages, { candidateCount: candidateCount })
+      // Validate the authoritative response before checking its parsed length:
+      // a response made entirely from unknown content types legitimately
+      // parses to zero messages but still carries completeness diagnostics.
+      // Unknown visible content, missing roles, many empty turns, or a large
+      // API/DOM count mismatch must stop a full export instead of silently
+      // replacing it with a potentially virtualized page snapshot.
+      var candidateCount = 0;
+      if (isCurrentConversation(chat) && typeof exporter.getParseStats === "function") {
+        try {
+          candidateCount = Number(exporter.getParseStats().candidateTurnCount) || 0;
+        } catch (error) {}
+      }
+      var risk = typeof fetchers.detectApiCompletenessRisk === "function"
+        ? fetchers.detectApiCompletenessRisk(messages, { candidateCount: candidateCount })
+        : { needsFallback: false, reasons: [], unknownTypes: [] };
+      var blockingRiskReasons = getBlockingConversationRiskReasons(risk, platform);
+
+      // A current ChatGPT page may safely resolve an evolving API schema
+      // only when it covers every API/unknown-only turn and every expected
+      // conversation role. Re-run completeness checks on that whole-page
+      // snapshot before accepting it; never splice individual DOM turns into
+      // the authoritative API branch.
+      var hasOnlyUnknownSchemaRisk = blockingRiskReasons.length > 0 && blockingRiskReasons.every((reason) => (
+        reason === "unknown_content_type" ||
+        reason === "missing_user_role" ||
+        reason === "missing_assistant_role"
+      ));
+      if (platform === "chatgpt" &&
+          options.allowPageFallback === true &&
+          hasOnlyUnknownSchemaRisk &&
+          typeof fetchers.canUseValidatedChatGptPageSnapshot === "function" &&
+          fetchers.canUseValidatedChatGptPageSnapshot(messages, pageMessages)) {
+        var pageRisk = typeof fetchers.detectApiCompletenessRisk === "function"
+          ? fetchers.detectApiCompletenessRisk(pageMessages, { candidateCount: candidateCount })
           : { needsFallback: false, reasons: [], unknownTypes: [] };
-        var blockingRiskReasons = getBlockingConversationRiskReasons(risk, platform);
-
-        if (blockingRiskReasons.length > 0) {
-          const riskError = new Error("Conversation completeness check failed: " + blockingRiskReasons.join(", "));
-          riskError.code = "CONVERSATION_COMPLETENESS_RISK";
-          throw riskError;
+        var pageBlockingRiskReasons = getBlockingConversationRiskReasons(pageRisk, platform);
+        if (pageBlockingRiskReasons.length === 0) {
+          messages = cloneExportMessages(pageMessages);
+          risk = pageRisk;
+          blockingRiskReasons = [];
         }
+      }
 
+      if (blockingRiskReasons.length > 0) {
+        const unknownTypeDetails = Array.isArray(risk?.unknownTypes)
+          ? risk.unknownTypes
+            .slice(0, 5)
+            .map((type) => String(type || "").trim().slice(0, 80))
+            .filter(Boolean)
+          : [];
+        const describedRiskReasons = blockingRiskReasons.map((reason) => (
+          reason === "unknown_content_type" && unknownTypeDetails.length > 0
+            ? `unknown_content_type (${unknownTypeDetails.join(", ")})`
+            : reason
+        ));
+        const riskError = new Error("Conversation completeness check failed: " + describedRiskReasons.join(", "));
+        riskError.code = "CONVERSATION_COMPLETENESS_RISK";
+        riskError.reasons = blockingRiskReasons.slice();
+        riskError.unknownTypes = unknownTypeDetails;
+        throw riskError;
+      }
+
+      if (Array.isArray(messages) && messages.length > 0) {
         var needsPresentationMerge = (options.preserveHtmlPresentation || options.preserveMarkdownSemantics) && pageMessages.length > 0;
 
         let alreadyCloned = false;
@@ -5247,9 +5308,13 @@
       if (options.signal?.aborted || error?.name === "AbortError") {
         throw error;
       }
-      if (options.allowPageFallback === true && pageMessages.length > 0) {
-        console.warn("Full conversation fetch failed; explicit visible-page fallback was requested:", error);
-        return pageMessages;
+      // Completeness risks already had a chance to use the validated whole-page
+      // path above. Do not let the generic fallback bypass that validation.
+      if (options.allowPageFallback === true &&
+          pageMessages.length > 0 &&
+          error?.code !== "CONVERSATION_COMPLETENESS_RISK") {
+        console.info("[Claude Export] Using the explicitly requested visible-page fallback:", error?.code || error?.name, error?.message);
+        return cloneExportMessages(pageMessages);
       }
       throw createFullConversationUnavailableError(error, platform);
     }
@@ -5675,6 +5740,24 @@
         suggestion: tx("content_export_fail_timeout_fix", "Retry, or reduce the number of messages to export.", "请重试，或减少导出的消息数量。"),
         fixAction: "retry",
         fixLabel: tx("content_export_fix_retry", "Retry", "重试")
+      };
+    }
+
+    // 7.5 会话完整性无法确认（API/DOM 数量不匹配或平台结构变化）
+    if (
+      code === "CONVERSATION_COMPLETENESS_RISK" ||
+      code === "FULL_CONVERSATION_UNAVAILABLE" ||
+      code === "CONTENT_INCOMPLETE" ||
+      code === "PLATFORM_SCHEMA_CHANGED" ||
+      code === "PLATFORM_UNAVAILABLE" ||
+      /completeness check failed|complete conversation could not be verified/i.test(message)
+    ) {
+      return {
+        category: "platform_dom",
+        reason: tx("content_export_fail_completeness_reason", "The complete conversation could not be verified.", "无法确认会话内容完整性。"),
+        suggestion: tx("content_export_fail_completeness_fix", "Refresh the AI conversation page and try again.", "请刷新当前 AI 会话页面后重试。"),
+        fixAction: "refresh_page",
+        fixLabel: tx("content_export_fix_refresh", "Refresh & Retry", "刷新并重试")
       };
     }
 
@@ -6150,6 +6233,7 @@
     const signal = controller.signal;
     const isSingleExport = !globalThis.CHATVAULT_IS_BATCH_EXPORT;
     let serverConsumedExportUsage = false;
+    let currentExportPhase = "initialize";
 
     function clearCurrentExportController() {
       if (abortController === controller) {
@@ -6271,6 +6355,7 @@
     // API 使用 URL 中的 conversationId 和用户 cookie，不依赖 DOM 选择器，
     // 可覆盖 DOM 虚拟化/懒加载导致 DOM 解析为空但会话实际存在的场景。
     if (!providedMessages && !isSelectedExport && platformForExport) {
+      currentExportPhase = "fetch";
       if (!globalThis.CHATVAULT_IS_BATCH_EXPORT) {
         renderExportProgress(formatForExport, {
           mode: "single",
@@ -6346,6 +6431,7 @@
 
     try {
       // 1. 抓取聊天消息
+      currentExportPhase = "parse";
       setExportProgress(tx("content_progress_parsing", "Parsing page content...", "正在解析页面内容..."), 8);
       const rawMessages = rawMessagesForExport;
       
@@ -6419,6 +6505,7 @@
       };
 
       // 6. 执行核心导出 (在浏览器本地渲染并生成 Blob/ZIP/PNG)
+      currentExportPhase = "render";
       setExportProgress(tx("content_progress_building", "Building document...", "正在构建文档..."), 32);
 
       await exporter.preload();
@@ -6491,6 +6578,7 @@
       }
 
       // 7. 保存导出文件
+      currentExportPhase = "save";
       setExportProgress(tx("content_progress_downloading", "Preparing safe download...", "正在准备安全下载..."), 94);
 
       if (signal.aborted) {
@@ -6568,6 +6656,7 @@
         platform: metadata.platform,
         properties: { format: formatForExport, source: "current_chat" }
       });
+      currentExportPhase = "complete";
       if (copyToClipboard) {
         showPageToast(tx("content_json_copied", "JSON copied to clipboard.", "JSON 已复制到剪贴板。"));
       }
@@ -6594,11 +6683,16 @@
       }
 
     } catch (e) {
-      if (e.message !== "Export cancelled.") {
+      const structuredError = exportErrors?.apply?.(e, {
+        phase: currentExportPhase,
+        format: formatForExport,
+        platform: platformForExport
+      }) || e;
+      if (e.message !== "Export cancelled." && structuredError.code !== "EXPORT_CANCELLED") {
         hideExportProgress();
         if (!globalThis.CHATVAULT_IS_BATCH_EXPORT) {
           // 单次导出失败：展示具体原因 + 一键修复对话框（替代原来的通用 toast）
-          const failure = classifyExportFailure(e, { format: formatForExport });
+          const failure = classifyExportFailure(structuredError, { phase: currentExportPhase, format: formatForExport });
           const onFix = buildFailureFixHandler(failure, {
             formatForExport,
             settingsForExport,
@@ -7238,10 +7332,10 @@
             await loadState({ localOnly: true, skipVerify: true });
           } catch (error) {
             if (!exportStarted) {
-              sendResponse({
-                ok: false,
-                error: error?.message || tx("content_export_failed_message", "Export failed.", "导出失败。")
-              });
+              sendResponse(buildStructuredErrorResponse(error, null, {
+                format: activeFormat,
+                phase: "initialize"
+              }));
               return;
             }
             console.error("Popup export failed after it started:", error);
@@ -7259,7 +7353,10 @@
             await executeContextExportRequest("select");
             sendResponse({ ok: true });
           } catch (error) {
-            sendResponse({ ok: false, error: error?.message || tx("content_export_failed_message", "Export failed.", "导出失败。") });
+            sendResponse(buildStructuredErrorResponse(error, null, {
+              format: "select",
+              phase: "initialize"
+            }));
           }
         })();
         return true;

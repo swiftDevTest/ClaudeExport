@@ -289,7 +289,10 @@ var EXPORT_LIST_MAX_ITEMS = 2000;
 function normalizeListItems(items, depth, budget) {
   var currentDepth = Number.isFinite(Number(depth)) ? Number(depth) : 0;
   var remaining = budget || { value: EXPORT_LIST_MAX_ITEMS };
-  if (currentDepth >= EXPORT_LIST_MAX_DEPTH || remaining.value <= 0) return [];
+  if (currentDepth >= EXPORT_LIST_MAX_DEPTH || remaining.value <= 0) {
+    remaining.truncated = true;
+    return [];
+  }
   return (items || []).map(function (item) {
     if (remaining.value <= 0) return null;
     remaining.value -= 1;
@@ -352,10 +355,10 @@ export function normalizeExportBlock(block, index) {
     // A display formula is semantic content, not a paragraph whose TeX can be
     // rewritten by the normal text sanitizer. Keep both the portable source
     // LaTeX and any source MathML captured from the conversation DOM.
-    var latex = String(block.text == null ? "" : block.text)
+    var originalLatex = String(block.text == null ? "" : block.text)
       .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "")
-      .trim()
-      .slice(0, 8000);
+      .trim();
+    var latex = originalLatex.slice(0, 8000);
     if (!latex) return null;
     var mathBlock = {
       ...block,
@@ -364,6 +367,7 @@ export function normalizeExportBlock(block, index) {
       display: block.display !== false,
       originalIndex: Number.isFinite(Number(block.originalIndex)) ? Number(block.originalIndex) : Number(index)
     };
+    if (originalLatex.length > latex.length) mathBlock.truncated = true;
     var mathMl = sanitizeExportMathMl(block.mathMl);
     if (mathMl) mathBlock.mathMl = mathMl;
     else delete mathBlock.mathMl;
@@ -372,12 +376,15 @@ export function normalizeExportBlock(block, index) {
   }
 
   if (type === "list") {
+    var listBudget = { value: EXPORT_LIST_MAX_ITEMS, truncated: false };
     var listBlock = {
       ...block,
       type: "list",
       ordered: Boolean(block.ordered),
-      items: normalizeListItems(block.items)
+      items: normalizeListItems(block.items, 0, listBudget)
     };
+    if (listBudget.truncated) listBlock.truncated = true;
+    else delete listBlock.truncated;
     if (listBlock.textSource !== "dom") delete listBlock.textSource;
     var listHtmlStyle = sanitizeExportHtmlStyle(block.htmlStyle);
     if (listHtmlStyle) listBlock.htmlStyle = listHtmlStyle;

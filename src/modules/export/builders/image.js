@@ -22,7 +22,7 @@ import {
   wrapRichText,
   getFontsForStyle
 } from '../utils.js';
-import { preloadCanvasImages } from '../media.js';
+import { preloadCanvasImages, imageBytesCache } from '../media.js';
 import { getImageTheme } from '../themes/image.js';
 import { getMathAssetKey, mathFallbackText, preloadMathAssets } from '../math.js';
 
@@ -81,7 +81,7 @@ function isTransparentColor(value) {
   return false;
 }
 
-export async function buildImageBlob(messages, metadata, settingsInput, options) {
+async function buildImageBlobInternal(messages, metadata, settingsInput, options) {
   options = options || {};
   function throwIfAborted() {
     if (options.signal && options.signal.aborted) {
@@ -92,7 +92,11 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
   }
 
   throwIfAborted();
-  var imageCache = await preloadCanvasImages(messages, options);
+  var imageProfile = getAdaptiveImageExportProfile();
+  var scale = options && options.preview ? IMAGE_PREVIEW_SCALE : imageProfile.preferredScale;
+  var imageCache = await preloadCanvasImages(messages, Object.assign({}, options, {
+    imageRenderScale: scale
+  }));
   throwIfAborted();
   var mathAssets = await preloadMathAssets(messages, options, 18, true);
   throwIfAborted();
@@ -102,8 +106,6 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
   var flatLayout = themeConfig.styleId === "natural";
   var messageBottomGap = flatLayout ? 20 : IMAGE_MESSAGE_BOTTOM_GAP;
   var width = IMAGE_RENDER_WIDTH;
-  var imageProfile = getAdaptiveImageExportProfile();
-  var scale = options && options.preview ? IMAGE_PREVIEW_SCALE : imageProfile.preferredScale;
   var pad = 64;
   var contentWidth = width - pad * 2;
   var measure = createCanvas(width, 10, 1);
@@ -1130,7 +1132,7 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
   if (settings.show_chatvault_badge) {
     var footerY = y + IMAGE_FOOTER_TOP_GAP;
     ctx.font = "700 15px " + theme.font.body;
-    var footerText = t("export_pdf_footer_branding", "Exported by Claude Export");
+    var footerText = t("export_pdf_footer_branding", "Exported by AI Chat Export");
     var footerWidth = Math.max(120, ctx.measureText(footerText).width);
     var logoGradient = ctx.createLinearGradient(pad, footerY, pad + footerWidth, footerY);
     logoGradient.addColorStop(0, theme.color.accent);
@@ -1149,5 +1151,13 @@ export async function buildImageBlob(messages, metadata, settingsInput, options)
     // 释放主渲染 canvas 与测量 canvas 的位图内存，避免长对话导出后 GC 压力
     try { c.canvas.width = 1; c.canvas.height = 1; } catch (ignored) {}
     try { measure.canvas.width = 1; measure.canvas.height = 1; } catch (ignored) {}
+  }
+}
+
+export async function buildImageBlob(messages, metadata, settingsInput, options) {
+  try {
+    return await buildImageBlobInternal(messages, metadata, settingsInput, options);
+  } finally {
+    imageBytesCache.clear();
   }
 }

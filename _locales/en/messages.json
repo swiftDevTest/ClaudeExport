@@ -1634,6 +1634,12 @@
   "content_export_fail_unknown_reason": {
     "message": "An unexpected error occurred during export."
   },
+  "content_export_fail_completeness_reason": {
+    "message": "The complete conversation could not be verified."
+  },
+  "content_export_fail_completeness_fix": {
+    "message": "Refresh the AI conversation page and try again."
+  },
   "content_export_fail_unknown_fix": {
     "message": "Refresh the page and try again. If the issue persists, try a different format."
   },
@@ -1921,5 +1927,1253 @@
   },
   "content_retry": {
     "message": "Retry"
+  },
+  "billing_benefit_premium_styles": {
+    "message": "Premium report styles (Oxford, McKinsey)"
+  },
+  "billing_benefit_shared": {
+    "message": "Shared Pro VIP status with Claude Export AI"
+  },
+  "billing_benefit_unlimited": {
+    "message": "Unlimited daily chat exports"
+  },
+  "billing_benefit_watermark": {
+    "message": "Hide Claude Export watermark"
+  },
+  "billing_billed_yearly": {
+    "message": "Billed $$29.99 yearly"
+  },
+  "content_all_conversations_loaded": {
+    "message": "All conversations loaded"
+  },
+  "content_background_loading": {
+    "message": "Loading more conversations in background..."
+  },
+  "content_background_syncing": {
+    "message": "Updating conversation history in background..."
+  },
+  "content_batch_action_type": {
+    "message": "Batch action type"
+  },
+  "content_batch_already_running": {
+    "message": "A batch sync is already running. Please wait or cancel it first."
+  },
+  "content_batch_export_files": {
+    "message": "Export files"
+  },
+  "content_batch_export_platform": {
+    "message": "Batch export <b>$1</b> chats"
+  },
+  "content_batch_exporting_count": {
+    "message": "Exporting <b>$1</b> chats"
+  },
+  "content_batch_item_failed_with_reason": {
+    "message": "Failed: $1"
+  },
+  "content_batch_no_files": {
+    "message": "No conversations were exported."
+  },
+  "content_batch_partial_failure": {
+    "message": "Some chats failed to export: $1"
+  },
+  "content_batch_quota_exceeded": {
+    "message": "Daily export limit reached. Upgrade to Pro for unlimited exports."
+  },
+  "content_batch_saving_zip": {
+    "message": "Preparing save file..."
+  },
+  "content_batch_sync_notion": {
+    "message": "Sync to Notion"
+  },
+  "content_batch_sync_obsidian": {
+    "message": "Sync to Obsidian"
+  },
+  "content_batch_trial_exhausted": {
+    "message": "You have used your free batch export trial. Upgrade to Pro for unlimited batch export."
+  },
+  "content_batch_trial_hint": {
+    "message": "Free trial: this is your one free batch export. Upgrade to Pro for unlimited use."
+  },
+  "content_batch_trial_banner_available": {
+    "message": "Free trial available: 1 free batch export. Upgrade to Pro for unlimited use."
+  },
+  "content_batch_trial_banner_used": {
+    "message": "Free trial used. Upgrade to Pro for unlimited batch export."
+  },
+  "content_btn_clear": {
+    "message": "Clear"
+  },
+  "content_btn_close": {
+    "message": "Close"
+  },
+  "content_btn_done": {
+    "message": "Done"
+  },
+  "content_btn_exit": {
+    "message": "Exit"
+  },
+  "content_cancel_export": {
+    "message": "Cancel export"
+  },
+  "content_completed_title": {
+    "message": "Completed: $1"
+  },
+  "content_continuing_chatgpt_history": {
+    "message": "Continuing to sync Claude history..."
+  },
+  "content_continuing_sidebar_sync": {
+    "message": "Continuing to load sidebar history..."
+  },
+  "content_context_export_this": {
+    "message": "Export this conversation"
+  },
+  "content_conversation_history": {
+    "message": "Conversation history"
+  },
+  "content_copy_failed_refresh": {
+    "message": "Copy failed. Refresh the page and try again."
+  },
+  "content_detail_toggles": {
+    "message": "Detailed toggles"
+  },
+  "content_entitlement_local_quota_exhausted": {
+    "message": "Daily export limit reached (verified locally). Try again later or upgrade to Pro."
+  },
+  "content_entitlement_verify_failed": {
+    "message": "Could not verify your export entitlement. Check your connection and try again."
+  },
+  "content_export_already_running": {
+    "message": "An export is already running. Please wait or cancel it first."
+  },
+  "content_export_review_button": {
+    "message": "Rate Claude Export"
+  },
+  "content_export_review_open_failed": {
+    "message": "Could not open the Chrome Web Store."
+  },
+  "content_export_engine_load_failed": {
+    "message": "Export engine failed to load. Refresh the page and try again."
+  },
+  "content_export_fail_engine_reason": {
+    "message": "The extension export engine is unavailable."
+  },
+  "content_export_fail_engine_fix": {
+    "message": "Refresh the page and try again."
+  },
+  "content_export_failed_message": {
+    "message": "Export failed: $1"
+  },
+  "content_export_failed_title": {
+    "message": "Export failed: $1"
+  },
+  "content_export_options": {
+    "message": "Export format and detailed settings"
+  },
+  "content_export_save_cancelled": {
+    "message": "Export cancelled."
+  },
+  "content_export_ui_not_ready": {
+    "message": "Export UI is still loading. Refresh the page and try again."
+  },
+  "content_exporting_index_title": {
+    "message": "Exporting ($1/$2): <b style='color:#d97706;'>$3</b>"
+  },
+  "content_format_text": {
+    "message": "Text"
+  },
+  "content_found_syncing": {
+    "message": "Found $1 conversations."
+  },
+  "content_generating_export_file": {
+    "message": "Generating local export file..."
+  },
+  "content_generating_local_file": {
+    "message": "Generating local file..."
+  },
+  "content_guest_quota_mode": {
+    "message": "Guest free quota mode"
+  },
+  "content_json_copied": {
+    "message": "JSON copied to clipboard."
+  },
+  "content_load_more": {
+    "message": "Load More"
+  },
+  "content_loading_conversation_data": {
+    "message": "Loading conversation data: $1"
+  },
+  "content_loading_more": {
+    "message": "Loading..."
+  },
+  "content_local_batch_export_starting": {
+    "message": "Starting local batch export..."
+  },
+  "content_login_failed_refresh": {
+    "message": "Sign-in failed. Refresh the page and try again."
+  },
+  "content_login_service_unavailable": {
+    "message": "Sign-in is temporarily unavailable. Refresh the page and try again."
+  },
+  "content_login_required_batch_export": {
+    "message": "Please sign in to use batch export."
+  },
+  "content_no_copy_text": {
+    "message": "This conversation has no text content to copy."
+  },
+  "content_no_messages_for_batch_item": {
+    "message": "No exportable messages found."
+  },
+  "content_notion_batch_in_progress": {
+    "message": "Syncing to Notion"
+  },
+  "content_notion_batch_progress": {
+    "message": "$1 of $2 complete"
+  },
+  "content_notion_batch_progress_with_detail": {
+    "message": "$1 · $2"
+  },
+  "content_notion_cancelled": {
+    "message": "Cancelled"
+  },
+  "content_notion_connect_helper": {
+    "message": "Open the extension popup to connect your Notion workspace."
+  },
+  "content_notion_database": {
+    "message": "Notion Database"
+  },
+  "content_notion_destination_required": {
+    "message": "Choose a Notion Database first."
+  },
+  "content_notion_destination_unavailable": {
+    "message": "Connect Notion from the extension popup"
+  },
+  "content_notion_failed": {
+    "message": "Failed"
+  },
+  "content_notion_no_database": {
+    "message": "No authorized Database found"
+  },
+  "content_notion_partial": {
+    "message": "Synced with warnings"
+  },
+  "content_notion_preparing": {
+    "message": "Preparing"
+  },
+  "content_notion_queued": {
+    "message": "Queued"
+  },
+  "content_notion_retrying": {
+    "message": "Retrying"
+  },
+  "content_notion_share_database": {
+    "message": "Share a Database with the Notion connection, then reopen this panel."
+  },
+  "content_notion_synced": {
+    "message": "Synced"
+  },
+  "content_notion_syncing": {
+    "message": "Syncing"
+  },
+  "content_notion_waiting": {
+    "message": "Waiting"
+  },
+  "content_open": {
+    "message": "Open"
+  },
+  "content_signing_in": {
+    "message": "Signing in..."
+  },
+  "content_open_subscribe_panel": {
+    "message": "Opening Claude Export Pro plans..."
+  },
+  "content_open_subscribe_panel_failed": {
+    "message": "Open the Claude Export toolbar popup to subscribe."
+  },
+  "content_opening_conversation_page": {
+    "message": "Opening conversation page..."
+  },
+  "content_pro_quota_desc": {
+    "message": "Unlimited report-grade PDF and Word exports are available. All premium business themes are unlocked."
+  },
+  "content_progress_building": {
+    "message": "Building document..."
+  },
+  "content_progress_checking_export_access": {
+    "message": "Preparing export..."
+  },
+  "content_progress_complete": {
+    "message": "Export complete."
+  },
+  "content_progress_copying_json": {
+    "message": "Copying JSON..."
+  },
+  "content_progress_downloading": {
+    "message": "Preparing safe download..."
+  },
+  "content_progress_formatting": {
+    "message": "Applying export formatting..."
+  },
+  "content_progress_initializing": {
+    "message": "Exporting..."
+  },
+  "content_progress_loading_full_conversation": {
+    "message": "Loading complete conversation data..."
+  },
+  "content_progress_parsing": {
+    "message": "Parsing page content..."
+  },
+  "content_progress_receipt": {
+    "message": "Generating export receipt..."
+  },
+  "content_quota_loading_desc": {
+    "message": "Checking today's local export usage."
+  },
+  "content_quota_loading_title": {
+    "message": "Loading quota..."
+  },
+  "content_quota_remaining_prefix": {
+    "message": "Today's remaining quota: "
+  },
+  "content_quota_remaining_suffix": {
+    "message": "exports."
+  },
+  "content_select_one_before_export": {
+    "message": "Select at least one message before exporting."
+  },
+  "content_selected_batch_suffix": {
+    "message": " chats (max 10)"
+  },
+  "content_selected_prefix": {
+    "message": "Selected "
+  },
+  "content_selected_short": {
+    "message": "Selected"
+  },
+  "content_sidebar_sync_failed": {
+    "message": "Sidebar sync failed. Please try again."
+  },
+  "content_sync_chat_count": {
+    "message": "Sync $1 chats to Notion"
+  },
+  "content_syncing_chatgpt_history": {
+    "message": "Syncing conversations from Claude history..."
+  },
+  "content_syncing_sidebar": {
+    "message": "Syncing sidebar history and loading more chats..."
+  },
+  "content_toggle_watermark": {
+    "message": "Hide product watermark"
+  },
+  "content_untitled_database": {
+    "message": "Untitled Database"
+  },
+  "content_upgrade_appendix": {
+    "message": "Prompt Appendix requires Pro."
+  },
+  "content_upgrade_batch_export": {
+    "message": "Batch export is a Pro feature. Upgrade to unlock multi-chat export."
+  },
+  "content_upgrade_desc": {
+    "message": "Upgrade to Claude Export Pro to remove quota limits."
+  },
+  "content_upgrade_free_limit": {
+    "message": "You have used today's 3 free exports."
+  },
+  "content_upgrade_quota_hint": {
+    "message": "Upgrade to Pro to remove quota and watermark limits."
+  },
+  "content_upgrade_template": {
+    "message": "The selected professional template requires Pro."
+  },
+  "content_upgrade_theme": {
+    "message": "Premium report themes require Pro."
+  },
+  "content_upgrade_watermark": {
+    "message": "Hiding the Claude Export watermark requires Pro."
+  },
+  "export_image_large_tables": {
+    "message": "This conversation contains large tables that are best exported as PDF or Word."
+  },
+  "image_limit_modal_title": {
+    "message": "Image Too Large"
+  },
+  "image_limit_modal_cancel": {
+    "message": "Cancel"
+  },
+  "image_limit_modal_export_pdf": {
+    "message": "Export as PDF"
+  },
+  "export_image_placeholder": {
+    "message": "[Image]"
+  },
+  "export_pdf_encode_failed": {
+    "message": "PDF page rendering failed. Please try again."
+  },
+  "export_pdf_too_large": {
+    "message": "This conversation is too large to export as one PDF safely. Export a shorter range."
+  },
+  "export_pdf_too_many_pages": {
+    "message": "This conversation is too large to export as one PDF safely. Export a shorter range."
+  },
+  "export_progress_building_json": {
+    "message": "Building JSON export"
+  },
+  "export_progress_building_markdown": {
+    "message": "Building Markdown export"
+  },
+  "export_progress_building_text": {
+    "message": "Building text export"
+  },
+  "export_progress_building_word": {
+    "message": "Building Word document"
+  },
+  "export_progress_detail_conversations": {
+    "message": "$1 conversations"
+  },
+  "export_progress_detail_issue": {
+    "message": "$1 issue"
+  },
+  "export_progress_detail_issues": {
+    "message": "$1 issues"
+  },
+  "export_progress_detail_ready": {
+    "message": "$1 ready"
+  },
+  "export_progress_loading_images": {
+    "message": "Loading images"
+  },
+  "export_progress_preparing_docx": {
+    "message": "Preparing Word document"
+  },
+  "export_progress_preparing_json": {
+    "message": "Preparing JSON export"
+  },
+  "export_progress_preparing_markdown": {
+    "message": "Preparing Markdown export"
+  },
+  "export_progress_preparing_text": {
+    "message": "Preparing text export"
+  },
+  "export_progress_ready_doc": {
+    "message": "Export ready"
+  },
+  "folders_load_more": {
+    "message": "Load More"
+  },
+  "format_markdown": {
+    "message": "Markdown"
+  },
+  "notion_clear_task": {
+    "message": "Clear local task"
+  },
+  "notion_connected": {
+    "message": "Connected"
+  },
+  "notion_metadata_exported": {
+    "message": "Exported"
+  },
+  "notion_metadata_from": {
+    "message": "From"
+  },
+  "notion_no_data_source": {
+    "message": "No authorized Database found"
+  },
+  "notion_not_connected": {
+    "message": "Not connected"
+  },
+  "notion_disconnect_server_retained": {
+    "message": "Could not disconnect on the server side. Your local data was kept. Please try again later."
+  },
+  "notion_fetch_failed": {
+    "message": "Fetch failed"
+  },
+  "notion_reconnect_required": {
+    "message": "Reconnect required"
+  },
+  "notion_reconnect_warning": {
+    "message": "Notion access has expired. Reconnect to continue syncing."
+  },
+  "notion_reconnect_action": {
+    "message": "Reconnect"
+  },
+  "notion_oauth_failed": {
+    "message": "Notion connection failed: $1"
+  },
+  "notion_oauth_opening": {
+    "message": "Opening Notion authorization..."
+  },
+  "notion_oauth_success": {
+    "message": "Notion connected."
+  },
+  "notion_connecting": {
+    "message": "Connecting..."
+  },
+  "notion_save_to": {
+    "message": "Save to Notion"
+  },
+  "notion_save": {
+    "message": "Save"
+  },
+  "notion_disconnected": {
+    "message": "Notion disconnected."
+  },
+  "notion_cancel_task": {
+    "message": "Cancel task"
+  },
+  "notion_retry": {
+    "message": "Retry"
+  },
+  "notion_open_page_failed": {
+    "message": "Could not open the Notion page."
+  },
+  "notion_signin_again": {
+    "message": "Signed in. Click Connect Notion again to continue."
+  },
+  "notion_signin_required": {
+    "message": "Sign in first. Notion workspace authorization will open automatically after sign-in."
+  },
+  "notion_sync_cancelled": {
+    "message": "Sync cancelled."
+  },
+  "notion_sync_fetching_conversation": {
+    "message": "Fetching conversation..."
+  },
+  "notion_sync_failed": {
+    "message": "Notion sync failed: $1"
+  },
+  "notion_sync_no_messages": {
+    "message": "No conversation messages were found on this page."
+  },
+  "notion_sync_partial_desc": {
+    "message": "The page was created successfully. Open it to review any content that could not be preserved exactly."
+  },
+  "notion_sync_partial_title": {
+    "message": "Synced to Notion with warnings"
+  },
+  "notion_sync_preparing": {
+    "message": "Preparing conversation..."
+  },
+  "notion_sync_progress_title": {
+    "message": "Syncing to Notion"
+  },
+  "notion_sync_retrying": {
+    "message": "Notion is busy. Retrying safely..."
+  },
+  "notion_sync_success_desc": {
+    "message": "This conversation is ready in your Notion Database."
+  },
+  "notion_sync_success_title": {
+    "message": "Synced to Notion"
+  },
+  "notion_thinking_process": {
+    "message": "Thinking Process (思考过程)"
+  },
+  "notion_untitled_conversation": {
+    "message": "Untitled conversation"
+  },
+  "obsidian_batch_all_failed": {
+    "message": "No conversations could be synced."
+  },
+  "obsidian_batch_cancelled": {
+    "message": "Obsidian batch sync cancelled."
+  },
+  "obsidian_batch_complete": {
+    "message": "Obsidian batch sync complete"
+  },
+  "obsidian_batch_complete_desc": {
+    "message": "Each successful conversation was saved as a separate note."
+  },
+  "obsidian_batch_in_progress": {
+    "message": "Syncing to Obsidian"
+  },
+  "obsidian_batch_progress": {
+    "message": "$1 of $2 complete"
+  },
+  "obsidian_batch_progress_with_detail": {
+    "message": "$1 · $2"
+  },
+  "obsidian_batch_sync": {
+    "message": "Sync to Obsidian"
+  },
+  "obsidian_batch_title": {
+    "message": "Batch sync to Obsidian"
+  },
+  "obsidian_cancelled": {
+    "message": "Cancelled"
+  },
+  "obsidian_change_folder": {
+    "message": "Change folders"
+  },
+  "obsidian_checking_vault": {
+    "message": "Checking Vault"
+  },
+  "obsidian_save_to": {
+    "message": "Save to Obsidian"
+  },
+  "obsidian_connect": {
+    "message": "Connect Obsidian"
+  },
+  "obsidian_connect_first": {
+    "message": "Connect an Obsidian Vault first."
+  },
+  "obsidian_connect_helper": {
+    "message": "Choose a local Vault to enable sync."
+  },
+  "obsidian_directories_missing": {
+    "message": "A configured folder is missing. Repair it before syncing."
+  },
+  "obsidian_disconnect_failed": {
+    "message": "Could not disconnect Obsidian."
+  },
+  "obsidian_disconnected": {
+    "message": "Obsidian disconnected. Existing files were kept."
+  },
+  "obsidian_failed": {
+    "message": "Failed"
+  },
+  "obsidian_fetching": {
+    "message": "Getting conversation"
+  },
+  "obsidian_finishing": {
+    "message": "Finishing sync..."
+  },
+  "obsidian_getting_conversation": {
+    "message": "Getting complete conversation..."
+  },
+  "obsidian_getting_selected": {
+    "message": "Getting selected messages..."
+  },
+  "obsidian_getting_selected_count": {
+    "message": "Getting $1 selected messages..."
+  },
+  "obsidian_job_running": {
+    "message": "Another Obsidian sync is already running."
+  },
+  "obsidian_not_connected": {
+    "message": "Vault not connected"
+  },
+  "obsidian_configured": {
+    "message": "Configured"
+  },
+  "obsidian_open_failed": {
+    "message": "Could not open Obsidian."
+  },
+  "obsidian_open_note": {
+    "message": "Open in Obsidian"
+  },
+  "obsidian_permission_required": {
+    "message": "Vault permission must be granted again."
+  },
+  "obsidian_preparing": {
+    "message": "Checking Vault"
+  },
+  "obsidian_ready": {
+    "message": "Ready"
+  },
+  "obsidian_reauthorize": {
+    "message": "Reauthorize Vault"
+  },
+  "obsidian_retry_check": {
+    "message": "Retry"
+  },
+  "obsidian_reauthorize_first": {
+    "message": "Reauthorize the Obsidian Vault first."
+  },
+  "obsidian_select_message_first": {
+    "message": "Select at least one message before syncing."
+  },
+  "obsidian_select_message_first_short": {
+    "message": "Select messages"
+  },
+  "obsidian_settings": {
+    "message": "Settings"
+  },
+  "obsidian_settings_assets_folder": {
+    "message": "Assets folder (optional)"
+  },
+  "obsidian_settings_assets_help": {
+    "message": "If unset, assets use the notes folder. Each sync uses an isolated asset transaction folder."
+  },
+  "obsidian_settings_assets_placeholder": {
+    "message": "Uses the notes folder when not set"
+  },
+  "obsidian_settings_choose": {
+    "message": "Choose"
+  },
+  "obsidian_settings_choose_assets_failed": {
+    "message": "Could not choose the assets folder."
+  },
+  "obsidian_settings_choose_notes_failed": {
+    "message": "Could not choose the notes folder."
+  },
+  "obsidian_settings_choose_notes_first": {
+    "message": "Choose a notes folder first."
+  },
+  "obsidian_settings_choose_root_first": {
+    "message": "Choose your Obsidian Vault folder first."
+  },
+  "obsidian_settings_choose_vault": {
+    "message": "Choose Vault"
+  },
+  "obsidian_settings_choose_vault_failed": {
+    "message": "Could not choose the Vault."
+  },
+  "obsidian_settings_choose_vault_step": {
+    "message": "Choose Vault"
+  },
+  "obsidian_settings_clear": {
+    "message": "Clear"
+  },
+  "obsidian_settings_connection_ready": {
+    "message": "Connection is ready."
+  },
+  "obsidian_settings_current_vault": {
+    "message": "Current Vault"
+  },
+  "obsidian_settings_failed": {
+    "message": "Could not open Obsidian settings."
+  },
+  "obsidian_settings_opened_background": {
+    "message": "Obsidian settings opened in a new tab. Switch tabs to configure, then come back here."
+  },
+  "obsidian_settings_folder_outside": {
+    "message": "Choose a folder inside the current Vault."
+  },
+  "obsidian_settings_folders_step": {
+    "message": "Choose folders"
+  },
+  "obsidian_settings_folders_step_desc": {
+    "message": "Choose a notes folder and an optional assets folder."
+  },
+  "obsidian_settings_heading": {
+    "message": "Save conversations directly to your knowledge base"
+  },
+  "obsidian_settings_history": {
+    "message": "Recent syncs"
+  },
+  "obsidian_settings_history_desc": {
+    "message": "Only paths and status are stored. Chat content is not saved here."
+  },
+  "obsidian_settings_history_failed": {
+    "message": "Could not load sync history."
+  },
+  "obsidian_settings_image_count": {
+    "message": "$1 images"
+  },
+  "obsidian_settings_init_failed": {
+    "message": "Could not initialize Obsidian settings."
+  },
+  "obsidian_settings_intro": {
+    "message": "Choose your folders once, then sync one or many conversations. Text and images stay local."
+  },
+  "obsidian_settings_invalid_path": {
+    "message": "Folders must use a safe path inside the Vault and cannot contain .., .obsidian, or invalid system characters."
+  },
+  "obsidian_settings_local": {
+    "message": "Local write"
+  },
+  "obsidian_settings_no_history": {
+    "message": "No Obsidian sync history yet."
+  },
+  "obsidian_settings_not_selected": {
+    "message": "Not selected"
+  },
+  "obsidian_settings_notes_folder": {
+    "message": "Notes folder"
+  },
+  "obsidian_settings_notes_help": {
+    "message": "Required. Notes are saved directly here without extra root or platform folders."
+  },
+  "obsidian_settings_notes_placeholder": {
+    "message": "Choose a notes folder inside the Vault"
+  },
+  "obsidian_settings_path_preview": {
+    "message": "Path preview"
+  },
+  "obsidian_settings_permission_denied": {
+    "message": "Vault write permission was not granted. Reauthorize the Vault and try again."
+  },
+  "obsidian_settings_picker_unsupported": {
+    "message": "This Chrome version does not support folder access. Update Chrome and try again."
+  },
+  "obsidian_settings_preview_empty": {
+    "message": "Choose a notes folder to preview the path"
+  },
+  "obsidian_settings_preview_title": {
+    "message": "Conversation title"
+  },
+  "obsidian_settings_ready": {
+    "message": "Connection and folders are ready for single or batch sync."
+  },
+  "obsidian_settings_refresh": {
+    "message": "Refresh"
+  },
+  "obsidian_settings_request_failed": {
+    "message": "Obsidian request failed."
+  },
+  "obsidian_settings_resolve_unsupported": {
+    "message": "This Chrome version cannot confirm whether the selected folder is inside the Vault."
+  },
+  "obsidian_settings_return": {
+    "message": "Return to conversation"
+  },
+  "obsidian_settings_save_permission_failed": {
+    "message": "Could not save Vault permission."
+  },
+  "obsidian_settings_saved": {
+    "message": "Vault verified. Returning to the conversation..."
+  },
+  "obsidian_settings_steps_label": {
+    "message": "Vault setup steps"
+  },
+  "obsidian_settings_storage_failed": {
+    "message": "Could not open Obsidian local storage."
+  },
+  "obsidian_settings_title": {
+    "message": "Connect Obsidian Vault"
+  },
+  "obsidian_settings_vault_authorized": {
+    "message": "Vault access is ready. Choose a notes folder next."
+  },
+  "obsidian_settings_verify_failed": {
+    "message": "Vault write verification failed."
+  },
+  "obsidian_settings_verify_save": {
+    "message": "Verify and save"
+  },
+  "obsidian_settings_verify_step": {
+    "message": "Verify access"
+  },
+  "obsidian_settings_verify_step_desc": {
+    "message": "Create and remove a temporary file."
+  },
+  "obsidian_settings_verifying": {
+    "message": "Verifying..."
+  },
+  "obsidian_start_failed": {
+    "message": "Could not start Obsidian sync. Refresh the page and try again."
+  },
+  "obsidian_status_cancelled_short": {
+    "message": "Cancelled"
+  },
+  "obsidian_status_failed_short": {
+    "message": "Failed"
+  },
+  "obsidian_status_partial": {
+    "message": "Warnings"
+  },
+  "obsidian_status_success": {
+    "message": "Success"
+  },
+  "obsidian_sync_busy": {
+    "message": "A sync task is writing to this Vault."
+  },
+  "obsidian_sync_cancelled": {
+    "message": "Obsidian sync cancelled."
+  },
+  "obsidian_sync_chat_count": {
+    "message": "Sync $1 chats to Obsidian"
+  },
+  "obsidian_sync_complete": {
+    "message": "Synced to Obsidian"
+  },
+  "obsidian_sync_complete_desc": {
+    "message": "The note and its local media are ready in your Vault."
+  },
+  "obsidian_sync_current_short": {
+    "message": "Sync"
+  },
+  "obsidian_sync_failed": {
+    "message": "Obsidian sync failed: $1"
+  },
+  "obsidian_sync_failed_desc": {
+    "message": "No note was created. Check Vault access and try again."
+  },
+  "obsidian_sync_failed_title": {
+    "message": "Obsidian sync failed"
+  },
+  "obsidian_sync_no_messages": {
+    "message": "No conversation messages were found on this page."
+  },
+  "obsidian_sync_partial_desc": {
+    "message": "The note was created. Review the warnings below for media that could not be preserved."
+  },
+  "obsidian_sync_partial_title": {
+    "message": "Obsidian sync completed with warnings"
+  },
+  "obsidian_sync_progress_title": {
+    "message": "Syncing to Obsidian"
+  },
+  "obsidian_sync_running": {
+    "message": "A sync is already running. This panel will unlock when it finishes."
+  },
+  "obsidian_sync_selected_short": {
+    "message": "Sync $1"
+  },
+  "obsidian_synced": {
+    "message": "Synced"
+  },
+  "obsidian_synced_partial": {
+    "message": "Synced with warnings"
+  },
+  "obsidian_syncing": {
+    "message": "Syncing"
+  },
+  "obsidian_vault": {
+    "message": "Obsidian Vault"
+  },
+  "obsidian_vault_root": {
+    "message": "Vault root"
+  },
+  "obsidian_visible_content_fallback": {
+    "message": "The complete conversation was unavailable; visible page content was used."
+  },
+  "obsidian_waiting": {
+    "message": "Waiting"
+  },
+  "obsidian_writing": {
+    "message": "Writing to Vault"
+  },
+  "placeholder_batch_search": {
+    "message": "Search by conversation title..."
+  },
+  "popup_benefit_batch_export": {
+    "message": "Batch export conversations"
+  },
+  "popup_checkout_rate_limited": {
+    "message": "Checkout is already being prepared. Please wait a moment and try again."
+  },
+  "popup_checkout_temporarily_unavailable": {
+    "message": "Checkout is temporarily unavailable. Please wait a moment and try again."
+  },
+  "popup_checkout_signed_in_retry": {
+    "message": "Signed in. Select your plan and click Continue again to open checkout."
+  },
+  "popup_checkout_signin_message": {
+    "message": "Sign in with Google first. After sign-in, click Continue again to open secure checkout."
+  },
+  "popup_checkout_signin_ok": {
+    "message": "Sign in"
+  },
+  "popup_checkout_signin_title": {
+    "message": "Sign in before checkout"
+  },
+  "popup_connections_title": {
+    "message": "Connections"
+  },
+  "popup_free_quota_exhausted": {
+    "message": "You have used today's 3 free exports."
+  },
+  "popup_language_change_failed": {
+    "message": "Could not change language."
+  },
+  "popup_language_title": {
+    "message": "Interface Language"
+  },
+  "popup_login_service_unavailable": {
+    "message": "Sign-in is temporarily unavailable. Please refresh and try again."
+  },
+  "popup_pro_already_active": {
+    "message": "Pro is already active on this account."
+  },
+  "popup_entitlement_syncing": {
+    "message": "Syncing membership status..."
+  },
+  "role_user": {
+    "message": "User"
+  },
+  "subscribe_badge_lifetime": {
+    "message": "Lifetime Pro"
+  },
+  "subscribe_badge_monthly": {
+    "message": "Monthly Pro"
+  },
+  "subscribe_badge_yearly": {
+    "message": "Yearly Pro"
+  },
+  "subscribe_cadence_lifetime": {
+    "message": "one-time"
+  },
+  "subscribe_cadence_month": {
+    "message": "/ month"
+  },
+  "subscribe_cadence_year": {
+    "message": "/ year"
+  },
+  "subscribe_checkout_error": {
+    "message": "Checkout error: $1"
+  },
+  "subscribe_confirm_switch": {
+    "message": "Sign out of the current account and switch?"
+  },
+  "subscribe_discount_lifetime": {
+    "message": "Save 38%"
+  },
+  "subscribe_discount_monthly": {
+    "message": "Save 44%"
+  },
+  "subscribe_discount_yearly": {
+    "message": "Save 50%"
+  },
+  "subscribe_early_bird_badge": {
+    "message": "Limited-time early bird"
+  },
+  "subscribe_err_build_checkout": {
+    "message": "Could not build the checkout page. Please try again later."
+  },
+  "subscribe_err_generic": {
+    "message": "Please try again later."
+  },
+  "subscribe_err_login_service": {
+    "message": "Sign-in is temporarily unavailable. Please refresh and try again."
+  },
+  "subscribe_err_open_checkout": {
+    "message": "Could not open checkout. Please try again later."
+  },
+  "subscribe_err_popup_blocked": {
+    "message": "The browser blocked the checkout page. Please allow popups and try again."
+  },
+  "subscribe_err_schema_cache": {
+    "message": "Checkout service is updating. Please reopen Claude Export and try again."
+  },
+  "subscribe_err_temporarily_unavailable": {
+    "message": "Checkout is temporarily unavailable. Please wait a moment and try again."
+  },
+  "subscribe_faq_a1": {
+    "message": "100% local privacy. All parsing, structuring and conversion happen inside your browser. Claude Export never uploads or stores your chat content, images or cookies."
+  },
+  "subscribe_faq_a2": {
+    "message": "Simply sign in with the same Google account in both Claude Export AI and AI Chat Export. Pro status syncs automatically."
+  },
+  "subscribe_faq_a3": {
+    "message": "Checkout is processed by Paddle, a globally trusted payment processor. We do not collect or store your card or payment details."
+  },
+  "subscribe_faq_a4": {
+    "message": "The panel includes a built-in Export Health Check. For tough issues or feature suggestions, contact chatvaultaisupport@gmail.com anytime."
+  },
+  "subscribe_faq_q1": {
+    "message": "Is my locally exported data safe?"
+  },
+  "subscribe_faq_q2": {
+    "message": "How do I get shared Pro benefits?"
+  },
+  "subscribe_faq_q3": {
+    "message": "Is payment secure and compliant?"
+  },
+  "subscribe_faq_q4": {
+    "message": "How do I get help with export issues?"
+  },
+  "subscribe_faq_title": {
+    "message": "FAQ"
+  },
+  "subscribe_feature_codepack_desc": {
+    "message": "Preserve code blocks and their language labels in exported conversations for easier review and reuse."
+  },
+  "subscribe_feature_codepack_title": {
+    "message": "Code-friendly export"
+  },
+  "subscribe_feature_qa_desc": {
+    "message": "Scan for unloaded content and canvas size risks before export, with safer format or retry guidance when issues are found."
+  },
+  "subscribe_feature_qa_title": {
+    "message": "Full pre-export quality check"
+  },
+  "subscribe_feature_shared_desc": {
+    "message": "Share the same account and Pro status with Claude Export AI. Buy once, unlock all benefits on both products."
+  },
+  "subscribe_feature_shared_title": {
+    "message": "Shared Pro across both products"
+  },
+  "subscribe_feature_templates_desc": {
+    "message": "Unlock Research Brief, Client Memo and more templates for beautifully structured Word / PDF / HTML briefs."
+  },
+  "subscribe_feature_templates_title": {
+    "message": "Scenario-based templates"
+  },
+  "subscribe_feature_themes_desc": {
+    "message": "Exclusive Academic Paper, McKinsey, Newsprint and other professional themes."
+  },
+  "subscribe_feature_themes_title": {
+    "message": "Publication-grade themes"
+  },
+  "subscribe_feature_unlimited_desc": {
+    "message": "Remove the 3-per-day free limit and export as much as you need."
+  },
+  "subscribe_feature_unlimited_title": {
+    "message": "Unlimited local exports"
+  },
+  "subscribe_feature_watermark_desc": {
+    "message": "Hide the Claude Export signature and watermark at the end of documents for professional use."
+  },
+  "subscribe_feature_watermark_title": {
+    "message": "Hide Claude Export watermark"
+  },
+  "subscribe_features_title": {
+    "message": "Unlock Pro-only advanced features"
+  },
+  "subscribe_logged_in_as": {
+    "message": "Signed in as: "
+  },
+  "subscribe_logged_in_user": {
+    "message": "Signed-in user"
+  },
+  "subscribe_login_failed": {
+    "message": "Sign-in failed: $1"
+  },
+  "subscribe_login_now": {
+    "message": "Sign in"
+  },
+  "subscribe_login_required": {
+    "message": "Please sign in before subscribing to bind Pro benefits automatically."
+  },
+  "subscribe_not_signed_in": {
+    "message": "Not signed in yet. Please"
+  },
+  "subscribe_opening_checkout": {
+    "message": "Opening checkout..."
+  },
+  "subscribe_page_title": {
+    "message": "Upgrade to Claude Export Pro"
+  },
+  "subscribe_pay_lifetime": {
+    "message": "Pay $$79.99"
+  },
+  "subscribe_pay_monthly": {
+    "message": "Pay $$4.99"
+  },
+  "subscribe_pay_yearly": {
+    "message": "Pay $$29.99"
+  },
+  "subscribe_plan_desc_lifetime": {
+    "message": "Early supporter special. Lifetime free updates, no recurring billing."
+  },
+  "subscribe_plan_desc_monthly": {
+    "message": "Great for trying Pro. Cancel anytime with all formats and platforms supported."
+  },
+  "subscribe_plan_desc_yearly": {
+    "message": "Best for heavy AI users. Unlimited exports and premium formatting all year."
+  },
+  "subscribe_plan_detail_lifetime": {
+    "message": "Pay once, keep forever"
+  },
+  "subscribe_plan_detail_monthly": {
+    "message": "Cancel anytime from subscription management"
+  },
+  "subscribe_plan_detail_yearly": {
+    "message": "Billed yearly at $$29.99"
+  },
+  "subscribe_plan_title_lifetime": {
+    "message": "Lifetime Plan"
+  },
+  "subscribe_plan_title_monthly": {
+    "message": "Pro Monthly Plan"
+  },
+  "subscribe_plan_title_yearly": {
+    "message": "Pro Yearly Plan"
+  },
+  "subscribe_privacy_alert": {
+    "message": "Privacy Policy: We never collect, upload or store any of your chat content on our servers. All analysis, formatting and file generation happen locally in your browser."
+  },
+  "subscribe_privacy_link": {
+    "message": "Privacy Policy"
+  },
+  "subscribe_recommended_badge": {
+    "message": "Best Value"
+  },
+  "subscribe_signed_in_retry": {
+    "message": "Signed in. Click the subscribe button again to open checkout."
+  },
+  "subscribe_subtitle": {
+    "message": "Remove quota limits and unlock publication-grade themes plus shared Pro benefits across both products."
+  },
+  "subscribe_switch_account": {
+    "message": "Switch account"
+  },
+  "subscribe_terms_alert": {
+    "message": "Terms of Service: Claude Export is for personal daily extraction and saving of AI conversations only. Using this tool to scrape sensitive, illegal or copyrighted data is strictly prohibited."
+  },
+  "subscribe_terms_link": {
+    "message": "Terms of Service"
+  },
+  "subscribe_title": {
+    "message": "Upgrade to Claude Export Pro"
+  },
+  "welcome_aria_toolbar_mock": {
+    "message": "Chrome toolbar guide"
+  },
+  "welcome_look_up": {
+    "message": "Use the puzzle button in the browser toolbar above this page."
+  },
+  "welcome_look_up_title": {
+    "message": "Click Extensions here"
+  },
+  "welcome_open_hint": {
+    "message": "Claude Export activates automatically when you visit a supported AI chat page."
+  },
+  "welcome_pin_step_1": {
+    "message": "Open Extensions from the browser toolbar"
+  },
+  "welcome_pin_step_2": {
+    "message": "Find Claude Export in the menu"
+  },
+  "welcome_pin_step_3": {
+    "message": "Click the pin beside its name"
+  },
+  "welcome_step_1": {
+    "message": "Recommended setup"
+  },
+  "welcome_step_2": {
+    "message": "Step 2"
+  },
+  "welcome_title_open": {
+    "message": "Open an AI platform and start exporting."
+  },
+  "popup_notion_checking_connection": {
+    "message": "Checking connection"
+  },
+  "notion_destination_changed": {
+    "message": "The previously selected Database is no longer available. Review the current selection and click Save again."
+  },
+  "notion_destination_verify_failed": {
+    "message": "Could not verify the Notion workspace and Database. Check the connection and try again."
+  },
+  "popup_checking": {
+    "message": "Checking..."
+  },
+  "popup_close_aria": {
+    "message": "Close"
+  },
+  "popup_plan_yearly_detail": {
+    "message": "Billed yearly $$29.99"
+  },
+  "popup_subscribe_cta": {
+    "message": "Pay $$29.99"
+  },
+  "billing_trial_badge_yearly": {
+    "message": "3-day free trial"
+  },
+  "billing_trial_cta_yearly": {
+    "message": "Start 3-day free trial"
+  },
+  "billing_trial_charge_after": {
+    "message": "Today $0; after 3 days, annual billing is $$29.99 unless canceled."
+  },
+  "billing_trial_not_eligible": {
+    "message": "Annual plan: $$29.99/year, charged today."
+  },
+  "billing_trial_confirm_charge": {
+    "message": "The free trial is unavailable for this account. Continue with the annual plan at $$29.99 charged today?"
+  },
+  "billing_trial_signin_check": {
+    "message": "Sign in to confirm free-trial eligibility."
+  },
+  "billing_trial_checking": {
+    "message": "Checking your trial eligibility..."
+  },
+  "billing_trial_check_cta": {
+    "message": "Check 3-day free trial"
+  },
+  "billing_trial_used_badge": {
+    "message": "Trial already used"
   }
 }

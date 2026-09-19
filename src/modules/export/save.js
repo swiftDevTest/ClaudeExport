@@ -7,6 +7,19 @@ export var SAVE_DOWNLOAD_COMPLETION_TIMEOUT_MS = 5 * 60 * 1000;
 export var MAX_EXPORT_SAVE_BYTES = 512 * 1024;
 export var BLOB_URL_REVOKE_DELAY_MS = 60000;
 
+function structuredSaveFailure(error) {
+  var protocol = typeof globalThis !== "undefined" ? globalThis.CHATVAULT_EXPORT_ERRORS : null;
+  var details = protocol && typeof protocol.serialize === "function"
+    ? protocol.serialize(error, { phase: "save" })
+    : { error_code: error && error.code || "SAVE_DENIED", error_phase: "save", retryable: true };
+  return {
+    ok: false,
+    error: error && error.message || "Save failed.",
+    code: details.error_code,
+    ...details
+  };
+}
+
 export function normalizeSaveOptions(options) {
   var source = options && typeof options === "object" ? options : {};
   var timeoutMs = Number(source.timeoutMs);
@@ -272,8 +285,8 @@ export async function saveBlob(blob, filename, options) {
     return { ok: true, filename: savedName || filename };
   } catch (error) {
     if (error && error.name === "AbortError") {
-      return { ok: false, cancelled: true };
+      return { ok: false, cancelled: true, code: "SAVE_CANCELLED", error_code: "SAVE_CANCELLED", error_phase: "save", retryable: true };
     }
-    return { ok: false, error: error.message || "Save failed." };
+    return structuredSaveFailure(error);
   }
 }

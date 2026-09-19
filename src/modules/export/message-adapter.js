@@ -428,9 +428,12 @@ function defaultPlatformLabel(platform) {
         if (platform === "gemini") {
           var geminiPageMessages = getCurrentPageMessages(chat);
           try {
-            var geminiMessages = await deps.fetchGeminiConversationMessages(chat);
+            var geminiMessages = await deps.fetchGeminiConversationMessages(chat, {
+              signal: options.signal
+            });
             return returnApiMessagesOrPageFallback(chat, geminiMessages, geminiPageMessages, options);
           } catch (geminiError) {
+            if (options.signal && options.signal.aborted) throw geminiError;
             if (options.allowPageFallback === true && geminiPageMessages.length) {
               return ensureCompleteConversationMessages(chat, geminiPageMessages, options);
             }
@@ -440,9 +443,12 @@ function defaultPlatformLabel(platform) {
 
         if (platform === "claude") {
           try {
-            var claudeMessages = await deps.fetchClaudeConversationMessages(chat);
+            var claudeMessages = await deps.fetchClaudeConversationMessages(chat, {
+              signal: options.signal
+            });
             return returnApiMessagesOrPageFallback(chat, claudeMessages, null, options);
           } catch (claudeError) {
+            if (options.signal && options.signal.aborted) throw claudeError;
             var claudePageMessages = getCurrentPageMessages(chat);
             if (options.allowPageFallback === true && claudePageMessages.length) {
               return ensureCompleteConversationMessages(chat, claudePageMessages, options);

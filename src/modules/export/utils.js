@@ -2,39 +2,7 @@ import { captureExportHtmlStyle, getExportHtmlStyleDifference, sanitizeExportHtm
 
 const i18n = globalThis.CHATVAULT_I18N;
 
-function getWatermarkLocale() {
-  try {
-    if (typeof chrome !== "undefined" && chrome.i18n && typeof chrome.i18n.getUILanguage === "function") {
-      return String(chrome.i18n.getUILanguage() || "").replace(/_/g, "-").toLowerCase();
-    }
-  } catch (error) {}
-  try {
-    return String(globalThis.navigator?.language || "").replace(/_/g, "-").toLowerCase();
-  } catch (error) {}
-  return "en";
-}
-
-function getLocalizedWatermark(productName) {
-  var locale = getWatermarkLocale();
-  if (locale === "zh-tw" || locale === "zh-hk" || locale === "zh-mo") return "由 " + productName + " 本地端匯出";
-  if (locale === "zh-cn" || locale === "zh-sg" || locale.startsWith("zh")) return "由 " + productName + " 本地导出";
-  if (locale.startsWith("ja")) return productName + " によってローカルにエクスポートされました";
-  if (locale.startsWith("ko")) return productName + "를 통해 로컬로 내보냄";
-  if (locale.startsWith("fr")) return "Exporté localement par " + productName;
-  if (locale.startsWith("de")) return "Lokal exportiert durch " + productName;
-  if (locale.startsWith("es")) return "Exportado localmente por " + productName;
-  if (locale.startsWith("pt")) return "Exportado localmente pelo " + productName;
-  return "Exported by " + productName;
-}
-
 export function t(key, defaultText, ...args) {
-  // The watermark is product-scoped. Keep the visible signature consistent
-  // across locales and make sure standalone products never inherit another
-  // product's stale locale value.
-  if (key === "export_pdf_footer_branding" || key === "export_branding_footer") {
-    var productName = globalThis.CHATVAULT_PRODUCT_CONFIG?.productName || "Claude Export";
-    return getLocalizedWatermark(productName);
-  }
   if (i18n && typeof i18n.t === "function") {
     return i18n.t(key, defaultText, ...args);
   }
@@ -110,14 +78,16 @@ export function normalizeBooleanSetting(value, defaultValue) {
 
 
 var CHINESE_THOUGHT_STATUS_PATTERN = /^\s*(?:已\s*)?(?:思考|推理)(?:了|中)?\s*(?:(?:约|大约|若干|几|数|多)?(?:\d+(?:\.\d+)?|[一二三四五六七八九十百千万半两]+)?\s*(?:毫秒|秒钟|秒|分钟|分|小时|时))?\s*[。.,，:：-]?\s*$/i;
-var ENGLISH_THOUGHT_STATUS_PATTERN = /^\s*(?:(?:Thought|Reasoned|Worked)\s+(?:for|about)|Thinking|Reasoning|Working)(?:\b|[\s:：,，。.·-]|$)[\s\S]{0,160}$/i;
+var ENGLISH_THOUGHT_DURATION_PATTERN = /^\s*(?:(?:about|around|approximately|roughly|over|under)\s+)?(?:(?:\d+(?:\.\d+)?)|(?:a|an|one|two|three|four|five|six|seven|eight|nine|ten)|(?:a\s+couple\s+of)|(?:a\s+few)|several)\s*(?:ms|milliseconds?|s|secs?|seconds?|m|mins?|minutes?|h|hrs?|hours?)\s*$/i;
+var ENGLISH_THOUGHT_STATUS_PATTERN = /^\s*(?:(?:Thought|Reasoned|Worked)\s+(?:for|about)\s+(.+?)|(?:Thinking|Reasoning|Working)\s*(?:\.{1,3}|…)?)[。.]?\s*$/i;
 export var THOUGHT_ATTR_PATTERN = /\b(?:reasoning|thought|thinking|chain[-_ ]?of[-_ ]?thought|model[-_ ]?thought|oai[-_ ]?reasoning)\b/i;
 
 export function isThoughtStatusLine(value) {
   var text = String(value || "").trim();
-  return text.length > 0 &&
-    text.length <= 180 &&
-    (CHINESE_THOUGHT_STATUS_PATTERN.test(text) || ENGLISH_THOUGHT_STATUS_PATTERN.test(text));
+  if (!text || text.length > 180) return false;
+  if (CHINESE_THOUGHT_STATUS_PATTERN.test(text)) return true;
+  var englishMatch = text.match(ENGLISH_THOUGHT_STATUS_PATTERN);
+  return Boolean(englishMatch && (!englishMatch[1] || ENGLISH_THOUGHT_DURATION_PATTERN.test(englishMatch[1])));
 }
 
 export function normalizeExportSettings(input) {
@@ -131,6 +101,26 @@ export function normalizeExportSettings(input) {
     }
   });
   return out;
+}
+
+// Builders may need to degrade individual assets to keep an export within the
+// browser's memory limits. Surface those decisions to the engine instead of
+// leaving a console-only breadcrumb or a misleading successful export.
+export function notifyExportDiagnostic(options, diagnostic) {
+  if (!options || typeof options.onDiagnostic !== "function" || !diagnostic) return;
+  var code = String(diagnostic.code || "EXPORT_WARNING").replace(/[^A-Z0-9_]/gi, "_").slice(0, 80);
+  var message = String(diagnostic.message || "Some export content was degraded.").slice(0, 360);
+  try {
+    options.onDiagnostic({
+      level: diagnostic.level === "error" ? "error" : "warning",
+      code: code || "EXPORT_WARNING",
+      message: message,
+      count: Math.max(1, Math.floor(Number(diagnostic.count) || 1)),
+      format: diagnostic.format ? String(diagnostic.format).slice(0, 24) : undefined
+    });
+  } catch (error) {
+    // Diagnostics must never make a successfully renderable export fail.
+  }
 }
 
 export function detectPlatform() {
@@ -408,7 +398,7 @@ export function getExportFooterSegments(settings, metadata) {
   var sourceUrl = getExportSourceUrl(metadata);
   return {
     left: settings && settings.show_chatvault_badge
-      ? t("export_pdf_footer_branding", "Exported by Claude Export")
+      ? t("export_pdf_footer_branding", "Exported by AI Chat Export")
       : "",
     right: settings && settings.include_source_url && sourceUrl
       ? t("export_footer_source", "Export From: $1", sourceUrl)
@@ -824,7 +814,7 @@ export function stripSerializedUiPayloads(value) {
   while ((match = markerPattern.exec(source)) !== null) {
     var jsonStart = source.indexOf("{", markerPattern.lastIndex - 1);
     var parsed = parseJsonObjectAt(source, jsonStart);
-    if (!parsed || !isStructuredUiPayloadValue(parsed.value, 0, true)) {
+    if (!parsed) {
       continue;
     }
     output += source.slice(cursor, match.index).replace(/[ \t]+$/g, "");
@@ -1579,76 +1569,13 @@ export function stripThoughtText(value) {
     .trim();
 }
 
-function isEnabledInternalFlag(value) {
-  if (value === true || value === 1) return true;
-  return /^(?:true|1|yes|on)$/i.test(String(value || "").trim());
-}
-
-export function hasInternalVisibilityMarker(value) {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
-    return false;
-  }
-
-  var metadata = value.metadata && typeof value.metadata === "object" && !Array.isArray(value.metadata)
-    ? value.metadata
-    : {};
-  var containers = [value, metadata];
-  var flagNames = [
-    "is_thinking",
-    "is_reasoning",
-    "is_analysis",
-    "is_internal",
-    "internal",
-    "is_hidden",
-    "hidden",
-    "is_visually_hidden",
-    "is_visually_hidden_from_conversation",
-    "is_thinking_preamble_message"
-  ];
-
-  if (containers.some(function (container) {
-    return flagNames.some(function (name) {
-      return isEnabledInternalFlag(container[name]);
-    });
-  })) {
-    return true;
-  }
-
-  var hasInternalVisibility = containers.some(function (container) {
-    var visibility = container.visibility || container.display_visibility || container.audience;
-    return typeof visibility === "string" &&
-      /^(?:hidden|invisible|internal|model[-_ ]?only|assistant[-_ ]?only|private)$/i.test(visibility.trim());
-  });
-  if (hasInternalVisibility) {
-    return true;
-  }
-
-  return containers.some(function (container) {
-    return /^(?:assistant|model|tool|internal)$/i.test(String(container.recipient || "").trim());
-  });
-}
-
 export function isThoughtLikeContentValue(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     return false;
   }
 
-  var metadata = value.metadata && typeof value.metadata === "object" && !Array.isArray(value.metadata)
-    ? value.metadata
-    : {};
-  var type = [
-    value.type,
-    value.content_type,
-    value.kind,
-    value.name,
-    value.role,
-    metadata.type,
-    metadata.content_type,
-    metadata.kind
-  ].map(function (item) {
-    return String(item || "").trim().toLowerCase().replace(/[\s.-]+/g, "_");
-  }).filter(Boolean).join(" ");
-  if (/(?:^|\s)(?:analysis|reasoning|thinking|thought|chain_of_thought|model_thought|redacted_thinking|thinking_summary|reasoning_summary|analysis_summary|internal_reasoning|internal_monologue|scratchpad|recap|thought_summary|plan|internal_note)(?:\s|$)/i.test(type)) {
+  var type = String(value.type || value.content_type || value.kind || value.name || value.role || "").trim();
+  if (/^(analysis|reasoning|thinking|thought|chain_of_thought|model_thought)$/i.test(type)) {
     return true;
   }
 
@@ -1657,53 +1584,16 @@ export function isThoughtLikeContentValue(value) {
     value.label,
     value.summary,
     value.status,
-    value.display_name,
-    metadata.title,
-    metadata.label,
-    metadata.status,
-    metadata.display_name
+    value.display_name
   ].map(function (item) { return String(item || ""); }).join(" ");
 
-  return hasInternalVisibilityMarker(value) ||
-    (typeof value.thinking === "string" && Boolean(value.thinking.trim())) ||
-    THOUGHT_ATTR_PATTERN.test(label) ||
-    isThoughtStatusLine(label);
+  return THOUGHT_ATTR_PATTERN.test(label) || isThoughtStatusLine(label);
 }
 
-function isThoughtLikeElementSelf(element) {
+export function isThoughtLikeElement(element) {
   if (!element || !element.getAttribute) return false;
-  var explicitThoughtFlags = [
-    "data-is-thinking",
-    "data-thinking",
-    "data-is-reasoning",
-    "data-reasoning",
-    "data-is-analysis",
-    "data-analysis",
-    "data-is-internal",
-    "data-thought",
-    "data-recap",
-    "data-thinking-summary"
-  ];
-  if (explicitThoughtFlags.some(function (name) {
-    if (!element.hasAttribute || !element.hasAttribute(name)) return false;
-    var value = String(element.getAttribute(name) || "").trim();
-    return !/^(?:false|0|off|no)$/i.test(value);
-  })) {
-    return true;
-  }
-
-  var visibility = String(
-    element.getAttribute("data-visibility") ||
-    element.getAttribute("data-display-visibility") ||
-    ""
-  ).trim();
-  if (/^(?:hidden|invisible|internal|model[-_ ]?only|assistant[-_ ]?only|private)$/i.test(visibility)) {
-    return true;
-  }
-
   var label = [
     element.getAttribute("data-testid"),
-    element.getAttribute("data-test-id"),
     element.getAttribute("aria-label"),
     element.getAttribute("data-message-type"),
     element.getAttribute("data-content-type"),
@@ -1720,22 +1610,6 @@ function isThoughtLikeElementSelf(element) {
     .trim();
 
   return isThoughtStatusLine(text);
-}
-
-export function isThoughtLikeElement(element) {
-  if (isThoughtLikeElementSelf(element)) return true;
-
-  // Walk up ancestors (up to 5 levels) to detect thought containers.
-  // Claude.ai may render thinking prose inside child elements whose own
-  // attributes don't carry thought markers, but whose parent wrapper does.
-  var ancestor = element && element.parentElement ? element.parentElement : null;
-  var depth = 0;
-  while (ancestor && depth < 5) {
-    if (isThoughtLikeElementSelf(ancestor)) return true;
-    ancestor = ancestor.parentElement;
-    depth++;
-  }
-  return false;
 }
 
 var TOOL_CALL_CONTAINER_RE = /\b(?:tool[-_ ]?(?:call|use|input|output|result)|action[-_ ]?card|web[-_ ]?(?:search|browse)|code[-_ ]?interpreter)\b/i;
@@ -2163,7 +2037,8 @@ export function isIgnoredContentNode(element) {
   var testId = String(element.getAttribute("data-testid") || "");
   var label = String(element.getAttribute("aria-label") || "");
   var className = String(element.className || "");
-  if (THOUGHT_ATTR_PATTERN.test(testId + " " + label + " " + className)) {
+  var isThinkingAttr = String(element.getAttribute("data-is-thinking") || element.getAttribute("data-thinking") || "");
+  if (isThinkingAttr === "true" || THOUGHT_ATTR_PATTERN.test(testId + " " + label + " " + className + " " + isThinkingAttr)) {
     return true;
   }
 
