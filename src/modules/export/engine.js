@@ -1,4 +1,4 @@
-import { detectPlatform, ensureAllGeminiMessagesLoaded, buildFilename, blobToDataUrl } from './utils.js';
+import { detectPlatform, ensureAllGeminiMessagesLoaded, buildFilename, blobToDataUrl, collectVisualExportStats } from './utils.js';
 import { resolveMessages, getImageEligibility } from './platform.js';
 import { saveBlobWithDialog, saveBlob } from './save.js';
 import { imageBytesCache } from './media.js';
@@ -166,9 +166,11 @@ export async function createExportBlob(request) {
       scope: resolved.scope
     };
     var diagnostics = collectPreflightDiagnostics(document, format);
+    var visualStats = /^(pdf|image)$/.test(format) ? collectVisualExportStats(document.messages) : null;
     var renderOptions = {
       onProgress: request && request.onProgress,
       signal: request && request.signal,
+      visualStats: visualStats,
       onDiagnostic: function (diagnostic) { appendDiagnostic(diagnostics, diagnostic); }
     };
 
@@ -185,7 +187,7 @@ export async function createExportBlob(request) {
     } else if (format === "html") {
       blob = await (await loadFormatModule("html")).buildHtmlBlob(document.messages, document.metadata, document.settings, renderOptions);
     } else {
-      var eligibility = getImageEligibility({ messages: resolved.messages, metadata: resolved.metadata, settings: resolved.settings });
+      var eligibility = getImageEligibility({ messages: resolved.messages, metadata: resolved.metadata, settings: resolved.settings, stats: visualStats });
       if (!eligibility.ok) return { ok: false, error: eligibility.reason, code: eligibility.code || "IMAGE_CANVAS_LIMIT_EXCEEDED" };
       blob = await (await loadFormatModule("image")).renderImageDocument(document, renderOptions);
     }
@@ -245,7 +247,8 @@ export async function renderImagePreview(request) {
     }
     var resolved = resolveMessages(request || {});
     if (!resolved.ok) return resolved;
-    var eligibility = getImageEligibility({ messages: resolved.messages });
+    var visualStats = collectVisualExportStats(resolved.messages);
+    var eligibility = getImageEligibility({ messages: resolved.messages, stats: visualStats });
     if (!eligibility.ok) return { ok: false, error: eligibility.reason };
     if (eligibility.requiresMultipage) {
       return { ok: false, error: "Preview is not available for very long image exports." };
@@ -255,7 +258,7 @@ export async function renderImagePreview(request) {
       messages: resolved.messages,
       settings: resolved.settings,
       scope: resolved.scope
-    }, { preview: true });
+    }, { preview: true, visualStats: visualStats });
     return { ok: true, dataUrl: await blobToDataUrl(blob), charCount: eligibility.charCount };
   } finally {
     imageBytesCache.clear();

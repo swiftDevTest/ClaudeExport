@@ -125,6 +125,10 @@ export function notifyExportDiagnostic(options, diagnostic) {
 
 export function detectPlatform() {
   var hostname = window.location.hostname;
+  var supported = globalThis.CHATVAULT_PRODUCT_CONFIG?.supportedPlatforms;
+  if (Array.isArray(supported) && supported.length === 1 && supported[0] === "claude") {
+    return hostname === "claude.ai" ? PLATFORM_CLAUDE : "";
+  }
   if (/^(chatgpt\.com|chat\.openai\.com)$/.test(hostname)) {
     return PLATFORM_CHATGPT;
   }
@@ -346,11 +350,15 @@ export async function ensureAllGeminiMessagesLoaded(options) {
 }
 
 export function sanitizeFilename(name) {
-  return String(name || "Untitled Chat")
+  var clean = String(name || "Untitled Chat")
     .replace(/[<>:"/\\|?*\x00-\x1f]/g, "")
     .replace(/\s+/g, " ")
-    .trim()
-    .substring(0, 80) || "Untitled Chat";
+    .trim();
+  // Keep the existing size budget (also safe for UTF-8 filenames), but never
+  // leave half of an emoji at the truncation boundary.
+  clean = clean.slice(0, 80).replace(/[\uD800-\uDBFF]$/, "").replace(/[.\s]+$/, "");
+  clean = clean.replace(/^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?=\.|$)/i, "$1_");
+  return clean || "Untitled Chat";
 }
 
 export function formatDateDisplay(date) {
@@ -398,7 +406,7 @@ export function getExportFooterSegments(settings, metadata) {
   var sourceUrl = getExportSourceUrl(metadata);
   return {
     left: settings && settings.show_chatvault_badge
-      ? t("export_pdf_footer_branding", "Exported by AI Chat Export")
+      ? t("export_pdf_footer_branding", "Exported by Claude Export")
       : "",
     right: settings && settings.include_source_url && sourceUrl
       ? t("export_footer_source", "Export From: $1", sourceUrl)
@@ -442,6 +450,44 @@ export function yieldToBrowser() {
     }
     setTimeout(resolve, 0);
   });
+}
+
+export function createExportScheduler(options) {
+  options = options || {};
+  var sliceMs = Math.max(4, Math.min(50, Number(options.sliceMs) || 12));
+  var signal = options.signal;
+  var now = typeof options.now === "function"
+    ? options.now
+    : function () {
+        try {
+          if (typeof performance !== "undefined" && typeof performance.now === "function") return performance.now();
+        } catch (error) {}
+        return Date.now();
+      };
+  var lastYieldAt = now();
+
+  function throwIfAborted() {
+    if (signal && signal.aborted) {
+      var error = new Error("aborted");
+      error.name = "AbortError";
+      throw error;
+    }
+  }
+
+  return {
+    checkpoint: async function (force) {
+      throwIfAborted();
+      var current = now();
+      if (!force && current - lastYieldAt < sliceMs) return false;
+      await yieldToBrowser();
+      lastYieldAt = now();
+      throwIfAborted();
+      return true;
+    },
+    reset: function () {
+      lastYieldAt = now();
+    }
+  };
 }
 
 export function getFittedCanvasScale(width, height, preferredScale, minScale, maxPixels) {
@@ -503,7 +549,11 @@ export async function mapLimit(array, limit, fn) {
   for (var i = 0; i < Math.min(limit, array.length); i++) {
     workers.push(worker());
   }
-  await Promise.all(workers);
+  var workerResults = await Promise.allSettled(workers);
+  var firstRejection = workerResults.find(function (result) {
+    return result.status === "rejected";
+  });
+  if (firstRejection) throw firstRejection.reason;
   return results;
 }
 
@@ -1190,6 +1240,142 @@ export function getBlockText(block) {
 
 export function getPlainText(blocks) {
   return (blocks || []).map(getBlockText).filter(Boolean).join("\n\n").trim();
+}
+
+function getVisualInlineValueLength(value) {
+  if (typeof value === "string") return value.length;
+  if (typeof value === "number" || typeof value === "boolean") return String(value).length;
+  if (Array.isArray(value)) {
+    return value.reduce(function (sum, item) { return sum + getVisualInlineValueLength(item); }, 0);
+  }
+  if (!value || typeof value !== "object") return 0;
+  if (typeof value.text === "string") return value.text.length;
+  if (Array.isArray(value.segments)) return getVisualInlineValueLength(value.segments);
+  return 0;
+}
+
+function getVisualExplicitLineCount(value) {
+  var text = typeof value === "string"
+    ? value
+    : value && typeof value.text === "string"
+      ? value.text
+      : "";
+  if (!text) return 0;
+  var count = 1;
+  for (var index = 0; index < text.length; index += 1) {
+    if (text.charCodeAt(index) === 10) count += 1;
+  }
+  return count;
+}
+
+function getTrimmedJoinedTextLength(parts, separatorLength) {
+  if (!parts || !parts.length) return 0;
+  var first = 0;
+  var last = parts.length - 1;
+  while (first <= last && !String(parts[first]).trim()) first += 1;
+  while (last >= first && !String(parts[last]).trim()) last -= 1;
+  if (first > last) return 0;
+
+  var total = Math.max(0, last - first) * Math.max(0, Number(separatorLength) || 0);
+  for (var index = first; index <= last; index += 1) total += String(parts[index]).length;
+  var firstText = String(parts[first]);
+  var lastText = String(parts[last]);
+  total -= firstText.length - firstText.trimStart().length;
+  total -= lastText.length - lastText.trimEnd().length;
+  return Math.max(0, total);
+}
+
+export function collectVisualExportStats(messages) {
+  var stats = {
+    messageCount: 0,
+    blockCount: 0,
+    textCharCount: 0,
+    plainTextCharCount: 0,
+    imageCount: 0,
+    codeBlockCount: 0,
+    maxCodeCharCount: 0,
+    listItemCount: 0,
+    tableCellCount: 0,
+    tableCharCount: 0,
+    maxExplicitLines: 0,
+    oversizedStructure: false
+  };
+  var nonEmptyMessageCount = 0;
+
+  (Array.isArray(messages) ? messages : []).forEach(function (message) {
+    stats.messageCount += 1;
+    var rawBlocks = message && message.contentBlocks;
+    var blocks = Array.isArray(rawBlocks) ? rawBlocks : [];
+    var plainTextParts = [];
+
+    blocks.forEach(function (block) {
+      if (!block) return;
+      var plainBlockText = getBlockText(block);
+      if (plainBlockText) plainTextParts.push(plainBlockText);
+      stats.blockCount += 1;
+      if (block.type === "image") {
+        stats.imageCount += 1;
+        return;
+      }
+      if (block.type === "code") {
+        stats.codeBlockCount += 1;
+        stats.maxCodeCharCount = Math.max(stats.maxCodeCharCount, String(block.text || "").length);
+      }
+
+      if (block.type === "list") {
+        var blockItemCount = 0;
+        (block.items || []).forEach(function (item) {
+          blockItemCount += 1;
+          stats.textCharCount += getVisualInlineValueLength(item);
+          (item && item.subItems || []).forEach(function (subItem) {
+            blockItemCount += 1;
+            stats.textCharCount += getVisualInlineValueLength(subItem);
+          });
+        });
+        stats.listItemCount += blockItemCount;
+        if (blockItemCount >= 160) stats.oversizedStructure = true;
+        return;
+      }
+
+      if (block.type === "table") {
+        var rows = (block.headers && block.headers.length ? [block.headers] : []).concat(block.rows || []);
+        stats.textCharCount += getVisualInlineValueLength(block.headers || []);
+        var tableRowTexts = [];
+        rows.forEach(function (row, rowIndex) {
+          var cells = Array.isArray(row) ? row : [];
+          stats.tableCellCount += cells.length;
+          if (!(block.headers && block.headers.length && rowIndex === 0)) {
+            cells.forEach(function (cell) { stats.textCharCount += getVisualInlineValueLength(cell); });
+          }
+          tableRowTexts.push(cells.join(" "));
+          cells.forEach(function (cell) {
+            var lineCount = getVisualExplicitLineCount(cell);
+            stats.maxExplicitLines = Math.max(stats.maxExplicitLines, lineCount);
+            if (lineCount >= 60) stats.oversizedStructure = true;
+          });
+        });
+        stats.tableCharCount += tableRowTexts.join(" ").length;
+        if ((block.rows || []).length >= 60) stats.oversizedStructure = true;
+        return;
+      }
+
+      stats.textCharCount += getVisualInlineValueLength(block);
+      var explicitLines = getVisualExplicitLineCount(block);
+      stats.maxExplicitLines = Math.max(stats.maxExplicitLines, explicitLines);
+      if ((block.type === "blockquote" || block.type === "code") && explicitLines >= 120) {
+        stats.oversizedStructure = true;
+      }
+    });
+
+    var plainTextLength = getTrimmedJoinedTextLength(plainTextParts, 2);
+    if (plainTextLength > 0) {
+      if (nonEmptyMessageCount > 0) stats.plainTextCharCount += 2;
+      stats.plainTextCharCount += plainTextLength;
+      nonEmptyMessageCount += 1;
+    }
+  });
+
+  return stats;
 }
 
 export function getCleanedAnchorText(anchor) {

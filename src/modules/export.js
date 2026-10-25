@@ -69,6 +69,10 @@
 
   function detectPlatform() {
     var hostname = window.location.hostname;
+    var supported = globalThis.CHATVAULT_PRODUCT_CONFIG?.supportedPlatforms;
+    if (Array.isArray(supported) && supported.length === 1 && supported[0] === "claude") {
+      return hostname === "claude.ai" ? PLATFORM_CLAUDE : "";
+    }
     if (/^(chatgpt\.com|chat\.openai\.com)$/.test(hostname)) return PLATFORM_CHATGPT;
     if (/(^|\.)claude\.ai$/.test(hostname)) return PLATFORM_CLAUDE;
     if (hostname === "gemini.google.com") return PLATFORM_GEMINI;

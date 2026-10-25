@@ -12,12 +12,13 @@ import {
   t,
   getFittedCanvasScale,
   getAdaptiveImageExportProfile,
+  collectVisualExportStats,
   dedupeImageBlocksWithinMessage,
   getBlockText,
   getPlainText
 } from './utils.js';
 
-import { compareElementsInDocument, pushDistinctDocumentElement } from './platforms/shared.js';
+import { compareElementsInDocument, pushDistinctDocumentElement, selectDistinctDocumentElements } from './platforms/shared.js';
 import { parseClaudeMessages as parseClaudeMessagesFromPlatform } from './platforms/claude/extractor.js';
 import { parseMessagesForPlatform } from './platforms/registry.js';
 import { createExportDocument, normalizeExportBlocks, validateExportDocument } from './document.js';
@@ -51,16 +52,7 @@ function resetSelectionState() {
 }
 
 function collapseCandidateElements(elements) {
-  var collapsed = [];
-  Array.prototype.forEach.call(elements || [], function (element) {
-    var overlaps = collapsed.some(function (existing) {
-      return existing === element ||
-        existing && typeof existing.contains === "function" && existing.contains(element) ||
-        element && typeof element.contains === "function" && element.contains(existing);
-    });
-    if (!overlaps) collapsed.push(element);
-  });
-  return collapsed;
+  return selectDistinctDocumentElements(elements);
 }
 
 function queryCollapsedCandidates(root, selectors) {
@@ -467,18 +459,10 @@ function getImageEligibility(input) {
   }
 
   var messages = resolved.messages;
-  var charCount = getMessagesPlainText(messages).length;
+  var stats = input && input.stats || collectVisualExportStats(messages);
+  var charCount = stats.plainTextCharCount;
 
-  var tableStats = messages.reduce(function (stats, message) {
-    message.contentBlocks.forEach(function (block) {
-      if (block.type !== "table") return;
-      var rows = (block.headers && block.headers.length ? [block.headers] : []).concat(block.rows || []);
-      stats.cells += rows.reduce(function (sum, row) { return sum + row.length; }, 0);
-      stats.chars += rows.map(function (row) { return row.join(" "); }).join(" ").length;
-    });
-    return stats;
-  }, { cells: 0, chars: 0 });
-  if (tableStats.cells > 48 || tableStats.chars > 1800) {
+  if (stats.tableCellCount > 48 || stats.tableCharCount > 1800) {
     return {
       ok: false,
       code: "IMAGE_CANVAS_LIMIT_EXCEEDED",
@@ -513,11 +497,7 @@ function getImageEligibility(input) {
     (IMAGE_RENDER_WIDTH * imageProfile.preferredScale * imageProfile.preferredScale)
   );
   var requiresMultipage = estimatedHeight > Math.min(IMAGE_MAX_RENDER_HEIGHT, adaptiveMaxRenderHeight) || messages.length > IMAGE_MAX_MESSAGES;
-  var hasLongCode = messages.some(function (message) {
-    return message.contentBlocks.some(function (block) {
-      return block.type === "code" && String(block.text || "").length > IMAGE_MAX_CODE_CHARS;
-    });
-  });
+  var hasLongCode = stats.maxCodeCharCount > IMAGE_MAX_CODE_CHARS;
 
   return {
     ok: true,

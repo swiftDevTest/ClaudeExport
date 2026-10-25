@@ -6,7 +6,7 @@ import {
   IMAGE_PREVIEW_SCALE,
   IMAGE_MIN_EXPORT_SCALE,
   notifyProgress,
-  yieldToBrowser,
+  createExportScheduler,
   sanitizeImageAlt,
   createCanvas,
   canvasToBlob,
@@ -22,7 +22,7 @@ import {
   wrapRichText,
   getFontsForStyle
 } from '../utils.js';
-import { preloadCanvasImages, imageBytesCache } from '../media.js';
+import { preloadCanvasImages, releaseCanvasImageCache, imageBytesCache } from '../media.js';
 import { getImageTheme } from '../themes/image.js';
 import { getMathAssetKey, mathFallbackText, preloadMathAssets } from '../math.js';
 
@@ -83,6 +83,11 @@ function isTransparentColor(value) {
 
 async function buildImageBlobInternal(messages, metadata, settingsInput, options) {
   options = options || {};
+  var scheduler = createExportScheduler({
+    sliceMs: options.schedulerSliceMs || 12,
+    signal: options.signal,
+    now: options.schedulerNow
+  });
   function throwIfAborted() {
     if (options.signal && options.signal.aborted) {
       var err = new Error("aborted");
@@ -97,6 +102,7 @@ async function buildImageBlobInternal(messages, metadata, settingsInput, options
   var imageCache = await preloadCanvasImages(messages, Object.assign({}, options, {
     imageRenderScale: scale
   }));
+  try {
   throwIfAborted();
   var mathAssets = await preloadMathAssets(messages, options, 18, true);
   throwIfAborted();
@@ -136,13 +142,13 @@ async function buildImageBlobInternal(messages, metadata, settingsInput, options
   for (var mi = 0; mi < messages.length; mi++) {
     throwIfAborted();
     var message = messages[mi];
-    var layout = measureImageMessage(message);
+    var layout = await measureImageMessage(message);
     messageLayouts.push(layout);
     y += layout.cardHeight + messageBottomGap;
     if (mi % 5 === 4 || mi === messages.length - 1) {
       notifyProgress(options, t("export_progress_measuring", "Measuring image layout"), 0.08 + 0.24 * ((mi + 1) / Math.max(1, messages.length)));
-      await yieldToBrowser();
     }
+    await scheduler.checkpoint();
   }
 
   function getImageCodeFrame(width) {
@@ -196,16 +202,20 @@ async function buildImageBlobInternal(messages, metadata, settingsInput, options
     return output;
   }
 
-  function measureImageMessage(message) {
+  async function measureImageMessage(message) {
     var isUser = message.role === "user";
     var alignRight = isUser && settings.align_user_messages_right;
     
     var maxCardWidth = alignRight ? contentWidth * 0.75 : contentWidth;
     var horizontalPadding = flatLayout ? 8 : 48;
     var maxInnerWidth = maxCardWidth - horizontalPadding;
-    var allBlocks = expandInlineMathBlocks(message.contentBlocks).map(function (block) {
-      return measureImageBlock(getVisualMessageBlock(block, message.role), maxInnerWidth);
-    }).filter(Boolean);
+    var sourceBlocks = expandInlineMathBlocks(message.contentBlocks);
+    var allBlocks = [];
+    for (var sourceBlockIndex = 0; sourceBlockIndex < sourceBlocks.length; sourceBlockIndex++) {
+      var measuredBlock = await measureImageBlock(getVisualMessageBlock(sourceBlocks[sourceBlockIndex], message.role), maxInnerWidth);
+      if (measuredBlock) allBlocks.push(measuredBlock);
+      await scheduler.checkpoint();
+    }
     
     var bubbleBlocks = allBlocks.filter(function (b) { return b.type !== "image"; });
     
@@ -252,24 +262,14 @@ async function buildImageBlobInternal(messages, metadata, settingsInput, options
     var totalFlowHeight = flowSections.reduce(function (sum, section, index) {
       return sum + section.height + (index ? 14 : 0);
     }, 0);
-    var imageRows = flowSections
-      .filter(function (section) { return section.type === "images"; })
-      .flatMap(function (section) { return section.rows; });
-    var bubbleHeight = flowSections
-      .filter(function (section) { return section.type === "bubble"; })
-      .reduce(function (sum, section) { return sum + section.height; }, 0);
     var labelInBubble = false;
     var totalHeight = currentRoleHeight + totalFlowHeight + (currentRoleHeight > 0 ? (flatLayout ? 4 : 8) : 0);
     
     return {
       message: message,
-      blocks: allBlocks,
-      bubbleBlocks: bubbleBlocks,
-      imageRows: imageRows,
       flowSections: flowSections,
       roleHeight: currentRoleHeight,
       cardHeight: totalHeight,
-      bubbleHeight: bubbleHeight,
       cardWidth: cardWidth,
       alignRight: alignRight,
       labelInBubble: labelInBubble
@@ -323,7 +323,7 @@ async function buildImageBlobInternal(messages, metadata, settingsInput, options
     return sections;
   }
 
-  function measureImageBlock(block, width) {
+  async function measureImageBlock(block, width) {
     if (!block) return null;
     if (block.type === "math") {
       var mathAsset = mathAssets.get(getMathAssetKey(block, 18));
@@ -397,7 +397,9 @@ async function buildImageBlobInternal(messages, metadata, settingsInput, options
       var groups = [];
       var maxLineWidth = 0;
       var listStart = block.start || 1;
-      (block.items || []).forEach(function (item, index) {
+      var listItems = block.items || [];
+      for (var index = 0; index < listItems.length; index++) {
+        var item = listItems[index];
         var itemFont = imageBodyFont;
         var textIndent = 26;
         var richLines = wrapRichText(measureCtx, getInlineRichText(item), width - textIndent, itemFont, theme.font);
@@ -423,7 +425,9 @@ async function buildImageBlobInternal(messages, metadata, settingsInput, options
           index: listStart + index,
           isSub: false
         });
-        (item.subItems || []).forEach(function (sub) {
+        var subItems = item.subItems || [];
+        for (var subIndex = 0; subIndex < subItems.length; subIndex++) {
+          var sub = subItems[subIndex];
           var subFont = "16px " + theme.font.body;
           var subTextIndent = 24;
           var subRichLines = wrapRichText(measureCtx, getInlineRichText(sub), width - 28 - subTextIndent, subFont, theme.font);
@@ -447,8 +451,10 @@ async function buildImageBlobInternal(messages, metadata, settingsInput, options
             ordered: false,
             isSub: true
           });
-        });
-      });
+          await scheduler.checkpoint();
+        }
+        await scheduler.checkpoint();
+      }
       return {
         type: "list",
         groups: groups,
@@ -660,7 +666,7 @@ async function buildImageBlobInternal(messages, metadata, settingsInput, options
     ctx.fillText(label, textX, textY);
   }
 
-  function renderImageBlock(block, x, cursor, width, alignRight) {
+  async function renderImageBlock(block, x, cursor, width, alignRight) {
     function drawRichChunk(chunk, currentX, textY, fontSize, fonts, defaultColor) {
       ctx.font = chunk.bold ? fonts.bold : (chunk.italic ? fonts.italic : (chunk.code ? fonts.code : fonts.normal));
       var chunkW = ctx.measureText(chunk.text).width;
@@ -736,7 +742,10 @@ async function buildImageBlobInternal(messages, metadata, settingsInput, options
       }
       ctx.font = block.font || ("16px " + theme.font.mono);
       ctx.fillStyle = theme.color.ink;
-      block.lines.forEach(function (line, index) { ctx.fillText(line, x, cursor + 3 + index * block.lineHeight); });
+      for (var mathLineIndex = 0; mathLineIndex < block.lines.length; mathLineIndex++) {
+        ctx.fillText(block.lines[mathLineIndex], x, cursor + 3 + mathLineIndex * block.lineHeight);
+        if (mathLineIndex % 32 === 31) await scheduler.checkpoint();
+      }
       return cursor + block.height;
     }
 
@@ -748,20 +757,23 @@ async function buildImageBlobInternal(messages, metadata, settingsInput, options
       var fonts = getFontsForStyle(block.font, theme.font);
 
       if (block.richLines) {
-        block.richLines.forEach(function (line) {
+        for (var richLineIndex = 0; richLineIndex < block.richLines.length; richLineIndex++) {
+          var line = block.richLines[richLineIndex];
           var currentX = x;
           line.chunks.forEach(function (chunk) {
             currentX += drawRichChunk(chunk, currentX, cursor + yOffset, fontSize, fonts, theme.color.ink);
           });
           cursor += block.lineHeight;
-        });
+          if (richLineIndex % 32 === 31) await scheduler.checkpoint();
+        }
       } else {
         ctx.font = block.font;
         ctx.fillStyle = theme.color.ink;
-        block.lines.forEach(function (line) {
-          ctx.fillText(line, x, cursor + yOffset);
+        for (var plainLineIndex = 0; plainLineIndex < block.lines.length; plainLineIndex++) {
+          ctx.fillText(block.lines[plainLineIndex], x, cursor + yOffset);
           cursor += block.lineHeight;
-        });
+          if (plainLineIndex % 32 === 31) await scheduler.checkpoint();
+        }
       }
       ctx.textBaseline = oldBaseline;
       return cursor;
@@ -780,10 +792,11 @@ async function buildImageBlobInternal(messages, metadata, settingsInput, options
         var codeY = cursor + 48;
         ctx.font = block.font;
         ctx.fillStyle = theme.color.codeText;
-        block.lines.forEach(function (line) {
-          (ctx.fillTextPreservingWhitespace || ctx.fillText).call(ctx, line, frameX + paddingX, codeY);
+        for (var terminalLineIndex = 0; terminalLineIndex < block.lines.length; terminalLineIndex++) {
+          (ctx.fillTextPreservingWhitespace || ctx.fillText).call(ctx, block.lines[terminalLineIndex], frameX + paddingX, codeY);
           codeY += block.lineHeight;
-        });
+          if (terminalLineIndex % 32 === 31) await scheduler.checkpoint();
+        }
       } else {
         var codeY = cursor + (block.language ? 22 : 16);
         if (block.language) {
@@ -794,10 +807,11 @@ async function buildImageBlobInternal(messages, metadata, settingsInput, options
         }
         ctx.font = block.font;
         ctx.fillStyle = theme.color.codeText;
-        block.lines.forEach(function (line) {
-          (ctx.fillTextPreservingWhitespace || ctx.fillText).call(ctx, line, frameX + paddingX, codeY);
+        for (var codeLineIndex = 0; codeLineIndex < block.lines.length; codeLineIndex++) {
+          (ctx.fillTextPreservingWhitespace || ctx.fillText).call(ctx, block.lines[codeLineIndex], frameX + paddingX, codeY);
           codeY += block.lineHeight;
-        });
+          if (codeLineIndex % 32 === 31) await scheduler.checkpoint();
+        }
       }
       return cursor + block.height;
     }
@@ -805,13 +819,15 @@ async function buildImageBlobInternal(messages, metadata, settingsInput, options
     if (block.type === "list") {
       var oldBaseline = ctx.textBaseline;
       ctx.textBaseline = "top";
-      block.groups.forEach(function (group) {
+      for (var groupIndex = 0; groupIndex < block.groups.length; groupIndex++) {
+        var group = block.groups[groupIndex];
         var fonts = getFontsForStyle(group.font, theme.font);
         var bulletX = x + group.xOffset;
         var fontSize = group.font.includes("16px") ? 16 : 18;
         var yOffset = (group.lineHeight - fontSize) / 2;
         if (group.richLines) {
-          group.richLines.forEach(function (line, lineIndex) {
+          for (var lineIndex = 0; lineIndex < group.richLines.length; lineIndex++) {
+            var line = group.richLines[lineIndex];
             var currentX = x + group.xOffset + (group.textIndent || 0);
             
             if (lineIndex === 0) {
@@ -842,16 +858,17 @@ async function buildImageBlobInternal(messages, metadata, settingsInput, options
               currentX += drawRichChunk(chunk, currentX, cursor + yOffset, fontSize, fonts, theme.color.ink);
             });
             cursor += group.lineHeight;
-          });
+          }
         } else {
           ctx.font = group.font;
           ctx.fillStyle = theme.color.ink;
-          group.lines.forEach(function (line) {
-            ctx.fillText(line, x + group.xOffset, cursor + yOffset);
+          for (var groupLineIndex = 0; groupLineIndex < group.lines.length; groupLineIndex++) {
+            ctx.fillText(group.lines[groupLineIndex], x + group.xOffset, cursor + yOffset);
             cursor += group.lineHeight;
-          });
+          }
         }
-      });
+        await scheduler.checkpoint();
+      }
       ctx.textBaseline = oldBaseline;
       return cursor + 8;
     }
@@ -865,27 +882,30 @@ async function buildImageBlobInternal(messages, metadata, settingsInput, options
       ctx.textBaseline = "top";
       var quoteY = cursor + 15;
       if (block.richLines) {
-        block.richLines.forEach(function (line) {
+        for (var quoteLineIndex = 0; quoteLineIndex < block.richLines.length; quoteLineIndex++) {
+          var line = block.richLines[quoteLineIndex];
           var currentX = x + 20;
           line.chunks.forEach(function (chunk) {
             currentX += drawRichChunk(chunk, currentX, quoteY, 17, fonts, theme.color.ink);
           });
           quoteY += block.lineHeight;
-        });
+          if (quoteLineIndex % 32 === 31) await scheduler.checkpoint();
+        }
       } else {
         ctx.font = block.font;
         ctx.fillStyle = theme.color.ink;
-        block.lines.forEach(function (line) {
-          ctx.fillText(line, x + 20, quoteY);
+        for (var fallbackQuoteIndex = 0; fallbackQuoteIndex < block.lines.length; fallbackQuoteIndex++) {
+          ctx.fillText(block.lines[fallbackQuoteIndex], x + 20, quoteY);
           quoteY += block.lineHeight;
-        });
+          if (fallbackQuoteIndex % 32 === 31) await scheduler.checkpoint();
+        }
       }
       ctx.textBaseline = oldBaseline;
       return cursor + block.height;
     }
 
     if (block.type === "table") {
-      return renderImageTable(block, x, cursor);
+      return await renderImageTable(block, x, cursor);
     }
 
     if (block.type === "separator") {
@@ -960,11 +980,11 @@ async function buildImageBlobInternal(messages, metadata, settingsInput, options
     }
   }
 
-  function renderImageGridRow(row, x, cursor) {
+  async function renderImageGridRow(row, x, cursor) {
     if (!row || !row.blocks || !row.blocks.length) return cursor;
     if (!row.square) {
       var block = row.blocks[0];
-      return renderImageBlock(block, x, cursor, block.width, false);
+      return await renderImageBlock(block, x, cursor, block.width, false);
     }
 
     var imageY = cursor + 6;
@@ -975,8 +995,9 @@ async function buildImageBlobInternal(messages, metadata, settingsInput, options
     return cursor + row.height;
   }
 
-  function renderImageTable(block, x, cursor) {
-    block.rows.forEach(function (row) {
+  async function renderImageTable(block, x, cursor) {
+    for (var rowIndex = 0; rowIndex < block.rows.length; rowIndex++) {
+      var row = block.rows[rowIndex];
       var cellX = x;
       row.cellLines.forEach(function (lines) {
         ctx.fillStyle = row.header ? theme.color.cardBgUser : theme.color.cardBgAssistant;
@@ -991,7 +1012,8 @@ async function buildImageBlobInternal(messages, metadata, settingsInput, options
         cellX += block.cellWidth;
       });
       cursor += row.rowHeight;
-    });
+      await scheduler.checkpoint();
+    }
     return cursor + 12;
   }
 
@@ -1078,11 +1100,15 @@ async function buildImageBlobInternal(messages, metadata, settingsInput, options
       currentY += layout.roleHeight + (flatLayout ? 4 : 8);
     }
     
-    (layout.flowSections || []).forEach(function (section, sectionIndex) {
+    var flowSections = layout.flowSections || [];
+    for (var sectionIndex = 0; sectionIndex < flowSections.length; sectionIndex++) {
+      var section = flowSections[sectionIndex];
       if (sectionIndex) currentY += 14;
 
       if (section.type === "images") {
-        section.rows.forEach(function (row, index) {
+        for (var rowIndex = 0; rowIndex < section.rows.length; rowIndex++) {
+          var row = section.rows[rowIndex];
+          var index = rowIndex;
           if (index) currentY += 8;
           var imgX;
           if (layout.alignRight) {
@@ -1094,13 +1120,14 @@ async function buildImageBlobInternal(messages, metadata, settingsInput, options
               imgX = pad + Math.max(0, (contentWidth - row.width) / 2);
             }
           }
-          currentY = renderImageGridRow(row, imgX, currentY);
-        });
-        return;
+          currentY = await renderImageGridRow(row, imgX, currentY);
+          await scheduler.checkpoint();
+        }
+        continue;
       }
 
       if (section.type !== "bubble") {
-        return;
+        continue;
       }
 
       if (!flatLayout) {
@@ -1114,25 +1141,29 @@ async function buildImageBlobInternal(messages, metadata, settingsInput, options
       var innerWidth = cardWidth - (flatLayout ? 8 : 48);
       var innerY = currentY + (flatLayout ? 6 : 18);
 
-      section.blocks.forEach(function (block, index) {
+      for (var blockIndex = 0; blockIndex < section.blocks.length; blockIndex++) {
+        var block = section.blocks[blockIndex];
+        var index = blockIndex;
         if (index) innerY += 8;
-        innerY = renderImageBlock(block, innerX, innerY, innerWidth, false);
-      });
+        innerY = await renderImageBlock(block, innerX, innerY, innerWidth, false);
+        await scheduler.checkpoint();
+      }
 
       currentY += section.height;
-    });
+      await scheduler.checkpoint();
+    }
     
     y = currentY + messageBottomGap;
     if (layoutIndex % 5 === 4 || layoutIndex === messageLayouts.length - 1) {
       notifyProgress(options, t("export_progress_rendering", "Rendering image"), 0.36 + 0.5 * ((layoutIndex + 1) / Math.max(1, messageLayouts.length)));
-      await yieldToBrowser();
     }
+    await scheduler.checkpoint();
   }
 
   if (settings.show_chatvault_badge) {
     var footerY = y + IMAGE_FOOTER_TOP_GAP;
     ctx.font = "700 15px " + theme.font.body;
-    var footerText = t("export_pdf_footer_branding", "Exported by AI Chat Export");
+    var footerText = t("export_pdf_footer_branding", "Exported by Claude Export");
     var footerWidth = Math.max(120, ctx.measureText(footerText).width);
     var logoGradient = ctx.createLinearGradient(pad, footerY, pad + footerWidth, footerY);
     logoGradient.addColorStop(0, theme.color.accent);
@@ -1143,6 +1174,9 @@ async function buildImageBlobInternal(messages, metadata, settingsInput, options
 
   notifyProgress(options, t("export_progress_saving", "Saving image"), 0.94);
   throwIfAborted();
+  // The destination canvas now owns the rendered pixels. Release decoded
+  // source images before PNG encoding, which is the export's memory peak.
+  releaseCanvasImageCache(imageCache);
   var imageBlob = await canvasToBlob(c.canvas, "image/png");
   throwIfAborted();
   notifyProgress(options, t("export_progress_ready", "Image ready"), 1);
@@ -1151,6 +1185,12 @@ async function buildImageBlobInternal(messages, metadata, settingsInput, options
     // 释放主渲染 canvas 与测量 canvas 的位图内存，避免长对话导出后 GC 压力
     try { c.canvas.width = 1; c.canvas.height = 1; } catch (ignored) {}
     try { measure.canvas.width = 1; measure.canvas.height = 1; } catch (ignored) {}
+  }
+  } finally {
+    releaseCanvasImageCache(imageCache);
+    // Measurement can be cancelled or rejected before the main canvas exists.
+    // Keep its cleanup in the outer scope as well as the normal render path.
+    try { if (measure && measure.canvas) { measure.canvas.width = 1; measure.canvas.height = 1; } } catch (ignored) {}
   }
 }
 

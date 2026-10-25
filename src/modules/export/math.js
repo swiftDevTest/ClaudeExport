@@ -65,7 +65,10 @@ async function loadKatexCss() {
       return css.replace(/url\((?:['"])?fonts\/([^)'"\s]+)(?:['"])?\)/g, function (_match, name) {
         return 'url("' + new URL('../../vendor/katex/fonts/' + name, import.meta.url).href + '")';
       });
-    }).catch(function () { return ''; });
+    }).catch(function () {
+      katexCssPromise = null;
+      return '';
+    });
   }
   return katexCssPromise;
 }
@@ -185,7 +188,11 @@ export async function renderMathPngAsset(block, options) {
     return null;
   });
   cacheMathAsset(key, pending);
-  return pending;
+  var result = await pending;
+  // A temporary font/layout failure must not poison later exports of the
+  // same formula. Keep in-flight deduplication, but cache only usable assets.
+  if (!result && mathAssetCache.get(key) === pending) mathAssetCache.delete(key);
+  return result;
 }
 
 // Raster assets are intentionally generated once per export and shared by

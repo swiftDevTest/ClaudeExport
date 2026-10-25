@@ -1,6 +1,9 @@
 (function initChatVaultContentScript() {
   "use strict";
 
+  // This extension reads Claude only, including manual reinjection.
+  if (window.location.hostname !== "claude.ai") return;
+
   // 防止重复注入
   if (globalThis.CHATVAULT_EXPORTER_INJECTED) {
     return;
@@ -4095,13 +4098,14 @@
     const source = Array.isArray(items) ? items : [];
     const slots = source.map(() => null);
     let nextIndex = 0;
+    let disposed = false;
     const workerCount = Math.max(1, Math.min(Number(concurrency) || 1, source.length || 1));
 
     function startNext() {
-      if (nextIndex >= source.length) return;
+      if (disposed || nextIndex >= source.length) return;
       const index = nextIndex++;
       slots[index] = Promise.resolve().then(async () => {
-        if (signal.aborted) {
+        if (disposed || signal.aborted) {
           const abortError = new Error("Export cancelled.");
           abortError.name = "AbortError";
           throw abortError;
@@ -4116,18 +4120,27 @@
     for (let index = 0; index < workerCount; index += 1) startNext();
     return {
       async get(index) {
+        if (disposed || signal.aborted) throw new DOMException("Export cancelled.", "AbortError");
+        if (!Number.isInteger(index) || index < 0 || index >= source.length) throw new RangeError("Invalid prefetch index.");
+        // Only advance the window when the consumer takes an ordered result.
+        // This bounds retained conversation payloads even when rendering one
+        // PDF/image takes much longer than fetching the remaining chats.
         while (nextIndex <= index) startNext();
         const result = await slots[index];
+        slots[index] = null;
         startNext();
         return result;
+      },
+      async dispose() {
+        disposed = true;
+        // Wait for attachment loaders before revoking their object URLs.
+        await Promise.allSettled(slots.filter(Boolean));
+        slots.fill(null);
       }
     };
   }
 
-  async function runInPageBatchExport(selectedItems, format, settings) {
-    const controller = new AbortController();
-    batchExportAbortController = controller;
-    abortController = controller;
+  async function runInPageBatchExport(selectedItems, format, settings, controller) {
     const signal = controller.signal;
     const total = selectedItems.length;
     const rootName = getBatchExportFolderName();
@@ -4323,6 +4336,8 @@
         });
       }
     } finally {
+      controller.abort();
+      await batchPrefetch?.dispose();
       hideExportProgress();
       globalThis.CHATVAULT_IS_BATCH_EXPORT = false;
       setBatchExportingUi(false);
@@ -4333,10 +4348,7 @@
     }
   }
 
-  async function runInPageBatchNotionSync(selectedItems) {
-    const controller = new AbortController();
-    batchExportAbortController = controller;
-    abortController = controller;
+  async function runInPageBatchNotionSync(selectedItems, controller) {
     const signal = controller.signal;
     batchNotionJobs = new Map();
     batchNotionResults = new Map();
@@ -4507,10 +4519,7 @@
     }
   }
 
-  async function runInPageBatchObsidianSync(selectedItems) {
-    const controller = new AbortController();
-    batchExportAbortController = controller;
-    abortController = controller;
+  async function runInPageBatchObsidianSync(selectedItems, controller) {
     const signal = controller.signal;
     batchObsidianResults = new Map();
     batchObsidianBatchId = `obsidian_batch_${Date.now()}_${Math.random().toString(16).slice(2)}`;
@@ -4675,8 +4684,8 @@
   }
 
   async function startInPageBatchExport() {
-    if (globalThis.CHATVAULT_IS_BATCH_EXPORT) {
-      showPageToast(tx("content_batch_already_running", "A batch sync is already running. Please wait or cancel it first.", "已有批量同步任务在运行，请等待完成或先取消。"));
+    if (hasActiveExportTask()) {
+      showPageToast(tx("content_export_already_running", "An export is already running. Please wait or cancel it first.", "已有导出任务在运行，请等待完成或先取消。"));
       return;
     }
     const selectedRows = shadowRoot.querySelectorAll(".cv-batch-item-row.selected");
@@ -4692,7 +4701,7 @@
     if (selectedItems.length === 0) return;
 
     if (batchMode === "notion") {
-      runInPageBatchNotionSync(selectedItems);
+      runInPageBatchNotionSync(selectedItems, acquireExportTaskController({ batch: true }));
       return;
     }
     if (batchMode === "obsidian") {
@@ -4703,14 +4712,12 @@
         shadowRoot?.getElementById("cv-batch-obsidian-configure")?.click();
         return;
       }
-      runInPageBatchObsidianSync(selectedItems);
+      runInPageBatchObsidianSync(selectedItems, acquireExportTaskController({ batch: true }));
       return;
     }
 
     batchActiveItems = selectedItems.slice();
-    const preflightController = new AbortController();
-    batchExportAbortController = preflightController;
-    abortController = preflightController;
+    const preflightController = acquireExportTaskController({ batch: true });
 
     function clearBatchPreflightController() {
       if (batchExportAbortController === preflightController) batchExportAbortController = null;
@@ -4797,7 +4804,7 @@
         titleTextEl.innerHTML = tx("content_batch_exporting_count", "Exporting <b>$1</b> chats", "正在批量导出 <b>$1</b> 个会话", selectedItems.length);
       }
 
-      runInPageBatchExport(selectedItems, batchSelectedFormat, currentSettings);
+      await runInPageBatchExport(selectedItems, batchSelectedFormat, currentSettings, preflightController);
     } catch (error) {
       if (!preflightController.signal.aborted) {
         resetBatchPreflightUi();
@@ -5014,7 +5021,7 @@
   }
 
   function isClaudeHost() {
-    return /(^|\.)claude\.ai$/.test(window.location.hostname);
+    return window.location.hostname === "claude.ai";
   }
 
   function isGeminiHost() {
@@ -5122,6 +5129,9 @@
   function ensureCanReadChatBody(chat) {
     const platform = getChatPlatform(chat);
     const currentPlatform = getCurrentPlatformId();
+    if (platform !== "claude" || !isClaudeHost()) {
+      throw new Error("Claude Export can only read conversations on claude.ai.");
+    }
     if (platform !== currentPlatform) {
       throw new Error(getCrossPlatformExportMessage(platform));
     }
@@ -5181,9 +5191,9 @@
 
   function getBlockingConversationRiskReasons(risk, platform) {
     const reasons = Array.isArray(risk?.reasons) ? risk.reasons.filter(Boolean) : [];
-    if (platform !== "chatgpt") return reasons;
+    if (platform !== "chatgpt" && !(platform === "claude" && risk?.allowMissingRoles === true)) return reasons;
 
-    // A structurally complete ChatGPT path may legitimately contain one
+    // A structurally verified conversation may legitimately contain one
     // unanswered user turn (or an assistant-only greeting). Missing-role
     // signals are therefore advisory by themselves. They remain blocking
     // when any substantive parser/count signal says content may be missing.
@@ -5201,9 +5211,9 @@
     try {
       let messages = [];
       if (platform === "gemini") {
-        messages = await fetchers.fetchGeminiConversationMessages(chat);
+        messages = await fetchers.fetchGeminiConversationMessages(chat, { signal: options.signal });
       } else if (platform === "claude") {
-        messages = await fetchers.fetchClaudeConversationMessages(chat);
+        messages = await fetchers.fetchClaudeConversationMessages(chat, { signal: options.signal });
       } else {
         messages = await fetchers.fetchChatGptConversationMessages(chat, {
           pageMessages,
@@ -5322,6 +5332,9 @@
 
   async function getCurrentConversationMessagesForExport(pageMessages, options = {}) {
     const chat = getCurrentConversationForExport();
+    if (options.sourceUrl && sanitizeSourceUrl(window.location.href) !== options.sourceUrl) {
+      throw new Error(isChineseUi() ? "会话已切换，请在目标会话中重新导出。" : "Conversation changed. Please retry in the intended conversation.");
+    }
     if (!chat) {
       if (options.allowPageFallback === true && Array.isArray(pageMessages) && pageMessages.length > 0) {
         return cloneExportMessages(pageMessages);
@@ -5331,14 +5344,19 @@
         getCurrentPlatformId()
       );
     }
-    return fetchConversationMessagesForExport(chat, {
+    const messages = await fetchConversationMessagesForExport(chat, {
       pageMessages,
       preserveHtmlPresentation: options.preserveHtmlPresentation === true,
       preserveMarkdownSemantics: options.preserveMarkdownSemantics === true,
       allowPageFallback: options.allowPageFallback === true,
       signal: options.signal
     });
+    if (!isCurrentConversation(chat)) {
+      throw new Error(isChineseUi() ? "会话已切换，请在目标会话中重新导出。" : "Conversation changed. Please retry in the intended conversation.");
+    }
+    return messages;
   }
+
 
   function sanitizeBatchPathSegment(value, fallback = "Untitled") {
     return String(value || fallback)
@@ -6204,7 +6222,29 @@
   }
 
   // 核心：执行文档导出
+  function hasActiveExportTask() {
+    return Boolean(abortController || batchExportAbortController || globalThis.CHATVAULT_IS_BATCH_EXPORT ||
+      activeNotionJobId || activeObsidianSingleSync);
+  }
+
+  function acquireExportTaskController(options = {}) {
+    if (hasActiveExportTask()) {
+      const error = new Error(tx("content_export_already_running", "An export is already running. Please wait or cancel it first.", "已有导出任务在运行，请等待完成或先取消。"));
+      error.code = "EXPORT_BUSY";
+      throw error;
+    }
+    // Every entrypoint reserves the same task slot before its first await.
+    const controller = new AbortController();
+    abortController = controller;
+    if (options.batch) batchExportAbortController = controller;
+    return controller;
+  }
+
   async function performExport(options = {}) {
+    if (hasActiveExportTask()) {
+      showPageToast(tx("content_export_already_running", "An export is already running. Please wait or cancel it first.", "已有导出任务在运行，请等待完成或先取消。"));
+      return;
+    }
     const formatForExport = activeFormat || "pdf";
     const copyToClipboard = options.copyToClipboard === true && formatForExport === "json" && !globalThis.CHATVAULT_IS_BATCH_EXPORT;
     const requestSettings = options.settings && typeof options.settings === "object"
@@ -6218,19 +6258,26 @@
       return;
     }
 
+    const controller = acquireExportTaskController();
+    const signal = controller.signal;
+    try {
+    const sourceUrlForExport = sanitizeSourceUrl(window.location.href);
+    const titleForExport = exporter.getConversationTitle();
     // A direct export request carries the freshest popup state. Do not let an
     // older asynchronous storage snapshot overwrite it before rendering.
     if (!requestSettings) {
-      await loadPersistedExportSettings();
+      try {
+        await loadPersistedExportSettings();
+      } catch (error) {
+        if (abortController === controller) abortController = null;
+        throw error;
+      }
     }
     const presetForExport = currentPreset;
     const settingsForExport = requestSettings
       ? { ...exportSettings, ...requestSettings }
       : { ...exportSettings };
     const isSelectedExport = settingsForExport.mode === "selected";
-    const controller = new AbortController();
-    abortController = controller;
-    const signal = controller.signal;
     const isSingleExport = !globalThis.CHATVAULT_IS_BATCH_EXPORT;
     let serverConsumedExportUsage = false;
     let currentExportPhase = "initialize";
@@ -6344,6 +6391,13 @@
       }
     }
 
+    if (sanitizeSourceUrl(window.location.href) !== sourceUrlForExport) {
+      hideExportProgress();
+      clearCurrentExportController();
+      showPageToast(isChineseUi() ? "会话已切换，请在目标会话中重新导出。" : "Conversation changed. Please retry in the intended conversation.");
+      return;
+    }
+
     const pageParseOptions = { includeHtmlStyles: formatForExport === "html" };
     let pageMessagesForExport = providedMessages || (
       isSelectedExport && typeof exporter.getSelectedMessages === "function"
@@ -6367,9 +6421,12 @@
       }
       try {
         rawMessagesForExport = await getCurrentConversationMessagesForExport(pageMessagesForExport, {
+          sourceUrl: sourceUrlForExport,
           preserveHtmlPresentation: formatForExport === "html",
           preserveMarkdownSemantics: formatForExport === "markdown",
-          allowPageFallback: pageMessagesForExport.length > 0,
+          // A visible snapshot may omit virtualized turns. Full export must
+          // stop on API failure; selected-message export remains available.
+          allowPageFallback: false,
           signal
         });
         if (isCurrentExportCancelled()) return;
@@ -6495,9 +6552,9 @@
       
       // 5. 编译元数据
       const metadata = {
-        platform: exporter.detectPlatform(),
-        title: exporter.getConversationTitle(),
-        sourceUrl: sanitizeSourceUrl(window.location.href),
+        platform: platformForExport,
+        title: titleForExport,
+        sourceUrl: sourceUrlForExport,
         messageCount: processedMessages.length,
         redaction: redactionSummary,
         codeIndex,
@@ -6549,12 +6606,12 @@
         }
       });
 
-      if (abortController.signal.aborted) {
+      if (signal.aborted) {
         throw new Error("Export cancelled.");
       }
 
       if (!blobResult || !blobResult.ok) {
-        throw new Error(blobResult?.error || "Blob creation failed");
+        throw Object.assign(new Error(blobResult?.error || "Blob creation failed"), blobResult || {});
       }
 
       if (!isProUser && currentSession?.access_token) {
@@ -6619,7 +6676,7 @@
           platform: metadata.platform,
           properties: { format: formatForExport, source: "current_chat", error_category: "export_build" }
         });
-        throw new Error(saveResult?.error || "Save dialog is not available.");
+        throw Object.assign(new Error(saveResult?.error || "Save dialog is not available."), saveResult || {});
       }
 
       // 8. 成功后生成凭证
@@ -6724,6 +6781,12 @@
       cleanupExportObjectUrls();
       clearCurrentExportController();
     }
+    } finally {
+      if (abortController === controller) {
+        hideExportProgress();
+        abortController = null;
+      }
+    }
   }
 
   // 取消或关闭导出提示罩
@@ -6775,10 +6838,8 @@
     return { coordinator, status, selectionMode, selectedCount };
   }
 
-  async function runSingleObsidianSync(config, preflight) {
+  async function runSingleObsidianSync(config, preflight, controller) {
     activeObsidianSingleSync = true;
-    const controller = new AbortController();
-    abortController = controller;
     const signal = controller.signal;
     const settings = config?.settings && typeof config.settings === "object" ? config.settings : {};
     let serverConsumedUsage = false;
@@ -7038,7 +7099,9 @@
       if (message.type === "CHATVAULT_POPUP_OBSIDIAN_SYNC") {
         (async () => {
           let started = false;
+          let obsidianSyncController = null;
           try {
+            obsidianSyncController = acquireExportTaskController();
             // 立即回复 popup 并展示进度 UI，避免点击同步后出现停顿。
             // prepareSingleObsidianSync 可能耗时 ~2s，移到响应之后再执行。
             if (message.config?.settings && typeof message.config.settings === "object") {
@@ -7062,7 +7125,8 @@
               showPageToast(error?.message || tx("obsidian_sync_failed", "Obsidian sync could not start.", "无法开始 Obsidian 同步。"));
               return;
             }
-            await runSingleObsidianSync({ ...message.config, settings: { ...exportSettings, ...(message.config?.settings || {}) } }, preflight);
+            if (obsidianSyncController.signal.aborted) throw new DOMException("Sync cancelled.", "AbortError");
+            await runSingleObsidianSync({ ...message.config, settings: { ...exportSettings, ...(message.config?.settings || {}) } }, preflight, obsidianSyncController);
           } catch (error) {
             if (!started) {
               if (error?.message === FREE_QUOTA_EXHAUSTED_MESSAGE) showUpgradePrompt(FREE_QUOTA_EXHAUSTED_MESSAGE);
@@ -7076,6 +7140,8 @@
                 showPageToast(error?.message || tx("obsidian_sync_failed", "Obsidian sync could not start.", "无法开始 Obsidian 同步。"));
               }
             }
+          } finally {
+            if (obsidianSyncController && abortController === obsidianSyncController) abortController = null;
           }
         })();
         return true;
@@ -7137,10 +7203,10 @@
           let notionJobReleased = false;
           let notionSyncController = null;
           try {
+            notionSyncController = acquireExportTaskController();
             await waitForContextExportReady();
-            notionSyncController = new AbortController();
-            abortController = notionSyncController;
             const signal = notionSyncController.signal;
+            if (signal.aborted) throw new DOMException("Sync cancelled.", "AbortError");
             syncStarted = true;
             sendResponse({ ok: true, syncStarted: true });
 

@@ -2,11 +2,28 @@ export function compareElementsInDocument(left, right) {
   if (left === right) return 0;
   if (!left || !right || typeof left.compareDocumentPosition !== "function") return 0;
   var position = left.compareDocumentPosition(right);
-  if (typeof Node !== "undefined") {
-    if (position & Node.DOCUMENT_POSITION_PRECEDING) return 1;
-    if (position & Node.DOCUMENT_POSITION_FOLLOWING) return -1;
-  }
+  if (position & 1) return 0; // Disconnected nodes have no shared document order.
+  if (position & 2) return 1; // DOCUMENT_POSITION_PRECEDING
+  if (position & 4) return -1; // DOCUMENT_POSITION_FOLLOWING
   return 0;
+}
+
+// Keep the first matching candidate (selector priority), without comparing
+// every message with every other message. Ancestor walks scale with DOM depth.
+export function selectDistinctDocumentElements(elements) {
+  var selected = new Set();
+  var selectedAncestors = new Set();
+  Array.prototype.forEach.call(elements || [], function (element) {
+    if (!element || selected.has(element) || selectedAncestors.has(element)) return;
+    var ancestors = [];
+    for (var parent = element.parentNode; parent; parent = parent.parentNode) {
+      if (selected.has(parent)) return;
+      ancestors.push(parent);
+    }
+    selected.add(element);
+    ancestors.forEach(function (ancestor) { selectedAncestors.add(ancestor); });
+  });
+  return Array.from(selected).sort(compareElementsInDocument);
 }
 
 export function pushDistinctDocumentElement(list, element) {
@@ -23,12 +40,8 @@ export function pushDistinctDocumentElement(list, element) {
   list.push(element);
 }
 
-export function collapseNestedDocumentElements(elements, maxElements = 1000) {
-  var unique = Array.from(new Set((elements || []).filter(Boolean))).slice(0, Math.max(1, maxElements));
+export function collapseNestedDocumentElements(elements, maxElements = Infinity) {
+  var unique = Array.from(new Set((elements || []).filter(Boolean)));
   unique.sort(compareElementsInDocument);
-  var collapsed = [];
-  unique.forEach(function (element) {
-    pushDistinctDocumentElement(collapsed, element);
-  });
-  return collapsed;
+  return selectDistinctDocumentElements(unique).slice(0, Math.max(1, maxElements));
 }

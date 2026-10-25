@@ -187,6 +187,57 @@ function releaseCanvasBitmap(canvas) {
   } catch (error) {}
 }
 
+export function releaseCanvasImageCacheEntry(entry, released) {
+  var element = entry && entry.element;
+  var releasedElements = released instanceof Set ? released : new Set();
+  if (!element || releasedElements.has(element)) return releasedElements;
+  releasedElements.add(element);
+
+  try {
+    if (typeof element.close === "function") {
+      element.close();
+    } else if (typeof element.getContext === "function") {
+      releaseCanvasBitmap(element);
+    } else {
+      // preloadCanvasImages creates detached Image elements. Removing their
+      // source releases decoded image memory without touching page-owned DOM.
+      element.onload = null;
+      element.onerror = null;
+      if (typeof element.removeAttribute === "function") element.removeAttribute("src");
+      else if ("src" in element) element.src = "";
+    }
+  } catch (error) {}
+  return releasedElements;
+}
+
+export function releaseCanvasImageCache(cache) {
+  if (!cache || typeof cache !== "object") return;
+  var released = new Set();
+  Object.keys(cache).forEach(function (key) {
+    var entry = cache[key];
+    delete cache[key];
+    releaseCanvasImageCacheEntry(entry, released);
+  });
+}
+
+export function getCanvasImageCacheStats(cache) {
+  var seen = new Set();
+  var decodedPixels = 0;
+  Object.keys(cache || {}).forEach(function (key) {
+    var entry = cache[key];
+    var identity = entry && (entry.element || entry);
+    if (!entry || seen.has(identity)) return;
+    seen.add(identity);
+    var width = Math.max(0, Number(entry.width) || 0);
+    var height = Math.max(0, Number(entry.height) || 0);
+    decodedPixels += width * height;
+  });
+  return {
+    entryCount: seen.size,
+    decodedPixels: decodedPixels
+  };
+}
+
 async function readResponseBytesWithinLimit(response, maxBytes) {
   var contentLength = Number(response && response.headers && response.headers.get ? response.headers.get("content-length") || 0 : 0);
   if (Number.isFinite(contentLength) && contentLength > maxBytes) {
@@ -940,14 +991,16 @@ export async function preloadImageForDocx(src, index, options) {
     return null;
   }
 
-  var mimeType = bytesInfo.mimeType || "image/png";
+  var mimeType = String(bytesInfo.mimeType || "image/png").split(";")[0].trim().toLowerCase();
+  var docxExtensions = { "image/png": "png", "image/jpeg": "jpeg", "image/jpg": "jpeg", "image/gif": "gif", "image/bmp": "bmp", "image/tiff": "tiff" };
+  var needsRasterization = !docxExtensions[mimeType];
   var dims = await new Promise(function (resolve) {
-    if (bytesInfo.width && bytesInfo.height) {
+    if (!needsRasterization && bytesInfo.width && bytesInfo.height) {
       resolve({ width: bytesInfo.width, height: bytesInfo.height });
       return;
     }
     if (typeof Image === "undefined" || typeof URL === "undefined" || typeof Blob === "undefined") {
-      resolve({ width: 600, height: 400 });
+      resolve(needsRasterization ? null : { width: 600, height: 400 });
       return;
     }
     var settled = false;
@@ -961,7 +1014,7 @@ export async function preloadImageForDocx(src, index, options) {
       if (settled) return;
       settled = true;
       revokeObjectUrl();
-      resolve({ width: 600, height: 400 });
+      resolve(needsRasterization ? null : { width: 600, height: 400 });
     }, 5000);
 
     function finish(value) {
@@ -974,22 +1027,46 @@ export async function preloadImageForDocx(src, index, options) {
     var img = new Image();
     var blob = new Blob([bytesInfo.bytes], { type: mimeType });
     objectUrl = URL.createObjectURL(blob);
-    img.onload = function () {
+    img.onload = async function () {
+      if (settled) return;
       revokeObjectUrl();
-      finish({ width: img.naturalWidth || 600, height: img.naturalHeight || 400 });
+      var width = img.naturalWidth || 600;
+      var height = img.naturalHeight || 400;
+      var canvas = null;
+      try {
+        if (needsRasterization) {
+          // Word cannot portably embed AVIF/WebP/SVG. Store actual PNG bytes
+          // instead of labeling an unsupported payload with a .png suffix.
+          assertSafeCanvasDimensions(width, height);
+          canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          var context = canvas.getContext("2d");
+          if (!context) throw new Error("Image conversion canvas unavailable.");
+          context.drawImage(img, 0, 0);
+          var png = await canvasToBlob(canvas, "image/png", undefined, IMAGE_PRELOAD_CANVAS_TIMEOUT_MS);
+          var buffer = await png.arrayBuffer();
+          assertImageByteLength(buffer.byteLength);
+          bytesInfo = { bytes: new Uint8Array(buffer), width: width, height: height };
+          mimeType = "image/png";
+        }
+        finish({ width: width, height: height });
+      } catch (error) {
+        finish(null);
+      } finally {
+        if (canvas) releaseCanvasBitmap(canvas);
+      }
     };
     img.onerror = function () {
       revokeObjectUrl();
-      finish({ width: 600, height: 400 });
+      finish(needsRasterization ? null : { width: 600, height: 400 });
     };
     img.src = objectUrl;
   });
+  if (!dims) return null;
 
   var id = index + 1;
-  var ext = "png";
-  if (mimeType.indexOf("jpeg") !== -1 || mimeType.indexOf("jpg") !== -1) ext = "jpeg";
-  else if (mimeType.indexOf("gif") !== -1) ext = "gif";
-  else if (mimeType.indexOf("webp") !== -1) ext = "webp";
+  var ext = docxExtensions[mimeType];
   return {
     src: src,
     bytes: bytesInfo.bytes,
@@ -1059,7 +1136,8 @@ export async function preloadCanvasImages(messages, options) {
   if (uniqueImages.length === 0) return cache;
   var aggregateDecodedPixels = 0;
 
-  await mapLimit(uniqueImages, getImagePreloadConcurrency(), async function (entry) {
+  try {
+    await mapLimit(uniqueImages, getImagePreloadConcurrency(), async function (entry) {
     try {
       var src = entry.src;
       var fetchOptions = options;
@@ -1138,6 +1216,9 @@ export async function preloadCanvasImages(messages, options) {
       if (!Number.isFinite(decodedPixels) || decodedPixels <= 0 ||
           decodedPixels > IMAGE_PRELOAD_MAX_IMAGE_PIXELS ||
           aggregateDecodedPixels + decodedPixels > IMAGE_PRELOAD_MAX_TOTAL_PIXELS) {
+        // The decoded resource has not been inserted into cache yet, so the
+        // outer cleanup cannot discover it if the pixel budget rejects it.
+        releaseCanvasImageCacheEntry(cached);
         notifyExportDiagnostic(options, {
           code: "IMAGE_PIXEL_BUDGET",
           message: "Some images exceed the browser's safe decoded-pixel budget and were replaced with placeholders."
@@ -1167,7 +1248,13 @@ export async function preloadCanvasImages(messages, options) {
         imageBytesCache.delete(entry.src);
       }
     }
-  });
+    });
+  } catch (error) {
+    // An abort or worker failure can happen after earlier workers already
+    // created scaled canvases. Release those partial results before bubbling.
+    releaseCanvasImageCache(cache);
+    throw error;
+  }
 
   return cache;
 }

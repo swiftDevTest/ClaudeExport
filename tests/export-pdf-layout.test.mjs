@@ -90,6 +90,8 @@ function installFakeCanvasDocument(options = {}) {
       };
       let canvasWidth = 0;
       let canvasHeight = 0;
+      let canvasBlobAttempts = 0;
+      const canvasIndex = canvases.length;
       const canvas = {
         get width() { return canvasWidth; },
         set width(value) { canvasWidth = value; updateLiveCanvasCount(); },
@@ -98,6 +100,17 @@ function installFakeCanvasDocument(options = {}) {
         getContext() { return context; },
         toBlob(callback, type) {
           blobAttempts += 1;
+          canvasBlobAttempts += 1;
+          if (typeof options.toBlob === "function") {
+            options.toBlob({
+              callback,
+              type,
+              canvas,
+              canvasIndex,
+              attempt: canvasBlobAttempts
+            });
+            return;
+          }
           const finish = () => callback(options.failBlob
             ? null
             : new Blob([new Uint8Array([0xff, 0xd8, 0xff, 0xd9])], { type: type || "image/jpeg" }));
@@ -154,7 +167,7 @@ function assertContentStaysAboveFooter(canvases) {
   assert.ok(contentCalls.length > 0);
   assert.ok(contentCalls.every((call) => call.y <= 1049), "body text must stay above the PDF footer boundary");
   canvases.forEach(({ drawCalls }) => {
-    const footer = drawCalls.filter((call) => call.text === "Exported by AI Chat Export");
+    const footer = drawCalls.filter((call) => call.text === "Exported by Claude Export");
     assert.equal(footer.length, 1);
     assert.equal(footer[0].clipActive, false);
     assert.equal(footer[0].y, 1087);
@@ -223,7 +236,37 @@ test("PDF export bounds live page canvases inside one very long message", async 
   }
 });
 
-test("PDF export restores the five-page encoding pipeline for ordinary content", async () => {
+test("PDF export cancellation interrupts long measurement and releases canvases", async () => {
+  const fake = installFakeCanvasDocument();
+  const controller = new AbortController();
+  let tick = 0;
+  try {
+    const items = Array.from({ length: 240 }, (_, index) => ({ text: `CancelPdfItem${index + 1}` }));
+    await assert.rejects(renderPdfPages([{
+      role: "assistant",
+      contentBlocks: [{ type: "list", ordered: true, items }]
+    }], {
+      title: "PDF cancellation",
+      platform: "chatgpt",
+      scope: "conversation"
+    }, pdfSettings(), {
+      signal: controller.signal,
+      schedulerSliceMs: 4,
+      schedulerNow() {
+        tick += 1;
+        if (tick === 8) controller.abort();
+        return tick * 5;
+      }
+    }, {}, new Map()), { name: "AbortError" });
+
+    assert.ok(fake.canvases.length >= 1);
+    assert.ok(fake.canvases.every(({ canvas }) => canvas.width === 1 && canvas.height === 1));
+  } finally {
+    fake.restore();
+  }
+});
+
+test("PDF export uses the planned high-memory encoding window for ordinary content", async () => {
   const fake = installFakeCanvasDocument({ deferBlob: true });
   try {
     const messages = Array.from({ length: 80 }, (_, index) => ({
@@ -237,11 +280,11 @@ test("PDF export restores the five-page encoding pipeline for ordinary content",
       title: "Fast ordinary export",
       platform: "chatgpt",
       scope: "conversation"
-    }, pdfSettings(), {}, {});
+    }, pdfSettings(), { deviceMemory: 16 }, {});
 
     assert.ok(pages.length >= 8);
     assert.ok(fake.maxLiveCanvases > 3, `expected fast pipeline to exceed the conservative limit, got ${fake.maxLiveCanvases}`);
-    assert.ok(fake.maxLiveCanvases <= 6, `expected at most 6 live canvases, got ${fake.maxLiveCanvases}`);
+    assert.ok(fake.maxLiveCanvases <= 4, `expected at most 4 live canvases, got ${fake.maxLiveCanvases}`);
   } finally {
     fake.restore();
   }
@@ -273,6 +316,47 @@ test("PDF export settles rejected page encoders and releases canvases after a la
     }, pdfSettings(), {}, {}), /synthetic render failure/);
 
     assert.equal(fake.blobAttempts, 2, "the pending encoder and its fallback retry must both settle");
+    assert.ok(fake.canvases.length >= 2);
+    assert.ok(fake.canvases.every(({ canvas }) => canvas.width === 1 && canvas.height === 1));
+  } finally {
+    fake.restore();
+  }
+});
+
+test("PDF drain waits for delayed sibling encoders before rejecting", async () => {
+  let delayedSiblingSettled = false;
+  const fake = installFakeCanvasDocument({
+    toBlob({ callback, type, canvasIndex }) {
+      if (canvasIndex === 0) {
+        queueMicrotask(() => callback(null));
+        return;
+      }
+      if (canvasIndex === 1) {
+        setTimeout(() => {
+          delayedSiblingSettled = true;
+          callback(new Blob([new Uint8Array([0xff, 0xd8, 0xff, 0xd9])], { type: type || "image/jpeg" }));
+        }, 30);
+        return;
+      }
+      queueMicrotask(() => callback(new Blob([new Uint8Array([0xff, 0xd8, 0xff, 0xd9])], { type: type || "image/jpeg" })));
+    }
+  });
+
+  try {
+    const items = Array.from({ length: 180 }, (_, index) => ({ text: `DrainItem${index + 1}` }));
+    await assert.rejects(renderPdfPages([{
+      role: "assistant",
+      contentBlocks: [{ type: "list", ordered: true, items }]
+    }], {
+      title: "Drain settlement regression",
+      platform: "chatgpt",
+      scope: "conversation"
+    }, pdfSettings(), {
+      schedulerNow: (() => { let clock = 0; return () => (clock += 20); })(),
+      renderProfile: { scale: 2.25, conservative: true, maxPendingPageJobs: 2 }
+    }, {}), /PDF page rendering failed/);
+
+    assert.equal(delayedSiblingSettled, true, "the delayed sibling must settle before renderPdfPages rejects");
     assert.ok(fake.canvases.length >= 2);
     assert.ok(fake.canvases.every(({ canvas }) => canvas.width === 1 && canvas.height === 1));
   } finally {
@@ -355,14 +439,14 @@ test("Image export keeps a long list complete and places branding after the cont
     }, pdfSettings(), {});
     assert.equal(blob.type, "image/png");
 
-    const rendered = fake.canvases.find(({ drawCalls }) => drawCalls.some((call) => call.text === "Exported by AI Chat Export"));
+    const rendered = fake.canvases.find(({ drawCalls }) => drawCalls.some((call) => call.text === "Exported by Claude Export"));
     assert.ok(rendered);
     const markers = rendered.drawCalls
       .filter((call) => /^\d+\.$/.test(call.text))
       .map((call) => Number(call.text.slice(0, -1)));
     assert.deepEqual(markers, Array.from({ length: 120 }, (_, index) => index + 1));
 
-    const footerY = rendered.drawCalls.find((call) => call.text === "Exported by AI Chat Export").y;
+    const footerY = rendered.drawCalls.find((call) => call.text === "Exported by Claude Export").y;
     const lastMarkerY = rendered.drawCalls.find((call) => call.text === "120.").y;
     assert.ok(lastMarkerY < footerY);
   } finally {
@@ -396,6 +480,36 @@ test("Image export keeps every positional space in a code diagram", async () => 
     diagram.forEach((line) => {
       assert.ok(rendered.drawCalls.some((call) => call.text === line), `diagram row must retain its exact spaces: ${line}`);
     });
+  } finally {
+    fake.restore();
+  }
+});
+
+test("Image export cancellation interrupts long measurement and releases canvases", async () => {
+  const fake = installFakeCanvasDocument();
+  const controller = new AbortController();
+  let tick = 0;
+  try {
+    const items = Array.from({ length: 240 }, (_, index) => ({ text: `CancelItem${index + 1}` }));
+    await assert.rejects(buildImageBlob([{
+      role: "assistant",
+      contentBlocks: [{ type: "list", ordered: true, items }]
+    }], {
+      title: "Cancellation",
+      platform: "chatgpt",
+      scope: "conversation"
+    }, pdfSettings(), {
+      signal: controller.signal,
+      schedulerSliceMs: 4,
+      schedulerNow() {
+        tick += 1;
+        if (tick === 8) controller.abort();
+        return tick * 5;
+      }
+    }), { name: "AbortError" });
+
+    assert.ok(fake.canvases.length >= 1);
+    assert.ok(fake.canvases.every(({ canvas }) => canvas.width === 1 && canvas.height === 1));
   } finally {
     fake.restore();
   }

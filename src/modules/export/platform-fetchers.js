@@ -48,7 +48,9 @@ function createMissingDependencyError(name) {
     for (var i = 0; i < Math.min(limit, array.length); i++) {
       workers.push(worker());
     }
-    await Promise.all(workers);
+    var workerResults = await Promise.allSettled(workers);
+    var rejected = workerResults.find(function (result) { return result.status === "rejected"; });
+    if (rejected) throw rejected.reason;
     return results;
   }
 
@@ -313,6 +315,12 @@ function createMissingDependencyError(name) {
 
   function getPresentationMessageText(message) {
     return (message && message.contentBlocks || []).map(getPresentationBlockText).filter(Boolean).join("\n");
+  }
+
+  function hasExportBlockContent(block) {
+    if (!block) return false;
+    if (block.type === "image") return Boolean(String(block.src || block.alt || "").trim());
+    return Boolean(block.generatedFile || getPresentationBlockText(block).trim());
   }
 
   function normalizePresentationMatchText(value) {
@@ -1636,12 +1644,25 @@ function createMissingDependencyError(name) {
   }
 
   function splitMarkdownTableRow(line) {
-    return String(line || "")
-      .trim()
-      .replace(/^\|/, "")
-      .replace(/\|$/, "")
-      .split("|")
-      .map((cell) => cell.trim());
+    const source = String(line || "").trim();
+    const cells = [];
+    let start = source.startsWith("|") ? 1 : 0;
+    let backslashes = 0;
+    function appendCell(end) {
+      // Unescape only after locating delimiters. Slice each cell once so
+      // pipe-heavy cells do not repeatedly copy an ever-growing string.
+      cells.push(source.slice(start, end).trim().replace(/\\\|/g, "|"));
+    }
+    for (let index = start; index < source.length; index += 1) {
+      const char = source[index];
+      if (char === "|" && backslashes % 2 === 0) {
+        appendCell(index);
+        start = index + 1;
+      }
+      backslashes = char === "\\" ? backslashes + 1 : 0;
+    }
+    if (start < source.length || !cells.length) appendCell(source.length);
+    return cells;
   }
 
   function parseMarkdownTable(lines, startIndex) {
@@ -1650,6 +1671,7 @@ function createMissingDependencyError(name) {
     }
 
     const headers = splitMarkdownTableRow(lines[startIndex]);
+    if (headers.length !== splitMarkdownTableRow(lines[startIndex + 1]).length) return null;
     const rows = [];
     let index = startIndex + 2;
 
@@ -3033,10 +3055,11 @@ function createMissingDependencyError(name) {
       throw new Error(`${label} returned too much data to export safely. Try exporting a shorter conversation.`);
     }
 
-    let bytes;
+    const isBlob = bodyType === "blob";
+    const parts = [];
+    const decoder = isBlob ? null : new TextDecoder();
     if (response.body && typeof response.body.getReader === "function") {
       const streamReader = response.body.getReader();
-      const chunks = [];
       let total = 0;
       const deadline = Number.isFinite(Number(timeoutMs)) && Number(timeoutMs) > 0
         ? Date.now() + Number(timeoutMs)
@@ -3071,17 +3094,18 @@ function createMissingDependencyError(name) {
             cancelReader();
             throw new Error(`${label} returned too much data to export safely. Try exporting a shorter conversation.`);
           }
-          chunks.push(chunk);
+          // Decode incrementally so text responses never retain every byte
+          // chunk plus a second full-size contiguous byte buffer. Streaming
+          // decoding also preserves UTF-8 characters split across packets.
+          parts.push(isBlob ? chunk : decoder.decode(chunk, { stream: true }));
         }
+      } catch (error) {
+        cancelReader();
+        throw error;
       } finally {
         try { streamReader.releaseLock(); } catch (error) {}
       }
-      bytes = new Uint8Array(total);
-      let offset = 0;
-      chunks.forEach((chunk) => {
-        bytes.set(chunk, offset);
-        offset += chunk.byteLength;
-      });
+      if (decoder) parts.push(decoder.decode());
     } else {
       const fallback = await withPlatformTimeout(
         response.arrayBuffer(),
@@ -3092,13 +3116,14 @@ function createMissingDependencyError(name) {
       if (fallback.byteLength > normalizedMaxBytes) {
         throw new Error(`${label} returned too much data to export safely. Try exporting a shorter conversation.`);
       }
-      bytes = new Uint8Array(fallback);
+      parts.push(isBlob ? fallback : decoder.decode(fallback));
     }
 
-    if (bodyType === "blob") {
-      return new Blob([bytes], { type: response.headers.get("content-type") || "application/octet-stream" });
+    throwIfPlatformAborted(signal, label);
+    if (isBlob) {
+      return new Blob(parts, { type: response.headers.get("content-type") || "application/octet-stream" });
     }
-    const text = new TextDecoder().decode(bytes);
+    const text = parts.join("");
     return bodyType === "text" ? text : JSON.parse(text);
   }
 
@@ -3164,7 +3189,7 @@ function createMissingDependencyError(name) {
     }
   }
 
-  function getClaudeOrganizationIdFromPayload(payload) {
+  function getClaudeOrganizationsFromPayload(payload) {
     const candidates = Array.isArray(payload)
       ? payload
       : Array.isArray(payload?.organizations)
@@ -3176,11 +3201,10 @@ function createMissingDependencyError(name) {
             : payload
               ? [payload]
               : [];
-    const active = candidates.find((item) => item?.active || item?.is_active || item?.uuid || item?.id) || candidates[0];
-    return active?.uuid || active?.id || active?.organization_uuid || active?.organizationId || "";
+    return candidates.filter(Boolean);
   }
 
-  async function getClaudeOrganizationIdForExport(options = {}) {
+  async function getClaudeOrganizationIdsForExport(chat, options = {}) {
     const { response, body } = await fetchPlatformConversationPayload(`${window.location.origin}/api/organizations`, {
       credentials: "include",
       headers: {
@@ -3193,12 +3217,26 @@ function createMissingDependencyError(name) {
       throw new Error(`Claude organization request failed: ${response.status}`);
     }
 
-    const organizationId = getClaudeOrganizationIdFromPayload(body);
-    if (!organizationId) {
+    const organizations = getClaudeOrganizationsFromPayload(body);
+    const getId = (item) => String(item?.uuid || item?.id || item?.organization_uuid || item?.organizationId || "");
+    let pageOrganizationId = "";
+    try {
+      const match = typeof document !== "undefined" && document.cookie.match(/(?:^|;\s*)lastActiveOrg=([^;]+)/);
+      if (match) pageOrganizationId = decodeURIComponent(match[1]);
+    } catch (error) {}
+    const preferredId = String(options.organizationId || chat?.organizationId || chat?.organization_uuid || chat?.organization_id || pageOrganizationId || "");
+    const ordered = [
+      ...organizations.filter((item) => getId(item) === preferredId),
+      ...organizations.filter((item) => item.active === true || item.is_active === true),
+      ...organizations
+    ];
+    // A failed conversation lookup must not fan out over an unbounded account.
+    const organizationIds = [...new Set(ordered.map(getId).filter(Boolean))].slice(0, 5);
+    if (!organizationIds.length) {
       throw new Error("Claude organization could not be resolved for export.");
     }
 
-    return organizationId;
+    return organizationIds;
   }
 
   function getClaudeMessagesFromPayload(payload) {
@@ -3208,6 +3246,48 @@ function createMissingDependencyError(name) {
     if (Array.isArray(payload?.conversation?.messages)) return payload.conversation.messages;
     if (Array.isArray(payload)) return payload;
     return [];
+  }
+
+  function selectClaudeConversationBranch(payload, options = {}) {
+    const messages = getClaudeMessagesFromPayload(payload).filter(Boolean);
+    const leafId = String(payload?.current_leaf_message_uuid || payload?.conversation?.current_leaf_message_uuid || "");
+    const hasParents = messages.some((message) => Object.hasOwn(message, "parent_message_uuid"));
+    if (!leafId && !hasParents && (!options.requireBranchSelection || messages.length <= 1)) return messages;
+
+    function invalidBranch(reason) {
+      const error = new Error("Claude conversation branch could not be verified: " + reason);
+      error.code = "CONVERSATION_COMPLETENESS_RISK";
+      throw error;
+    }
+    const byId = new Map();
+    const parentsWithChildren = new Set();
+    const isRoot = (id) => !id || /^00000000-0000-(?:0000|4000)-(?:0000|8000)-000000000000$/.test(id);
+    messages.forEach((message) => {
+      const id = String(message.uuid || message.id || "");
+      if (!id || byId.has(id)) invalidBranch("missing or duplicate message ID");
+      byId.set(id, message);
+      const parentId = String(message.parent_message_uuid || "");
+      if (!isRoot(parentId)) parentsWithChildren.add(parentId);
+    });
+    let currentId = leafId;
+    if (!currentId) {
+      const leaves = [...byId.keys()].filter((id) => !parentsWithChildren.has(id));
+      if (leaves.length !== 1) invalidBranch("the selected leaf is ambiguous");
+      currentId = leaves[0];
+    }
+    if (!hasParents && messages.length > 1) invalidBranch("parent links are missing");
+
+    const branch = [];
+    const visited = new Set();
+    while (!isRoot(currentId)) {
+      if (visited.has(currentId)) invalidBranch("cyclic parent links");
+      const message = byId.get(currentId);
+      if (!message) invalidBranch("a parent or selected leaf is missing");
+      visited.add(currentId);
+      branch.push(message);
+      currentId = String(message.parent_message_uuid || "");
+    }
+    return branch.reverse();
   }
 
   function extractImagesFromClaudeMessage(message, organizationId, rawConversationId) {
@@ -3601,8 +3681,9 @@ function createMissingDependencyError(name) {
     });
   }
 
-  function parseClaudeConversationPayload(payload, organizationId = "", rawConversationId = "") {
-    const rawMessages = getClaudeMessagesFromPayload(payload);
+  function parseClaudeConversationPayload(payload, organizationId = "", rawConversationId = "", options = {}) {
+    const rawMessages = selectClaudeConversationBranch(payload, options);
+    let droppedMessageCount = 0;
     const messages = rawMessages
       .filter((message) => {
         if (!message) return false;
@@ -3613,6 +3694,9 @@ function createMissingDependencyError(name) {
         const role = message?.sender || message?.role || message?.author || message?.type;
         const normalizedRole = normalizeExportRole(role);
         const contentBlocks = orderUserImageBlocksFirst(normalizedRole, claudeMessageToExportBlocks(message, organizationId, rawConversationId));
+        // Keep evidence of an unparsed turn before filtering it out. Otherwise
+        // a dropped reply could look like a legitimate unanswered question.
+        if (normalizedRole && !contentBlocks.length) droppedMessageCount += 1;
         return normalizedRole && contentBlocks.length
           ? {
               role: normalizedRole,
@@ -3622,7 +3706,19 @@ function createMissingDependencyError(name) {
       })
       .filter(Boolean);
 
-    return filterInheritedUserImages(messages);
+    const result = filterInheritedUserImages(messages);
+    Object.defineProperty(result, "_chatVaultFetchDiagnostics", {
+      value: {
+        sourcePlatform: "claude",
+        branchValidated: true,
+        droppedMessageCount,
+        hasUserRole: result.some((message) => message.role === "user"),
+        hasAssistantRole: result.some((message) => message.role === "assistant"),
+        emptyContentBlockCount: 0
+      },
+      configurable: true
+    });
+    return result;
   }
 
 
@@ -4331,6 +4427,18 @@ function createMissingDependencyError(name) {
     var deps = options || {};
     var _createdObjectUrls = [];
 
+    function assertSupportedPlatform(platform) {
+      var supported = globalThis.CHATVAULT_PRODUCT_CONFIG?.supportedPlatforms;
+      if (Array.isArray(supported) && !supported.includes(platform)) {
+        throw new Error("Claude Export can only read Claude conversations.");
+      }
+      var hostname = window.location.hostname;
+      var expected = platform === "claude" ? hostname === "claude.ai"
+        : platform === "gemini" ? hostname === "gemini.google.com"
+        : /^(chatgpt\.com|chat\.openai\.com)$/.test(hostname);
+      if (!expected) throw new Error("Conversation platform does not match the current page.");
+    }
+
     function trackObjectUrl(url) {
       if (url && typeof url === "string" && url.startsWith("blob:") && _createdObjectUrls.indexOf(url) === -1) {
         _createdObjectUrls.push(url);
@@ -4466,6 +4574,7 @@ function createMissingDependencyError(name) {
     }
 
     async function fetchChatGptConversationMessages(chat, options) {
+      assertSupportedPlatform("chatgpt");
       options = options || {};
       requireFn(deps, "ensureCanReadChatBody")(chat);
       var chatGptSession = {};
@@ -4679,9 +4788,7 @@ function createMissingDependencyError(name) {
           msgObj._chatVaultHasUnknownContent = true;
           msgObj._chatVaultUnknownTypes = partDiagnostics.unknownTypes.slice();
         }
-        if (!contentBlocks.some(function (block) {
-          return block && (block.text || block.type === "image" || block.generatedFile);
-        })) {
+        if (!contentBlocks.some(hasExportBlockContent)) {
           fetchDiagnostics.emptyContentBlockCount += 1;
         }
         if (role === "user") fetchDiagnostics.hasUserRole = true;
@@ -4793,53 +4900,66 @@ function createMissingDependencyError(name) {
     }
 
     async function fetchClaudeConversationMessages(chat, options = {}) {
+      assertSupportedPlatform("claude");
       var opts = options || {};
       throwIfPlatformAborted(opts.signal, "Claude");
       requireFn(deps, "ensureCanReadChatBody")(chat);
-      var organizationId = await getClaudeOrganizationIdForExport(opts);
       var rawConversationId = requireFn(deps, "getChatConversationId")(chat);
 
       if (!rawConversationId) {
         throw new Error("Conversation ID is missing for export.");
       }
 
+      var organizationIds = await getClaudeOrganizationIdsForExport(chat, opts);
       var conversationId = encodeURIComponent(rawConversationId);
-      var endpoints = [
-        "/api/organizations/" + encodeURIComponent(organizationId) + "/chat_conversations/" + conversationId,
-        "/api/organizations/" + encodeURIComponent(organizationId) + "/chat_conversations/" + conversationId + "?tree=true"
-      ];
       var lastError = null;
 
-      for (var index = 0; index < endpoints.length; index += 1) {
-        try {
-          var result = await fetchPlatformConversationPayload(window.location.origin + endpoints[index], {
-            credentials: "include",
-            headers: {
-              Accept: "application/json"
-            },
-            signal: opts.signal
-          }, "Claude", "json");
+      for (var organizationId of organizationIds) {
+        throwIfPlatformAborted(opts.signal, "Claude");
+        var basePath = "/api/organizations/" + encodeURIComponent(organizationId) + "/chat_conversations/" + conversationId;
+        var endpoints = [basePath, basePath + "?tree=true"];
+        var tryNextOrganization = false;
+        for (var index = 0; index < endpoints.length; index += 1) {
+          try {
+            const result = await fetchPlatformConversationPayload(window.location.origin + endpoints[index], {
+              credentials: "include",
+              headers: {
+                Accept: "application/json"
+              },
+              signal: opts.signal
+            }, "Claude", "json");
 
-          if (!result.response.ok) {
-            lastError = new Error("Claude conversation request failed: " + result.response.status);
-            continue;
-          }
+            if (!result.response.ok) {
+              lastError = Object.assign(new Error("Claude conversation request failed: " + result.response.status), { status: result.response.status });
+              // Only an inaccessible/missing conversation justifies looking in
+              // another organization. Outages, rate limits and parser errors do not.
+              if (result.response.status === 403 || result.response.status === 404) {
+                tryNextOrganization = true;
+                break;
+              }
+              if (result.response.status === 401 || result.response.status === 429) throw lastError;
+              continue;
+            }
 
-          var messages = parseClaudeConversationPayload(result.body, organizationId, rawConversationId);
-          if (messages.length) {
-            await resolveClaudeImageBlocks(messages, opts);
-            return messages;
+            var messages = parseClaudeConversationPayload(result.body, organizationId, rawConversationId, { requireBranchSelection: index === 1 });
+            if (messages.length) {
+              await resolveClaudeImageBlocks(messages, opts);
+              return messages;
+            }
+          } catch (error) {
+            if (error?.name === "AbortError" || opts.signal?.aborted) throw error;
+            if (error?.code === "CONVERSATION_COMPLETENESS_RISK" || error?.status === 401 || error?.status === 429) throw error;
+            lastError = error;
           }
-        } catch (error) {
-          if (error?.name === "AbortError" || opts.signal?.aborted) throw error;
-          lastError = error;
         }
+        if (!tryNextOrganization) break;
       }
 
       throw lastError || new Error("Claude conversation body could not be loaded.");
     }
 
     async function fetchGeminiConversationMessages(chat, options = {}) {
+      assertSupportedPlatform("gemini");
       var opts = options || {};
       throwIfPlatformAborted(opts.signal, "Gemini");
       requireFn(deps, "ensureCanReadChatBody")(chat);
@@ -4938,24 +5058,31 @@ function createMissingDependencyError(name) {
           if (unknownTypes.indexOf(typeLabel) === -1) unknownTypes.push(typeLabel);
         });
       }
+      if (diagnostics && diagnostics.droppedMessageCount > 0) {
+        reasons.push("unparsed_message");
+      }
 
       // 2. 角色完整性
+      var hasUserRole = false;
+      var hasAssistantRole = false;
       if (diagnostics) {
-        if (!diagnostics.hasUserRole) reasons.push("missing_user_role");
-        if (!diagnostics.hasAssistantRole) reasons.push("missing_assistant_role");
+        hasUserRole = diagnostics.hasUserRole === true;
+        hasAssistantRole = diagnostics.hasAssistantRole === true;
+        if (!hasUserRole) reasons.push("missing_user_role");
+        if (!hasAssistantRole) reasons.push("missing_assistant_role");
       } else {
         // 没有诊断字段（可能是 Claude/Gemini 或旧路径）→ 用 messages 数组推断
-        var hasUser = (messages || []).some(function (m) { return m && m.role === "user"; });
-        var hasAssistant = (messages || []).some(function (m) { return m && m.role === "assistant"; });
-        if (!hasUser && (messages || []).length > 0) reasons.push("missing_user_role");
-        if (!hasAssistant && (messages || []).length > 0) reasons.push("missing_assistant_role");
+        hasUserRole = (messages || []).some(function (m) { return m && m.role === "user"; });
+        hasAssistantRole = (messages || []).some(function (m) { return m && m.role === "assistant"; });
+        if (!hasUserRole && (messages || []).length > 0) reasons.push("missing_user_role");
+        if (!hasAssistantRole && (messages || []).length > 0) reasons.push("missing_assistant_role");
       }
 
       // 3. 空消息占比
       var emptyCount = diagnostics ? diagnostics.emptyContentBlockCount : 0;
       if (!diagnostics) {
         (messages || []).forEach(function (m) {
-          if (m && m.contentBlocks && !m.contentBlocks.some(function (b) { return b && b.text; })) {
+          if (!m || !Array.isArray(m.contentBlocks) || !m.contentBlocks.some(hasExportBlockContent)) {
             emptyCount += 1;
           }
         });
@@ -4976,7 +5103,12 @@ function createMissingDependencyError(name) {
       return {
         needsFallback: reasons.length > 0,
         reasons: reasons,
-        unknownTypes: unknownTypes
+        unknownTypes: unknownTypes,
+        hasUserRole: hasUserRole,
+        hasAssistantRole: hasAssistantRole,
+        emptyContentBlockCount: emptyCount,
+        allowMissingRoles: Boolean(diagnostics && diagnostics.sourcePlatform === "claude" &&
+          diagnostics.branchValidated === true && diagnostics.droppedMessageCount === 0)
       };
     }
 

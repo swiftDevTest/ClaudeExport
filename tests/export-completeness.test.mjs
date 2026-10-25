@@ -443,7 +443,7 @@ test("content export recognizes Custom GPT URLs and explicitly falls back for on
   const performStart = source.indexOf("async function performExport(options = {})");
   const performEnd = source.indexOf("\n  \/\/ 取消或关闭导出提示罩", performStart);
   const performSource = source.slice(performStart, performEnd);
-  assert.match(performSource, /allowPageFallback: pageMessagesForExport\.length > 0/);
+  assert.match(performSource, /allowPageFallback: false/);
   assert.match(source, /options\.allowPageFallback === true && Array\.isArray\(pageMessages\)/);
 });
 

@@ -1,5 +1,6 @@
 import { isChatVaultNode, isIgnoredContentNode, isTrustedConversationImageSrc, isPlatformOrSystemIcon, isSubstantialSvg, convertSvgToDataUrl, isDalleMetadataText, isGeminiImagePlaceholderText, hasImageAttachment, cleanText, cleanInlineSegments, stripThoughtText, isIgnoredRoleLabel, isGeminiUINoiseText, isImageOrFileSignature, sanitizeExportText, decodeVisibleTextEscapes, getBlockText, getPlainText, dedupeImageBlocksWithinMessage } from './utils.js';
 import { captureExportHtmlStyle, getExportHtmlStyleDifference, isExportHtmlStyleCaptureEnabled, isTransparentCssColor } from './html-style.js';
+import { selectDistinctDocumentElements } from './platforms/shared.js';
 
 var KNOWN_CODE_LANGUAGE = /^(?:abap|arduino|bash|basic|c|c\+\+|cpp|c#|csharp|clojure|css|dart|diff|dockerfile?|elixir|elm|erlang|f#|fortran|go|graphql|groovy|haskell|html|java|javascript|js|json|julia|kotlin|latex|less|lisp|lua|makefile|markdown|matlab|mermaid|objective-c|ocaml|perl|php|plaintext|powershell|python|py|r|ruby|rust|sass|scala|scheme|scss|shell|sql|swift|text|typescript|ts|tsx|vb\.net|verilog|vhdl|xml|yaml|yml|zsh)$/i;
 
@@ -435,11 +436,6 @@ export function collectContentElements(root, selectors) {
 
   function add(element) {
     if (!element || isIgnoredContentNode(element)) return;
-    if (elements.some(function (existing) {
-      return existing === element || existing.contains(element) || element.contains(existing);
-    })) {
-      return;
-    }
     elements.push(element);
   }
 
@@ -447,7 +443,7 @@ export function collectContentElements(root, selectors) {
     Array.prototype.forEach.call(root.querySelectorAll(selector), add);
   });
 
-  return elements;
+  return selectDistinctDocumentElements(elements);
 }
 
 export function attachBlockSource(block, element) {

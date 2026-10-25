@@ -1,5 +1,6 @@
 import { normalizeContent, chooseMoreCompleteBlocks, collectContentElements, getBlockSourceElement } from '../../parser-dom.js';
 import { captureExportHtmlStyle } from '../../html-style.js';
+import { selectDistinctDocumentElements } from '../shared.js';
 
 export function parseClaudeMessages() {
   var messages = [];
@@ -24,14 +25,10 @@ export function parseClaudeMessages() {
 
   selectors.forEach(function (selector) {
     Array.prototype.forEach.call(root.querySelectorAll(selector), function (el) {
-      if (allMessageEls.some(function (existing) {
-        return existing === el || existing.contains(el) || el.contains(existing);
-      })) {
-        return;
-      }
       allMessageEls.push(el);
     });
   });
+  allMessageEls = selectDistinctDocumentElements(allMessageEls);
 
   if (!allMessageEls.length) {
     allMessageEls = root.querySelectorAll("[class*='human-message'], [class*='assistant-message'], [data-is-streaming]");

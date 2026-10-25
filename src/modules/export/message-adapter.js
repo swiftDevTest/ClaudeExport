@@ -433,7 +433,7 @@ function defaultPlatformLabel(platform) {
             });
             return returnApiMessagesOrPageFallback(chat, geminiMessages, geminiPageMessages, options);
           } catch (geminiError) {
-            if (options.signal && options.signal.aborted) throw geminiError;
+            if (options.signal?.aborted || geminiError?.name === "AbortError") throw geminiError;
             if (options.allowPageFallback === true && geminiPageMessages.length) {
               return ensureCompleteConversationMessages(chat, geminiPageMessages, options);
             }
@@ -448,7 +448,7 @@ function defaultPlatformLabel(platform) {
             });
             return returnApiMessagesOrPageFallback(chat, claudeMessages, null, options);
           } catch (claudeError) {
-            if (options.signal && options.signal.aborted) throw claudeError;
+            if (options.signal?.aborted || claudeError?.name === "AbortError") throw claudeError;
             var claudePageMessages = getCurrentPageMessages(chat);
             if (options.allowPageFallback === true && claudePageMessages.length) {
               return ensureCompleteConversationMessages(chat, claudePageMessages, options);
@@ -469,6 +469,7 @@ function defaultPlatformLabel(platform) {
           }
           return returnApiMessagesOrPageFallback(chat, chatGptMessages, chatGptPageMessages, options);
         } catch (chatGptError) {
+          if (options.signal?.aborted || chatGptError?.name === "AbortError") throw chatGptError;
           if (options.allowPageFallback === true && chatGptPageMessages.length) {
             return ensureCompleteConversationMessages(chat, chatGptPageMessages, options);
           }

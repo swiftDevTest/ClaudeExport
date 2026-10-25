@@ -718,6 +718,93 @@ try {
     });
   }
 
+  function getExportSaveOwner(sender) {
+    return Number.isInteger(sender?.tab?.id)
+      ? `tab:${sender.tab.id}:${sender.documentId || ""}`
+      : `extension:${sender?.url || sender?.id || ""}`;
+  }
+
+  function getExportSaveRequestStatus(requestId, sender, callback) {
+    if (!/^save_[a-z0-9_-]{8,100}$/i.test(String(requestId || ""))) {
+      callback({ ok: false, error: "Invalid export save request." });
+      return;
+    }
+    const key = `chatvault_save_request_${requestId}`;
+    chrome.storage.local.get(key, (items) => {
+      const lastError = chrome.runtime.lastError;
+      if (lastError) return callback({ ok: false, error: lastError.message });
+      const record = items[key];
+      if (!record || record.owner !== getExportSaveOwner(sender)) {
+        callback({ ok: false, error: "Export save request was not found." });
+        return;
+      }
+      const { owner, createdAt, ...status } = record;
+      if (!record.downloadId || record.state === "complete" || record.state === "interrupted") {
+        callback(status);
+        return;
+      }
+      getDownloadStatus(record.downloadId, record.filename, (download) => {
+        callback({ ...status, ...download });
+      });
+    });
+  }
+
+  function startExportSaveRequest(message, sender, sendResponse) {
+    const requestId = String(message.requestId || "");
+    if (!/^save_[a-z0-9_-]{8,100}$/i.test(requestId)) {
+      sendResponse({ ok: false, error: "Invalid export save request." });
+      return;
+    }
+    const downloadUrl = typeof message.dataUrl === "string" && message.dataUrl.startsWith("data:")
+      ? message.dataUrl
+      : isTrustedExportBlobUrl(message.blobUrl) ? message.blobUrl : "";
+    if (!downloadUrl) {
+      sendResponse({ ok: false, error: "Export data is not available." });
+      return;
+    }
+    const filename = sanitizeDownloadFilename(message.filename);
+    const key = `chatvault_save_request_${requestId}`;
+    const record = { owner: getExportSaveOwner(sender), createdAt: Date.now(), requestId, filename, ok: true, state: "pending" };
+    chrome.storage.local.set({ [key]: record }, () => {
+      const lastError = chrome.runtime.lastError;
+      if (lastError) {
+        sendResponse({ ok: false, error: lastError.message || "Could not track export save." });
+        return;
+      }
+      // Acknowledge before Chrome opens its native file chooser. User input
+      // must not keep a runtime message response pending for minutes.
+      sendResponse({ ok: true, requestId, filename, state: "pending" });
+      function finish(status) {
+        chrome.storage.local.set({ [key]: { ...record, ...status } });
+        if (Number.isInteger(sender?.tab?.id)) {
+          chrome.tabs.sendMessage(sender.tab.id, { type: "CHATVAULT_DOWNLOAD_STATUS", requestId, ...status }, () => void chrome.runtime.lastError);
+        }
+      }
+      try {
+        chrome.downloads.download({ url: downloadUrl, filename, saveAs: message.saveAs !== false, conflictAction: message.saveAs !== false ? "prompt" : "uniquify" }, (downloadId) => {
+          const downloadError = chrome.runtime.lastError;
+          if (downloadError || !Number.isInteger(downloadId)) {
+            const error = downloadError?.message || "Download could not start.";
+            finish({ ok: false, state: "interrupted", cancelled: /cancel/i.test(error), error });
+            return;
+          }
+          chrome.storage.local.set({ [key]: { ...record, downloadId, state: "in_progress" } });
+          if (Number.isInteger(sender?.tab?.id)) {
+            chrome.storage.local.set({ [`chatvault_download_mapping_${downloadId}`]: {
+              tabId: sender.tab.id, filename, createdAt: record.createdAt, requestId
+            } });
+          }
+          // Covers downloads which finish before their tab mapping is stored.
+          getDownloadStatus(downloadId, filename, (status) => {
+            if (status.state === "complete" || status.state === "interrupted") finish(status);
+          });
+        });
+      } catch (error) {
+        finish({ ok: false, state: "interrupted", error: error.message || "Download could not start." });
+      }
+    });
+  }
+
   function createRandomHex(byteLength = 32) {
     const bytes = new Uint8Array(byteLength);
     crypto.getRandomValues(bytes);
@@ -1351,6 +1438,12 @@ try {
       return true; // Keep message channel open for async response
     }
 
+    if (message && message.type === "CHATVAULT_GET_EXPORT_SAVE_STATUS") {
+      if (rejectUntrustedSender(sender, sendResponse)) return false;
+      getExportSaveRequestStatus(message.requestId, sender, sendResponse);
+      return true;
+    }
+
     if (message && message.type === "CHATVAULT_GET_DOWNLOAD_STATUS") {
       if (rejectUntrustedSender(sender, sendResponse)) return false;
       getDownloadStatus(Number(message.downloadId), sanitizeDownloadFilename(message.filename), sendResponse);
@@ -1361,6 +1454,11 @@ try {
       return false;
     }
     if (rejectUntrustedSender(sender, sendResponse)) return false;
+
+    if (message.requestId) {
+      startExportSaveRequest(message, sender, sendResponse);
+      return true;
+    }
 
     const dataUrl = typeof message.dataUrl === "string" ? message.dataUrl : "";
     const blobUrl = typeof message.blobUrl === "string" ? message.blobUrl : "";
@@ -1451,11 +1549,24 @@ try {
 
         const isCancelled = state === "interrupted" && delta.error?.current === "USER_CANCELED";
         const errorMsg = state === "interrupted" ? (delta.error?.current || "Download interrupted") : null;
+        if (mapping.requestId) {
+          const requestKey = `chatvault_save_request_${mapping.requestId}`;
+          chrome.storage.local.get(requestKey, (items) => {
+            if (chrome.runtime.lastError) return;
+            const record = items[requestKey];
+            if (record?.downloadId === downloadId) {
+              chrome.storage.local.set({ [requestKey]: {
+                ...record, ok: state === "complete", state, cancelled: isCancelled, error: errorMsg
+              } });
+            }
+          });
+        }
 
         // Notify the content script tab
         chrome.tabs.sendMessage(tabId, {
           type: "CHATVAULT_DOWNLOAD_STATUS",
           downloadId: downloadId,
+          requestId: mapping.requestId,
           state: state,
           filename: filename,
           cancelled: isCancelled,
@@ -1475,7 +1586,7 @@ try {
       const now = Date.now();
       const keysToRemove = [];
       Object.keys(items || {}).forEach((key) => {
-        if (key.startsWith("chatvault_download_mapping_")) {
+        if (key.startsWith("chatvault_download_mapping_") || key.startsWith("chatvault_save_request_")) {
           const mapping = items[key];
           if (mapping && now - (mapping.createdAt || 0) > 2 * 60 * 60 * 1000) {
             keysToRemove.push(key);

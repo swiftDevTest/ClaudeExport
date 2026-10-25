@@ -5,6 +5,8 @@ import {
   IMAGE_RENDER_WIDTH,
   notifyProgress,
   yieldToBrowser,
+  createExportScheduler,
+  collectVisualExportStats,
   sanitizeExportText,
   sanitizeImageAlt,
   normalizeExportLinkHref,
@@ -22,7 +24,7 @@ import {
   wrapRichText,
   getFontsForStyle
 } from '../utils.js';
-import { preloadCanvasImages, imageBytesCache } from '../media.js';
+import { preloadCanvasImages, releaseCanvasImageCache, getCanvasImageCacheStats, imageBytesCache } from '../media.js';
 import { getPdfTheme } from '../themes/pdf.js';
 import { getMathAssetKey, mathFallbackText, preloadMathAssets } from '../math.js';
 
@@ -37,77 +39,7 @@ var PDF_DEFAULT_CANVAS_SCALE = 3;
 var PDF_CONSERVATIVE_CANVAS_SCALE = 2.5;
 var PDF_LOW_MEMORY_CANVAS_SCALE = 2.25;
 
-function getInlineValueLength(value) {
-  if (typeof value === "string") return value.length;
-  if (typeof value === "number" || typeof value === "boolean") return String(value).length;
-  if (Array.isArray(value)) {
-    return value.reduce(function (sum, item) { return sum + getInlineValueLength(item); }, 0);
-  }
-  if (!value || typeof value !== "object") return 0;
-  if (typeof value.text === "string") return value.text.length;
-  if (Array.isArray(value.segments)) return getInlineValueLength(value.segments);
-  return 0;
-}
-
-function getExplicitLineCount(value) {
-  var text = typeof value === "string"
-    ? value
-    : value && typeof value.text === "string"
-      ? value.text
-      : "";
-  return text ? text.split(/\r?\n/).length : 0;
-}
-
-function shouldUseConservativePdfEncoding(messages, deviceMemoryInput) {
-  var totalTextLength = 0;
-  var totalBlocks = 0;
-  var imageCount = 0;
-  var oversizedStructure = false;
-
-  (messages || []).forEach(function (message) {
-    (message && message.contentBlocks || []).forEach(function (block) {
-      if (!block || oversizedStructure) return;
-      totalBlocks += 1;
-
-      if (block.type === "image") {
-        imageCount += 1;
-        return;
-      }
-
-      if (block.type === "list") {
-        var listUnits = 0;
-        (block.items || []).forEach(function (item) {
-          listUnits += 1;
-          totalTextLength += getInlineValueLength(item);
-          (item && item.subItems || []).forEach(function (subItem) {
-            listUnits += 1;
-            totalTextLength += getInlineValueLength(subItem);
-          });
-        });
-        if (listUnits >= 160) oversizedStructure = true;
-        return;
-      }
-
-      if (block.type === "table") {
-        var rows = block.rows || [];
-        totalTextLength += getInlineValueLength(block.headers || []);
-        rows.forEach(function (row) {
-          (row || []).forEach(function (cell) {
-            totalTextLength += getInlineValueLength(cell);
-            if (getExplicitLineCount(cell) >= 60) oversizedStructure = true;
-          });
-        });
-        if (rows.length >= 60) oversizedStructure = true;
-        return;
-      }
-
-      totalTextLength += getInlineValueLength(block);
-      if ((block.type === "blockquote" || block.type === "code") && getExplicitLineCount(block) >= 120) {
-        oversizedStructure = true;
-      }
-    });
-  });
-
+function resolveDeviceMemory(deviceMemoryInput) {
   var deviceMemory = Number(deviceMemoryInput);
   if (!Number.isFinite(deviceMemory) || deviceMemory <= 0) {
     try {
@@ -116,35 +48,61 @@ function shouldUseConservativePdfEncoding(messages, deviceMemoryInput) {
       deviceMemory = 0;
     }
   }
+  return deviceMemory;
+}
 
-  return oversizedStructure ||
-    totalTextLength >= 120000 ||
-    totalBlocks >= 600 ||
-    imageCount >= 12 ||
+function shouldUseConservativePdfEncoding(messages, deviceMemoryInput, statsInput) {
+  var deviceMemory = resolveDeviceMemory(deviceMemoryInput);
+  var stats = statsInput || collectVisualExportStats(messages);
+  return stats.oversizedStructure ||
+    stats.textCharCount >= 120000 ||
+    stats.blockCount >= 600 ||
+    stats.imageCount >= 12 ||
     (Number.isFinite(deviceMemory) && deviceMemory > 0 && deviceMemory <= 4);
 }
 
-export function getPdfRenderProfile(messages, deviceMemoryInput) {
-  var deviceMemory = Number(deviceMemoryInput);
-  if (!Number.isFinite(deviceMemory) || deviceMemory <= 0) {
-    try {
-      deviceMemory = Number(globalThis.navigator && globalThis.navigator.deviceMemory || 0);
-    } catch (error) {
-      deviceMemory = 0;
-    }
-  }
-  var conservative = shouldUseConservativePdfEncoding(messages, deviceMemory);
+export function getPdfPagePipelinePlan(input) {
+  input = input || {};
+  var scale = Math.max(1, Number(input.scale) || PDF_DEFAULT_CANVAS_SCALE);
+  var deviceMemory = resolveDeviceMemory(input.deviceMemory);
+  var currentMaximum = Math.max(1, Math.min(PDF_FAST_PENDING_PAGE_JOBS, Number(input.currentMaximum) || PDF_FAST_PENDING_PAGE_JOBS));
+  var pipelineBudget = deviceMemory > 0 && deviceMemory <= 4
+    ? 64 * 1024 * 1024
+    : deviceMemory > 0 && deviceMemory <= 8
+      ? 96 * 1024 * 1024
+      : deviceMemory > 8
+        ? 128 * 1024 * 1024
+        : 96 * 1024 * 1024;
+  var estimatedPageBytes = 794 * 1123 * scale * scale * 4;
+  var baseJobs = Math.floor(pipelineBudget / Math.max(1, estimatedPageBytes)) - 1;
+  var decodedImagePixels = Math.max(0, Number(input.decodedImagePixels) || 0);
+  var imagePenalty = decodedImagePixels >= 16 * 1024 * 1024 ? 1 : 0;
+  var maxPendingPageJobs = Math.max(1, Math.min(currentMaximum, baseJobs - imagePenalty));
+  return {
+    estimatedPageBytes: estimatedPageBytes,
+    pipelineBudget: pipelineBudget,
+    maxPendingPageJobs: maxPendingPageJobs
+  };
+}
+
+export function getPdfRenderProfile(messages, deviceMemoryInput, statsInput) {
+  var deviceMemory = resolveDeviceMemory(deviceMemoryInput);
+  var conservative = shouldUseConservativePdfEncoding(messages, deviceMemory, statsInput);
   var scale = deviceMemory > 0 && deviceMemory <= 4
     ? PDF_LOW_MEMORY_CANVAS_SCALE
     : conservative
       ? PDF_CONSERVATIVE_CANVAS_SCALE
       : PDF_DEFAULT_CANVAS_SCALE;
+  var currentMaximum = conservative ? PDF_CONSERVATIVE_PENDING_PAGE_JOBS : PDF_FAST_PENDING_PAGE_JOBS;
+  var pagePlan = getPdfPagePipelinePlan({
+    scale: scale,
+    deviceMemory: deviceMemory,
+    currentMaximum: currentMaximum
+  });
   return {
     conservative: conservative,
     scale: scale,
-    maxPendingPageJobs: conservative
-      ? PDF_CONSERVATIVE_PENDING_PAGE_JOBS
-      : PDF_FAST_PENDING_PAGE_JOBS
+    maxPendingPageJobs: pagePlan.maxPendingPageJobs
   };
 }
 
@@ -183,22 +141,31 @@ async function buildPdfBlobInternal(messages, metadata, settingsInput, options) 
     abortErr.name = "AbortError";
     throw abortErr;
   }
-  var renderProfile = getPdfRenderProfile(messages);
+  var renderProfile = getPdfRenderProfile(messages, undefined, options.visualStats);
   var imageCache = await preloadCanvasImages(messages, Object.assign({}, options, {
     imageRenderScale: renderProfile.scale
   }));
-  var mathAssets = await preloadMathAssets(messages, options, 15, true);
-  notifyProgress(options, t("export_progress_paginating_doc", "Paginating export"), 0.04);
-  var pages = await renderPdfPages(messages, metadata, settingsInput, {
-    signal: options.signal,
-    onProgress: function (progress) {
-      notifyProgress(options, progress.message || t("export_progress_paginating_doc", "Paginating export"), 0.04 + 0.62 * (progress.progress || 0));
-    }
-  }, imageCache, mathAssets);
-  notifyProgress(options, t("export_progress_generating_pdf", "Generating PDF"), 0.68);
-  var pdf = createPdfFromJpegs(pages, pages[0] && pages[0].canvasScale || PDF_DEFAULT_CANVAS_SCALE);
-  notifyProgress(options, t("export_progress_ready_doc", "Export ready"), 1);
-  return pdf;
+  try {
+    var mathAssets = await preloadMathAssets(messages, options, 15, true);
+    notifyProgress(options, t("export_progress_paginating_doc", "Paginating export"), 0.04);
+    var pages = await renderPdfPages(messages, metadata, settingsInput, {
+      signal: options.signal,
+      visualStats: options.visualStats,
+      renderProfile: renderProfile,
+      onProgress: function (progress) {
+        notifyProgress(options, progress.message || t("export_progress_paginating_doc", "Paginating export"), 0.04 + 0.62 * (progress.progress || 0));
+      }
+    }, imageCache, mathAssets);
+    notifyProgress(options, t("export_progress_generating_pdf", "Generating PDF"), 0.68);
+    // Page canvases already contain every decoded source image. Drop the
+    // preload cache before assembling the final Blob to lower peak memory.
+    releaseCanvasImageCache(imageCache);
+    var pdf = createPdfFromJpegs(pages, pages[0] && pages[0].canvasScale || PDF_DEFAULT_CANVAS_SCALE);
+    notifyProgress(options, t("export_progress_ready_doc", "Export ready"), 1);
+    return pdf;
+  } finally {
+    releaseCanvasImageCache(imageCache);
+  }
 }
 
 export async function buildPdfBlob(messages, metadata, settingsInput, options) {
@@ -211,6 +178,11 @@ export async function buildPdfBlob(messages, metadata, settingsInput, options) {
 
 export async function renderPdfPages(messages, metadata, settingsInput, options, imageCache, mathAssets) {
   options = options || {};
+  var scheduler = createExportScheduler({
+    sliceMs: options.schedulerSliceMs || 12,
+    signal: options.signal,
+    now: options.schedulerNow
+  });
   var themeConfig = getPdfTheme(settingsInput);
   var settings = themeConfig.settings;
   var theme = themeConfig.theme;
@@ -220,7 +192,15 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
 
   var pageWidth = 794;
   var pageHeight = 1123;
-  var renderProfile = getPdfRenderProfile(messages);
+  var renderProfile = options.renderProfile || getPdfRenderProfile(messages, options.deviceMemory, options.visualStats);
+  var imageCacheStats = getCanvasImageCacheStats(imageCache);
+  var pagePlan = getPdfPagePipelinePlan({
+    scale: renderProfile.scale,
+    deviceMemory: options.deviceMemory,
+    decodedImagePixels: imageCacheStats.decodedPixels,
+    currentMaximum: renderProfile.maxPendingPageJobs || (renderProfile.conservative ? PDF_CONSERVATIVE_PENDING_PAGE_JOBS : PDF_FAST_PENDING_PAGE_JOBS)
+  });
+  renderProfile = Object.assign({}, renderProfile, { maxPendingPageJobs: pagePlan.maxPendingPageJobs });
   var scale = renderProfile.scale;
   var margin = 56;
   var topMargin = 54;
@@ -336,7 +316,7 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
     if (!settings.show_chatvault_badge) return;
     ctx.font = "10px " + DESIGN.font.body;
     ctx.fillStyle = DESIGN.color.muted;
-    ctx.fillText(t("export_pdf_footer_branding", "Exported by AI Chat Export"), margin, pageHeight - 36);
+    ctx.fillText(t("export_pdf_footer_branding", "Exported by Claude Export"), margin, pageHeight - 36);
   }
 
   function finalizeCurrentPage() {
@@ -356,7 +336,7 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
     var finalizedPageNumber = totalPageCount;
     currentCanvas = null;
     currentPageLinks = [];
-    pageJobs.push((async function () {
+    var pageJob = (async function () {
       try {
         // Use async canvas encoding so repeated PDF exports do not monopolize the page thread.
         var blob = await canvasToBlob(canvas, "image/jpeg", 0.85);
@@ -403,17 +383,31 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
           canvas.height = 1;
         } catch (e) {}
       }
-    })());
+    })();
+    // Observe failures immediately: rendering may yield before the queue is
+    // full. Keep the original rejected promise so drain still reports failure.
+    pageJob.catch(function () {});
+    pageJobs.push(pageJob);
   }
 
   async function drainPageJobs() {
     if (!pageJobs.length) return;
     var jobs = pageJobs;
     pageJobs = [];
-    var results = await Promise.all(jobs);
+    // Keep every encoder alive until its canvas has reached the job's finally
+    // cleanup. A fail-fast Promise.all would lose sight of sibling jobs after
+    // pageJobs is cleared and let renderPdfPages reject while they still hold
+    // large canvases.
+    var results = await Promise.allSettled(jobs);
+    var firstRejection = null;
     for (var i = 0; i < results.length; i++) {
-      encodedPages.push(results[i]);
+      if (results[i].status === "fulfilled") {
+        encodedPages.push(results[i].value);
+      } else if (!firstRejection) {
+        firstRejection = results[i].reason;
+      }
     }
+    if (firstRejection) throw firstRejection;
     if (encodedPageBytes > PDF_MAX_ENCODED_PAGE_BYTES) {
       throw new Error(t("export_pdf_too_large", "This conversation is too large to export as one PDF safely. Export a shorter range."));
     }
@@ -497,12 +491,12 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
         throw err;
       }
       var message = messages[mi];
-      var layout = measurePdfMessage(message);
+      var layout = await measurePdfMessage(message);
       await renderPdfMessageCard(layout);
       if (mi > 0 && mi % 20 === 0) {
         notifyProgress(options, t("export_progress_paginating_doc", "Paginating export"), 0.08 + 0.64 * ((mi + 1) / Math.max(1, messages.length)));
-        await new Promise(function (resolve) { setTimeout(resolve, 0); });
       }
+      await scheduler.checkpoint();
       if (pageJobs.length >= maxPendingPageJobs) {
         await drainPageJobs();
       }
@@ -520,30 +514,36 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
     throw error;
   }
 
-  function measurePdfMessage(message) {
+  async function measurePdfMessage(message) {
     var isUser = message.role === "user";
     var alignRight = isUser && settings.align_user_messages_right;
     
     var maxCardWidth = alignRight ? contentWidth * 0.75 : contentWidth;
     var horizontalPadding = flatLayout ? 8 : 44;
     var maxInnerWidth = maxCardWidth - horizontalPadding;
-    var allBlocks = expandInlineMathBlocks(message.contentBlocks).map(function (block) {
-      return measurePdfBlock(getVisualMessageBlock(block, message.role), maxInnerWidth);
-    }).filter(Boolean);
+    var sourceBlocks = expandInlineMathBlocks(message.contentBlocks);
+    var allBlocks = [];
+    for (var sourceBlockIndex = 0; sourceBlockIndex < sourceBlocks.length; sourceBlockIndex++) {
+      var measuredBlock = await measurePdfBlock(getVisualMessageBlock(sourceBlocks[sourceBlockIndex], message.role), maxInnerWidth);
+      if (measuredBlock) allBlocks.push(measuredBlock);
+      await scheduler.checkpoint();
+    }
     
     var bubbleBlocks = allBlocks.filter(function (b) { return b.type !== "image"; });
     
     var cardWidth = alignRight ? contentWidth * 0.75 : contentWidth;
     if (alignRight && bubbleBlocks.length > 0) {
       var maxContentW = 0;
-      bubbleBlocks.forEach(function (block) {
+      for (var bubbleBlockIndex = 0; bubbleBlockIndex < bubbleBlocks.length; bubbleBlockIndex++) {
+        var block = bubbleBlocks[bubbleBlockIndex];
         if (block.type === "paragraph" || block.type === "heading") {
           if (block.lines) {
             ctx.font = block.font;
-            block.lines.forEach(function (line) {
-              var w = ctx.measureText(line).width;
+            for (var textLineIndex = 0; textLineIndex < block.lines.length; textLineIndex++) {
+              var w = ctx.measureText(block.lines[textLineIndex]).width;
               if (w > maxContentW) maxContentW = w;
-            });
+              if (textLineIndex % 32 === 31) await scheduler.checkpoint();
+            }
           }
         } else if (block.type === "code") {
           var w = block.frameWidth || 0;
@@ -555,16 +555,18 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
           var maxQuoteLineW = 0;
           if (block.lines) {
             ctx.font = block.font;
-            block.lines.forEach(function (line) {
-              var w = ctx.measureText(line).width + 36;
+            for (var quoteLineIndex = 0; quoteLineIndex < block.lines.length; quoteLineIndex++) {
+              var w = ctx.measureText(block.lines[quoteLineIndex]).width + 36;
               if (w > maxQuoteLineW) maxQuoteLineW = w;
-            });
+              if (quoteLineIndex % 32 === 31) await scheduler.checkpoint();
+            }
           }
           if (maxQuoteLineW > maxContentW) maxContentW = maxQuoteLineW;
         } else {
           if (block.width && block.width > maxContentW) maxContentW = block.width;
         }
-      });
+        await scheduler.checkpoint();
+      }
       var limit = contentWidth * 0.75;
       cardWidth = Math.min(limit, Math.max(120, maxContentW + horizontalPadding));
     }
@@ -575,27 +577,13 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
     }
     
     var flowSections = buildPdfFlowSections(allBlocks, cardWidth);
-    var totalFlowHeight = flowSections.reduce(function (sum, section, index) {
-      return sum + section.height + (index ? 12 : 0);
-    }, 0);
-    var imageRows = flowSections
-      .filter(function (section) { return section.type === "images"; })
-      .flatMap(function (section) { return section.rows; });
-    var bubbleHeight = flowSections
-      .filter(function (section) { return section.type === "bubble"; })
-      .reduce(function (sum, section) { return sum + section.height; }, 0);
     var labelInBubble = false;
-    var totalHeight = currentRoleHeight + totalFlowHeight + (currentRoleHeight > 0 ? 6 : 0);
     
     return {
       message: message,
       blocks: allBlocks,
-      bubbleBlocks: bubbleBlocks,
-      imageRows: imageRows,
       flowSections: flowSections,
       roleHeight: currentRoleHeight,
-      cardHeight: totalHeight,
-      bubbleHeight: bubbleHeight,
       cardWidth: cardWidth,
       alignRight: alignRight,
       labelInBubble: labelInBubble
@@ -885,7 +873,7 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
     return null;
   }
 
-  function measurePdfBlock(block, width) {
+  async function measurePdfBlock(block, width) {
     if (!block) return null;
     if (block.type === "heading") {
       var size = block.level === 1 ? 21 : block.level === 2 ? 18 : 16;
@@ -942,7 +930,9 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
       var renderLines = [];
       var maxLineWidth = 0;
       var listStart = block.start || 1;
-      (block.items || []).forEach(function (item, index) {
+      var listItems = block.items || [];
+      for (var index = 0; index < listItems.length; index++) {
+        var item = listItems[index];
         var itemFont = bodyFont;
         var textIndent = 22;
         var richLines = wrapRichText(ctx, getInlineRichText(item), width - textIndent, itemFont, DESIGN.font);
@@ -968,7 +958,9 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
           index: listStart + index,
           isSub: false
         });
-        (item.subItems || []).forEach(function (sub) {
+        var subItems = item.subItems || [];
+        for (var subIndex = 0; subIndex < subItems.length; subIndex++) {
+          var sub = subItems[subIndex];
           var subFont = "14px " + DESIGN.font.body;
           var subTextIndent = 20;
           var subRichLines = wrapRichText(ctx, getInlineRichText(sub), width - 24 - subTextIndent, subFont, DESIGN.font);
@@ -992,9 +984,12 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
             ordered: false,
             isSub: true
           });
-        });
-      });
-      groups.forEach(function (group, groupIndex) {
+          await scheduler.checkpoint();
+        }
+        await scheduler.checkpoint();
+      }
+      for (var groupIndex = 0; groupIndex < groups.length; groupIndex++) {
+        var group = groups[groupIndex];
         var lines = group.richLines && group.richLines.length
           ? group.richLines
           : [{ chunks: [{ text: "" }] }];
@@ -1006,7 +1001,8 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
             richLine: richLine
           });
         });
-      });
+        await scheduler.checkpoint();
+      }
       return {
         type: "list",
         groups: groups,
@@ -1027,7 +1023,7 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
       return { type: "blockquote", lines: quoteLines, richLines: richLines, font: quoteFont, lineHeight: 22, height: Math.max(1, richLines.length) * 22 + 24 };
     }
     if (block.type === "table") {
-      return measurePdfTable(block, width);
+      return await measurePdfTable(block, width);
     }
     if (block.type === "image") {
       var cached = imageCache && imageCache[block.src];
@@ -1084,36 +1080,41 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
     return rows;
   }
 
-  function measurePdfTable(block, width) {
+  async function measurePdfTable(block, width) {
     var rows = [];
     if (block.headers && block.headers.length) rows.push({ cells: block.headers, header: true });
     (block.rows || []).forEach(function (row) { rows.push({ cells: row, header: false }); });
     if (!rows.length) return null;
     var columnCount = Math.max.apply(null, rows.map(function (row) { return row.cells.length; }));
     var cellWidth = width / Math.max(1, columnCount);
-    var rowLayouts = rows.map(function (row) {
+    var rowLayouts = [];
+    for (var rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+      var row = rows[rowIndex];
       var cellLines = row.cells.map(function (cell) {
         return wrapText(ctx, cleanInlineMarkdownText(cell), cellWidth - 12, (row.header ? "700 " : "") + "11px " + DESIGN.font.body);
       });
       var rowHeight = Math.max(30, Math.max.apply(null, cellLines.map(function (lines) { return lines.length; })) * 15 + 14);
-      return { header: row.header, cellLines: cellLines, rowHeight: rowHeight };
-    });
+      rowLayouts.push({ header: row.header, cellLines: cellLines, rowHeight: rowHeight });
+      await scheduler.checkpoint();
+    }
     var paginatedRows = [];
-    rowLayouts.forEach(function (row) {
+    for (var layoutIndex = 0; layoutIndex < rowLayouts.length; layoutIndex++) {
+      var row = rowLayouts[layoutIndex];
       var lineCount = Math.max.apply(null, row.cellLines.map(function (lines) { return Math.max(1, lines.length); }));
       if (lineCount <= PDF_MAX_TABLE_ROW_LINES) {
         paginatedRows.push(row);
-        return;
+      } else {
+        for (var lineStart = 0; lineStart < lineCount; lineStart += PDF_MAX_TABLE_ROW_LINES) {
+          var take = Math.min(PDF_MAX_TABLE_ROW_LINES, lineCount - lineStart);
+          paginatedRows.push({
+            header: row.header,
+            cellLines: row.cellLines.map(function (lines) { return lines.slice(lineStart, lineStart + take); }),
+            rowHeight: Math.max(30, take * 15 + 14)
+          });
+        }
       }
-      for (var lineStart = 0; lineStart < lineCount; lineStart += PDF_MAX_TABLE_ROW_LINES) {
-        var take = Math.min(PDF_MAX_TABLE_ROW_LINES, lineCount - lineStart);
-        paginatedRows.push({
-          header: row.header,
-          cellLines: row.cellLines.map(function (lines) { return lines.slice(lineStart, lineStart + take); }),
-          rowHeight: Math.max(30, take * 15 + 14)
-        });
-      }
-    });
+      await scheduler.checkpoint();
+    }
     return { type: "table", columnCount: columnCount, cellWidth: cellWidth, rows: paginatedRows, height: paginatedRows.reduce(function (sum, row) { return sum + row.rowHeight; }, 0) + 12 };
   }
 
@@ -1356,6 +1357,7 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
           }
         }
         y = renderPdfImageGridRow(fittedRow, imgX, y) + 4;
+        await scheduler.checkpoint();
       }
     }
 
@@ -1660,6 +1662,7 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
         
         currentIdx = nextIdx;
         isFirstSegment = false;
+        await scheduler.checkpoint();
       }
     }
 
@@ -1672,6 +1675,7 @@ export async function renderPdfPages(messages, metadata, settingsInput, options,
       } else if (section.type === "bubble") {
         await renderPdfBubbleSection(section);
       }
+      await scheduler.checkpoint();
     }
 
     y += flatLayout ? 20 : 32;
